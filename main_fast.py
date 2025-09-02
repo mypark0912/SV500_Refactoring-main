@@ -171,7 +171,7 @@ if __name__ == '__main__':
     uvicorn.run(
         app,  # 모듈명:FastAPI 인스턴스 이름
         host="0.0.0.0",
-        port=4000,
+        port=3000,
         workers=1,  # 워커 1개로 고정 (메모리 절약)
         http="httptools",  # 경량 HTTP 파서
     )
