@@ -793,6 +793,7 @@ const updateAsset = async () => {
   //   const kva = parseInt(norminal_kva.value);
   //   inputDict.value.n_kva = kva;
   // }
+  
   const oldName = inputDict.value.assetInfo.name;
   const newName = assetMode.value.name;
 
@@ -804,7 +805,7 @@ const updateAsset = async () => {
   };
 
   try {
-    console.log("payload", payload);
+    await unregisterAsset();
     const response = await axios.post("/setting/modifyAsset", payload, {
       headers: { "Content-Type": "application/json" },
     });
