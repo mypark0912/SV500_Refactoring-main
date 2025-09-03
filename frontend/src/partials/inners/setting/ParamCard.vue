@@ -16,47 +16,52 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60">
             <div class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-2">Parameter Configuration</div>
           <div class="mt-6 pt-2">
-                    <div class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4">
-                    <div class="text-left">Parameter</div>
-                    <div class="text-left">Module</div>
-                    <div class="text-left">Default Thresholds(Min/Max)</div>
-                    <div class="text-left">Ack.</div>
-                    <div class="text-left">Test Type</div>
+            <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
+            <div class="flex flex-col">
+              <!-- 헤더 - 스크롤바 영역만큼 패딩 추가 -->
+              <div
+                class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4"
+                style="padding-right: 16px;"
+              >
+                <div class="text-left">Parameter</div>
+                <div class="text-left">Module</div>
+                <div class="text-left">Default Thresholds(Min/Max)</div>
+                <div class="text-left">Ack.</div>
+                <div class="text-left">Test Type</div>
+              </div>
+
+              <!-- 스크롤 가능한 데이터 목록 -->
+              <div class="overflow-y-auto max-h-[300px] space-y-2">
+                <div
+                   v-for="({ row, originalIndex }, idx) in filteredParamData" :key="originalIndex"
+                    class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
+                >
+                    <div class="text-left" hidden>{{ row.originalIndex }}</div>
+                    <!-- Name -->
+                    <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
+                    <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
+                    <!-- Value 입력 -->
+                     <div v-if="row.DefaultThresholds">
+                        <template v-for="(item, index) in row.DefaultThresholds" :key="index">
+                            <input
+                                v-if="!isNaNValue(item)"
+                                v-model.number="row.DefaultThresholds[index]"
+                                type="text"
+                                class="text-center border border-gray-300 dark:border-gray-600 rounded-md p-1 w-12 text-xs mr-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-violet-500 focus:border-violet-500"
+                                :disabled="!isEditParameters"
+                            />
+                        </template>
                     </div>
-
-                    <!-- 스크롤 가능한 데이터 목록 -->
-                    <div class="overflow-y-auto max-h-[300px] space-y-2 pr-1">
-                        <div
-                           v-for="({ row, originalIndex }, idx) in filteredParamData" :key="originalIndex"
-                            class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm"
-                        >
-                            <div class="text-left" hidden>{{ row.originalIndex }}</div>
-                            <!-- Name -->
-                            <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
-                            <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
-                            <!-- Value 입력 -->
-                             <div v-if="row.DefaultThresholds">
-                                <template v-for="(item, index) in row.DefaultThresholds" :key="index">
-                                    <input
-                                        v-if="!isNaNValue(item)"
-                                        v-model.number="row.DefaultThresholds[index]"
-                                        type="text"
-                                        class="text-center border border-gray-300 dark:border-gray-600 rounded-md p-1 w-12 text-xs mr-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-violet-500 focus:border-violet-500"
-                                        :disabled="!isEditParameters"
-                                    />
-                                </template>
-                            </div>
-                            <div v-else class="text-gray-400 dark:text-gray-500 text-xs italic">No thresholds</div>
-                            <div>
-                              <input type="checkbox" v-model="row.Acknowledged" :disabled="!isEditParameters" />
-                            </div>
-                            <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ checkTestType(row.TestType) }}</div>
-                            <!-- Unit -->
-                        </div>
+                    <div v-else class="text-gray-400 dark:text-gray-500 text-xs italic">No thresholds</div>
+                    <div>
+                      <input type="checkbox" v-model="row.Acknowledged" :disabled="!isEditParameters" />
                     </div>
-
-
+                    <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ checkTestType(row.TestType) }}</div>
+                    <!-- Unit -->
                 </div>
+            </div>
+            </div>
+          </div>
         </div>
         <!--div class="mt-4 flex justify-end space-x-4">
           <button class="btn h-6 px-5 bg-blue-900 text-blue-100 hover:bg-blue-800 dark:bg-blue-100 dark:text-blue-800 dark:hover:bg-white" @click="saveChanges">Save</button>
@@ -149,6 +154,23 @@ const filteredParamData = computed(() =>
 </script>
 
 <style scoped>
+/* 스크롤바 스타일링 - 필요시 사용 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
 /* 다크모드를 위한 포커스 및 호버 스타일 향상 */
 input:focus {
   outline: none;

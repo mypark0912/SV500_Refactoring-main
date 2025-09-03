@@ -48,7 +48,7 @@
             Nameplates Configuration
           </div>
           <button v-if="isAdmin"
-            class="btn h-6 px-5 ml-auto mr-2 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
+            class="btn h-6 px-5 ml-auto mr-5 bg-sky-900 text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
             @click="feedbackModalOpen = true"
           >
             Add Bearing
@@ -56,115 +56,117 @@
           <button
             v-if="authStore.getUserRole !== '1' || authStore.getUserRole !== '0'"
             @click="showAdvancedModal = true"
-            class="btn h-6 px-5 bg-violet-900 text-violet-100 text-xs hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
+            class="btn h-6 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
           >
             Advanced
           </button>
         </div>
         <div class="mt-6 pt-2">
-          <!-- 헤더 -->
-          <div
-            class="grid grid-cols-[30%_10%_1fr_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4"
-          >
-            <div class="text-left">Item</div>
-            <div class="text-left">Module</div>
-            <div class="text-center">Value</div>
-            <div class="text-center">Unit</div>
-          </div>
-
-          <!-- 스크롤 가능한 데이터 목록 -->
-          <div class="overflow-y-auto max-h-[300px] space-y-2 pr-1">
+          <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
+          <div class="flex flex-col">
+            <!-- 헤더 - 스크롤바 영역만큼 패딩 추가 -->
             <div
-              v-for="(row, index) in readonlyRows"
-              :key="index"
-              class="grid grid-cols-[30%_10%_1fr_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm"
+              class="grid grid-cols-[30%_10%_1fr_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4 pr-4"
+              style="padding-right: 16px;" 
             >
-              <!-- Name -->
-              <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
-              <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
-              <!-- Value 입력 -->
-              <input
-                v-model.number="row.Value"
-                type="number"
-                class="text-center border border-gray-300 dark:border-gray-600 rounded-md p-1 w-full text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                :min="getMinValue(row)"
-                :max="getMaxValue(row)"
-                disabled
-              />
-              <div class="text-left" hidden>{{ row.Min }}</div>
-              <div class="text-left" hidden>{{ row.Max }}</div>
-              <!-- Unit -->
-              <div class="text-center text-xs text-gray-600 dark:text-gray-300">{{ row.Unit }}</div>
+              <div class="text-left">Item</div>
+              <div class="text-left">Module</div>
+              <div class="text-center">Value</div>
+              <div class="text-center">Unit</div>
             </div>
 
-            <div
-              v-for="(row, index) in filteredEditableRows"
-              :key="index"
-              class="grid grid-cols-[30%_10%_1fr_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm"
-            >
-              <!--div class="text-left text-gray-800 dark:text-gray-200">
-                {{ `${row.Assembly}_${row.AssemblyID}: ${row.Title}` }}
-              </div-->
-              <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
-              <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
-              <div class="text-left" hidden>{{ `${row.Name}` }}</div>
-              <template v-if="row.DataType === 3">
-                <select
-                  v-model.number="row.Value"
-                  class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
-                  :disabled="!isEditNameplates"
-                >
-                  <option
-                    v-for="(label, i) in row.DataInfo"
-                    :key="i"
-                    :value="i"
-                  >
-                    {{ label }}
-                  </option>
-                </select>
-              </template>
-
-              <template v-else-if="row.DataType === 4">
-                <div v-if="row.Name == 'BearingName'" class="flex items-center gap-2">
-                  <select
-                  v-model="row.Value"
-                  class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
-                  :disabled="!isEditNameplates"
-                  @change="onBearingChanged(row)"
-                >
-                  <option v-for="data in BearingOptions" :value="data">
-                    {{ data }}
-                  </option>
-                </select>
-                <button
-                class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200" 
-                :disabled="!isEditNameplates"
-                @click="openSearchModal(row)"
+            <!-- 스크롤 가능한 데이터 목록 -->
+            <div class="overflow-y-auto max-h-[300px] space-y-2">
+              <div
+                v-for="(row, index) in readonlyRows"
+                :key="index"
+                class="grid grid-cols-[30%_10%_1fr_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
               >
-                🔍
-              </button>
-                </div>                
-                <input v-else 
-                  type="text"
-                  v-model="row.Value"
-                  class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
-                  :disabled="!isEditNameplates"
-                />
-              </template>
-
-              <template v-else>
+                <!-- Name -->
+                <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
+                <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
+                <!-- Value 입력 -->
                 <input
-                  type="number"
                   v-model.number="row.Value"
-                  :min="row.Min"
-                  :max="row.Max"
-                  class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
-                  :disabled="!isEditNameplates"
+                  type="number"
+                  class="text-center border border-gray-300 dark:border-gray-600 rounded-md p-1 w-full text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                  :min="getMinValue(row)"
+                  :max="getMaxValue(row)"
+                  disabled
                 />
-              </template>
-              <div class="text-left" hidden>{{ row.Min }}</div>
-              <div class="text-left" hidden>{{ row.Max }}</div>
-              <div class="text-center text-xs text-gray-600 dark:text-gray-300">{{ row.Unit }}</div>
+                <div class="text-left" hidden>{{ row.Min }}</div>
+                <div class="text-left" hidden>{{ row.Max }}</div>
+                <!-- Unit -->
+                <div class="text-center text-xs text-gray-600 dark:text-gray-300">{{ row.Unit }}</div>
+              </div>
+
+              <div
+                v-for="(row, index) in filteredEditableRows"
+                :key="index"
+                class="grid grid-cols-[30%_10%_1fr_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
+              >
+                <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
+                <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
+                <div class="text-left" hidden>{{ `${row.Name}` }}</div>
+                
+                <template v-if="row.DataType === 3">
+                  <select
+                    v-model.number="row.Value"
+                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
+                    :disabled="!isEditNameplates"
+                  >
+                    <option
+                      v-for="(label, i) in row.DataInfo"
+                      :key="i"
+                      :value="i"
+                    >
+                      {{ label }}
+                    </option>
+                  </select>
+                </template>
+
+                <template v-else-if="row.DataType === 4">
+                  <div v-if="row.Name == 'BearingName'" class="flex items-center gap-2">
+                    <select
+                    v-model="row.Value"
+                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
+                    :disabled="!isEditNameplates"
+                    @change="onBearingChanged(row)"
+                  >
+                    <option v-for="data in BearingOptions" :value="data">
+                      {{ data }}
+                    </option>
+                  </select>
+                  <button
+                  class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200" 
+                  :disabled="!isEditNameplates"
+                  @click="openSearchModal(row)"
+                >
+                  🔍
+                </button>
+                  </div>                
+                  <input v-else 
+                    type="text"
+                    v-model="row.Value"
+                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
+                    :disabled="!isEditNameplates"
+                  />
+                </template>
+
+                <template v-else>
+                  <input
+                    type="number"
+                    v-model.number="row.Value"
+                    :min="row.Min"
+                    :max="row.Max"
+                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500" 
+                    :disabled="!isEditNameplates"
+                  />
+                </template>
+                <div class="text-left" hidden>{{ row.Min }}</div>
+                <div class="text-left" hidden>{{ row.Max }}</div>
+                <div class="text-center text-xs text-gray-600 dark:text-gray-300">{{ row.Unit }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -639,48 +641,21 @@ const validateModalData = () => {
 </script>
 
 <style scoped>
-table {
-  table-layout: fixed;
-  width: 100%;
-  min-height: calc(40px * 20); /* 40px * 20줄 높이 고정 */
-  border-collapse: collapse;
+/* 스크롤바 스타일링 - 필요시 사용 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
 }
 
-th,
-td {
-  text-align: center;
-  padding: 8px;
-  border: 1px solid #ddd;
-  height: 40px; /* 각 행 높이 고정 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.overflow-y-auto::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-@media (prefers-color-scheme: dark) {
-  th,
-  td {
-    border-color: rgba(55, 65, 81, 0.6);
-  }
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded;
 }
 
-th:nth-child(1) {
-  width: 300px;
-} /* 첫 번째 컬럼 */
-th:nth-child(2) {
-  width: 150px;
-}
-th:nth-child(3) {
-  width: 150px;
-}
-th:nth-child(4) {
-  width: 200px;
-}
-th:nth-child(5) {
-  width: 100px;
-}
-.empty-row {
-  visibility: hidden; /* 빈 행 안보이게 처리 */
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 
 /* 다크모드를 위한 포커스 및 호버 스타일 향상 */
