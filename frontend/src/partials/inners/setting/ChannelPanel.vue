@@ -930,10 +930,65 @@ export default {
     const channel = ref(props.channel);
     const selectedNodeName = ref("");
     const selectedNodeType = ref("");
-    const isAssetExist = ref(false);
-    const tableData = ref([]);
-    const modalData = ref([]);
-    const paramData = ref([]);
+    // const isAssetExist = ref(false);
+    // const tableData = ref([]);
+    // const modalData = ref([]);
+    // const paramData = ref([]);
+    const tableData = computed({
+  get: () => {
+    const channelKey = channel.value.toLowerCase(); // 'Main' -> 'main'
+    return diagnosis_detail.value[channelKey]?.tableData || [];
+  },
+  set: (value) => {
+    const channelKey = channel.value.toLowerCase();
+    if (diagnosis_detail.value[channelKey]) {
+      diagnosis_detail.value[channelKey].tableData = value;
+    }
+  }
+});
+
+const modalData = computed({
+  get: () => {
+    const channelKey = channel.value.toLowerCase();
+    const allData = diagnosis_detail.value[channelKey]?.tableData || [];
+    
+    if (authStore.getUserRole == "2") {
+      return allData.filter((item) => item.Type === 1);
+    } else if (authStore.getUserRole == "3") {
+      return allData.filter((item) => [1, 2].includes(item.Type));
+    }
+    return [];
+  },
+  set: (value) => {
+    console.warn('modalData는 tableData에서 자동 생성됩니다.');
+  }
+});
+
+const paramData = computed({
+  get: () => {
+    const channelKey = channel.value.toLowerCase();
+    return diagnosis_detail.value[channelKey]?.paramData || [];
+  },
+  set: (value) => {
+    const channelKey = channel.value.toLowerCase();
+    if (diagnosis_detail.value[channelKey]) {
+      diagnosis_detail.value[channelKey].paramData = value;
+    }
+  }
+});
+
+const isAssetExist = computed({
+  get: () => {
+    const channelKey = channel.value.toLowerCase();
+    return diagnosis_detail.value[channelKey]?.use || false;
+  },
+  set: (value) => {
+    const channelKey = channel.value.toLowerCase();
+    if (diagnosis_detail.value[channelKey]) {
+      diagnosis_detail.value[channelKey].use = value;
+    }
+  }
+});
     const isEditNameplates = ref(false);
     const isEditParameters = ref(false);
     const testData = ref({});
@@ -1115,48 +1170,70 @@ export default {
       }
       return false;
     });
+ 
 
-    // ✅ 채널 변경 감지
-    watch(
-      () => props.channel,
-      async (newChannel, oldChannel) => {
-        if (newChannel !== oldChannel) {
-          channel.value = newChannel;
+watch(
+  () => props.channel,
+  async (newChannel, oldChannel) => {
+    if (newChannel !== oldChannel) {
+      channel.value = newChannel;
 
-          const targetDict = getInputDict();
-          if (targetDict.assetInfo && targetDict.assetInfo.name !== "") {
-            isAssetExist.value = true;
-            await fetchAssetData(targetDict.assetInfo.name, channel.value);
-            await fetchParamData(targetDict.assetInfo.name, channel.value);
-            //console.log('Channel - DIAGNOSIS', diagnosis_detail.value);
-          } else {
-            isAssetExist.value = false;
-            tableData.value = [];
-            paramData.value = [];
-          }
+      const currentDict = getInputDict();
+      const assetName = currentDict.assetInfo?.name;
+      const channelKey = newChannel.toLowerCase();
 
-          componentKey.value++;
+      if (assetName && assetName !== "") {
+        const needsAssetData = !diagnosis_detail.value[channelKey]?.tableData?.length || 
+                               diagnosis_detail.value[channelKey]?.assetName !== assetName;
+        const needsParamData = !diagnosis_detail.value[channelKey]?.paramData?.length || 
+                               diagnosis_detail.value[channelKey]?.assetName !== assetName;
+
+        if (needsAssetData) {
+          await fetchAssetData(assetName, newChannel);
         }
+        if (needsParamData) {
+          await fetchParamData(assetName, newChannel);
+        }
+      } else {
+        // Asset이 없는 경우 초기화
+        diagnosis_detail.value[channelKey].use = false;
+        diagnosis_detail.value[channelKey].assetName = '';
+        diagnosis_detail.value[channelKey].tableData = [];
+        diagnosis_detail.value[channelKey].paramData = [];
       }
-    );
 
-    // ✅ Asset 이름 변경 감지
-    watch(
-      () => getInputDict().assetInfo?.name,
-      async (newValue) => {
-        if (newValue) {
-          isAssetExist.value = true;
+      componentKey.value++;
+    }
+  }
+);
+watch(
+  () => getInputDict().assetInfo?.name,
+  async (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+      const channelKey = channel.value.toLowerCase();
+      
+      if (newValue && newValue !== "") {
+        const needsAssetData = !diagnosis_detail.value[channelKey]?.tableData?.length || 
+                               diagnosis_detail.value[channelKey]?.assetName !== newValue;
+        const needsParamData = !diagnosis_detail.value[channelKey]?.paramData?.length || 
+                               diagnosis_detail.value[channelKey]?.assetName !== newValue;
+
+        if (needsAssetData) {
           await fetchAssetData(newValue);
-          await fetchParamData(newValue);
-          //console.log('Asset- DIAGNOSIS', diagnosis_detail.value);
-        } else {
-          isAssetExist.value = false;
-          tableData.value = [];
-          paramData.value = [];
         }
+        if (needsParamData) {
+          await fetchParamData(newValue);
+        }
+      } else {
+        // Asset 이름이 비워진 경우
+        diagnosis_detail.value[channelKey].use = false;
+        diagnosis_detail.value[channelKey].assetName = '';
+        diagnosis_detail.value[channelKey].tableData = [];
+        diagnosis_detail.value[channelKey].paramData = [];
       }
-    );
-
+    }
+  }
+);
     onMounted(async () => {
       await nextTick();
 
@@ -1197,70 +1274,70 @@ export default {
       }
     });
 
-    const fetchAssetData = async (asset) => {
-      try {
-        if (asset == "") {
-          asset = "GlobalTemplate";
-        }
-        const response = await axios.get(`/setting/getAssetConfig/${asset}`);
-        if (response.data.success === true) {
-          const allData = response.data.data;
-          if (Array.isArray(allData)) {
-            tableData.value = allData.filter((item) => item.Type === 0);
-            if(channel.value == 'Main'){
-              diagnosis_detail.value.main.use = true;
-              diagnosis_detail.value.main.assetName = asset;
-              diagnosis_detail.value.main.tableData = tableData.value;
-            }else{
-              diagnosis_detail.value.sub.use = true;
-              diagnosis_detail.value.sub.assetName = asset;
-              diagnosis_detail.value.sub.tableData = tableData.value;
-            }
-            
-            if (authStore.getUserRole == "2") {
-              modalData.value = allData.filter((item) => item.Type === 1);
-            } else if (authStore.getUserRole == "3") {
-              modalData.value = allData.filter((item) =>
-                [1, 2].includes(item.Type)
-              );
-            }
-          } else {
-            tableData.value = [];
-            modalData.value = [];
-          }
-        } else {
-          console.log("Data Load Fail!", response.data.error);
-        }
-      } catch (error) {
-        console.error("Data import failed:", error);
-      }
-    };
+const fetchAssetData = async (asset, targetChannel = null) => {
+  const currentChannel = targetChannel || channel.value;
+  const channelKey = currentChannel.toLowerCase();
+  
+  // 중복 로딩 방지
+  if (diagnosis_detail.value[channelKey]?.assetName === asset && 
+      diagnosis_detail.value[channelKey]?.tableData?.length > 0) {
+    console.log(`Asset data already loaded for ${currentChannel}:${asset}`);
+    return;
+  }
 
-    const fetchParamData = async (asset) => {
-      if (asset == "") {
-        asset = "GlobalTemplate";
+  try {
+    if (asset == "") {
+      asset = "GlobalTemplate";
+    }
+
+    const response = await axios.get(`/setting/getAssetConfig/${asset}`);
+    if (response.data.success === true) {
+      const allData = response.data.data;
+      if (Array.isArray(allData)) {
+        const filteredTableData = allData.filter((item) => item.Type === 0);
+        
+        // diagnosis_detail에 직접 저장
+        diagnosis_detail.value[channelKey].use = true;
+        diagnosis_detail.value[channelKey].assetName = asset;
+        diagnosis_detail.value[channelKey].tableData = filteredTableData;
+      } else {
+        diagnosis_detail.value[channelKey].tableData = [];
+        diagnosis_detail.value[channelKey].use = false;
       }
-      try {
-        const response = await axios.get(`/setting/getAssetParams/${asset}`);
-        if (response.data.success === true) {
-          const allData = response.data.data;
-          if (Array.isArray(allData)) {
-            paramData.value = allData;
-            if(channel.value == 'Main'){
-              diagnosis_detail.value.main.paramData = paramData.value;
-            }else{
-              diagnosis_detail.value.sub.paramData = paramData.value;
-            }
-          } else {
-            paramData.value = [];
-          }
-        } else {
-          console.log("Data Load Fail!", response.data.error);
-        }
-      } catch (error) {
-        console.error("Data import failed:", error);
+    }
+  } catch (error) {
+    console.error("Data import failed:", error);
+  }
+};
+const fetchParamData = async (asset, targetChannel = null) => {
+  const currentChannel = targetChannel || channel.value;
+  const channelKey = currentChannel.toLowerCase();
+  
+  // 중복 로딩 방지
+  if (diagnosis_detail.value[channelKey]?.assetName === asset && 
+      diagnosis_detail.value[channelKey]?.paramData?.length > 0) {
+    console.log(`Param data already loaded for ${currentChannel}:${asset}`);
+    return;
+  }
+
+  if (asset == "") {
+    asset = "GlobalTemplate";
+  }
+  
+  try {
+    const response = await axios.get(`/setting/getAssetParams/${asset}`);
+    if (response.data.success === true) {
+      const allData = response.data.data;
+      if (Array.isArray(allData)) {
+        diagnosis_detail.value[channelKey].paramData = allData;
+      } else {
+        diagnosis_detail.value[channelKey].paramData = [];
       }
-    };
+    }
+  } catch (error) {
+    console.error("Data import failed:", error);
+  }
+};
 
     // ✅ 수정된 savefile 함수 - Enable과 Diagnosis 연동 제거
     const savefile = async (source = "default") => {
@@ -1353,13 +1430,6 @@ export default {
       "channel_inputDict",
       computed(() => getInputDict())
     );
-    provide("savefile", savefile);
-    provide("tableData", tableData);
-    provide("modalData", modalData);
-    provide("paramData", paramData);
-    provide("isEditNameplates", isEditNameplates);
-    provide("isEditParameters", isEditParameters);
-
     // ✅ 추가: 필수 함수들을 provide
     provide("updateNestedField", updateNestedField);
     provide("updateField", updateField);
