@@ -400,6 +400,38 @@
             </div>
           </div>
         </div>
+        <ModalBasic
+          :modalOpen="showNameplateConfirm"
+          @close-modal="handleConfirm(false)"
+          title="Confirm changes"
+        >
+          <div class="w-[600px] max-w-full px-6">
+            <!-- 헤더 -->
+            <div class="text-sm">
+              {{ nameplateConfirmMessage }}
+            </div>
+
+            <!-- Footer -->
+            <div
+              class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60"
+            >
+              <div class="flex justify-end space-x-2">
+                <button
+                  class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  @click="handleConfirm(true)"
+                >
+                  YES
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                  @click="handleConfirm(false)"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalBasic>
         <OnboardModal
           :modalOpen="isModalOpen"
           :OpMode="mode"
@@ -461,7 +493,9 @@ export default {
     const authStore = useAuthStore();
     const setupStore = useSetupStore();
     const router = useRouter();
-
+    const showNameplateConfirm = ref(false);
+    const nameplateConfirmMessage = ref("");
+    let resolveNameplateConfirm = null;
     const sidebarOpen = ref(false);
     const dangerModalOpen = ref(false);
     const errorMessage = ref(""); // ✅ 에러 메시지 변수 추가
@@ -474,6 +508,24 @@ export default {
       if (parseInt(authStore.getUserRole) > 1) return true;
       else return false;
     });
+    function askNameplateConfirm(channels) {
+      const channelList = channels.join(", ");
+      nameplateConfirmMessage.value =
+        `The changed settings will delete all previous calculations for ${channelList}.\n` +
+        `Would you like to proceed?`;
+      showNameplateConfirm.value = true;
+
+      return new Promise((resolve) => {
+        resolveNameplateConfirm = resolve;
+      });
+    }
+    function handleConfirm(ok) {
+      showNameplateConfirm.value = false;
+      if (resolveNameplateConfirm) {
+        resolveNameplateConfirm(!!ok);
+        resolveNameplateConfirm = null;
+      }
+    }
     const {
       setupDict,
       inputDict,
@@ -962,16 +1014,20 @@ export default {
         );
         return;
       }
+      // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
+      let needsNameplateConfirmation = false;
+      let nameplateChannels = [];
 
       for (const channelName in diagnosis_detail.value) {
         const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
+
         // Main/Sub 채널별 diagnosis 사용 여부 확인
         const isDiagnosisEnabledForChannel =
           channelName === "main"
             ? inputDict.value.useFuction.diagnosis_main
             : inputDict.value.useFuction.diagnosis_sub;
 
-        // assetName과 tableData 검증
+        // assetName과 tableData 검증 및 nameplate 체크
         if (
           channelData.use &&
           isDiagnosisEnabledForChannel &&
@@ -981,14 +1037,66 @@ export default {
           Array.isArray(channelData.tableData) &&
           channelData.tableData.length > 0
         ) {
-          const success = await checkTableData(
+          try {
+            const nameplateFlag = await checkNameplateConfig(
+              channelData.tableData,
+              channelData.assetName
+            );
+            console.log(
+              channelData.assetName,
+              "Nameplate check result:",
+              nameplateFlag
+            );
+            if (nameplateFlag) {
+              needsNameplateConfirmation = true;
+              nameplateChannels.push(
+                `${channelName} channel(${channelData.assetName})`
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error checking nameplate for ${channelName}:`,
+              error
+            );
+            alert(
+              `An error occurred while checking nameplate configuration for ${channelName}: ${error.message}`
+            );
+            return;
+          }
+        }
+      }
+
+      // 2. Nameplate 변경이 필요한 경우 사용자 확인
+      if (needsNameplateConfirmation) {
+        const channelList = nameplateChannels.join(", ");
+        const userConfirmed = await askNameplateConfirm(nameplateChannels);
+        if (!userConfirmed) return;
+      }
+
+      for (const channelName in diagnosis_detail.value) {
+        const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
+        // Main/Sub 채널별 diagnosis 사용 여부 확인
+        const isDiagnosisEnabledForChannel =
+          channelName === "main"
+            ? inputDict.value.useFuction.diagnosis_main
+            : inputDict.value.useFuction.diagnosis_sub;
+
+        // Nameplate 설정 저장
+        if (
+          channelData.use &&
+          isDiagnosisEnabledForChannel &&
+          channelData.assetName &&
+          channelData.assetName !== "" &&
+          channelData.tableData &&
+          Array.isArray(channelData.tableData) &&
+          channelData.tableData.length > 0
+        ) {
+          await setNameplateConfig(
             channelData.tableData,
             channelData.assetName,
             channelName
           );
-          if (!success) return;
         }
-
         // assetName과 paramData 검증
         if (
           channelData.use &&
@@ -1006,7 +1114,7 @@ export default {
           );
         }
       }
-      console.log("devMode.value",devMode.value)
+      console.log("devMode.value", devMode.value);
       if (devMode.value === "device0") {
         const device0Params = [
           "Temperature",
@@ -1031,8 +1139,6 @@ export default {
           channel_sub.value.trendInfo = {};
         }
         channel_sub.value.trendInfo.params = [...device0Params];
-
-      
       }
       // 저장 진행
       await saveAllSettings();
@@ -1124,14 +1230,28 @@ export default {
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
         const nameplateFlag = await checkNameplateConfig(tableData, assetName);
+
         if (nameplateFlag) {
-          await setNameplateConfig(tableData, assetName, channelName);
+          // 사용자에게 확인 팝업 표시
+          const userConfirmed = confirm(
+            `The changed settings will delete all ${channelName} previous calculations. Would you like to proceed?`
+          );
+
+          if (userConfirmed) {
+            await setNameplateConfig(tableData, assetName, channelName);
+          } else {
+            alert("Nameplate configuration has been canceled.");
+            return false; // 사용자가 취소한 경우
+          }
         }
         return true;
       } catch (error) {
         console.error(
           `Error occurred while checking table data for ${channelName}:`,
           error
+        );
+        alert(
+          `An error occurred during nameplate configuration for ${channelName}: ${error.message}`
         );
         return false;
       }
@@ -1277,6 +1397,9 @@ export default {
       GetDiagnosisSetting,
       checkNameplateflag,
       diagnosis_detail,
+      showNameplateConfirm,
+      nameplateConfirmMessage,
+      handleConfirm,
     };
   },
 };
