@@ -666,7 +666,6 @@
               </div>
             </div>
             <AlarmCard
-              v-if="devMode != 'device0'"
               :parameterOptions="parameterOptions"
             />
             <EventCard1 />

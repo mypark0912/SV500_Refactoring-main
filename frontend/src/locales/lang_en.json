@@ -286,7 +286,7 @@
         },
         "cardTitle": {
         "Channel": "Equipment Information",
-        "PowerQuality": "Power Quality-EN 50160 Report",
+        "PowerQuality": "Power Quality",
 
         "iticCurAnalysis": "ITIC Curve Analysis",
         "hourlyEngUsage":"Hourly Energy Usage",
