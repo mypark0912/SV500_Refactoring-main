@@ -436,6 +436,7 @@
           :modalOpen="isModalOpen"
           :OpMode="mode"
           :restartDone="isRestartDone"  
+          :preventBackdropClose="true"
           @close-modal="handleCloseModal"
           @restart-validation="restart"
         />

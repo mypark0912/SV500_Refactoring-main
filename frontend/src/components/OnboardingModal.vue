@@ -1433,6 +1433,7 @@ export default {
 
     // Close on click outside
     const clickHandler = ({ target }) => {
+      return; 
       if (!props.modalOpen || modalContent.value.contains(target)) return;
       closeModal();
     };
