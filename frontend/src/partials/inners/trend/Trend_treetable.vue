@@ -2,9 +2,9 @@
   <table class="table-fixed w-full dark:text-white">
     <!-- colgroup으로 컬럼 너비 비율 고정 -->
     <colgroup>
-      <col style="width: 70%">
+      <col style="width: 65%">
       <col style="width: 20%">
-      <col style="width: 10%">
+      <col style="width: 15%">
     </colgroup>
     
     <!-- Table header -->
