@@ -60,13 +60,14 @@
             console.log(asset.value);
             return;
           }
-         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+         const assetName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
          const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
          const chNick = channel.value == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
+         const chName = channel.value == 'main'? 'Main':'Sub';
          if(chName != ''){
 
            try {
-             const response = await axios.get(`/api/getStatus/${chName}`);
+             const response = await axios.get(`/api/getStatus/${assetName}/${chName}`);
               //console.log(response.data.status);
              if (response.data.status >= 0) {
                 stData.value.devName = chName;
@@ -83,7 +84,7 @@
                   stData.value.Ig = channel.value === 'main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
                 }
              }else{
-               console.log('No Data');
+               console.log('TransInfo: No Data');
              }
            }catch (error) {
              console.log("데이터 가져오기 실패:", error);

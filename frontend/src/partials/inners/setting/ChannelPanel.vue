@@ -301,9 +301,10 @@
                       id="use-dhcp"
                       class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                     >
-                      <option :value="0">A_Type</option>
-                      <option :value="1">B_Type</option>
-                      <option :value="2">C_Type</option>
+                      <option :value="0">None</option>
+                      <option :value="1">200mA:100mV</option>
+                      <option :value="2">200mA:1.5mA</option>
+                      <option :value="3">200mV:0.1mA</option>
                     </select>
                   </div>
                 </div>
