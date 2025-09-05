@@ -435,6 +435,7 @@
         <OnboardModal
           :modalOpen="isModalOpen"
           :OpMode="mode"
+          :restartDone="isRestartDone"  
           @close-modal="handleCloseModal"
           @restart-validation="restart"
         />
@@ -503,6 +504,7 @@ export default {
     const isModalOpen = ref(false);
     const mode = ref(props.mode);
     const checkNameplateflag = ref(false);
+    const isRestartDone = ref(false);
     //const langset = computed(() => authStore.getLang);
     const isAdmin = computed(() => {
       if (parseInt(authStore.getUserRole) > 1) return true;
@@ -794,6 +796,7 @@ export default {
 
     const handleCloseModal = () => {
       isModalOpen.value = false;
+      isRestartDone.value = false;
     };
 
     const restart = async () => {
@@ -809,6 +812,10 @@ export default {
             const apiflag = await serviceRestart("restart", "SmartAPI");
             if (servicflag["result"] && apiflag["result"]) {
               alert("✅ Service restarted successfully");
+              //isModalOpen.value = false;
+              isRestartDone.value = true;
+        
+             
             } else if (servicflag["result"] && apiflag["result"]) {
               alert("❌ SmartSystem Restart failed");
             } else {
@@ -820,12 +827,19 @@ export default {
               );
             }
           } else {
-            isModalOpen.value = false;
+            //isModalOpen.value = false;
+            isRestartDone.value = true;
+
+            
             alert("✅ System restarted successfully");
           }
         } else {
-          isModalOpen.value = false;
+          //isModalOpen.value = false;
+          isRestartDone.value = true;
+          
+         
           alert("✅ System restarted successfully");
+
         }
       } catch (e) {
         console.error("Error occurred:", e);
@@ -1400,6 +1414,7 @@ export default {
       showNameplateConfirm,
       nameplateConfirmMessage,
       handleConfirm,
+      isRestartDone,
     };
   },
 };
