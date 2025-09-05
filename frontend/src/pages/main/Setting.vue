@@ -435,7 +435,7 @@
         <OnboardModal
           :modalOpen="isModalOpen"
           :OpMode="mode"
-          :restartDone="isRestartDone"  
+          :restartDone="isRestartDone"
           :preventBackdropClose="true"
           @close-modal="handleCloseModal"
           @restart-validation="restart"
@@ -815,8 +815,6 @@ export default {
               alert("✅ Service restarted successfully");
               //isModalOpen.value = false;
               isRestartDone.value = true;
-        
-             
             } else if (servicflag["result"] && apiflag["result"]) {
               alert("❌ SmartSystem Restart failed");
             } else {
@@ -831,16 +829,13 @@ export default {
             //isModalOpen.value = false;
             isRestartDone.value = true;
 
-            
             alert("✅ System restarted successfully");
           }
         } else {
           //isModalOpen.value = false;
           isRestartDone.value = true;
-          
-         
-          alert("✅ System restarted successfully");
 
+          alert("✅ System restarted successfully");
         }
       } catch (e) {
         console.error("Error occurred:", e);
@@ -1053,8 +1048,14 @@ export default {
           channelData.tableData.length > 0
         ) {
           try {
+            const combinedData = [
+              ...channelData.tableData,
+              ...(channelData.modalData && Array.isArray(channelData.modalData)
+                ? channelData.modalData
+                : []),
+            ];
             const nameplateFlag = await checkNameplateConfig(
-              channelData.tableData,
+              combinedData,
               channelData.assetName
             );
             console.log(
@@ -1106,8 +1107,15 @@ export default {
           Array.isArray(channelData.tableData) &&
           channelData.tableData.length > 0
         ) {
+          const combinedData = [
+            ...channelData.tableData,
+            ...(channelData.modalData && Array.isArray(channelData.modalData)
+              ? channelData.modalData
+              : []),
+          ];
+
           await setNameplateConfig(
-            channelData.tableData,
+            combinedData,
             channelData.assetName,
             channelName
           );

@@ -48,7 +48,7 @@
             Nameplates Configuration
           </div>
           <button v-if="isAdmin"
-            class="btn h-6 px-5 ml-auto mr-5 bg-sky-900 text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
+            class="btn h-6 px-5 ml-auto mr-2 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
             @click="feedbackModalOpen = true"
           >
             Add Bearing
@@ -56,7 +56,7 @@
           <button
             v-if="authStore.getUserRole !== '1' || authStore.getUserRole !== '0'"
             @click="showAdvancedModal = true"
-            class="btn h-6 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
+            class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
           >
             Advanced
           </button>
@@ -226,10 +226,29 @@
   </ModalBasic>
   <ModalBasic
     :modalOpen="showAdvancedModal"
-    @close-modal="showAdvancedModal = false"
+    @close-modal="closeAdvancedModal"
     title="Advanced Settings"
   >
     <div class="w-[600px] max-w-full px-6">
+      <!-- Edit 체크박스 -->
+      <div class="flex items-center mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+        <input
+          id="edit-checkbox"
+          v-model="isEditMode"
+          type="checkbox"
+          class="h-4 w-4 text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
+        />
+        <label
+          for="edit-checkbox"
+          class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+        >
+          Edit Mode
+        </label>
+        <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+          (Check to enable editing)
+        </span>
+      </div>
+
       <!-- 헤더 -->
       <div
         class="flex justify-between items-center text-base font-semibold text-gray-500 dark:text-gray-400 mt-2 mb-1"
@@ -257,7 +276,12 @@
               v-model.number="row.Value"
               type="number"
               :id="`modal-input-${row.Title}`"
-              class="w-full text-center border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md px-2 py-1 text-base focus:ring-violet-500 focus:border-violet-500"
+              :disabled="!isEditMode"
+              class="w-full text-center border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 rounded-md px-2 py-1 text-base focus:ring-violet-500 focus:border-violet-500"
+              :class="{
+                'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': !isEditMode,
+                'bg-white dark:bg-gray-800': isEditMode
+              }"
             />
             <div
               v-if="row.invalid"
@@ -279,12 +303,14 @@
         <div class="flex justify-end space-x-2">
           <button
             class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700"
-            @click="showAdvancedModal = false"
+            @click="closeAdvancedModal"
           >
             Close
           </button>
           <button
-            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+            v-if="false"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!isEditMode"
             @click="saveAdvanced"
           >
             Save
@@ -321,6 +347,7 @@ const tableData = inject("tableData");
 const modalData = inject("modalData");
 const isEditNameplates = inject("isEditNameplates");
 const showAdvancedModal = ref(false);
+const isEditMode = ref(false); // ✅ Edit 모드 상태 추가
 const getMinValue = inject("getMinValue");
 const getMaxValue = inject("getMaxValue");
 const feedbackModalOpen = ref(false);
@@ -351,6 +378,13 @@ const BearingValues = ref([]);
 const isAdmin = computed(()=>{   
    return (authStore.getUserRole == 3 && authStore.getUser == 'ntek')
 })
+
+// ✅ Advanced Modal 닫기 함수 (Edit 모드 초기화)
+const closeAdvancedModal = () => {
+  showAdvancedModal.value = false;
+  isEditMode.value = false; // Modal 닫을 때 Edit 모드 해제
+};
+
 watchEffect(() => {
   if (!inputDict.value || !Array.isArray(tableData.value)) return;
 
@@ -405,6 +439,7 @@ onMounted(async () => {
   } catch (error) {
     //message.value = "업로드 실패: " + error.response.data.error;
   }
+  console.log("modalData.value",modalData.value);
 });
 
 provide('BearingOptions',BearingOptions);
@@ -580,7 +615,7 @@ const saveAdvanced = async () => {
     );
     if (response.data?.success) {
       alert("✅ Advanced settings saved!");
-      showAdvancedModal.value = false;
+      closeAdvancedModal(); // ✅ 저장 후 모달 닫기 (Edit 모드도 함께 해제)
     } else {
       alert("❌ Save failed: " + (response.data.error || "Unknown error"));
     }
@@ -668,5 +703,10 @@ select:focus {
 button:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5);
+}
+
+/* Edit 모드가 아닐 때 input 비활성화 스타일 */
+input:disabled {
+  cursor: not-allowed;
 }
 </style>

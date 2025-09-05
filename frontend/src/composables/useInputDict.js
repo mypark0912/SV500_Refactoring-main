@@ -64,13 +64,15 @@ export function useInputDict() {
       use:false,
       assetName:'',
       tableData:[],
-      paramData:[]
+      paramData:[],
+      modalData:[]
     },
     sub:{
       use:false,
       assetName:'',
       tableData:[],
-      paramData:[]
+      paramData:[],
+      modalData:[]
     }
   })
 
