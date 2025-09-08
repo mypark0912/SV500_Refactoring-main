@@ -880,7 +880,7 @@ async def get_diagnosis(asset, request: Request):
 
 
 @router.get("/getStatus/{asset}/{channel}")  # Master Dashboard Status
-async def getStatus(asset, channel, request: Request):
+async def getStatus(asset, channel):
     try:
         # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
         # data = response.json()
