@@ -1344,9 +1344,12 @@ export default {
 
         // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
         if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
-          // 여기에 라우트 호출 코드를 추가하세요
-     
-     
+         
+          const response = await axios.get(`/setting/restartdevice`);
+           if (!response.data.success) {
+            alert("Device restart failed. Please try again.");
+            return; // Stop navigation if restart fails
+           }
         }
 
         currentStep.value = nextStepId;
