@@ -377,10 +377,12 @@ export default {
         console.log("⏳ asset 준비 안됨. fetchData 대기중");
         return;
       }
-      const chName =
+      const assetName =
         channel.value == "main"
           ? asset.value.assetName_main
           : asset.value.assetName_sub;
+      const chName =
+        channel.value == "main"?'Main':'Sub'
       const chType =
         channel.value == "main"
           ? asset.value.assetType_main
@@ -392,7 +394,7 @@ export default {
 
       if (chName != "") {
         try {
-          const response = await axios.get(`/api/getStatus/${chName}`);
+          const response = await axios.get(`/api/getStatus/${assetName}/${chName}`);
           if (response.data.status >= 0) {
             stData.value.devName = chName;
             stData.value.devType = chType;
