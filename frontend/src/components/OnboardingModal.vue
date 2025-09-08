@@ -1323,6 +1323,8 @@ export default {
     // Navigation functions
     const nextStep = async () => {
       // 현재 단계가 Main Test이고 에러가 있으면 진행 불가
+
+      
       if (currentStep.value === 2 && mainTestResult.value.err > 0) {
         return;
       }
@@ -1332,10 +1334,24 @@ export default {
         return;
       }
 
+
+
+      
+
       const currentIndex = currentStepIndex.value;
       if (currentIndex < availableSteps.value.length - 1) {
         const nextStepId = availableSteps.value[currentIndex + 1].id;
+
+        // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
+        if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
+          // 여기에 라우트 호출 코드를 추가하세요
+     
+     
+        }
+
         currentStep.value = nextStepId;
+        
+        
 
         // Load data when entering main or sub test steps
         if (nextStepId === 2 && diagnosis_main.value) {
