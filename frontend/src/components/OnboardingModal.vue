@@ -1346,10 +1346,11 @@ export default {
         if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
          
           const response = await axios.get(`/setting/restartdevice`);
-           if (!response.data.success) {
-            alert("Device restart failed. Please try again.");
+          if (!response.data.success) {
+            const errorMessage = response.data.error || "Device restart failed. Please try again.";
+            alert(errorMessage);
             return; // Stop navigation if restart fails
-           }
+          }
         }
 
         currentStep.value = nextStepId;

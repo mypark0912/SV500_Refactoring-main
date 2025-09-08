@@ -937,24 +937,40 @@ export default {
       }
     };
 
-    // 전역 저장 함수 추가
     const saveAllSettings = async () => {
       try {
+        let errorMessages = [];
+
         // === 1. General 설정 저장 ===
-        const generalResponse = await axios.post(
-          "/setting/savefile/General",
-          inputDict.value,
-          {
-            headers: { "Content-Type": "application/json;charset=utf-8" },
-            withCredentials: true,
+        let generalSuccess = true;
+        try {
+          const generalResponse = await axios.post(
+            "/setting/savefile/General",
+            inputDict.value,
+            {
+              headers: { "Content-Type": "application/json;charset=utf-8" },
+              withCredentials: true,
+            }
+          );
+
+          if (!generalResponse.data || generalResponse.data["status"] !== "1") {
+            generalSuccess = false;
+            const errorMsg =
+              generalResponse.data?.error || "General settings save failed";
+            errorMessages.push(`General settings: ${errorMsg}`);
           }
-        );
+        } catch (err) {
+          generalSuccess = false;
+          const errorMsg =
+            err.response?.data?.error ||
+            err.message ||
+            "General settings save error";
+          errorMessages.push(`General settings: ${errorMsg}`);
+          console.error("General 저장 실패:", err);
+        }
 
-        let generalSuccess =
-          generalResponse.data && generalResponse.data["status"] === "1";
+        // === 2. Diagnosis 설정 저장 ===
         let diagnosisSuccess = true;
-
-        // diagnosis 설정 저장
         if (useDiagnosis.value) {
           try {
             if (
@@ -969,7 +985,19 @@ export default {
                   withCredentials: true,
                 }
               );
+
+              if (
+                !diagnosisResponse.data ||
+                diagnosisResponse.data["status"] !== "1"
+              ) {
+                diagnosisSuccess = false;
+                const errorMsg =
+                  diagnosisResponse.data?.error ||
+                  "Diagnosis settings save failed";
+                errorMessages.push(`Diagnosis settings: ${errorMsg}`);
+              }
             }
+
             if (
               advancedData.value &&
               Object.keys(advancedData.value).length > 0
@@ -982,34 +1010,61 @@ export default {
                   withCredentials: true,
                 }
               );
+
+              if (
+                !advancedResponse.data ||
+                advancedResponse.data["status"] !== "1"
+              ) {
+                diagnosisSuccess = false;
+                const errorMsg =
+                  advancedResponse.data?.error ||
+                  "Advanced diagnosis settings save failed";
+                errorMessages.push(`Advanced diagnosis settings: ${errorMsg}`);
+              }
             }
           } catch (err) {
             diagnosisSuccess = false;
+            const errorMsg =
+              err.response?.data?.error ||
+              err.message ||
+              "Diagnosis settings save error";
+            errorMessages.push(`Diagnosis settings: ${errorMsg}`);
             console.error("Diagnosis 저장 실패:", err);
           }
         }
 
-        // === 2. Main Channel 설정 저장 ===
-        const mainSuccess = await saveChannelData(channel_main.value, "Main");
+        // === 3. Main Channel 설정 저장 ===
+        const mainResult = await saveChannelData(channel_main.value, "Main");
+        if (!mainResult.success) {
+          errorMessages.push(`Main Channel: ${mainResult.error}`);
+        }
 
-        // === 3. Sub Channel 설정 저장 ===
-        const subSuccess = await saveChannelData(channel_sub.value, "Sub");
+        // === 4. Sub Channel 설정 저장 ===
+        const subResult = await saveChannelData(channel_sub.value, "Sub");
+        if (!subResult.success) {
+          errorMessages.push(`Sub Channel: ${subResult.error}`);
+        }
 
-        // === 4. 결과 알림 ===
-        if (generalSuccess && diagnosisSuccess && mainSuccess && subSuccess) {
+        // === 5. 결과 알림 ===
+        if (
+          generalSuccess &&
+          diagnosisSuccess &&
+          mainResult.success &&
+          subResult.success
+        ) {
           alert("✅ All settings have been saved successfully!");
-          //console.log(changeDiagnosis.value);
         } else {
           let errorMsg = "❌ Some settings failed to save:\n";
-          if (!generalSuccess) errorMsg += "- General settings failed\n";
-          if (!diagnosisSuccess) errorMsg += "- Diagnosis settings failed\n";
-          if (!mainSuccess) errorMsg += "- Main Channel settings failed\n";
-          if (!subSuccess) errorMsg += "- Sub Channel settings failed\n";
+          errorMessages.forEach((msg) => {
+            errorMsg += `- ${msg}\n`;
+          });
           alert(errorMsg);
         }
       } catch (err) {
         console.log(err);
-        alert("Error occurred while saving: " + err);
+        const errorMsg =
+          err.response?.data?.error || err.message || "Unknown error occurred";
+        alert(`Error occurred while saving: ${errorMsg}`);
       }
 
       setupStore.setApplySetup(false);
@@ -1364,10 +1419,20 @@ export default {
           }
         );
 
-        return response.data && response.data["status"] === "1";
+        if (response.data && response.data["status"] === "1") {
+          return { success: true };
+        } else {
+          const errorMsg =
+            response.data?.error || `${channelName} Channel save failed`;
+          return { success: false, error: errorMsg };
+        }
       } catch (err) {
         console.error(`${channelName} Channel 저장 실패:`, err);
-        return false;
+        const errorMsg =
+          err.response?.data?.error ||
+          err.message ||
+          `${channelName} Channel save error`;
+        return { success: false, error: errorMsg };
       }
     };
 
