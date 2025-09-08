@@ -1127,13 +1127,13 @@ def restartdevice():
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
-            return {"success": False, "msg": "Saving configuration is on modbus"}
+            return {"success": False, "error": "Modbus setting is activated"}
     try:
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
         return {"success": True}
     except Exception as e:
-        return {"success": False, "msg": "Redis Error"}
+        return {"success": False, "error": "Redis Error"}
 
 @router.post('/restoreSetting') #restore setup.json
 def restore_setting():
