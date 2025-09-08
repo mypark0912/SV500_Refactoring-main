@@ -647,9 +647,9 @@ async def set_diagnosissetting(request: Request):
         return {"status": "0", "error": str(e)}
 
     if len(data) > 0:
-        return {"success": True }
+        return {"status": "1", "success": True }
     else:
-        return {"success": False, "error": "Save Failed"}
+        return {"status": "1", "success": False, "error": "Save Failed"}
 
 @router.post('/setDiagnosisProfile')
 async def set_diagnosisprofile(request: Request):
@@ -674,9 +674,9 @@ async def set_diagnosisprofile(request: Request):
         return {"status": "0", "error": str(e)}
 
     if len(data) > 0:
-        return {"success": True }
+        return {"status": "1","success": True }
     else:
-        return {"success": False, "error": "Save Failed"}
+        return {"status": "1", "success": False, "error": "Save Failed"}
 
 @router.get("/getAssetTypes")  # Diagnosis, Report Vue : get Asset info
 async def get_assetTypes(request: Request):
@@ -1571,6 +1571,45 @@ async def push_command_left(command: Command):
             "success": False,
             "message": str(e)
         }
+
+
+@router.get("/trigger")
+async def push_both_channels(
+        cmd: int = CmdType.CMD_CAPTURE,  # 기본값: 2 (캡처)
+        item: int = ItemType.ITEM_WAVEFORM  # 기본값: 7 (웨이브폼)
+):
+    try:
+        # 채널 0에 푸시
+        channel_0_command = Command(
+            type=0,  # 채널 0
+            cmd=cmd,
+            item=item
+        )
+        result_0 = await push_command_left(channel_0_command)
+
+        # 채널 1에 푸시
+        channel_1_command = Command(
+            type=1,  # 채널 1
+            cmd=cmd,
+            item=item
+        )
+        result_1 = await push_command_left(channel_1_command)
+
+        return {
+            "success": True,
+            "message": "Command pushed to both channels (0 and 1)",
+            "commands": {
+                "channel_0": channel_0_command.dict(),
+                "channel_1": channel_1_command.dict()
+            },
+            "results": {
+                "channel_0": result_0,
+                "channel_1": result_1
+            }
+        }
+    except Exception as e:
+        print(str(e))
+        return {"success": False,}
 
 #@router.post("/command")
 #async def push_command_left(request: Request):

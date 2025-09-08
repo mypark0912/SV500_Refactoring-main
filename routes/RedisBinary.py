@@ -382,6 +382,7 @@ class MaxMin15MinParser(MaxMinDataParser):
 class CmdType(IntEnum):
     CMD_CLR = 0
     CMD_REBOOT = 1
+    CMD_CAPTURE = 2
 
 
 class ItemType(IntEnum):
@@ -392,6 +393,7 @@ class ItemType(IntEnum):
     ITEM_EVENT = 4
     ITEM_REBOOT = 5
     ITEM_RUNHOUR = 6
+    ITEM_WAVEFORM = 7
 
 # Pydantic 모델
 class Command(BaseModel):

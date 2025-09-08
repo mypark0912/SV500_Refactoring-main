@@ -1334,24 +1334,20 @@ export default {
         return;
       }
 
-
-
-      
-
       const currentIndex = currentStepIndex.value;
       if (currentIndex < availableSteps.value.length - 1) {
         const nextStepId = availableSteps.value[currentIndex + 1].id;
 
         // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
-        /*if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
+        if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
          
-          const response = await axios.get(`/setting/restartdevice`);
+          const response = await axios.get(`/setting/trigger`);
           if (!response.data.success) {
-            const errorMessage = response.data.error || "Device restart failed. Please try again.";
+            const errorMessage = response.data.error || "waveform file trigger failed. Please try again.";
             alert(errorMessage);
             return; // Stop navigation if restart fails
           }
-        } */
+        }
 
         currentStep.value = nextStepId;
         
@@ -1365,6 +1361,8 @@ export default {
         }
       }
     };
+
+
 
     // Handle main test next button - skip sub if not needed
     const handleMainTestNext = async () => {
