@@ -833,9 +833,9 @@ export default {
           }
         } else {
           //isModalOpen.value = false;
-          isRestartDone.value = true;
+          //isRestartDone.value = true;
 
-          alert("✅ System restarted successfully");
+          alert("✅ System restarted failed: " + response.data.error);
         }
       } catch (e) {
         console.error("Error occurred:", e);
@@ -930,7 +930,7 @@ export default {
           }
           dangerModalOpen.value = false;
         } else {
-          console.error("데이터 가져오기 실패:", error);
+          console.error("데이터 가져오기 실패:", response.data.msg);
         }
       } catch (error) {
         console.error("데이터 가져오기 실패:", error);

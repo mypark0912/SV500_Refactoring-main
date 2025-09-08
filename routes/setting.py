@@ -1119,7 +1119,7 @@ async def restartasset(request:Request, flag):
             return {"status": "1", "success": False}
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "success": False}
+        return {"status": "0", "success": False, "error": "Redis Error"}
 
 @router.get('/restartdevice')
 def restartdevice():

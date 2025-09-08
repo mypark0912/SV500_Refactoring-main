@@ -439,7 +439,7 @@ onMounted(async () => {
   } catch (error) {
     //message.value = "업로드 실패: " + error.response.data.error;
   }
-  console.log("modalData.value",modalData.value);
+
 });
 
 provide('BearingOptions',BearingOptions);

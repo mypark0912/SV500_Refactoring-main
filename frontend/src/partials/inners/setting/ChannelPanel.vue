@@ -1293,7 +1293,7 @@ export default {
         if (response.data.success === true) {
           const allData = response.data.data;
           if (Array.isArray(allData)) {
-            console.log("Fetched Asset Data:", allData);
+         
             const filteredTableData = allData.filter((item) => item.Type === 0);
 
             // diagnosis_detail에 직접 저장
