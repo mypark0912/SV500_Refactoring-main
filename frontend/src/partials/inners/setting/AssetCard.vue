@@ -755,6 +755,31 @@ const createAsset = async () => {
     //   const kva = parseInt(inputDict.value.n_kva);
     //   inputDict.value.n_kva = kva;
     // }
+    
+
+    getAssetList();
+
+    // 이름 중복 체크
+    const newAssetName = assetMode.value.name;
+    let isDuplicate = false;
+
+    // checkList.value가 Proxy 객체이므로 Object.values()로 배열들을 가져옴
+    const assetArrays = Object.values(checkList.value);
+    
+    for (const assetArray of assetArrays) {
+      if (Array.isArray(assetArray)) {
+        const duplicate = assetArray.find(asset => asset.Name === newAssetName);
+        if (duplicate) {
+          isDuplicate = true;
+          break;
+        }
+      }
+    }
+
+    if (isDuplicate) {
+      alert("❌ Asset name already exists. Please choose a different name.");
+      return; // 중복이면 함수 종료
+    }
     const payload = {
       assetType: assetMode.value.type, //inputDict.value.assetInfo.type,
       assetName: assetMode.value.name, //tempAssetName.value,
