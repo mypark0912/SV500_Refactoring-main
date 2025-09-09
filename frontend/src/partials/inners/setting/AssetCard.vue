@@ -295,7 +295,7 @@ const showEquip = computed(() => {
 
 // locale 변경 시 nickname 업데이트
 watch(locale, (newLocale) => {
-  console.log('Locale changed to:', newLocale);
+  //console.log('Locale changed to:', newLocale);
   if(newLocale === 'en') {
     inputDict.value.assetInfo.nickname = inputDict.value.assetInfo.name;
   }
@@ -322,7 +322,7 @@ watch(
   (newValue, oldValue) => {
     if (newValue) {
       tempAssetName.value = newValue;
-      if(newLocale === 'en')
+      if(locale.value === 'en')
         inputDict.value.assetInfo.nickname = tempAssetName;
     }
   },

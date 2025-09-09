@@ -1020,7 +1020,8 @@ export default {
 
     const diagnosis_main = computed(() => {
       // props가 명시적으로 전달되지 않으면 undefined일 수 있음
-
+      if(Object.keys(setupDict.value).length == 0)
+        return false;
       if (setupDict.value.main.Enable) {
         if (
           setupDict.value.main.assetInfo.name != "" &&
@@ -1035,6 +1036,8 @@ export default {
     });
 
     const diagnosis_sub = computed(() => {
+      if(Object.keys(setupDict.value).length == 0)
+        return false;
       if (setupDict.value.sub.Enable) {
         if (
           setupDict.value.sub.assetInfo.name != "" &&
