@@ -757,7 +757,7 @@ const createAsset = async () => {
     // }
     
 
-    getAssetList();
+    //getAssetList();
 
     // 이름 중복 체크
     const newAssetName = assetMode.value.name;
