@@ -350,7 +350,7 @@ async def get_diagnosis(asset, request: Request):
                 superdict["Status"] = datas["TreeList"][a]["Status"]
                 superdict["Value"] = datas["TreeList"][a]["Value"]
                 superdict["isParent"] = True
-                Titles = findNode(superlist, datas["TreeList"][a]["Name"], datas["TreeList"][a]["Path"])
+                Titles = findNode(superlist, datas["TreeList"][a]["Name"], datas["TreeList"][a]["AssemblyID"])
                 if Titles != "":
                     superdict["Title"] = superdict["Title"] + "_" + Titles
                     superlist.append(superdict)
@@ -457,12 +457,13 @@ async def get_diagPQ(asset, request: Request):
                 superdict["Status"] = datas["TreeList"][a]["Status"]
                 superdict["Value"] = datas["TreeList"][a]["Value"]
                 superdict["isParent"] = True
-                Titles = findNode(superlist, datas["TreeList"][a]["Name"], datas["TreeList"][a]["Path"])
-                if Titles != "":
-                    superdict["Title"] = superdict["Title"] + "_" + Titles
-                    superlist.append(superdict)
-                else:
-                    superlist.append(superdict)
+                superlist.append(superdict)
+                # Titles = checkNode(superlist, datas["TreeList"][a]["Name"], datas["TreeList"][a]["AssemblyID"])
+                # if Titles != "":
+                #     superdict["Title"] = superdict["Title"] + "_" + Titles
+                #     superlist.append(superdict)
+                # else:
+                #     superlist.append(superdict)
             else:
                 continue
         for i in range(0, len(superlist)):
