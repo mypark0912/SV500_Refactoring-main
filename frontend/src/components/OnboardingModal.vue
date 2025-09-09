@@ -384,7 +384,7 @@
                 </svg>
               </div>
               <div class="text-sm text-gray-500">
-                Loading main test result...
+                Loading main test result...This process may take 20 seconds or longer.
               </div>
             </div>
 
@@ -586,7 +586,7 @@
                 </svg>
               </div>
               <div class="text-sm text-gray-500">
-                Loading sub test result...
+                Loading sub test result...This process may take 20 seconds or longer.
               </div>
             </div>
 

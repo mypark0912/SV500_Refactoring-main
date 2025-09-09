@@ -1346,19 +1346,16 @@ async def set_assetParams(asset:str, request:Request):
         return {"success": False, "error": "No Data"}
 
 @router.get("/test/{asset}")
-async def test_asset(asset, request:Request):
-    try:
-        # HTTP 클라이언트 상태 확인
-        # if http_state.error:
-        #     return {"success": False, "error": http_state.error}
-        #
-        # # 클라이언트 가져오기
-        # client = http_state.client
-        # if not client:
-        #     return {"success": False, "error": "HTTP client not initialized"}
+async def test_asset(asset):
+    test_timeout = httpx.Timeout(
+        connect=2.0,  # 연결에는 5초
+        read=60.0,  # 응답 읽기는 2초
+        write=2.0,  # 요청 전송은 5초
+        pool=5.0  # 연결 풀은 5초
+    )
 
-        # response = await http_state.client.get(f"/getComm?name={asset}")
-        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+    try:
+        async with httpx.AsyncClient(timeout=test_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/getComm?name={asset}")
             data = response.json()
 
