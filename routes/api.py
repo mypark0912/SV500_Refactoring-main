@@ -1,7 +1,7 @@
 from http.client import responses
-
+from functools import wraps
 from fastapi import APIRouter, Request, HTTPException
-import os,httpx, re, logging
+import os,httpx, re, logging, gc, psutil
 import ujson as json
 from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
@@ -26,6 +26,36 @@ SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위�
 cpu_count = os.cpu_count() or 4
 MAX_WORKERS = min(max(2, cpu_count), 8)  # 2~8 사이
 executor: Optional[ThreadPoolExecutor] = None
+
+
+def gc_after_large_data(threshold_mb=50):
+    """대용량 데이터 처리 후 GC 실행하는 데코레이터"""
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+
+            process = psutil.Process()
+
+            # 실행 전 메모리
+            before_memory = process.memory_info().rss / 1024 / 1024
+
+            # 함수 실행
+            result = await func(*args, **kwargs)
+
+            # 실행 후 메모리
+            after_memory = process.memory_info().rss / 1024 / 1024
+
+            # 메모리 증가량이 임계값 초과시 GC
+            if after_memory - before_memory > threshold_mb:
+                gc.collect()
+                logging.info(f"GC triggered after {func.__name__}: {after_memory - before_memory:.1f}MB freed")
+
+            return result
+
+        return wrapper
+
+    return decorator
 
 def get_or_create_executor() -> ThreadPoolExecutor:
     """Executor를 가져오거나 생성 (thread-safe)"""
@@ -315,7 +345,8 @@ def checkNode(supers, name, path):  # check node level
     return ''
 
 
-@router.get("/getDiagnosisDetail/{asset}")  # Diagnosis Vue : get diagnosis
+@router.get("/getDiagnosisDetail/{asset}")
+@gc_after_large_data(threshold_mb=30)# Diagnosis Vue : get diagnosis
 async def get_diagnosis(asset, request: Request):
     # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
     # datas = response.json()
@@ -424,6 +455,7 @@ async def get_diagnosis(asset, request: Request):
 
 
 @router.get("/getDiagPQ/{asset}")  # Diagnosis Vue : get diagnosis PQ
+@gc_after_large_data(threshold_mb=30)
 async def get_diagPQ(asset, request: Request):
     # response = await  http_state.client.get(f"/getPQ?name={asset}")
     # datas = response.json()
@@ -681,6 +713,7 @@ def get_trendParams(channel):
 
 
 @router.get("/getParameters/{asset}/{type}")
+@gc_after_large_data(threshold_mb=30)
 async def get_params(asset, type, request: Request):
     # response = await  http_state.client.get(f"/getTrendHierarchy?name={asset}&type={type}")
     # datas = response.json()
@@ -702,6 +735,7 @@ async def get_params(asset, type, request: Request):
 
 
 @router.get("/getTrendParameters/{asset}/{type}")  # Diagnosis Vue : get diagnosis PQ
+@gc_after_large_data(threshold_mb=30)
 async def get_trendParams(asset, type, request: Request):
     # response = await  http_state.client.get(f"/getTrendHierarchy?name={asset}&type={type}")
     # datas = response.json()
@@ -821,6 +855,7 @@ async def get_trendParams(asset, type, request: Request):
 
 
 @router.post("/getTrendData")
+@gc_after_large_data(threshold_mb=30)
 async def get_trendData(data: Trend, request: Request):
     # response = await  http_state.client.post(f"/getTrendData", json=data.dict())
     # result = response.json()
@@ -860,6 +895,7 @@ async def get_trendData(data: Trend, request: Request):
 
 
 @router.get("/getDiagnosis/{asset}")  # Report Vue : get Diagnosis
+@gc_after_large_data(threshold_mb=30)
 async def get_diagnosis(asset, request: Request):
     # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
     # data = response.json()
@@ -881,6 +917,7 @@ async def get_diagnosis(asset, request: Request):
 
 
 @router.get("/getStatus/{asset}/{channel}")  # Master Dashboard Status
+@gc_after_large_data(threshold_mb=30)
 async def getStatus(asset, channel):
     try:
         # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
@@ -930,6 +967,7 @@ async def getStatus(asset, channel):
 
 
 @router.get("/getPQStatus/{asset}")  # Master Dashboard Status
+@gc_after_large_data(threshold_mb=30)
 async def getPQStatus(asset, request: Request):
     try:
         # response = await  http_state.client.get(f"/getPQ?name={asset}")
@@ -998,6 +1036,7 @@ def get_running(channel):
         return {"total": 0, "current":0}
 
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
+@gc_after_large_data(threshold_mb=30)
 async def get_asset(assettype, asset, request: Request):
     # response = await  http_state.client.get(f"/getRealTimeData?name={asset}")
     # data = response.json()
@@ -1673,6 +1712,7 @@ async def run_with_timeout(func, *args, timeout=30, **kwargs):
 
 
 @router.get("/getAlarms/{channel}/{page}")
+@gc_after_large_data(threshold_mb=30)
 async def get_alarms(channel: str, page: int):
     """최적화된 알람 조회"""
     try:
@@ -1768,6 +1808,7 @@ async def get_alarmSearch(data: AlarmSearch, channel: str, page: int):
 
 
 @router.get("/getEventlist/{channel}/{page}")
+@gc_after_large_data(threshold_mb=30)
 async def get_eventlist(channel: str, page: int):
     """최적화된 이벤트 조회"""
     try:
@@ -4504,3 +4545,10 @@ def get_heatmap_load_factor_data(channel: str, weeks: int = 4):
             "message": str(e),
             "heatmapData": []
         }
+
+def cleanup_executor():
+    """프로그램 종료 시 호출"""
+    global executor
+    if executor:
+        executor.shutdown(wait=True)
+        executor = None

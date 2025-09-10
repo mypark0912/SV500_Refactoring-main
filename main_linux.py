@@ -45,6 +45,7 @@ def setup_logging():
     
     # 기존 핸들러 제거
     for handler in logger.handlers[:]:
+        handler.close()
         logger.removeHandler(handler)
     
     # 날짜별 로그 파일 핸들러 생성
@@ -116,6 +117,8 @@ async def lifespan(app: FastAPI):
     yield  # 앱 실행
 
     await cleanup_global_resources()
+    from routes.api import cleanup_executor
+    cleanup_executor()
     # executor.shutdown(wait=True)
     # if influx_state.client:
     #     influx_state.client.close()
