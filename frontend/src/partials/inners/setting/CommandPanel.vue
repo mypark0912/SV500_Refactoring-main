@@ -53,7 +53,7 @@
   
 <script>
 import CommandItem from './CommandItem.vue'
-import { onMounted, ref , watch, provide, computed} from 'vue'
+import { onMounted, ref , watch, provide, computed,inject} from 'vue'
 import { useSetupStore } from '@/store/setup'
 import { useAuthStore } from '@/store/auth'
 import { useI18n } from "vue-i18n"; // 
@@ -71,6 +71,9 @@ export default {
     const health = ref('');
     const sysStatus = ref({});
     const diskStatus = ref([]);
+    const GetSettingData = inject('GetSettingData');
+
+    provide('GetSettingData', GetSettingData);
     const showMessage = (text) => {
       message.value = text
     }

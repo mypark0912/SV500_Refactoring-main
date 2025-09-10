@@ -1452,6 +1452,7 @@ export default {
     provide("changeDiagnosis", changeDiagnosis);
     provide("checkNameplateflag", checkNameplateflag);
     provide("diagnosis_detail", diagnosis_detail);
+    provide("GetSettingData", GetSettingData);
     return {
       sidebarOpen,
       channel,
