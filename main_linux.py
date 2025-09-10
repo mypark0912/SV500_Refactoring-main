@@ -28,7 +28,7 @@ index_file = dist_dir / "index.html"
 # 로그 디렉토리 설정
 LOG_DIR = os_spec.logpath #"/home/root/logs"
 LOG_FILE = "webserver"
-MAX_LOG_SIZE_MB = 100
+MAX_LOG_SIZE_MB = 10
 
 def setup_logging():
     """날짜별 로그 파일 생성 및 자동 관리 설정"""
@@ -41,7 +41,7 @@ def setup_logging():
     
     # 로거 설정
     logger = logging.getLogger()
-    logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.WARNING)
     
     # 기존 핸들러 제거
     for handler in logger.handlers[:]:
@@ -132,7 +132,7 @@ app.add_middleware(
     secret_key="nteksystem2025_sv500",
     # secret_key=secrets.token_urlsafe(32),
     same_site="lax",
-    max_age=None   #60 * 15  # 👈 5분 (초 단위)
+    max_age=60*60   #60 * 15  # 👈 5분 (초 단위)
 )
 app.add_middleware(
     CORSMiddleware,
