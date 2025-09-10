@@ -1077,8 +1077,8 @@ async def saveSetting(channel: str, request: Request):
 
         redis_state.client.select(0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
-        redis_state.client.hset("Service","save",1)
-        redis_state.client.hset("Service", "restart", 1)
+        # redis_state.client.hset("Service","save",1)
+        # redis_state.client.hset("Service", "restart", 1)
 
         return {"status": "1", "data": setting}
     except Exception as e:
@@ -1093,8 +1093,8 @@ async def restartasset(request:Request, flag):
         if int(checkflag) == 1:
             return {"status": "0","success": False, "error": "Modbus setting is activated"}
     try:
-        # redis_state.client.hset("Service","save",1)
-        # redis_state.client.hset("Service", "restart", 1)
+        redis_state.client.hset("Service","save",1)
+        redis_state.client.hset("Service", "restart", 1)
         if flag:
             # response = await  http_state.client.get(f"/isServiceRestartNeeded")
             # data = response.json()
