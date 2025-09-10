@@ -2713,7 +2713,7 @@ def extract_key_list(key_dict_list):
 
 
 @router.get("/getOnesfromRedis/{channel}/{unbal}")
-def get_OneM(channel, unbal):
+def get_OneSecond(channel, unbal):
     try:
         redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")

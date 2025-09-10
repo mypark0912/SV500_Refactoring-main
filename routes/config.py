@@ -1,10 +1,11 @@
 from fastapi import APIRouter, UploadFile, File
 from states.global_state import redis_state
-import os, csv, sqlite3
+import os, csv, sqlite3, shutil
 import ujson as json
 from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
+from .api import get_OneSecond
 
 router = APIRouter()
 
@@ -87,6 +88,7 @@ def upload_file(file: UploadFile = File(...)):
 
 @router.get('/checkSetup')
 def check_setup():
+    redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
@@ -94,13 +96,40 @@ def check_setup():
     else:
         return {'passOK': '0', 'error': 'No exist calibration setup'}
 
+@router.get('/calibrate/getUnbal')
+def getUnbal():
+    file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+    default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+    redis_state.client.select(0)
+    if redis_state.client.hexists("System", "setup"):
+        # Redis에 있으면 Redis 데이터 사용
+        setting = json.loads(redis_state.client.hget("System", "setup"))
+    else:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+        except json.JSONDecodeError:
+            # setup.json이 손상된 경우 default.json으로 복구
+            shutil.copy(default_file_path, file_path)
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+    return { 'unbal': setting['unbalance']}
+
+@router.get('/calibrateNow/{unbal}')
+def cali_mount(unbal):
+    mainResponse = get_OneSecond('Main', unbal)
+    subResponse = get_OneSecond('Sub', unbal)
+
+    return {'mainStatus': mainResponse['success'], 'mainData':mainResponse['retData']['meterData'],
+            'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData']}
+
 @router.get('/calibrate/start')
 def cali_start():
-    redis_state.client.execute_command("SELECT", 1)
+    redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
-        print(datalist)
+        redis_state.client.hset("System", "setup", json.dumps(datalist))
         redis_state.client.hset('Service', 'apply', 1)
         return {'passOK': '1'}
     else:
@@ -112,7 +141,7 @@ def cali_end():
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             setting = json.load(f)
-            redis_state.client.execute_command("SELECT", 1)
+            redis_state.client.execute_command("SELECT", 0)
             redis_state.client.hset("System", "setup", json.dumps(setting))
             return {'passOK': '1'}
     except Exception as e:
@@ -128,7 +157,7 @@ def set_cmd(data:CaliSet, types):
                 msg = data.cmd
         else:
             msg = data.cmd
-        redis_state.client.execute_command("SELECT", 1)
+        redis_state.client.execute_command("SELECT", 0)
         redis_state.client.hset('calibration','command',msg)
         redis_state.client.hset('calibration', 'cflag', 1)
         return {'passOK': '1'}
