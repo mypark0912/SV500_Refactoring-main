@@ -1,0 +1,964 @@
+{
+  "project": "SV500_Refactoring",
+  "analysis_date": "2025-01-10",
+  "summary": {
+    "total_routes": 146,
+    "total_routers": 6,
+    "methods": {
+      "GET": 98,
+      "POST": 48,
+      "PUT": 0,
+      "DELETE": 0,
+      "PATCH": 0
+    },
+    "routers": {
+      "auth": 18,
+      "api": 52,
+      "master": 5,
+      "setting": 38,
+      "config": 10,
+      "test": 4
+    }
+  },
+  "routers": {
+    "auth": {
+      "prefix": "/auth",
+      "description": "인증 및 사용자 관리",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/getInfluxdb",
+          "full_path": "/auth/getInfluxdb",
+          "function": "get_influxkey",
+          "description": "InfluxDB 키 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/checkInstall",
+          "full_path": "/auth/checkInstall",
+          "function": "checkInstall",
+          "description": "설치 상태 확인",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/checkDBMS",
+          "full_path": "/auth/checkDBMS",
+          "function": "check_Db",
+          "description": "DBMS 상태 확인",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/joinAdmin",
+          "full_path": "/auth/joinAdmin",
+          "function": "join",
+          "description": "관리자 가입",
+          "request_model": "SignupAdmin"
+        },
+        {
+          "method": "GET",
+          "path": "/checkSession",
+          "full_path": "/auth/checkSession",
+          "function": "check_session",
+          "description": "세션 확인",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getUser",
+          "full_path": "/auth/getUser",
+          "function": "getUser",
+          "description": "사용자 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getUserList",
+          "full_path": "/auth/getUserList",
+          "function": "get_Userlist",
+          "description": "사용자 목록 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/resetPassword",
+          "full_path": "/auth/resetPassword",
+          "function": "resetPassword",
+          "description": "비밀번호 재설정",
+          "request_model": "Resetpassword"
+        },
+        {
+          "method": "GET",
+          "path": "/getAPIUsers",
+          "full_path": "/auth/getAPIUsers",
+          "function": "get_users",
+          "description": "API 사용자 목록 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/saveUser/{account}/{role}",
+          "full_path": "/auth/saveUser/{account}/{role}",
+          "function": "updateRole",
+          "description": "사용자 역할 업데이트",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/removeUser/{username}",
+          "full_path": "/auth/removeUser/{username}",
+          "function": "removeUser",
+          "description": "사용자 삭제",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/updateProfile",
+          "full_path": "/auth/updateProfile",
+          "function": "updateProfile",
+          "description": "프로필 업데이트",
+          "request_model": "User"
+        },
+        {
+          "method": "GET",
+          "path": "/joinAPI/{role}",
+          "full_path": "/auth/joinAPI/{role}",
+          "function": "join_default",
+          "description": "기본 API 사용자 생성",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/removeAPI/{role}",
+          "full_path": "/auth/removeAPI/{role}",
+          "function": "remove_default",
+          "description": "기본 API 사용자 삭제",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/join",
+          "full_path": "/auth/join",
+          "function": "join",
+          "description": "사용자 가입",
+          "request_model": "SignupUser"
+        },
+        {
+          "method": "POST",
+          "path": "/checkLogins",
+          "full_path": "/auth/checkLogins",
+          "function": "checkLogins",
+          "description": "로그인 확인",
+          "request_model": "Login"
+        },
+        {
+          "method": "GET",
+          "path": "/checkRemote/{user}",
+          "full_path": "/auth/checkRemote/{user}",
+          "function": "check_remoteUser",
+          "description": "원격 사용자 확인",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/logout",
+          "full_path": "/auth/logout",
+          "function": "logout",
+          "description": "로그아웃",
+          "request_model": null
+        }
+      ]
+    },
+    "api": {
+      "prefix": "/api",
+      "description": "데이터 조회 및 진단 API",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/getChannelSetting/{channel}",
+          "full_path": "/api/getChannelSetting/{channel}",
+          "function": "getChannelSetting",
+          "description": "채널 설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getHarmonics/{channel}",
+          "full_path": "/api/getHarmonics/{channel}",
+          "function": "getHarmonics",
+          "description": "하모닉스 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/setWave/{channel}/{state}",
+          "full_path": "/api/setWave/{channel}/{state}",
+          "function": "setWave",
+          "description": "웨이브 설정",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getWave/{channel}",
+          "full_path": "/api/getWave/{channel}",
+          "function": "get_waves",
+          "description": "웨이브폼 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagnosisDetail/{asset}",
+          "full_path": "/api/getDiagnosisDetail/{asset}",
+          "function": "get_diagnosis",
+          "description": "진단 상세 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagPQ/{asset}",
+          "full_path": "/api/getDiagPQ/{asset}",
+          "function": "get_diagPQ",
+          "description": "진단 PQ 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getFaults/{asset}",
+          "full_path": "/api/getFaults/{asset}",
+          "function": "get_faults",
+          "description": "고장 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getEvents/{asset}",
+          "full_path": "/api/getEvents/{asset}",
+          "function": "get_events",
+          "description": "이벤트 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getTrendParameters/{channel}",
+          "full_path": "/api/getTrendParameters/{channel}",
+          "function": "get_trendParams",
+          "description": "트렌드 파라미터 가져오기 (채널)",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getParameters/{asset}/{type}",
+          "full_path": "/api/getParameters/{asset}/{type}",
+          "function": "get_params",
+          "description": "파라미터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getTrendParameters/{asset}/{type}",
+          "full_path": "/api/getTrendParameters/{asset}/{type}",
+          "function": "get_trendParams",
+          "description": "트렌드 파라미터 가져오기 (자산/타입)",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/getTrendData",
+          "full_path": "/api/getTrendData",
+          "function": "get_trendData",
+          "description": "트렌드 데이터 가져오기",
+          "request_model": "Trend"
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagnosis/{asset}",
+          "full_path": "/api/getDiagnosis/{asset}",
+          "function": "get_diagnosis",
+          "description": "진단 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getStatus/{asset}/{channel}",
+          "full_path": "/api/getStatus/{asset}/{channel}",
+          "function": "getStatus",
+          "description": "상태 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getPQStatus/{asset}",
+          "full_path": "/api/getPQStatus/{asset}",
+          "function": "getPQStatus",
+          "description": "PQ 상태 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getRealTime/{assettype}/{asset}",
+          "full_path": "/api/getRealTime/{assettype}/{asset}",
+          "function": "get_asset",
+          "description": "실시간 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAsset/{asset}",
+          "full_path": "/api/getAsset/{asset}",
+          "function": "get_asset",
+          "description": "자산 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getPaging/{measurement}/{channel}/{page}",
+          "full_path": "/api/getPaging/{measurement}/{channel}/{page}",
+          "function": "query_paged_records",
+          "description": "페이징된 레코드 조회",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/searchPaging/{measurement}/{channel}/{page}",
+          "full_path": "/api/searchPaging/{measurement}/{channel}/{page}",
+          "function": "search_paged_records",
+          "description": "페이징된 검색",
+          "request_model": "AlarmSearch"
+        },
+        {
+          "method": "POST",
+          "path": "/searchEventPaging/{measurement}/{channel}/{page}",
+          "full_path": "/api/searchEventPaging/{measurement}/{channel}/{page}",
+          "function": "search_paged_records_event",
+          "description": "이벤트 검색",
+          "request_model": "EventSearch"
+        },
+        {
+          "method": "GET",
+          "path": "/getGauge/{channel}",
+          "full_path": "/api/getGauge/{channel}",
+          "function": "getGauge",
+          "description": "게이지 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getSaStatus/{channel}",
+          "full_path": "/api/getSaStatus/{channel}",
+          "function": "getSaStatus",
+          "description": "SA 상태 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAllGauge/{channel}",
+          "full_path": "/api/getAllGauge/{channel}",
+          "function": "getAllGauge",
+          "description": "모든 게이지 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getITIC/{channel}",
+          "full_path": "/api/getITIC/{channel}",
+          "function": "getITIC",
+          "description": "ITIC 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getENinfo/{channel}",
+          "full_path": "/api/getENinfo/{channel}",
+          "function": "getENInfo",
+          "description": "EN 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAlarm/{channel}",
+          "full_path": "/api/getAlarm/{channel}",
+          "function": "getAlarm",
+          "description": "알람 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getChanData/{channel}",
+          "full_path": "/api/getChanData/{channel}",
+          "function": "getChanData",
+          "description": "채널 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDemand/{channel}/{demand_type}",
+          "full_path": "/api/getDemand/{channel}/{demand_type}",
+          "function": "get_demand",
+          "description": "수요 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDeviceName",
+          "full_path": "/api/getDeviceName",
+          "function": "getDevice",
+          "description": "디바이스 이름 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDebug",
+          "full_path": "/api/getDebug",
+          "function": "getDebug",
+          "description": "디버그 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getChan/{channel}",
+          "full_path": "/api/getChan/{channel}",
+          "function": "getChan",
+          "description": "채널 정보 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAlarmConfigs/{channel}",
+          "full_path": "/api/getAlarmConfigs/{channel}",
+          "function": "getAlarmConfig",
+          "description": "알람 설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getPHD/{channel}",
+          "full_path": "/api/getPHD/{channel}",
+          "function": "getPowerHealth",
+          "description": "Power Health 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getTotalRunning/{channel}",
+          "full_path": "/api/getTotalRunning/{channel}",
+          "function": "getTotalRunning",
+          "description": "총 실행 시간 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getRecoveryTime/{channel}",
+          "full_path": "/api/getRecoveryTime/{channel}",
+          "function": "getRecoveryTime",
+          "description": "복구 시간 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getOneSecond/{channel}/{unbal}",
+          "full_path": "/api/getOneSecond/{channel}/{unbal}",
+          "function": "get_OneSecond",
+          "description": "1초 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getMinMaxAvg/{channel}",
+          "full_path": "/api/getMinMaxAvg/{channel}",
+          "function": "getMinMaxAvg",
+          "description": "최소/최대/평균값 가져오기",
+          "request_model": null
+        }
+      ]
+    },
+    "master": {
+      "prefix": "/master",
+      "description": "마스터 디바이스 관리",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/getSetup/{ip}",
+          "full_path": "/master/getSetup/{ip}",
+          "function": "getSetup",
+          "description": "설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/saveDevice",
+          "full_path": "/master/saveDevice",
+          "function": "save_device",
+          "description": "디바이스 저장",
+          "request_model": "Device"
+        },
+        {
+          "method": "GET",
+          "path": "/deleteDevice/{id}",
+          "full_path": "/master/deleteDevice/{id}",
+          "function": "delete_device",
+          "description": "디바이스 삭제",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getStatus/{ip}/{asset}",
+          "full_path": "/master/getStatus/{ip}/{asset}",
+          "function": "getStatus",
+          "description": "상태 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDeviceInfo",
+          "full_path": "/master/getDeviceInfo",
+          "function": "getDeviceInfo",
+          "description": "디바이스 정보 가져오기",
+          "request_model": null
+        }
+      ]
+    },
+    "setting": {
+      "prefix": "/setting",
+      "description": "시스템 설정 및 자산 관리",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/initDB",
+          "full_path": "/setting/initDB",
+          "function": "initInflux",
+          "description": "InfluxDB 초기화",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/checkSettingFile",
+          "full_path": "/setting/checkSettingFile",
+          "function": "check_setupfile",
+          "description": "설정 파일 확인",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getSetting",
+          "full_path": "/setting/getSetting",
+          "function": "get_setting",
+          "description": "설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getSettingData/{channel}",
+          "full_path": "/setting/getSettingData/{channel}",
+          "function": "getDatafromSetting",
+          "description": "설정 데이터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/Reset",
+          "full_path": "/setting/Reset",
+          "function": "reset",
+          "description": "리셋",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/ResetAll",
+          "full_path": "/setting/ResetAll",
+          "function": "resetAll",
+          "description": "전체 리셋",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagnosisSetting",
+          "full_path": "/setting/getDiagnosisSetting",
+          "function": "get_diagnosissetting",
+          "description": "진단 설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagnosisProfile",
+          "full_path": "/setting/getDiagnosisProfile",
+          "function": "get_diagnosisprofile",
+          "description": "진단 프로필 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/setDiagnosisSetting",
+          "full_path": "/setting/setDiagnosisSetting",
+          "function": "set_diagnosissetting",
+          "description": "진단 설정하기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/setDiagnosisProfile",
+          "full_path": "/setting/setDiagnosisProfile",
+          "function": "set_diagnosisprofile",
+          "description": "진단 프로필 설정",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAssetTypes",
+          "full_path": "/setting/getAssetTypes",
+          "function": "get_assetTypes",
+          "description": "자산 타입 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAssetList",
+          "full_path": "/setting/getAssetList",
+          "function": "get_assetlist",
+          "description": "자산 목록 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/upload",
+          "full_path": "/setting/upload",
+          "function": "upload_file",
+          "description": "파일 업로드",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/checkBearing",
+          "full_path": "/setting/checkBearing",
+          "function": "load_and_merge_bearing_data",
+          "description": "베어링 확인",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/uploadBearing",
+          "full_path": "/setting/uploadBearing",
+          "function": "upload_file",
+          "description": "베어링 업로드",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/download",
+          "full_path": "/setting/download",
+          "function": "download_setting",
+          "description": "설정 다운로드",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/createAsset",
+          "full_path": "/setting/createAsset",
+          "function": "createAsset",
+          "description": "자산 생성",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/modifyAsset",
+          "full_path": "/setting/modifyAsset",
+          "function": "modifyAsset",
+          "description": "자산 수정",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/deleteAsset/{asset}",
+          "full_path": "/setting/deleteAsset/{asset}",
+          "function": "deleteAsset",
+          "description": "자산 삭제",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/unregisterAsset/{channel}/{asset}",
+          "full_path": "/setting/unregisterAsset/{channel}/{asset}",
+          "function": "unreg_Asset",
+          "description": "자산 등록 해제",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/registerAsset/{channel}/{assetName}/{assetType}",
+          "full_path": "/setting/registerAsset/{channel}/{assetName}/{assetType}",
+          "function": "reg_Asset",
+          "description": "자산 등록",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/savefile/{channel}",
+          "full_path": "/setting/savefile/{channel}",
+          "function": "saveSetting",
+          "description": "설정 저장",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/restartasset/{flag}",
+          "full_path": "/setting/restartasset/{flag}",
+          "function": "restartasset",
+          "description": "자산 재시작",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/restartdevice",
+          "full_path": "/setting/restartdevice",
+          "function": "restartdevice",
+          "description": "디바이스 재시작",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/restoreSetting",
+          "full_path": "/setting/restoreSetting",
+          "function": "restore_setting",
+          "description": "설정 복원",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAssetConfig/{asset}",
+          "full_path": "/setting/getAssetConfig/{asset}",
+          "function": "get_assetconfig",
+          "description": "자산 설정 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/checkAssetConfig/{asset}",
+          "full_path": "/setting/checkAssetConfig/{asset}",
+          "function": "check_assetconfig",
+          "description": "자산 설정 확인",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/setAssetConfig/{asset}",
+          "full_path": "/setting/setAssetConfig/{asset}",
+          "function": "set_assetconfig",
+          "description": "자산 설정하기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getAssetParams/{asset}",
+          "full_path": "/setting/getAssetParams/{asset}",
+          "function": "get_assetParams",
+          "description": "자산 파라미터 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/setAssetParams/{asset}",
+          "full_path": "/setting/setAssetParams/{asset}",
+          "function": "set_assetParams",
+          "description": "자산 파라미터 설정",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/test/{asset}",
+          "full_path": "/setting/test/{asset}",
+          "function": "test_asset",
+          "description": "자산 테스트",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/testwave/{asset}",
+          "full_path": "/setting/testwave/{asset}",
+          "function": "test_asset",
+          "description": "웨이브 테스트",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/SysCheck",
+          "full_path": "/setting/SysCheck",
+          "function": "check_sysStatus",
+          "description": "시스템 체크",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/SysService/{cmd}/{item}",
+          "full_path": "/setting/SysService/{cmd}/{item}",
+          "function": "sysService",
+          "description": "시스템 서비스",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/command",
+          "full_path": "/setting/command",
+          "function": "push_command_left",
+          "description": "명령 추가",
+          "request_model": "Command"
+        },
+        {
+          "method": "GET",
+          "path": "/trigger",
+          "full_path": "/setting/trigger",
+          "function": "push_both_channels",
+          "description": "트리거",
+          "request_model": null
+        }
+      ]
+    },
+    "config": {
+      "prefix": "/config",
+      "description": "보정 및 구성 관리",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/upload",
+          "full_path": "/config/upload",
+          "function": "upload_file",
+          "description": "파일 업로드",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/checkSetup",
+          "full_path": "/config/checkSetup",
+          "function": "check_setup",
+          "description": "설정 확인",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/calibrate/getUnbal",
+          "full_path": "/config/calibrate/getUnbal",
+          "function": "getUnbal",
+          "description": "언밸런스 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/calibrateNow/{unbal}",
+          "full_path": "/config/calibrateNow/{unbal}",
+          "function": "cali_mount",
+          "description": "보정 실행",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/calibrate/start",
+          "full_path": "/config/calibrate/start",
+          "function": "cali_start",
+          "description": "보정 시작",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/calibrate/end",
+          "full_path": "/config/calibrate/end",
+          "function": "cali_end",
+          "description": "보정 종료",
+          "request_model": null
+        },
+        {
+          "method": "POST",
+          "path": "/calibrate/cmd/{types}",
+          "full_path": "/config/calibrate/cmd/{types}",
+          "function": "set_cmd",
+          "description": "보정 명령 설정",
+          "request_model": "CaliSet"
+        },
+        {
+          "method": "POST",
+          "path": "/savePost/{mode}/{idx}",
+          "full_path": "/config/savePost/{mode}/{idx}",
+          "function": "save_post",
+          "description": "포스트 저장",
+          "request_model": "Post"
+        },
+        {
+          "method": "GET",
+          "path": "/getPost",
+          "full_path": "/config/getPost",
+          "function": "get_post",
+          "description": "포스트 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/deletePost/{idx}",
+          "full_path": "/config/deletePost/{idx}",
+          "function": "delete_post",
+          "description": "포스트 삭제",
+          "request_model": null
+        }
+      ]
+    },
+    "test": {
+      "prefix": "/test",
+      "description": "테스트 엔드포인트",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/getDiagnosis_trans/{asset}",
+          "full_path": "/test/getDiagnosis_trans/{asset}",
+          "function": "get_diagnosis_trans",
+          "description": "변압기 진단 가져오기",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getTrendParameter_trans/{asset}",
+          "full_path": "/test/getTrendParameter_trans/{asset}",
+          "function": "get_trendParams",
+          "description": "변압기 트렌드 파라미터",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagTransPQ",
+          "full_path": "/test/getDiagTransPQ",
+          "function": "get_diag_transpq",
+          "description": "변압기 PQ 진단",
+          "request_model": null
+        },
+        {
+          "method": "GET",
+          "path": "/getDiagTrans",
+          "full_path": "/test/getDiagTrans",
+          "function": "get_diag_trans",
+          "description": "변압기 진단",
+          "request_model": null
+        }
+      ]
+    }
+  },
+  "models": {
+    "request_models": [
+      "SignupAdmin",
+      "Resetpassword",
+      "User",
+      "SignupUser",
+      "Login",
+      "Trend",
+      "AlarmSearch",
+      "EventSearch",
+      "Device",
+      "Command",
+      "CaliSet",
+      "Post"
+    ],
+    "total_models": 12
+  },
+  "dependencies": {
+    "frameworks": ["FastAPI"],
+    "databases": ["Redis", "InfluxDB", "SQLite"],
+    "external_services": ["SmartSystems API"],
+    "authentication": "Session-based with bcrypt"
+  }
+}
