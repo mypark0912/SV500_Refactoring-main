@@ -1550,6 +1550,46 @@ def sysService(cmd, item):
             'action': cmd
         }
 
+@router.get('/ServiceStatus')
+def check_allservice():
+    devMode = redis_state.client.hget("System", "mode")
+
+    if devMode == 'device0':
+        servicedict = {
+            'redis': 'redis',
+            'influxdb': 'influxdb',
+            'core': 'core',
+            'webserver': 'webserver'
+        }
+    else:
+        servicedict = {
+            'smartsystem': 'smartsystemsservice',
+            'smartapi': 'smartsystemsrestapiservice',
+            'redis': 'redis',
+            'influxdb': 'influxdb',
+            'core': 'core',
+            'webserver': 'webserver'
+        }
+
+    service_status = {}
+
+    # 각 서비스의 상태 확인
+    for key, service_name in servicedict.items():
+        service_status[key] = is_service_active(service_name)
+
+    # 상태 확인
+    abnormal = False
+    for key, value in service_status.items():
+        if not value:  # 서비스가 죽어있으면 비정상
+            abnormal = True
+            break
+
+    if abnormal:
+        return {"result": False, "status": service_status}
+    else:
+        return {"result": True, "status": service_status}
+
+
 @router.post("/command")
 async def push_command_left(command: Command):
     """새로운 command를 Redis 리스트의 왼쪽에 추가"""
