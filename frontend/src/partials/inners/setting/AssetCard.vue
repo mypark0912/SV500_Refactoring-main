@@ -93,6 +93,7 @@
                 v-model="assetMode.type"
                 class="form-select w-full bg-gray-100"
                 :disabled="selectedbtn != 1"
+                
               >
                 <option v-for="item in asseTypeList" :key="item" :value="item">
                   {{ item }}
@@ -677,6 +678,7 @@ const unregisterAsset = async () => {
     selectedAsset.value.connected = false;
     selectedAsset.value.connectedCh = "";
     selectedbtn.value = 0;
+
     // ✅ TreeRow 체크 해제를 위한 selectedAsset 초기화
     selectedAsset.value = {
       id: "",
@@ -719,7 +721,7 @@ const unregisterAsset = async () => {
       type: inputDict.value.assetInfo.type,
       nick: inputDict.value.assetInfo.nickname,
     });
-
+    selectedbtn.value = -1;
     await getAssetList();
     alert("Asset is unregistered on this channel");
   } else {
