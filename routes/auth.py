@@ -306,7 +306,7 @@ def check_Db():
 #
 
 @router.post('/joinAdmin')
-def join(data: SignupAdmin):
+def join_admin(data: SignupAdmin):
     devType = data.devType
     name = data.username
     account = data.account
@@ -354,6 +354,23 @@ def join(data: SignupAdmin):
             )
             conn.commit()
             conn.close()
+            client_admin = SignupUser(
+                username='client_admin',
+                account='client_admin',
+                password='1234',
+                email='ntek@nteksys.com',
+                role='2'
+            )
+            client_guest = SignupUser(
+                username='client_guest',
+                account='client_guest',
+                password='1234',
+                email='ntek@nteksys.com',
+                role='0'
+            )
+            join(client_admin)
+            join(client_guest)
+
             return {"passOK": "1"}
         except Exception as e:
             print(str(e))
