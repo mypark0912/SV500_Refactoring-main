@@ -3274,38 +3274,38 @@ def get_all_meter_redis(channel):
         return {"success": False, "error": str(e)}
 
 
-@router.get("/getEnergyRedis/{channel}")
-def get_energyReport(channel):
-    flag = False
-    filtered_data = dict()
-    try:
-        # Redis 데이터 한 번에 로딩
-
-        rdkey = get_RedisKey(channel, "meter")
-
-        redis_data = load_json_from_redisHash(rdkey, "energy")
-        # 디코딩
-        # print(redis_data)
-        if redis_data:
-            try:
-                filtered_data = {
-                    key: redis_data.get(key, None)
-                    for key in (RedisMapped.energy_report or [])
-                }
-                flag = True
-
-            except json.JSONDecodeError:
-                flag = False
-        else:
-            flag = False
-        print(filtered_data)
-        if flag:
-            return {"success": flag, "data": filtered_data}
-        else:
-            return {"success": flag, "error": f"Json Parsing Error"}
-    except Exception as e:
-        print(str(e))
-        return {"success": flag, "error": f"Redis Read Error: {str(e)}"}
+# @router.get("/getEnergyRedis/{channel}")
+# def get_energyReport(channel):
+#     flag = False
+#     filtered_data = dict()
+#     try:
+#         # Redis 데이터 한 번에 로딩
+#
+#         rdkey = get_RedisKey(channel, "meter")
+#
+#         redis_data = load_json_from_redisHash(rdkey, "energy")
+#         # 디코딩
+#         # print(redis_data)
+#         if redis_data:
+#             try:
+#                 filtered_data = {
+#                     key: redis_data.get(key, None)
+#                     for key in (RedisMapped.energy_report or [])
+#                 }
+#                 flag = True
+#
+#             except json.JSONDecodeError:
+#                 flag = False
+#         else:
+#             flag = False
+#         print(filtered_data)
+#         if flag:
+#             return {"success": flag, "data": filtered_data}
+#         else:
+#             return {"success": flag, "error": f"Json Parsing Error"}
+#     except Exception as e:
+#         print(str(e))
+#         return {"success": flag, "error": f"Redis Read Error: {str(e)}"}
 
 
 @router.get("/getEnergy/{channel}")
