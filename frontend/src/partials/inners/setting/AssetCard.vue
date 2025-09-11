@@ -677,7 +677,14 @@ const unregisterAsset = async () => {
     selectedAsset.value.connected = false;
     selectedAsset.value.connectedCh = "";
     selectedbtn.value = 0;
-
+    // ✅ TreeRow 체크 해제를 위한 selectedAsset 초기화
+    selectedAsset.value = {
+      id: "",
+      name: "",
+      type: "",
+      connected: false,
+      connectedCh: "",
+    };
     // ✨ 채널명 매핑 및 diagnosis_detail 초기화
     const channelMapping = {
       Main: "main",
