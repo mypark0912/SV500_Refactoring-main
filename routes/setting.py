@@ -1584,11 +1584,45 @@ def check_allservice():
             abnormal = True
             break
 
-    if abnormal:
-        return {"result": False, "status": service_status}
-    else:
-        return {"result": True, "status": service_status}
+    status_list = get_system_status()
 
+    resultDict = {}
+    if abnormal:
+        resultDict["service"] = False
+    else:
+        resultDict["service"] = True
+
+    if len(status_list) > 0:
+        resultDict["data"] = status_list
+        resultDict["system"] = False
+    else:
+        resultDict["system"] = True
+
+    return resultDict
+
+
+def get_system_status():
+    """시스템 상태 조회"""
+    # CPU 사용률 (1초간 측정)
+    cpu_percent = psutil.cpu_percent(interval=1)
+
+    # 메모리 사용률
+    memory = psutil.virtual_memory()
+    memory_percent = memory.percent
+
+    # 루트 디렉토리(/) 사용률
+    disk = psutil.disk_usage('/')
+    disk_percent = round((disk.used / disk.total) * 100, 1)
+
+    highList = []
+    if memory_percent > 90:
+        highList.append('MEMORY')
+    if cpu_percent > 90:
+        highList.append('CPU')
+    if disk_percent > 80:
+        highList.append('DISK')
+
+    return highList
 
 @router.post("/command")
 async def push_command_left(command: Command):
