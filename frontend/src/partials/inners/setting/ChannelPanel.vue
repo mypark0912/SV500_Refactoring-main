@@ -685,9 +685,11 @@
               :isAsset="isAssetExist"
               :channel="channel"
               :savefile="savefile"
+              @update-selectedbtn="handleSelectedbtnUpdate"
             />
             <NameplateCard
               v-if="
+              selectedbtn == 2 &&
                 (channel == 'Main'
                   ? currentDiagnosis.Main
                   : currentDiagnosis.Sub) && tableData.length > 0
@@ -696,6 +698,7 @@
             />
             <ParamCard
               v-if="
+              selectedbtn == 2 &&
                 (channel == 'Main'
                   ? currentDiagnosis.Main
                   : currentDiagnosis.Sub) && paramData.length > 0
@@ -1473,7 +1476,10 @@ export default {
       { value: 60, label: "60Hz" },
       { value: 50, label: "50Hz" },
     ];
-
+    const selectedbtn = ref(0);
+    const handleSelectedbtnUpdate = (value) => {
+      selectedbtn.value = value;
+    };
     const setbtnOption = (value) => {
       updateNestedField("ptInfo", "linefrequency", value);
     };
@@ -1716,6 +1722,8 @@ export default {
       showDiagChart,
       checkNameplateflag,
       diagnosis_detail,
+      selectedbtn,
+      handleSelectedbtnUpdate,
     };
   },
 };

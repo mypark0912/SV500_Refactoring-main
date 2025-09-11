@@ -61,28 +61,30 @@
             Add Asset
           </button>
           <button
-            v-if="assetMode.name !== ''"
+            v-if="assetMode.name !== '' && selectedbtn == 2"
             @click="unregisterAsset"
             class="bg-sky-500 text-white px-4 py-2 rounded"
           >
             Unregister Asset
           </button>
           <button
+            v-if="selectedbtn != 2"
             @click="registerAsset"
             class="bg-green-500 text-white px-4 py-2 rounded"
           >
             Register Asset
           </button>
-          <button
+          <!-- <button
+            v-if="selectedbtn != 2"
             @click="showCheckDelete = true"
             class="bg-red-500 text-white px-4 py-2 rounded"
           >
             Delete Asset
-          </button>
+          </button> -->
         </div>
 
         <!-- 3. 상세 설정 영역 -->
-        <div v-if="selectedbtn > 0" class="space-y-4">
+        <div class="space-y-4">
           <!-- 1행: Asset Type + Asset Name 수평 정렬 -->
           <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center gap-2">
@@ -90,7 +92,7 @@
               <select
                 v-model="assetMode.type"
                 class="form-select w-full bg-gray-100"
-                :disabled="selectedbtn == 2"
+                :disabled="selectedbtn != 1"
               >
                 <option v-for="item in asseTypeList" :key="item" :value="item">
                   {{ item }}
@@ -98,17 +100,30 @@
               </select>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2" v-if="selectedbtn >= 1">
               <label class="w-24 text-sm font-medium">Asset Name</label>
               <input
+                
                 v-model="assetMode.name"
                 type="text"
                 class="form-input w-full"
+                :disabled="selectedbtn == 2"
+              />
+            </div>
+            <div class="flex items-center gap-2" v-if="selectedbtn == 0">
+              <label class="w-24 text-sm font-medium">Asset Name</label>
+              <input
+                
+                v-model="assetMode.newname"
+                type="text"
+                class="form-input w-full"
+                
               />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
-            <div v-if="showEquip" class="flex items-center gap-2">
+           
+            <div v-if="showEquip && selectedbtn >= 2" class="flex items-center gap-2">
               <label class="w-24 text-sm font-medium">Equipment Name</label>
               <input
                 v-model="inputDict.assetInfo.nickname"
@@ -117,7 +132,7 @@
               />
             </div>
             <div
-              v-if="assetMode.type == 'Transformer'"
+              v-if="assetMode.type == 'Transformer' && selectedbtn == 2"
               class="flex items-center gap-2"
             >
               <label class="w-48 text-sm font-medium"
@@ -134,11 +149,25 @@
           <!-- 버튼 영역 -->
           <div class="flex gap-2">
             <button
-              v-if="selectedbtn == 2"
+              v-if="selectedbtn == 2 && false"
               @click="updateAsset"
               class="bg-gray-500 text-white px-3 py-2 rounded"
             >
               Change
+            </button>
+            <button
+              v-if="selectedbtn == 0"
+              @click="renameAsset"
+              class="bg-gray-500 text-white px-3 py-2 rounded"
+            >
+              Name Change
+            </button>
+            <button
+              v-if="selectedbtn == 0"
+              @click="showCheckDelete = true"
+              class="bg-gray-500 text-white px-3 py-2 rounded"
+            >
+              Delete Asset
             </button>
             <button
               v-if="selectedbtn == 1"
@@ -148,7 +177,7 @@
               Create
             </button>
             <button
-              v-if="selectedbtn >= 1"
+              v-if="selectedbtn >= 1 && false"
               @click="cancel"
               class="bg-gray-500 text-white px-3 py-2 rounded"
             >
@@ -247,7 +276,7 @@ import axios from "axios";
 import { useSetupStore } from "@/store/setup"; // ✅ Pinia store 사용
 import TreeRowAsset from "./TreeRowAsset.vue";
 import ModalBasic from "../../../pages/common/ModalBasic.vue";
-import { useI18n } from "vue-i18n"; //
+import { useI18n } from "vue-i18n"; 
 const { locale } = useI18n();
 const inputDict = inject("channel_inputDict");
 const changeDiagnosis = inject("changeDiagnosis");
@@ -261,9 +290,12 @@ const checkList = ref([]);
 const selectedbtn = ref(0);
 const showCheckDelete = ref(false);
 const asseTypeList = ref([]);
-const assetMode = ref({ name: "", type: "Motor" });
+const assetMode = ref({ name: "", type: "Motor", newname:"" });
 const diagnosis_detail = inject("diagnosis_detail");
-
+const emit = defineEmits(['update-selectedbtn']);
+watch(selectedbtn, (newValue) => {
+  emit('update-selectedbtn', newValue);
+}, { immediate: true });
 //const norminal_kva = ref(0);
 const props = defineProps({
   channel: String,
@@ -302,6 +334,7 @@ watch(locale, (newLocale) => {
 }, { immediate: true });
 
 function onCheckChange({ id, name, type, connected, connectedCh }) {
+  console.log('id, name, type, connected, connectedCh',id, name, type, connected, connectedCh);
   selectedAsset.value.id = id;
   selectedAsset.value.name = name;
   selectedAsset.value.type = type;
@@ -313,6 +346,9 @@ function onCheckChange({ id, name, type, connected, connectedCh }) {
     assetMode.value.type = selectedAsset.value.type;
   } else {
     selectedbtn.value = 0;
+    assetMode.value.name = selectedAsset.value.name;
+    assetMode.value.newname = selectedAsset.value.name;
+    assetMode.value.type = selectedAsset.value.type;
   }
   //console.log(selectedAsset.value);
 }
@@ -552,7 +588,7 @@ const getAssetList = async () => {
     if (response.data.success) {
       //const groupedAssets = response.data.data;
       checkList.value = response.data.data;
-      //console.log('getAssetList',checkList.value);
+      console.log('getAssetList',checkList.value);
     }
   } catch (error) {
     console.log(error);
@@ -634,7 +670,7 @@ const unregisterAsset = async () => {
   if (flag) {
     inputDict.value.assetInfo.name = "";
     inputDict.value.assetInfo.type = "";
-    inputDict.value.assetInfo.nickname = "";
+    //inputDict.value.assetInfo.nickname = "";
     isAssetExist.value = false;
     assetMode.value.name = "";
     assetMode.value.type = "";
@@ -660,6 +696,7 @@ const unregisterAsset = async () => {
         assetName: "",
         tableData: [],
         paramData: [],
+        modalData: [],
       });
 
      
@@ -749,7 +786,12 @@ const createAsset = async () => {
     alert("❌ Please enter both Asset Type and Asset Name.");
     return;
   }
-
+  const validNamePattern = /^[a-zA-Z0-9]+$/;
+  
+  if (!validNamePattern.test(assetMode.value.name)) {
+    alert("❌ Asset name can only contain English letters and numbers. No spaces, special characters, or Korean characters allowed.");
+    return;
+  }
   try {
     // if(assetMode.value.type == 'Transformer'){
     //   const kva = parseInt(inputDict.value.n_kva);
@@ -802,6 +844,8 @@ const createAsset = async () => {
     alert("❌ An error occurred while creating the asset");
   }
 };
+
+
 // const cancel = () =>{
 //   if (isEditing.value){
 //     isEditing.value = false;
@@ -837,17 +881,19 @@ const updateAsset = async () => {
 
     if (response.data.status === "1") {
       inputDict.value.assetInfo.name = newName; // ✅ 새 이름 적용
+      inputDict.value.assetInfo.nickname = assetMode.value.nickname; // ✅ 새 닉네임 적용
       isEditing.value = false; // ✅ 수정모드 종료
-      //setupStore.setAssetConfig(channel.value, inputDict.value.assetInfo.name,inputDict.value.assetInfo.type,inputDict.value.assetInfo.nickname );
-      setupStore.setAssetConfig({
-        channel: channel.value,
-        name: inputDict.value.assetInfo.name,
-        type: inputDict.value.assetInfo.type,
-        nick: inputDict.value.assetInfo.nickname,
-      });
+
+      // setupStore.setAssetConfig({
+      //   channel: channel.value,
+      //   name: inputDict.value.assetInfo.name,
+      //   type: inputDict.value.assetInfo.type,
+      //   nick: inputDict.value.assetInfo.nickname,
+      // });
       await getAssetList();
       //savefile(); // ✅ 저장 호출
       changeDiagnosis.value.asset = true;
+     
       alert("✅ Asset Updated!");
     } else {
       alert("❌Asset name modification failed: " + (response.data.error || ""));
@@ -856,7 +902,70 @@ const updateAsset = async () => {
     alert("❌Error occurred while modifying Asset: " + err.message);
   }
 };
+const renameAsset = async () => {
+  if (!assetMode.value.name || !assetMode.value.type) {
+    //if (!inputDict.value.assetInfo.name || !inputDict.value.assetInfo.type) {
+    alert("❌ Please enter both Asset Type and Asset Name.");
+    return;
+  }
+  const validNamePattern = /^[a-zA-Z0-9]+$/;
+  
+  if (!validNamePattern.test(assetMode.value.newname)) {
+    alert("❌ Asset name can only contain English letters and numbers. No spaces, special characters, or Korean characters allowed.");
+    return;
+  }
+  const oldName = assetMode.value.name;
+  const newName = assetMode.value.newname;
 
+  let isDuplicate = false;
+
+  const assetArrays = Object.values(checkList.value);
+  
+  for (const assetArray of assetArrays) {
+    if (Array.isArray(assetArray)) {
+      const duplicate = assetArray.find(asset => asset.Name === newName);
+      if (duplicate) {
+        isDuplicate = true;
+        break;
+      }
+    }
+  }
+
+  if (isDuplicate) {
+    alert("❌ Asset name already exists. Please choose a different name.");
+    return; // 중복이면 함수 종료
+  }
+  // 수정된 이름 서버에 전송
+  const payload = {
+    assetName: oldName,
+    newName: newName,
+    assetNickname: assetMode.value.nickname,
+  };
+
+  console.log('renameAsset payload',payload);
+
+  try {
+    
+    const response = await axios.post("/setting/modifyAsset", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.data.status === "1") {
+      inputDict.value.assetInfo.name = newName; // ✅ 새 이름 적용
+
+      isEditing.value = false; // ✅ 수정모드 종료
+      await getAssetList();
+      //savefile(); // ✅ 저장 호출
+      changeDiagnosis.value.asset = true;
+     
+      alert("✅ Asset name Updated!");
+    } else {
+      alert("❌Asset name modification failed: " + (response.data.error || ""));
+    }
+  } catch (err) {
+    alert("❌Error occurred while modifying Asset: " + err.message);
+  }
+};
 const deleteAsset = async () => {
   const assetName = selectedAsset.value.name;
 
@@ -873,7 +982,7 @@ const deleteAsset = async () => {
       if (selectedAsset.value.connected) {
         inputDict.value.assetInfo.name = "";
         inputDict.value.assetInfo.type = "";
-        inputDict.value.assetInfo.nickname = "";
+        //inputDict.value.assetInfo.nickname = "";
         isAssetExist.value = false;
         //setupStore.setAssetConfig(props.channel, inputDict.value.assetInfo.name,inputDict.value.assetInfo.type,inputDict.value.assetInfo.nickname );
 
@@ -894,6 +1003,7 @@ const deleteAsset = async () => {
             assetName: "",
             tableData: [],
             paramData: [],
+            modalData: [],
           });
         }
 
