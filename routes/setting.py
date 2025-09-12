@@ -52,6 +52,15 @@ def read_mac_plain(filepath):
         # 구분자 없이 반환
         return mac_bytes.hex().lower()  # 더 간단한 방법
 
+@router.get('/checkInitDB')
+async def checkInitDB():
+    file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+    if not os.path.exists(file_path):
+        ret = await initInflux()
+        return {'result': True, 'Inited': ret['success']}
+    else:
+        return {'result': False}
+
 @router.get('/initDB')
 async def initInflux():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
@@ -1552,6 +1561,7 @@ def sysService(cmd, item):
 
 @router.get('/ServiceStatus')
 def check_allservice():
+    redis_state.client.select(0)
     devMode = redis_state.client.hget("System", "mode")
 
     if devMode == 'device0':
@@ -1589,6 +1599,7 @@ def check_allservice():
     resultDict = {}
     if abnormal:
         resultDict["service"] = False
+        resultDict["serviceDict"] = service_status
     else:
         resultDict["service"] = True
 
