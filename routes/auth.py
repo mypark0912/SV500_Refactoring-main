@@ -1014,6 +1014,37 @@ def get_mode_from_redis(redis_client) -> str:
 #         print(str(e))
 #         return {"passOK": "0"}
 
+@router.get('/checkAccount')
+async def checkAccount():
+    try:
+        isClientAdmin = False
+        isClientGuest = False
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        table_name = "user"
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        exists = cursor.fetchone()
+        if exists:
+            isAdmin = True
+            cursor.execute("SELECT * FROM user where account=?", ('client_admin',))
+            rows = cursor.fetchone()
+            if rows:
+                isClientAdmin = True
+
+            cursor.execute("SELECT * FROM user where account=?", ('client_guest',))
+            rows2 = cursor.fetchone()
+
+            if rows2:
+                isClientGuest = True
+        else:
+            isAdmin = False
+        conn.commit()
+        conn.close()
+        return {"result":True, "exist": {'ntek': isAdmin, 'admin': isClientAdmin, 'guest': isClientGuest}}
+    except Exception as e:
+        return {"result": False}
+
 @router.post('/checkLogins')
 async def checkLogins(request:Request, data: Login):
     # data = request.json()
