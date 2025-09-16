@@ -1342,15 +1342,19 @@ export default {
         const nextStepId = availableSteps.value[currentIndex + 1].id;
 
         // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
-        if (currentStep.value === 1 && (nextStepId === 2 || nextStepId === 3)) {
-         
-          const response = await axios.get(`/setting/trigger`);
-          if (!response.data.success) {
-            const errorMessage = response.data.error || "waveform file trigger failed. Please try again.";
-            alert(errorMessage);
-            return; // Stop navigation if restart fails
+        if (currentStep.value === 1) {
+
+          const rest = await restartDevice();
+
+          if(rest && (nextStepId === 2 || nextStepId === 3)){
+              const response2 = await axios.get(`/setting/trigger`);
+                if (!response2.data.success) {
+                  const errorMessage = response2.data.error || "waveform file trigger failed. Please try again.";
+                  alert(errorMessage);
+                  return; // Stop navigation if restart fails
+                }
+            }
           }
-        }
 
         currentStep.value = nextStepId;
         
@@ -1389,6 +1393,19 @@ export default {
       }
     };
 
+    const restartDevice = async() =>{
+      try{
+        const response = await axios.get(`/setting/restartdevice`);
+          if (response.data.success) {
+            return true;
+          }else{
+            return false;
+          }
+      }catch(error){
+        return false;
+      }
+    }
+
     const closeModal = () => {
       emit("close-modal");
     };
@@ -1410,7 +1427,6 @@ export default {
 
       // Reload settings and validate
       //await GetSettingData()
-
       emit("restart-validation");
     };
 
@@ -1515,6 +1531,7 @@ export default {
       diagnosis_main,
       diagnosis_sub,
       getWaveShow,
+      restartDevice,
     };
   },
 };

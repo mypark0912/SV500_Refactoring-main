@@ -1163,8 +1163,8 @@ async def restartasset(request:Request, flag):
         if int(checkflag) == 1:
             return {"status": "0","success": False, "error": "Modbus setting is activated"}
     try:
-        redis_state.client.hset("Service","save",1)
-        redis_state.client.hset("Service", "restart", 1)
+        # redis_state.client.hset("Service","save",1)
+        # redis_state.client.hset("Service", "restart", 1)
         if flag:
             # response = await  http_state.client.get(f"/isServiceRestartNeeded")
             # data = response.json()
@@ -1752,7 +1752,18 @@ async def push_both_channels(
         }
     except Exception as e:
         print(str(e))
-        return {"success": False,}
+        return {"success": False}
+
+@router.get('/getMode')
+def get_sysMode():
+    try:
+        redis_state.client.select(0)
+        result = redis_state.client.hget("System","mode")
+        return {"success": True, "mode": result}
+    except Exception as e:
+        print(str(e))
+        return {"success": False}
+
 
 #@router.post("/command")
 #async def push_command_left(request: Request):
