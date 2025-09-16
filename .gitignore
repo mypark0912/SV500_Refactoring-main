@@ -62,7 +62,6 @@ logs/
 device.db
 
 # Configuration files (sensitive data)
-config/
 backup/
 *.enc
 *.key
