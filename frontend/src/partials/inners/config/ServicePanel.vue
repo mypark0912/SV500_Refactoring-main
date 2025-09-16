@@ -403,7 +403,9 @@
     };
 
     const downloadUrl = computed(() => {
-      return `http://127.0.0.1:5000/api/getFolder?name=${modalSelectItem.value}`
+      //return `http://127.0.0.1:5000/api/getFolder?name=${modalSelectItem.value}`
+      const hostname = window.location.hostname
+      return `http://${hostname}:5000/api/getFolder?name=${modalSelectItem.value}`
     })
 
 
