@@ -147,3 +147,4 @@ dmypy.json
 # Local development files
 local_settings.py
 settings_local.py
+referenceDoc/config/influx.json
