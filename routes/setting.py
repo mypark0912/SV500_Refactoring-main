@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 import os, httpx, csv, psutil, struct
 import ujson as json
-import shutil, subprocess, logging
+import shutil, subprocess, logging, subprocess
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
@@ -98,6 +98,67 @@ async def initInflux():
         influx_state.error = f"Exception during init: {str(e)}"
         return {"success": False, "message": influx_state.error}
 
+@router.get("/initInfluxCLI")
+def init_influxcli():
+    try:
+        config = influx_state.getInflux()
+        token = influx_state.decrypt(config["cipher"])
+
+        # 토큰 검증 (보안)
+        if not token or token == "":
+            return {
+                "status": False,
+                "message": "No exist Influxdb Token"
+            }
+
+        # 특수문자 이스케이프 (보안)
+        token = token.replace('"', '\\"')
+        org = config['org'].replace('"', '\\"')
+
+        script_content = f"""export INFLUX_TOKEN="{token}"
+export INFLUX_HOST="http://localhost:8086"
+export INFLUX_ORG="{org}"
+export INFLUX_BUCKET="ntek"
+"""
+
+        # 파일 생성 및 권한 설정을 한 번에
+        full_command = f"""
+cat > /etc/profile.d/influx.sh << 'EOF'
+{script_content}EOF
+chmod +x /etc/profile.d/influx.sh
+"""
+
+        result = subprocess.run(
+            ['sudo', 'bash', '-c', full_command],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        # 현재 프로세스 환경변수 설정
+        os.environ.update({
+            'INFLUX_TOKEN': token,
+            'INFLUX_HOST': "http://localhost:8086",
+            'INFLUX_ORG': config['org'],
+            'INFLUX_BUCKET': "ntek"
+        })
+
+        return {
+            "status": "success",
+            "message": "InfluxDB CLI 환경변수 설정 완료",
+            "file": "/etc/profile.d/influx.sh"
+        }
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "status": False,
+            "message": "Failed execution command"
+        }
+    except Exception as e:
+        return {
+            "status": False,
+            "message": str(e)
+        }
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
