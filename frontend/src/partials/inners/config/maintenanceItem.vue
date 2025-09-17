@@ -8,7 +8,7 @@
                     {{ item.title }}
                   </a>
                   <div class="text-sm">{{item.context}} </div>
-                  <div class="text-sm">{{ getVersionText(item.utype, item.a_version, item.w_version, item.f_version) }}</div>
+                  <div class="text-sm">{{ getVersionText(item.utype, item.a_version, item.w_version, item.f_version, item.c_version, item.smart_version) }}</div>
               </div>
           </div>
           <!-- Right side -->
@@ -42,20 +42,26 @@ export default {
   name: 'maintenanceItem',
   props: ['item'],
   setup(props, { emit }){
-    function getVersionText(utype, appVer, webVer, fwVer) {
+    function getVersionText(utype, appVer, webVer, fwVer, corVer, smartVer) {
       if (!utype) return '';
 
       const result = [];
       const types = utype.split(',').map(s => s.trim().toLowerCase());
 
-      if (types.includes('app') && appVer) {
-        result.push(`App Version : ${appVer}`);
+      if (types.includes('a35') && appVer) {
+        result.push(`A35 Version : ${appVer}`);
       }
       if (types.includes('web') && webVer) {
         result.push(`Web Version : ${webVer}`);
       }
       if (types.includes('fw') && fwVer) {
         result.push(`FW Version : ${fwVer}`);
+      }
+      if (types.includes('core') && corVer) {
+        result.push(`Core Version : ${corVer}`);
+      }
+      if (types.includes('smartsystem') && smartVer) {
+        result.push(`SmartSystem Version : ${smartVer}`);
       }
 
       return result.join(' / ');

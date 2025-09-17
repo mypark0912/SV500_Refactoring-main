@@ -25,9 +25,11 @@ class Post(BaseModel):
     context: str
     mtype: int
     utype: str
-    f_version: str
-    a_version: str
-    w_version: str
+    f_version: str = ""
+    a_version: str = ""
+    w_version: str = ""
+    c_version: str = ""
+    smart_version: str = ""
 
 class CaliSet(BaseModel):
     cmd: str
@@ -174,6 +176,8 @@ def save_post(data: Post, mode: int, idx:int):
     f_version = data.f_version
     a_version = data.a_version
     w_version = data.w_version
+    c_version = data.c_version
+    smart_version = data.smart_version
     today = date.today()
     formatted = today.strftime("%Y-%m-%d")
     try:
@@ -181,13 +185,13 @@ def save_post(data: Post, mode: int, idx:int):
         cursor = conn.cursor()
         if mode == 0:
             cursor.execute(
-                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (title, context, mtype, utype, f_version,a_version,w_version, formatted)
+                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version,date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, formatted)
             )
         else:
             cursor.execute(
-                "Update `maintenance`set title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?, date=? where id=?",
-                (title, context, mtype, utype, f_version, a_version, w_version, formatted, idx )
+                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, date=? where id=?",
+                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, formatted, idx )
             )
         conn.commit()
         conn.close()
@@ -216,6 +220,8 @@ def get_post():
                             f_version TEXT,
                             a_version TEXT,
                             w_version TEXT,
+                            c_version TEXT,
+                            smart_version TEXT,
                             date TEXT
                         )
                     ''')
