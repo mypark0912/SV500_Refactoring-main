@@ -1,7 +1,7 @@
 from http.client import responses
 from functools import wraps
 from fastapi import APIRouter, Request, HTTPException
-import os,httpx, re, logging, gc, psutil
+import os, httpx, re, logging, gc, psutil
 import ujson as json
 from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
@@ -34,7 +34,6 @@ def gc_after_large_data(threshold_mb=50):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-
             process = psutil.Process()
 
             # 실행 전 메모리
@@ -57,6 +56,7 @@ def gc_after_large_data(threshold_mb=50):
 
     return decorator
 
+
 def get_or_create_executor() -> ThreadPoolExecutor:
     """Executor를 가져오거나 생성 (thread-safe)"""
     global executor
@@ -68,22 +68,23 @@ def get_or_create_executor() -> ThreadPoolExecutor:
         logging.info(f"Created ThreadPoolExecutor with {MAX_WORKERS} workers")
     return executor
 
+
 router = APIRouter()
 
 ptInfo = ["3P4W", "3P3W(3)", "1P2W", "1P3W", "3P3W(2)"]
 
-eventType = [ "All", "SAG", "SWELL", "SHORT INTERRUPT", "LONG INTERRUPT", "OVER CURRENT", "UNDER CURRENT", "VOLTAGE TRANSIENT", "CURRENT TRANSIENT" ]
+eventType = ["All", "SAG", "SWELL", "SHORT INTERRUPT", "LONG INTERRUPT", "OVER CURRENT", "UNDER CURRENT",
+             "VOLTAGE TRANSIENT", "CURRENT TRANSIENT"]
 
 api_timeout = httpx.Timeout(
     connect=2.0,  # 연결에는 5초
-    read=20.0,     # 응답 읽기는 2초
-    write=2.0,    # 요청 전송은 5초
-    pool=5.0      # 연결 풀은 5초
+    read=20.0,  # 응답 읽기는 2초
+    write=2.0,  # 요청 전송은 5초
+    pool=5.0  # 연결 풀은 5초
 )
 
 
 async def run_influx_query(func, *args, timeout: int = 30, **kwargs):
-
     loop = asyncio.get_event_loop()
     executor = get_or_create_executor()
 
@@ -112,6 +113,7 @@ async def run_influx_query(func, *args, timeout: int = 30, **kwargs):
             detail=f"Query failed: {str(e)}"
         )
 
+
 def get_RedisKey(channel, item):
     return f"{item}_{'main' if channel == 'Main' else 'sub'}"
 
@@ -138,10 +140,12 @@ class AlarmSearch(BaseModel):
     StartDate: str
     EndDate: str
 
+
 class EventSearch(BaseModel):
     param: str
     StartDate: str
     EndDate: str
+
 
 parameter_options = [
     "None",
@@ -193,6 +197,7 @@ parameter_options = [
     "THD Current L2",
     "THD Current L3"
 ]
+
 
 @router.get('/getChannelSetting/{channel}')  # report_info
 def getChannelSetting(channel):
@@ -249,12 +254,13 @@ def setWave(channel, state):
     key = get_RedisKey(channel, 'pq')
     try:
         redis_state.client.select(1)
-        redis_state.client.hset(key,f"setWave", int(state))
+        redis_state.client.hset(key, f"setWave", int(state))
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-  # get harmonics with redis
+
+# get harmonics with redis
 def getWave(channel):
     key = get_RedisKey(channel, 'pq')
     try:
@@ -313,6 +319,7 @@ async def get_waveform(channel: str):
             "message": f"Server error: {str(e)}"
         }
 
+
 @router.get('/getWave/{channel}')
 async def get_waves(channel):
     if os_spec.os == 'Windows':
@@ -335,6 +342,7 @@ def findNode(supers, name, path):  # check node level
                 break
     return result
 
+
 def checkNode(supers, name, path):  # check node level
     for i in range(0, len(supers)):
         if supers[i]["Name"] == name:
@@ -346,7 +354,7 @@ def checkNode(supers, name, path):  # check node level
 
 
 @router.get("/getDiagnosisDetail/{asset}")
-@gc_after_large_data(threshold_mb=30)# Diagnosis Vue : get diagnosis
+@gc_after_large_data(threshold_mb=30)  # Diagnosis Vue : get diagnosis
 async def get_diagnosis(asset, request: Request):
     # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
     # datas = response.json()
@@ -938,7 +946,7 @@ async def getStatus(asset, channel):
     runhours = get_running(channel)["total"]
     # success가 True인지 확인
     if len(data) == 0:
-        return {"status": -1, "runhours":runhours}
+        return {"status": -1, "runhours": runhours}
 
     # "data" 항목이 존재하는지 확인
     status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
@@ -947,23 +955,23 @@ async def getStatus(asset, channel):
 
     # 모든 값이 1이면 "OK"
     if all(status == 1 for status in status_list):
-        return {"status": 1, "runhours":runhours}
+        return {"status": 1, "runhours": runhours}
 
     # 모든 값이 0이면 "No Data"
     if all(status == 0 for status in status_list):
-        return {"status": 0, "runhours":runhours}
+        return {"status": 0, "runhours": runhours}
 
     # 우선순위: Repair(4) > Inspect(3) > Warning(2)
     if 4 in status_list:
-        return {"status": 4, "runhours":runhours}
+        return {"status": 4, "runhours": runhours}
     elif 3 in status_list:
-        return {"status": 3, "runhours":runhours}
+        return {"status": 3, "runhours": runhours}
     elif 2 in status_list:
-        return {"status": 2, "runhours":runhours}
+        return {"status": 2, "runhours": runhours}
     elif 1 in status_list:
-        return {"status": 1, "runhours":runhours}
+        return {"status": 1, "runhours": runhours}
     else:
-        return {"status": -2, "runhours":runhours}
+        return {"status": -2, "runhours": runhours}
 
 
 @router.get("/getPQStatus/{asset}")  # Master Dashboard Status
@@ -1029,11 +1037,12 @@ def get_running(channel):
     else:
         redisKey = 'runhour_sub'
     if redis_state.client.exists(redisKey):
-        total =  redis_state.client.hget(redisKey,"tot")
-        current = redis_state.client.hget(redisKey,"cur")
+        total = redis_state.client.hget(redisKey, "tot")
+        current = redis_state.client.hget(redisKey, "cur")
         return {"total": total, "current": current}
     else:
-        return {"total": 0, "current":0}
+        return {"total": 0, "current": 0}
+
 
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
@@ -1197,6 +1206,7 @@ def iso_to_timestamp(iso_string):
 
     return int(dt.timestamp())
 
+
 def get_local_timezone():
     """시스템의 로컬 timezone 객체 반환"""
     return datetime.now().astimezone().tzinfo
@@ -1226,7 +1236,8 @@ def iso_to_utc_string(iso_string):
         utc_dt = dt.astimezone(timezone.utc)
         return utc_dt.isoformat().replace('+00:00', 'Z')
 
-def getITIC_data(measurement: str, channel: str,):
+
+def getITIC_data(measurement: str, channel: str, ):
     local_tz = datetime.now().astimezone().tzinfo
     start_dt = datetime.now(local_tz) - timedelta(days=90)
     start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1252,6 +1263,7 @@ def getITIC_data(measurement: str, channel: str,):
             row['time'] = row['_time']
 
     return rows
+
 
 def count_influx_records_optimized(measurement: str, channel: str, page_size: int = 10):
     """count() 함수를 사용하여 DB에서 직접 카운트"""
@@ -1538,7 +1550,7 @@ def query_paged_search_event(measurement: str, channel: str, param: str,
       |> sort(columns: ["_time"], desc: true)
       |> limit(n: {page_size}, offset: {offset})
     '''
-
+    print(query)
     result = influx_state.query_api.query(query)
     rows = [record.values for table in result for record in table.records]
 
@@ -1548,6 +1560,79 @@ def query_paged_search_event(measurement: str, channel: str, param: str,
 
     return rows
 
+
+# def diagnose_paging_issue(measurement: str, channel: str, days_limit: int = 30):
+#     """
+#     페이징 카운트 문제 진단
+#     """
+#     # 1. 카운트 함수 실행
+#     count_result = count_influx_records_with_limit(measurement, channel, 10, days_limit)
+#     print(f"=== 카운트 함수 결과 ===")
+#     print(f"Total Records: {count_result['total_records']}")
+#     print(f"Total Pages: {count_result['total_pages']}")
+
+#     # 2. 실제 첫 페이지 조회
+#     first_page = query_influx_pages(measurement, channel, "time", 1, 10, days_limit)
+#     print(f"\n=== 첫 페이지 실제 데이터 ===")
+#     print(f"첫 페이지 레코드 수: {len(first_page)}")
+
+#     # 3. 마지막 페이지까지 실제로 조회해보기
+#     total_actual_records = 0
+#     page = 1
+#     max_pages = count_result['total_pages'] + 5  # 여유있게 확인
+
+#     print(f"\n=== 페이지별 실제 데이터 확인 ===")
+#     while page <= max_pages:
+#         page_data = query_influx_pages(measurement, channel, "time", page, 10, days_limit)
+#         if not page_data:
+#             break
+#         total_actual_records += len(page_data)
+#         print(f"Page {page}: {len(page_data)} records")
+#         if len(page_data) < 10:
+#             break
+#         page += 1
+
+#     print(f"\n=== 결과 비교 ===")
+#     print(f"카운트 함수: {count_result['total_records']} records, {count_result['total_pages']} pages")
+#     print(f"실제 데이터: {total_actual_records} records, {page} pages")
+#     print(f"일치 여부: {'✅ 일치' if count_result['total_records'] == total_actual_records else '❌ 불일치'}")
+
+#     return {
+#         "count_function": count_result,
+#         "actual_total": total_actual_records,
+#         "actual_pages": page,
+#         "match": count_result['total_records'] == total_actual_records
+#     }
+
+# def verify_new_count(measurement: str, channel: str, days_limit: int = 30):
+#     """
+#     새로운 카운트 함수 검증
+#     """
+#     # 새 카운트 함수 테스트
+#     count_result = count_influx_records_with_limit(measurement, channel, 10, days_limit)
+#     print(f"카운트 함수 결과: {count_result['total_records']} records")
+
+#     # 실제 페이징으로 확인
+#     total_actual = 0
+#     page = 1
+#     while True:
+#         rows = query_influx_pages(measurement, channel, "time", page, 10, days_limit)
+#         if not rows:
+#             break
+#         total_actual += len(rows)
+#         if len(rows) < 10:
+#             break
+#         page += 1
+
+#     print(f"실제 데이터: {total_actual} records")
+#     print(f"매치: {'✅' if count_result['total_records'] == total_actual else '❌'}")
+
+#     # 차이가 있으면 상세 분석
+#     if count_result['total_records'] != total_actual:
+#         print(f"\n차이: {abs(count_result['total_records'] - total_actual)}")
+#         print(f"비율: {count_result['total_records'] / total_actual if total_actual > 0 else 'N/A'}")
+
+#     return count_result['total_records'] == total_actual
 
 def query_influx_pages(measurement: str, channel: str, timefield: str,
                        page: int = 1, page_size: int = 10, days_limit: int = 30):
@@ -1590,48 +1675,128 @@ def query_influx_pages(measurement: str, channel: str, timefield: str,
 
 
 # ===== 추가: 기본 조회 기간 제한이 있는 count 함수 =====
-def count_influx_records_with_limit(measurement: str, channel: str,
-                                    page_size: int = 10, days_limit: int = 30):
-    """
-    최근 N일로 제한된 카운트 (기본 조회용)
-    """
-    # 로컬 timezone 가져오기
-    local_tz = get_local_timezone()
+# def count_influx_records_with_limit_v2(measurement: str, channel: str,
+#                                     page_size: int = 10, days_limit: int = 30):
+#     """
+#     필드 수를 확인하고 정확히 계산하는 방법
+#     """
+#     local_tz = get_local_timezone()
+#     enddate_local = datetime.now(local_tz)
+#     startdate_local = enddate_local - timedelta(days=days_limit)
 
-    # 로컬 시간 기준 날짜 계산 후 UTC 변환
-    end_dt = datetime.now(local_tz)
-    start_dt = end_dt - timedelta(days=days_limit)
+#     start_ts = int(startdate_local.timestamp())
+#     end_ts = int(enddate_local.timestamp())
 
-    startdate = start_dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
-    enddate = end_dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+#     # 1. 먼저 필드 수 확인
+#     field_query = f'''
+#     from(bucket: "ntek")
+#       |> range(start: {start_ts}, stop: {end_ts})
+#       |> filter(fn: (r) => r._measurement == "{measurement}")
+#       |> filter(fn: (r) => r.channel == "{channel}")
+#       |> limit(n: 1)
+#       |> group()
+#       |> keep(columns: ["_field"])
+#     '''
 
-    # 카운트 쿼리
-    query = f'''
-    from(bucket: "ntek")
-      |> range(start: time(v: "{startdate}"), stop: time(v: "{enddate}"))
-      |> filter(fn: (r) => r._measurement == "{measurement}")
-      |> filter(fn: (r) => r["channel"] == "{channel}")
-      |> group(columns: ["_measurement"])
-      |> count()
-    '''
+#     try:
+#         field_result = influx_state.query_api.query(field_query)
+#         field_count = 0
+#         fields_set = set()
+#         for table in field_result:
+#             for record in table.records:
+#                 field = record.values.get('_field')
+#                 if field:
+#                     fields_set.add(field)
+#         field_count = len(fields_set)
 
-    result = influx_state.query_api.query(query)
+#         if field_count == 0:
+#             field_count = 1  # 기본값
 
-    total_records = 0
-    for table in result:
-        for record in table.records:
-            count_value = record.get_value()
-            if count_value > total_records:
-                total_records = count_value
+#         print(f"Found {field_count} fields: {fields_set}")
 
-    total_pages = (total_records + page_size - 1) // page_size
+#         # 2. 전체 포인트 카운트
+#         count_query = f'''
+#         from(bucket: "ntek")
+#           |> range(start: {start_ts}, stop: {end_ts})
+#           |> filter(fn: (r) => r._measurement == "{measurement}")
+#           |> filter(fn: (r) => r.channel == "{channel}")
+#           |> count()
+#         '''
 
-    return {
-        "total_records": total_records,
-        "total_pages": total_pages,
-        "page_size": page_size,
-        "days_included": days_limit
-    }
+#         count_result = influx_state.query_api.query(count_query)
+#         total_points = 0
+#         for table in count_result:
+#             for record in table.records:
+#                 val = record.get_value()
+#                 if val:
+#                     total_points = val
+#                     break  # 첫 번째 값만 사용
+
+#         # 3. 실제 레코드 수 = 전체 포인트 / 필드 수
+#         total_records = total_points // field_count if field_count > 0 else 0
+#         total_pages = (total_records + page_size - 1) // page_size if total_records > 0 else 0
+
+#         return {
+#             "total_records": total_records,
+#             "total_pages": total_pages,
+#             "page_size": page_size,
+#             "days_included": days_limit,
+#             "field_count": field_count
+#         }
+
+#     except Exception as e:
+#         print(f"Count error: {e}")
+#         return {
+#             "total_records": 0,
+#             "total_pages": 0,
+#             "page_size": page_size,
+#             "days_included": days_limit,
+#             "error": str(e)
+#         }
+
+
+# def count_influx_records_with_limit(measurement: str, channel: str,
+#                                     page_size: int = 10, days_limit: int = 30):
+#     """
+#     최근 N일로 제한된 카운트 (기본 조회용)
+#     """
+#     # 로컬 timezone 가져오기
+#     local_tz = get_local_timezone()
+
+#     # 로컬 시간 기준 날짜 계산 후 UTC 변환
+#     end_dt = datetime.now(local_tz)
+#     start_dt = end_dt - timedelta(days=days_limit)
+
+#     startdate = start_dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+#     enddate = end_dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+#     # 카운트 쿼리
+#     query = f'''
+#     from(bucket: "ntek")
+#       |> range(start: time(v: "{startdate}"), stop: time(v: "{enddate}"))
+#       |> filter(fn: (r) => r._measurement == "{measurement}")
+#       |> filter(fn: (r) => r["channel"] == "{channel}")
+#       |> group(columns: ["_measurement"])
+#       |> count()
+#     '''
+
+#     result = influx_state.query_api.query(query)
+
+#     total_records = 0
+#     for table in result:
+#         for record in table.records:
+#             count_value = record.get_value()
+#             if count_value > total_records:
+#                 total_records = count_value
+
+#     total_pages = (total_records + page_size - 1) // page_size
+
+#     return {
+#         "total_records": total_records,
+#         "total_pages": total_pages,
+#         "page_size": page_size,
+#         "days_included": days_limit
+#     }
 
 def format_influx_time(dt: datetime, to_local: bool = True) -> str:
     # 입력 데이터 타입 처리
@@ -1651,6 +1816,7 @@ def format_influx_time(dt: datetime, to_local: bool = True) -> str:
     # 포맷팅
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
+
 def format_influx_militime(dt: datetime, to_local: bool = True) -> str:
     # 입력 데이터 타입 처리
     if isinstance(dt, float):
@@ -1666,19 +1832,20 @@ def format_influx_militime(dt: datetime, to_local: bool = True) -> str:
     # %f는 마이크로초(6자리)를 반환하므로 처음 3자리만 사용
     return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
+
 @router.get("/getAlarmParms/{channel}")
 def get_almParms(channel):
     redis_state.client.execute_command("SELECT", 0)
     alm_setup = {}
-    if redis_state.client.hexists("System","setup"):
-        sets = redis_state.client.hget("System","setup")
+    if redis_state.client.hexists("System", "setup"):
+        sets = redis_state.client.hget("System", "setup")
         setting = json.loads(sets)
         for dict in setting["channel"]:
             if dict["channel"] == channel:
                 alm_setup = dict["alarm"]
                 break
     if len(alm_setup) == 0:
-        return {"success":False}
+        return {"success": False}
     paramList = []
     for i in range(1, 33):
         idx = alm_setup[str(i)][0]
@@ -1687,7 +1854,8 @@ def get_almParms(channel):
             if entry not in paramList:
                 paramList.append(entry)
 
-    return {"success":True, "data":paramList}
+    return {"success": True, "data": paramList}
+
 
 def convert_inequality_to_text(condition_str):
     # > 를 Over로 변환
@@ -1714,23 +1882,21 @@ async def run_with_timeout(func, *args, timeout=30, **kwargs):
 @router.get("/getAlarms/{channel}/{page}")
 @gc_after_large_data(threshold_mb=30)
 async def get_alarms(channel: str, page: int):
-    """최적화된 알람 조회"""
+    """최적화된 알람 조회 - 단일 쿼리"""
     try:
-        # 병렬 실행을 위한 태스크 생성
-        data_task = run_influx_query(
+        page = int(page)
+
+        # 11개 조회 (10개 + 다음 페이지 확인용)
+        result = await run_influx_query(
             query_influx_pages,
-            "alarms", channel, "time", int(page),
+            "alarms", channel, "time", page, 11,  # page_size=11
             timeout=20
         )
 
-        count_task = run_influx_query(
-            count_influx_records_optimized,
-            "alarms", channel,
-            timeout=10
-        )
-
-        # 동시 실행
-        result, countDict = await asyncio.gather(data_task, count_task)
+        # 다음 페이지 존재 여부 확인
+        has_next = len(result) > 10
+        if has_next:
+            result = result[:10]  # 10개만 사용
 
         # 데이터 포맷팅
         for i in range(len(result)):
@@ -1744,18 +1910,25 @@ async def get_alarms(channel: str, page: int):
         return {
             "success": True,
             "data": result,
-            "totalRecord": countDict['total_records'],
-            "totalPages": countDict['total_pages']
+            "page": page,
+            "hasNext": has_next,
+            "hasPrev": page > 1,
+            # 하위 호환성
+            "totalRecord": -1,
+            "totalPages": -1
         }
 
     except HTTPException:
-        raise  # HTTPException은 그대로 전달
+        raise
     except Exception as e:
         logging.error(f"Unexpected error in get_alarms: {e}")
         return {
             "success": False,
             "error": str(e),
             "data": [],
+            "page": page,
+            "hasNext": False,
+            "hasPrev": False,
             "totalRecord": 0,
             "totalPages": 0
         }
@@ -1763,24 +1936,22 @@ async def get_alarms(channel: str, page: int):
 
 @router.post("/getAlarmSearch/{channel}/{page}")
 async def get_alarmSearch(data: AlarmSearch, channel: str, page: int):
-    """최적화된 알람 검색"""
+    """최적화된 알람 검색 - 단일 쿼리"""
     try:
-        # 병렬 실행
-        data_task = run_influx_query(
+        page = int(page)
+
+        # 11개 조회 (10개 + 다음 페이지 확인용)
+        result = await run_influx_query(
             query_paged_search,
             "alarms", channel, data.param,
-            data.StartDate, data.EndDate, int(page),
+            data.StartDate, data.EndDate, page, 11,  # page_size=11 추가
             timeout=20
         )
 
-        count_task = run_influx_query(
-            count_search_records_optimized,
-            "alarms", channel, data.param,
-            data.StartDate, data.EndDate,
-            timeout=10
-        )
-
-        result, countDict = await asyncio.gather(data_task, count_task)
+        # 다음 페이지 존재 여부 확인
+        has_next = len(result) > 10
+        if has_next:
+            result = result[:10]  # 10개만 사용
 
         # 포맷팅
         for i in range(len(result)):
@@ -1790,8 +1961,12 @@ async def get_alarmSearch(data: AlarmSearch, channel: str, page: int):
         return {
             "success": True,
             "data": result,
-            "totalRecord": countDict['total_records'],
-            "totalPages": countDict['total_pages']
+            "page": page,
+            "hasNext": has_next,
+            "hasPrev": page > 1,
+            # 하위 호환성
+            "totalRecord": -1,
+            "totalPages": -1
         }
 
     except HTTPException:
@@ -1802,30 +1977,127 @@ async def get_alarmSearch(data: AlarmSearch, channel: str, page: int):
             "success": False,
             "error": str(e),
             "data": [],
+            "page": page,
+            "hasNext": False,
+            "hasPrev": False,
             "totalRecord": 0,
             "totalPages": 0
         }
 
 
+# @router.get("/getAlarms/{channel}/{page}")
+# @gc_after_large_data(threshold_mb=30)
+# async def get_alarms(channel: str, page: int):
+#     """최적화된 알람 조회"""
+#     try:
+#         # 병렬 실행을 위한 태스크 생성
+#         data_task = run_influx_query(
+#             query_influx_pages,
+#             "alarms", channel, "time", int(page),
+#             timeout=20
+#         )
+
+#         count_task = run_influx_query(
+#             count_influx_records_optimized,
+#             "alarms", channel,
+#             timeout=10
+#         )
+
+#         # 동시 실행
+#         result, countDict = await asyncio.gather(data_task, count_task)
+
+#         # 데이터 포맷팅
+#         for i in range(len(result)):
+#             if os_spec.os == 'Windows':
+#                 result[i]["condition_str"] = convert_inequality_to_text(result[i]["condition_str"])
+#                 result[i]["alarm_ts"] = format_influx_time(result[i]["alarm_ts"])
+#             else:
+#                 result[i]["condition_str"] = f"{result[i]['chan_text']} {result[i]['condition']} {result[i]['level']}"
+#                 result[i]["alarm_ts"] = format_influx_time(result[i]["time"])
+
+#         return {
+#             "success": True,
+#             "data": result,
+#             "totalRecord": countDict['total_records'],
+#             "totalPages": countDict['total_pages']
+#         }
+
+#     except HTTPException:
+#         raise  # HTTPException은 그대로 전달
+#     except Exception as e:
+#         logging.error(f"Unexpected error in get_alarms: {e}")
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "data": [],
+#             "totalRecord": 0,
+#             "totalPages": 0
+#         }
+
+
+# @router.post("/getAlarmSearch/{channel}/{page}")
+# async def get_alarmSearch(data: AlarmSearch, channel: str, page: int):
+#     """최적화된 알람 검색"""
+#     try:
+#         # 병렬 실행
+#         data_task = run_influx_query(
+#             query_paged_search,
+#             "alarms", channel, data.param,
+#             data.StartDate, data.EndDate, int(page),
+#             timeout=20
+#         )
+
+#         count_task = run_influx_query(
+#             count_search_records_optimized,
+#             "alarms", channel, data.param,
+#             data.StartDate, data.EndDate,
+#             timeout=10
+#         )
+
+#         result, countDict = await asyncio.gather(data_task, count_task)
+
+#         # 포맷팅
+#         for i in range(len(result)):
+#             result[i]["condition_str"] = f"{result[i]['chan_text']} {result[i]['condition']} {result[i]['level']}"
+#             result[i]["alarm_ts"] = format_influx_time(result[i]["time"])
+
+#         return {
+#             "success": True,
+#             "data": result,
+#             "totalRecord": countDict['total_records'],
+#             "totalPages": countDict['total_pages']
+#         }
+
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logging.error(f"Error in get_alarmSearch: {e}")
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "data": [],
+#             "totalRecord": 0,
+#             "totalPages": 0
+#         }
+
 @router.get("/getEventlist/{channel}/{page}")
 @gc_after_large_data(threshold_mb=30)
 async def get_eventlist(channel: str, page: int):
-    """최적화된 이벤트 조회"""
+    """최적화된 이벤트 조회 - 단일 쿼리"""
     try:
-        # 병렬 실행
-        data_task = run_influx_query(
+        page = int(page)
+
+        # 11개 조회 (10개 + 다음 페이지 확인용 1개)
+        result = await run_influx_query(
             query_influx_pages,
-            "events", channel, "time", int(page),
+            "events", channel, "time", page, 11,  # page_size=11
             timeout=20
         )
 
-        count_task = run_influx_query(
-            count_influx_records_optimized,
-            "events", channel,
-            timeout=10
-        )
-
-        result, countDict = await asyncio.gather(data_task, count_task)
+        # 11개 왔으면 다음 페이지 있음
+        has_next = len(result) > 10
+        if has_next:
+            result = result[:10]  # 10개만 사용
 
         # 데이터 포맷팅
         for i in range(len(result)):
@@ -1834,22 +2106,21 @@ async def get_eventlist(channel: str, page: int):
             else:
                 timestamp = float(result[i]["time"])
 
-            # duration을 초 단위로 변환 (밀리초인 경우)
-            duration_seconds = float(result[i]["duration"]) / 1000.0
-
-            # 종료 시간 계산
+            duration_seconds = float(result[i].get("duration", 0)) / 1000.0
             end_timestamp = timestamp + duration_seconds
             end_datetime = datetime.fromtimestamp(end_timestamp)
 
-            # 포맷팅
             result[i]["end_ts"] = format_influx_militime(end_datetime)
             result[i]["start_ts"] = format_influx_militime(result[i]["time"])
 
         return {
             "success": True,
             "data": result,
-            "totalRecord": countDict['total_records'],
-            "totalPages": countDict['total_pages']
+            "page": page,
+            "hasNext": has_next,
+            "hasPrev": page > 1,
+            "totalRecord": -1,
+            "totalPages": -1
         }
 
     except HTTPException:
@@ -1860,35 +2131,118 @@ async def get_eventlist(channel: str, page: int):
             "success": False,
             "error": str(e),
             "data": [],
+            "page": page,
+            "hasNext": False,
+            "hasPrev": False,
             "totalRecord": 0,
             "totalPages": 0
         }
 
 
+# @router.get("/getEventlist/{channel}/{page}")
+# @gc_after_large_data(threshold_mb=30)
+# async def get_eventlist(channel: str, page: int):
+#     """최적화된 이벤트 조회 - 기존 함수 재사용"""
+#     try:
+#         page = int(page)
+
+#         # 현재 페이지 데이터 조회
+#         data_task = run_influx_query(
+#             query_influx_pages,
+#             "events", channel, "time", page,
+#             timeout=20
+#         )
+
+#         # 다음 페이지 첫 번째 레코드만 조회 (존재 여부 확인)
+#         next_check_task = run_influx_query(
+#             query_influx_pages,
+#             "events", channel, "time", page + 1, 1,  # 1개만 조회
+#             timeout=5
+#         )
+
+#         result, next_check = await asyncio.gather(data_task, next_check_task)
+
+#         # 데이터 포맷팅
+#         for i in range(len(result)):
+#             if isinstance(result[i]["time"], datetime):
+#                 timestamp = result[i]["time"].timestamp()
+#             else:
+#                 timestamp = float(result[i]["time"])
+
+#             # duration을 초 단위로 변환 (밀리초인 경우)
+#             duration_seconds = float(result[i].get("duration", 0)) / 1000.0
+
+#             # 종료 시간 계산
+#             end_timestamp = timestamp + duration_seconds
+#             end_datetime = datetime.fromtimestamp(end_timestamp)
+
+#             # 포맷팅
+#             result[i]["end_ts"] = format_influx_militime(end_datetime)
+#             result[i]["start_ts"] = format_influx_militime(result[i]["time"])
+
+#         ret = {
+#             "success": True,
+#             "data": result,
+#             "page": page,
+#             "hasNext": len(next_check) > 0,
+#             "hasPrev": page > 1,
+#             # 하위 호환성
+#             "totalRecord": -1,
+#             "totalPages": -1
+#         }
+
+#         return {
+#             "success": True,
+#             "data": result,
+#             "page": page,
+#             "hasNext": len(next_check) > 0,
+#             "hasPrev": page > 1,
+#             # 하위 호환성
+#             "totalRecord": -1,
+#             "totalPages": -1
+#         }
+
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logging.error(f"Error in get_eventlist: {e}")
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "data": [],
+#             "page": page,
+#             "hasNext": False,
+#             "hasPrev": False,
+#             "totalRecord": 0,
+#             "totalPages": 0
+#         }
+
 @router.post("/getEventSearch/{channel}/{page}")
 async def get_eventSearch(data: EventSearch, channel: str, page: int):
-    """최적화된 이벤트 검색"""
+    """최적화된 이벤트 검색 - 11개 조회 방식"""
     try:
+        page = int(page)
+        page_size = 10
         startdate = data.StartDate
-        param = eventType[int(data.param)]  # eventType 배열에서 변환
+        paramIdx = int(data.param)
+        if paramIdx < 0:
+            paramIdx = 0
+        param = eventType[paramIdx]
         enddate = data.EndDate
 
-        # 병렬 실행
-        data_task = run_influx_query(
+        # 11개를 가져와서 다음 페이지 확인
+        result = await run_influx_query(
             query_paged_search_event,
             "events", channel, param,
-            startdate, enddate, int(page),
+            startdate, enddate, page,
+            page_size + 1,  # 11개 조회
             timeout=20
         )
 
-        count_task = run_influx_query(
-            count_search_records_event_optimized,
-            "events", channel, param,
-            startdate, enddate,
-            timeout=10
-        )
-
-        result, countDict = await asyncio.gather(data_task, count_task)
+        # 다음 페이지 존재 여부 확인
+        has_next = len(result) > page_size
+        if has_next:
+            result = result[:page_size]  # 10개만 사용
 
         # 데이터 포맷팅
         for i in range(len(result)):
@@ -1897,22 +2251,22 @@ async def get_eventSearch(data: EventSearch, channel: str, page: int):
             else:
                 timestamp = float(result[i]["time"])
 
-            # duration을 초 단위로 변환 (밀리초인 경우)
-            duration_seconds = float(result[i]["duration"]) / 1000.0
-
-            # 종료 시간 계산
+            duration_seconds = float(result[i].get("duration", 0)) / 1000.0
             end_timestamp = timestamp + duration_seconds
             end_datetime = datetime.fromtimestamp(end_timestamp)
 
-            # 포맷팅
             result[i]["end_ts"] = format_influx_militime(end_datetime)
             result[i]["start_ts"] = format_influx_militime(result[i]["time"])
 
         return {
             "success": True,
             "data": result,
-            "totalRecord": countDict['total_records'],
-            "totalPages": countDict['total_pages']
+            "page": page,
+            "hasNext": has_next,
+            "hasPrev": page > 1,
+            # 하위 호환성
+            "totalRecord": -1,
+            "totalPages": -1
         }
 
     except HTTPException:
@@ -1923,9 +2277,136 @@ async def get_eventSearch(data: EventSearch, channel: str, page: int):
             "success": False,
             "error": str(e),
             "data": [],
+            "page": page,
+            "hasNext": False,
+            "hasPrev": False,
             "totalRecord": 0,
             "totalPages": 0
         }
+
+
+# @router.get("/getEventlist/{channel}/{page}")
+# @gc_after_large_data(threshold_mb=30)
+# async def get_eventlist(channel: str, page: int):
+#     """최적화된 이벤트 조회"""
+#     try:
+#         # 병렬 실행
+#         data_task = run_influx_query(
+#             query_influx_pages,
+#             "events", channel, "time", int(page),
+#             timeout=20
+#         )
+#         #count_influx_records_optimized , count_influx_records_with_limit
+#         count_task = run_influx_query(
+#              count_influx_records_with_limit_v2,
+#             "events", channel,
+#             timeout=10
+#         )
+
+
+#         result, countDict = await asyncio.gather(data_task, count_task)
+
+#         # 데이터 포맷팅
+#         for i in range(len(result)):
+#             if isinstance(result[i]["time"], datetime):
+#                 timestamp = result[i]["time"].timestamp()
+#             else:
+#                 timestamp = float(result[i]["time"])
+
+#             # duration을 초 단위로 변환 (밀리초인 경우)
+#             duration_seconds = float(result[i]["duration"]) / 1000.0
+
+#             # 종료 시간 계산
+#             end_timestamp = timestamp + duration_seconds
+#             end_datetime = datetime.fromtimestamp(end_timestamp)
+
+#             # 포맷팅
+#             result[i]["end_ts"] = format_influx_militime(end_datetime)
+#             result[i]["start_ts"] = format_influx_militime(result[i]["time"])
+
+#         print(countDict)
+
+#         return {
+#             "success": True,
+#             "data": result,
+#             "totalRecord": countDict['total_records'],
+#             "totalPages": countDict['total_pages']
+#         }
+
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logging.error(f"Error in get_eventlist: {e}")
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "data": [],
+#             "totalRecord": 0,
+#             "totalPages": 0
+#         }
+
+
+# @router.post("/getEventSearch/{channel}/{page}")
+# async def get_eventSearch(data: EventSearch, channel: str, page: int):
+#     """최적화된 이벤트 검색"""
+#     try:
+#         startdate = data.StartDate
+#         param = eventType[int(data.param)]  # eventType 배열에서 변환
+#         enddate = data.EndDate
+
+#         # 병렬 실행
+#         data_task = run_influx_query(
+#             query_paged_search_event,
+#             "events", channel, param,
+#             startdate, enddate, int(page),
+#             timeout=20
+#         )
+
+#         count_task = run_influx_query(
+#             count_search_records_event_optimized,
+#             "events", channel, param,
+#             startdate, enddate,
+#             timeout=10
+#         )
+
+#         result, countDict = await asyncio.gather(data_task, count_task)
+
+#         # 데이터 포맷팅
+#         for i in range(len(result)):
+#             if isinstance(result[i]["time"], datetime):
+#                 timestamp = result[i]["time"].timestamp()
+#             else:
+#                 timestamp = float(result[i]["time"])
+
+#             # duration을 초 단위로 변환 (밀리초인 경우)
+#             duration_seconds = float(result[i]["duration"]) / 1000.0
+
+#             # 종료 시간 계산
+#             end_timestamp = timestamp + duration_seconds
+#             end_datetime = datetime.fromtimestamp(end_timestamp)
+
+#             # 포맷팅
+#             result[i]["end_ts"] = format_influx_militime(end_datetime)
+#             result[i]["start_ts"] = format_influx_militime(result[i]["time"])
+
+#         return {
+#             "success": True,
+#             "data": result,
+#             "totalRecord": countDict['total_records'],
+#             "totalPages": countDict['total_pages']
+#         }
+
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logging.error(f"Error in get_eventSearch: {e}")
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "data": [],
+#             "totalRecord": 0,
+#             "totalPages": 0
+#         }
 # @router.get("/getAlarms/{channel}/{page}")
 # async def get_alarms(channel: str, page: int):
 #     """최적화된 알람 조회"""
@@ -2280,14 +2761,15 @@ def getAlarmStatus(channel):
     if redis_state.client.exists(key):
         try:
             harms = redis_state.client.hgetall(key)
-#            harmdict = json.loads(harms)
-#            print(harms)
+            #            harmdict = json.loads(harms)
+            #            print(harms)
             return {"success": True, "data": harms}
         except Exception as e:
             print('error', str(e))
             return {"success": False, "error": "Redis Read Error"}
     else:
         return {"success": False, "error": "No Data"}
+
 
 @router.get("/getEn50160/{channel}")  # get alarm log with redis
 def getEn50160(channel):
@@ -2318,6 +2800,7 @@ def getEn50160(channel):
                 return {"success": False, "error": "Redis Read Error"}
         else:
             return {"success": False, "error": "No Data"}
+
 
 def get_setupContext():
     redis_state.client.select(0)
@@ -2350,6 +2833,7 @@ def get_setupContext():
 
     return setup_dict
 
+
 @router.get("/getITIC/{channel}")
 def get_itic(channel):
     data = getITIC_data("events", channel)
@@ -2369,6 +2853,7 @@ def get_itic(channel):
         return {"success": True, "data": data, "ratedV": ch_ratedvoltage}
     else:
         return {"success": False, "error": "No Data"}
+
 
 def transform_en50160_data(redis_data):
     """Redis 데이터를 Vue 컴포넌트가 기대하는 형식으로 변환"""
@@ -3274,38 +3759,38 @@ def get_all_meter_redis(channel):
         return {"success": False, "error": str(e)}
 
 
-# @router.get("/getEnergyRedis/{channel}")
-# def get_energyReport(channel):
-#     flag = False
-#     filtered_data = dict()
-#     try:
-#         # Redis 데이터 한 번에 로딩
-#
-#         rdkey = get_RedisKey(channel, "meter")
-#
-#         redis_data = load_json_from_redisHash(rdkey, "energy")
-#         # 디코딩
-#         # print(redis_data)
-#         if redis_data:
-#             try:
-#                 filtered_data = {
-#                     key: redis_data.get(key, None)
-#                     for key in (RedisMapped.energy_report or [])
-#                 }
-#                 flag = True
-#
-#             except json.JSONDecodeError:
-#                 flag = False
-#         else:
-#             flag = False
-#         print(filtered_data)
-#         if flag:
-#             return {"success": flag, "data": filtered_data}
-#         else:
-#             return {"success": flag, "error": f"Json Parsing Error"}
-#     except Exception as e:
-#         print(str(e))
-#         return {"success": flag, "error": f"Redis Read Error: {str(e)}"}
+@router.get("/getEnergyRedis/{channel}")
+def get_energyReport(channel):
+    flag = False
+    filtered_data = dict()
+    try:
+        # Redis 데이터 한 번에 로딩
+
+        rdkey = get_RedisKey(channel, "meter")
+
+        redis_data = load_json_from_redisHash(rdkey, "energy")
+        # 디코딩
+        # print(redis_data)
+        if redis_data:
+            try:
+                filtered_data = {
+                    key: redis_data.get(key, None)
+                    for key in (RedisMapped.energy_report or [])
+                }
+                flag = True
+
+            except json.JSONDecodeError:
+                flag = False
+        else:
+            flag = False
+        print(filtered_data)
+        if flag:
+            return {"success": flag, "data": filtered_data}
+        else:
+            return {"success": flag, "error": f"Json Parsing Error"}
+    except Exception as e:
+        print(str(e))
+        return {"success": flag, "error": f"Redis Read Error: {str(e)}"}
 
 
 @router.get("/getEnergy/{channel}")
@@ -4417,7 +4902,8 @@ def get_weekly_load_factor_data(channel: str, end_date: str = None, days: int = 
         for date, stats in daily_stats.items():
             day_data = [item for item in weekly_data if item['date'] == date and item['load_factor_percent'] > 0]
             if day_data:
-                stats['avg_load_factor'] = round(sum(item['load_factor_percent'] for item in day_data) / len(day_data),2)
+                stats['avg_load_factor'] = round(sum(item['load_factor_percent'] for item in day_data) / len(day_data),
+                                                 2)
             if stats['min_load_factor'] == float('inf'):
                 stats['min_load_factor'] = 0
 
@@ -4545,6 +5031,7 @@ def get_heatmap_load_factor_data(channel: str, weeks: int = 4):
             "message": str(e),
             "heatmapData": []
         }
+
 
 def cleanup_executor():
     """프로그램 종료 시 호출"""

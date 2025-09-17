@@ -1,7 +1,7 @@
 <template>
-  <div class="flex items-center justify-between w-full">
+  <div class="flex items-center justify-end w-full">
     <!-- 가운데 정렬된 페이지 정보 -->
-    <div class="flex-1 text-center text-sm text-gray-500">
+    <!--div class="flex-1 text-center text-sm text-gray-500">
       Showing 
       <span class="font-medium text-gray-600 dark:text-white">{{ curPage }}</span> 
       to 
@@ -9,13 +9,13 @@
       of 
       <span class="font-medium text-gray-600 dark:text-white">{{ record }}</span> 
       results
-    </div>
+    </div-->
 
     <!-- 오른쪽 정렬된 Prev/Next 버튼 -->
     <nav role="navigation" aria-label="Navigation">
       <ul class="flex">
         <li class="ml-3 first:ml-0">
-          <span v-if="curPage == 1" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600">
+          <span v-if="!showPrev" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600">
             &lt;- Previous
           </span>
           <a v-else @click="movePrev" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-white" href="#0">
@@ -23,7 +23,7 @@
           </a>
         </li>
         <li class="ml-3 first:ml-0">
-          <span v-if="curPage == pages" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600">
+          <span v-if="!showNext" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 text-gray-300 dark:text-gray-600">
             Next -&gt;
           </span>
           <a v-else @click="moveNext" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-white" href="#0">
@@ -41,8 +41,10 @@ export default {
   name: 'PaginationClassic',
   props:['channel'],
   setup(props){
-    const record = inject('totalRecord');
-    const pages = inject('totalPages');
+    const showPrev = inject('showPrev');
+    const showNext = inject('showNext');
+
+    console.log('PaginationClassic - showPrev:', showPrev.value, 'showNext:', showNext.value);
     const channel = ref(props.channel);
     const curPage = inject('curPage');
     const moveNext = ()=>{
@@ -54,12 +56,14 @@ export default {
     };
 
     return {
-      record,
-      pages,
+      //record,
+      //pages,
       channel,
       curPage,
       movePrev,
       moveNext,
+      showPrev,
+      showNext,
     }
   }
 }

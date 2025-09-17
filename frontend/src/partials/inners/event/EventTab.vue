@@ -3,7 +3,7 @@
 
     <!-- Pagination -->
     <div class="mt-8">
-        <PaginationClassic v-if="totalPages > 1" :channel="channel" :mode="mode" />
+        <PaginationClassic v-if="showNext || showPrev" :channel="channel" :mode="mode" />
     </div>
 </template>
   <script>
@@ -25,6 +25,8 @@ export default {
     const alarmData = ref([]);
     const totalRecord = ref(0);
     const totalPages = ref(1);
+    const showPrev = ref(false);
+    const showNext = ref(false);
     const curPage = ref(1);
     const param = ref(-1);
     const start = ref('');
@@ -73,6 +75,8 @@ export default {
           }
           totalRecord.value = response.data.totalRecord;
           totalPages.value = response.data.totalPages;
+          showPrev.value = response.data.hasPrev;
+          showNext.value = response.data.hasNext;
         }else{
           //alert('No Data');
         }
@@ -121,8 +125,10 @@ export default {
             const endtime = tmpList[i]["end_ts"];
             eventData.value.push({"Type":tmpList[i]["event_type"] ,"StartTime":tmpList[i]["start_ts"], "Duration":tmpList[i]["duration"],"EndTime":endtime,"Phase":phase, "Level":levelstr});
           }
-          totalRecord.value = response.data.totalRecord;
-          totalPages.value = response.data.totalPages;
+          // totalRecord.value = response.data.totalRecord;
+          // totalPages.value = response.data.totalPages;
+          showPrev.value = response.data.hasPrev;
+          showNext.value = response.data.hasNext;
           curPage.value = pg;
         }else{
           alert('No Data');
@@ -138,8 +144,10 @@ export default {
         const response = await axios.get(`/api/getAlarms/${ch}/${pg}`);
         if(response.data.success){
           eventData.value = response.data.data;
-          totalRecord.value = response.data.totalRecord;
-          totalPages.value = response.data.totalPages;
+          showPrev.value = response.data.hasPrev;
+          showNext.value = response.data.hasNext;
+          // totalRecord.value = response.data.totalRecord;
+          // totalPages.value = response.data.totalPages;
         }else{
           //alert('No Data');
         }
@@ -160,8 +168,10 @@ export default {
         });
         if(response.data.success){
           eventData.value = response.data.data;
-          totalRecord.value = response.data.totalRecord;
-          totalPages.value = response.data.totalPages;
+          showPrev.value = response.data.hasPrev;
+          showNext.value = response.data.hasNext;
+          // totalRecord.value = response.data.totalRecord;
+          // totalPages.value = response.data.totalPages;
           curPage.value = pg;
         }else{
           alert('No Data');
@@ -186,6 +196,8 @@ export default {
     provide('search',search)
     provide('totalPages',totalPages);
     provide('totalRecord',totalRecord);
+    provide('showPrev',showPrev);
+    provide('showNext',showNext);
     provide('period',period);
     provide('parameter',parameter);
 
@@ -247,6 +259,8 @@ export default {
       search,
       period,
       parameter,
+      showPrev,
+      showNext,
     }
   }
 }
