@@ -45,7 +45,8 @@
           <select
             v-if="typeof value === 'boolean'"
             v-model="diagnosisData[key]"
-            class="form-select w-full"
+            :disabled="isReadonlyField(key)"
+            :class="['form-select w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
           >
             <option :value="true">True</option>
             <option :value="false">False</option>
@@ -56,7 +57,8 @@
             v-else-if="Array.isArray(value)"
             :value="diagnosisData[key].join(', ')"
             @input="onArrayInput($event, key)"
-            class="form-input w-full"
+            :readonly="isReadonlyField(key)"
+            :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="text"
           />
 
@@ -64,7 +66,8 @@
           <input
             v-else-if="typeof value === 'number'"
             v-model.number="diagnosisData[key]"
-            class="form-input w-full"
+            :readonly="isReadonlyField(key)"
+            :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="number"
           />
 
@@ -72,7 +75,8 @@
           <input
             v-else
             v-model="diagnosisData[key]"
-            class="form-input w-full"
+            :readonly="isReadonlyField(key)"
+            :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="text"
           />
         </div>
@@ -102,24 +106,19 @@
             <select
               v-if="typeof value === 'boolean'"
               v-model="advancedData[key]"
-              class="form-select w-full"
+              :disabled="isReadonlyField(key)"
+              :class="['form-select w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             >
               <option :value="true">True</option>
               <option :value="false">False</option>
             </select>
 
             <!-- Array → Comma-separated Text -->
-            <!--input
-              v-else-if="Array.isArray(value)"
-              :value="advancedData[key].join(', ')"
-              @input="onArrayInput($event, key)"
-              class="form-input w-full"
-              type="text"
-            /-->
             <input
               v-else-if="Array.isArray(value)"
               v-model="arrayBufferMap[key]"
-              class="form-input w-full"
+              :readonly="isReadonlyField(key)"
+              :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="text"
             />
 
@@ -127,7 +126,8 @@
             <input
               v-else-if="typeof value === 'number'"
               v-model.number="advancedData[key]"
-              class="form-input w-full"
+              :readonly="isReadonlyField(key)"
+              :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="number"
             />
 
@@ -135,7 +135,8 @@
             <input
               v-else
               v-model="advancedData[key]"
-              class="form-input w-full"
+              :readonly="isReadonlyField(key)"
+              :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="text"
             />
           </div>
@@ -188,7 +189,17 @@ const props = defineProps({
   }
 });
 
+// Readonly fields configuration
+const readonlyFields = ['DBUrl', 'Token', 'DBOrganization', 'InfluxPath'];
+
+const isReadonlyField = (key) => {
+  return readonlyFields.includes(key);
+};
+
 function onArrayInput(event, key) {
+  // Skip processing if field is readonly
+  if (isReadonlyField(key)) return;
+  
   const val = event.target.value;
   advancedData[key] = val
     .split(',')
@@ -227,6 +238,9 @@ watchEffect(() => {
 
   function onSaveAdvanced() {
   for (const key in arrayBufferMap.value) {
+    // Skip processing readonly fields
+    if (isReadonlyField(key)) continue;
+    
     const raw = arrayBufferMap.value[key];
     const parsed = raw
       .split(',')
