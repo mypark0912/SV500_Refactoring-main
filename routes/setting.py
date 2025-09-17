@@ -56,10 +56,9 @@ def read_mac_plain(filepath):
 async def checkInitDB():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     if not os.path.exists(file_path):
-        ret = await initInflux()
-        return {'result': True, 'Inited': ret['success']}
-    else:
         return {'result': False}
+    else:
+        return {'result': True}
 
 @router.get('/initDB')
 async def initInflux():
