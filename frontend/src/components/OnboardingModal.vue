@@ -329,6 +329,29 @@
               >
                 Cancel
               </button>
+              <div v-if="isRestarting" class="flex items-center text-sm text-blue-600">
+                <svg
+                  class="animate-spin w-4 h-4 mr-2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                {{ restartMessage }}
+              </div>
               <button
                 type="button"
                 class="btn"
@@ -1071,6 +1094,8 @@ export default {
     const subWaveformDataT = ref([]);
     const subWaveformLabelT = ref([]);
     const selectedSubChart = ref("Time Domain(Voltage)");
+    const isRestarting = ref(false);
+    const restartMessage = ref('');
 
     // Chart types
     const ChartTypes = ref([
@@ -1347,6 +1372,8 @@ export default {
           const rest = await restartDevice();
 
           if(rest && (nextStepId === 2 || nextStepId === 3)){
+            isRestarting.value = true;
+            restartMessage.value = 'Waiting for acquire waveform file';
               const response2 = await axios.get(`/setting/trigger`);
                 if (!response2.data.success) {
                   const errorMessage = response2.data.error || "waveform file trigger failed. Please try again.";
@@ -1395,8 +1422,12 @@ export default {
 
     const restartDevice = async() =>{
       try{
+        isRestarting.value = true;
+        restartMessage.value = 'Waiting for restart firmware';
+
         const response = await axios.get(`/setting/restartdevice`);
           if (response.data.success) {
+            await new Promise(resolve => setTimeout(resolve, 4000));
             return true;
           }else{
             return false;
@@ -1532,6 +1563,8 @@ export default {
       diagnosis_sub,
       getWaveShow,
       restartDevice,
+      isRestarting,
+      restartMessage,
     };
   },
 };

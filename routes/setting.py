@@ -60,25 +60,26 @@ async def checkInitDB():
     else:
         return {'result': True}
 
+
 @router.get('/initDB')
 async def initInflux():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     data = {
-          "username": "admin",
-          "password": "ntek9135",
-          "org": "ntek",
-          "bucket": "ntek",
-          "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
-        }
+        "username": "admin",
+        "password": "ntek9135",
+        "org": "ntek",
+        "bucket": "ntek",
+        "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
+    }
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://127.0.0.1:8086/api/v2/setup", json=data)
             resData = response.json()
             cipher = aesState.encrypt(resData.get("auth").get("token"))
             influxdata = {
-                "token" : cipher,
-                "org" : resData.get("org").get("name"),
-                "retention":data.get("retentionPeriodSeconds")
+                "token": cipher,
+                "org": resData.get("org").get("name"),
+                "retention": data.get("retentionPeriodSeconds")
             }
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
@@ -89,42 +90,47 @@ async def initInflux():
 
         if influx_state.error:
             return {"success": False, "message": influx_state.error}
-
-        return {"success": True, "message": "InfluxDB initialized successfully"}
+        set_cli = init_influxcli()
+        sysService('restart', 'InfluxDB')
+        if set_cli['status']:
+            return {"success": True, "message": "InfluxDB initialized successfully"}
+        else:
+            return {"success": True, "message": "InfluxDB initialized but check Influx CLI environment variables"}
     except Exception as e:
         logging.error(f"❌ Influxdb Init Error: {e}")
         influx_state.client = None
         influx_state.error = f"Exception during init: {str(e)}"
         return {"success": False, "message": influx_state.error}
 
+
 @router.get("/initInfluxCLI")
 def init_influxcli():
     try:
-        config = influx_state.getInflux()
-        token = influx_state.decrypt(config["cipher"])
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
 
-        # 토큰 검증 (보안)
+        # 토큰 검증
         if not token or token == "":
             return {
                 "status": False,
                 "message": "No exist Influxdb Token"
             }
 
-        # 특수문자 이스케이프 (보안)
-        token = token.replace('"', '\\"')
-        org = config['org'].replace('"', '\\"')
+        # 더 안전한 이스케이프 처리
+        import shlex
+        token_escaped = shlex.quote(token)
+        org_escaped = shlex.quote(config['org'])
 
-        script_content = f"""export INFLUX_TOKEN="{token}"
-export INFLUX_HOST="http://localhost:8086"
-export INFLUX_ORG="{org}"
-export INFLUX_BUCKET="ntek"
-"""
-
-        # 파일 생성 및 권한 설정을 한 번에
+        # 파일 생성, 권한 설정, source 적용을 한 번에
         full_command = f"""
 cat > /etc/profile.d/influx.sh << 'EOF'
-{script_content}EOF
+export INFLUX_TOKEN={token_escaped}
+export INFLUX_HOST="http://localhost:8086"
+export INFLUX_ORG={org_escaped}
+export INFLUX_BUCKET="ntek"
+EOF
 chmod +x /etc/profile.d/influx.sh
+source /etc/profile.d/influx.sh
 """
 
         result = subprocess.run(
@@ -143,21 +149,120 @@ chmod +x /etc/profile.d/influx.sh
         })
 
         return {
-            "status": "success",
-            "message": "InfluxDB CLI 환경변수 설정 완료",
+            "status": True,
+            "message": "InfluxDB CLI environment initiated.",
             "file": "/etc/profile.d/influx.sh"
         }
 
     except subprocess.CalledProcessError as e:
         return {
             "status": False,
-            "message": "Failed execution command"
+            "message": f"Command failed: {e.stderr if e.stderr else str(e)}"
         }
     except Exception as e:
         return {
             "status": False,
-            "message": str(e)
+            "message": f"Error: {str(e)}"
         }
+
+# @router.get('/initDB')
+# async def initInflux():
+#     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+#     data = {
+#           "username": "admin",
+#           "password": "ntek9135",
+#           "org": "ntek",
+#           "bucket": "ntek",
+#           "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
+#         }
+#     try:
+#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
+#             response = await client.post(f"http://127.0.0.1:8086/api/v2/setup", json=data)
+#             resData = response.json()
+#             cipher = aesState.encrypt(resData.get("auth").get("token"))
+#             influxdata = {
+#                 "token" : cipher,
+#                 "org" : resData.get("org").get("name"),
+#                 "retention":data.get("retentionPeriodSeconds")
+#             }
+#         with open(file_path, "w", encoding="utf-8") as f:
+#             json.dump(influxdata, f, indent=4)
+#
+#         # init_influx()  # ✅ 초기화 수행 (json 생성 + client 전역 등록)
+#         if influx_state.client is None:
+#             return {"result": False}
+#
+#         if influx_state.error:
+#             return {"success": False, "message": influx_state.error}
+#
+#         return {"success": True, "message": "InfluxDB initialized successfully"}
+#     except Exception as e:
+#         logging.error(f"❌ Influxdb Init Error: {e}")
+#         influx_state.client = None
+#         influx_state.error = f"Exception during init: {str(e)}"
+#         return {"success": False, "message": influx_state.error}
+#
+# @router.get("/initInfluxCLI")
+# def init_influxcli():
+#     try:
+#         config = influx_state.getInflux()
+#         token = influx_state.decrypt(config["cipher"])
+#
+#         # 토큰 검증 (보안)
+#         if not token or token == "":
+#             return {
+#                 "status": False,
+#                 "message": "No exist Influxdb Token"
+#             }
+#
+#         # 특수문자 이스케이프 (보안)
+#         token = token.replace('"', '\\"')
+#         org = config['org'].replace('"', '\\"')
+#
+#         script_content = f"""export INFLUX_TOKEN="{token}"
+# export INFLUX_HOST="http://localhost:8086"
+# export INFLUX_ORG="{org}"
+# export INFLUX_BUCKET="ntek"
+# """
+#
+#         # 파일 생성 및 권한 설정을 한 번에
+#         full_command = f"""
+# cat > /etc/profile.d/influx.sh << 'EOF'
+# {script_content}EOF
+# chmod +x /etc/profile.d/influx.sh
+# """
+#
+#         result = subprocess.run(
+#             ['sudo', 'bash', '-c', full_command],
+#             check=True,
+#             capture_output=True,
+#             text=True
+#         )
+#
+#         # 현재 프로세스 환경변수 설정
+#         os.environ.update({
+#             'INFLUX_TOKEN': token,
+#             'INFLUX_HOST': "http://localhost:8086",
+#             'INFLUX_ORG': config['org'],
+#             'INFLUX_BUCKET': "ntek"
+#         })
+#
+#         return {
+#             "status": True,
+#             "message": "InfluxDB CLI Initiated",
+#             "file": "/etc/profile.d/influx.sh"
+#         }
+#
+#     except subprocess.CalledProcessError as e:
+#         return {
+#             "status": False,
+#             "message": "Failed execution command"
+#         }
+#     except Exception as e:
+#         return {
+#             "status": False,
+#             "message": str(e)
+#         }
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
