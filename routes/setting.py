@@ -92,6 +92,10 @@ async def initInflux():
             return {"success": False, "message": influx_state.error}
         set_cli = init_influxcli()
         sysService('restart', 'InfluxDB')
+        sysMdoe = redis_state.client.hget("System", "mode")
+        if sysMdoe != 'device0':
+            sysService('restart', 'SmartSystems')
+            sysService('restart', 'SmartAPI')
         if set_cli['status']:
             return {"success": True, "message": "InfluxDB initialized successfully"}
         else:
