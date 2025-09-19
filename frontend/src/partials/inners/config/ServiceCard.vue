@@ -7,7 +7,7 @@
                     <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold mr-4">{{ itemDict[item] }}</h3>
                     
                     <!-- Redis, InfluxDB,'Core', 'WebServer' 상태 -->
-                    <template v-if="['Redis', 'InfluxDB','Core', 'WebServer' ].includes(item)">
+                    <template v-if="['Redis', 'InfluxDB','Core', 'WebServer','SmartSystems', 'SmartAPI' ].includes(item)">
                       <span v-if="health" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
                          Running
                       </span>
@@ -17,7 +17,7 @@
                     </template>
 
                     <!--  SmartSystems, SmartAPI상태 (App 카테고리) -->
-                    <template v-if="['SmartSystems', 'SmartAPI'].includes(item)">
+                    <!-- <template v-if="['SmartSystems', 'SmartAPI'].includes(item)">
                       <template v-if="DiagState">
                         <span v-if="health" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
                            Running
@@ -31,7 +31,7 @@
                           Disabled
                         </span>
                       </template>
-                    </template>
+                    </template> -->
 
                     <!-- 기존 DBMS 상태 -->
                     <template v-if="item == 'DBMS'">
