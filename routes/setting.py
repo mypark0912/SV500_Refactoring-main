@@ -889,11 +889,13 @@ async def get_assetlist(request: Request):
     #         else:
     #             response = await client.get(f"http://{os_spec.restip}:5000/api/getAssetHierarchy")
     #             datas = response.json()
+    
+
     if len(datas) > 0:
         grouped = defaultdict(list)
         for item in datas:
-            aid = item["AssemblyID"]
-            if aid is not None and aid != "null":
+            aid = item["AssemblyType"]
+            if aid is not None and aid != "null" and item["AssemblyID"] !="null" and item["Name"] !="Plant":
                 grouped[aid].append({
                     "Name": item["Name"],
                     "Type": aid
