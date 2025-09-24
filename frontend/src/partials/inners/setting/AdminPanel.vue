@@ -9,7 +9,7 @@
     <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl">
       <AccountPanel v-if="channel =='Profile'" />
       <BillingPanel v-else-if="channel == 'User'" />
-      <APIPanel v-else-if="channel == 'APIUser' && APIUse" />
+      <APIPanel v-else-if="channel == 'APIUser' && APIUse && false" />
     </div>
   </div>
 </template>

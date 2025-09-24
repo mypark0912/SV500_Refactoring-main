@@ -28,7 +28,7 @@
           </div>
         </div>
         </section>
-        <section v-if="!devMode && (userRole =='2' || userRole =='3')">
+        <section v-if="!devMode && (userRole =='2' || userRole =='3') && false">
           <div class="flex flex-col w-full max-w-md">
             <label for="email" class="text-sm font-medium text-gray-700 dark:text-white mb-2">
               {{ t('User.profile.useAPI') }}
