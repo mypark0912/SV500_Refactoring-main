@@ -90,7 +90,7 @@
               >
                 <!-- Name -->
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
-                  {{ row.Title }}
+                  {{ row.Titles[locale] }}
                 </div>
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
                   {{ row.AssemblyID }}
@@ -150,7 +150,7 @@
                 class="grid grid-cols-[30%_10%_1fr_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
               >
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
-                  {{ row.Title }}
+                  {{ row.Titles[locale] }}
                 </div>
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
                   {{ row.AssemblyID }}
@@ -405,11 +405,12 @@ import ModalBasic from "../../../pages/common/ModalBasic.vue";
 import SearchModal from "../../../pages/common/SearchModal.vue";
 import axios from "axios";
 import { useAuthStore } from "@/store/auth"; // ✅ Pinia store 사용
-
+import { useI18n } from "vue-i18n";
 defineProps({
   channel: String,
 });
 const authStore = useAuthStore(); // ✅ Pinia store 사용
+const { locale } = useI18n();
 const inputDict = inject("channel_inputDict");
 const tableData = inject("tableData");
 const modalData = inject("modalData");

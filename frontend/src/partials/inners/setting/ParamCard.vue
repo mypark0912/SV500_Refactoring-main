@@ -38,7 +38,7 @@
                 >
                     <div class="text-left" hidden>{{ row.originalIndex }}</div>
                     <!-- Name -->
-                    <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Title }}</div>
+                    <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.Titles[locale] }}</div>
                     <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ row.AssemblyID }}</div>
                     <!-- Value 입력 -->
                      <div v-if="row.DefaultThresholds">
@@ -74,11 +74,12 @@
 import { inject, defineProps, computed, onMounted, watch } from 'vue'
 import axios from 'axios';
 import { useAuthStore } from "@/store/auth"; // ✅ Pinia store 사용
-
+import { useI18n } from "vue-i18n";
 defineProps({
   channel: String
 })
 // const authStore = useAuthStore(); // ✅ Pinia store 사용
+const { locale } = useI18n();
 const inputDict = inject('channel_inputDict')
 const paramData = inject('paramData');
 const isEditParameters = inject('isEditParameters');
