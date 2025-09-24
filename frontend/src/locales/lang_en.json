@@ -606,6 +606,21 @@
                 "hysteresis":"Hysteresis"       
 
 
+            },
+            "Diagnosis":{
+                "title":"Diagnostic asset management",
+                "AddAsset":"Add Asset",
+                "UnregisterAsset":"Unregister Asset",
+                "registerAsset":"Register Asset",
+                "NameChange":"Name Change",
+                "DeleteAsset":"Delete Asset",
+                "AssetName":"Asset Name",
+                "AssetType":"Asset Type",
+                "EquipmentName":"Equipment Name",
+                "transformerCapacity":"Transformer Capacity",
+                "EditConfiguration":"Edit Configuration"
+
+
             }
 
         },
