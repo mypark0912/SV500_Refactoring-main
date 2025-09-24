@@ -52,6 +52,11 @@ def read_mac_plain(filepath):
         # 구분자 없이 반환
         return mac_bytes.hex().lower()  # 더 간단한 방법
 
+@router.get('/getMac')
+def getMacAddr():
+    devMac = get_mac_address()
+    return {'success':True, 'mac': devMac}
+
 @router.get('/checkInitDB')
 async def checkInitDB():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
@@ -350,13 +355,14 @@ def check_setupfile(request: Request):
     file_path = os.path.join(SETTING_FOLDER, 'setup.json')
     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
     deviceMac = get_mac_address()
+    ser = ''
     if os_spec.os != 'Windows':
         mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
         if os.path.exists(mac_file_path):
             ser = read_mac_plain(mac_file_path)
 
-            if ser != deviceMac:
-                deviceMac = ser
+            # if ser != deviceMac:
+            #     deviceMac = ser
 
     if redis_state.client is None:
         return {"result": "0", "error": "Redis not available"}
@@ -379,7 +385,11 @@ def check_setupfile(request: Request):
             # deviceMac = get_mac_address()
             if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
                 setting["General"]["deviceInfo"]["mac_address"] = deviceMac
-                setting["General"]["deviceInfo"]["serial_number"] = deviceMac
+            if ser != '':
+                setting["General"]["deviceInfo"]["serial_number"] = ser
+            else:
+                setting["General"]["deviceInfo"]["mac_address"] = deviceMac
+
         else:
             # Redis에 없으면 파일에서 읽어서 Redis에 저장
             try:
@@ -395,7 +405,11 @@ def check_setupfile(request: Request):
             # deviceMac = get_mac_address()
             if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
                 setting["General"]["deviceInfo"]["mac_address"] = deviceMac
-                setting["General"]["deviceInfo"]["serial_number"] = deviceMac
+                # setting["General"]["deviceInfo"]["serial_number"] = deviceMac
+            if ser != '':
+                setting["General"]["deviceInfo"]["serial_number"] = ser
+            else:
+                setting["General"]["deviceInfo"]["mac_address"] = deviceMac
 
             redis_state.client.hset("System", "setup", json.dumps(setting))
             if "mode" in setting:
@@ -1199,12 +1213,13 @@ def initialize_alarm_configs(channel, alams):
 @router.post('/savefile/{channel}')  # save setup.json
 async def saveSetting(channel: str, request: Request):
     deviceMac = get_mac_address()
+    ser=''
     if os_spec.os != 'Windows':
         mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
         if os.path.exists(mac_file_path):
             ser = read_mac_plain(mac_file_path)
-            if ser != deviceMac:
-                deviceMac = ser
+            # if ser != deviceMac:
+            #     deviceMac = ser
     redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
@@ -1246,6 +1261,10 @@ async def saveSetting(channel: str, request: Request):
         # 업데이트된 설정을 파일에 저장 (덮어쓰기)
         if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
             setting["General"]["deviceInfo"]["mac_address"] = deviceMac
+            # setting["General"]["deviceInfo"]["serial_number"] = deviceMac
+        if ser != '':
+            setting["General"]["deviceInfo"]["serial_number"] = ser
+        else:
             setting["General"]["deviceInfo"]["serial_number"] = deviceMac
 
         with open(FILE_PATH, "w", encoding="utf-8") as f:
