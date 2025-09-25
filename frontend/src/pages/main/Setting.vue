@@ -19,7 +19,19 @@
             <h2
               class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"
             >
-              {{ t("config.sitemap.title") }} >
+              <template
+                v-if="
+                  ![
+                    'User Management',
+                    'API User Management',
+                    'Account',
+                    'User',
+                    'maintenance'
+                  ].includes(formattedChannel)
+                "
+              >
+                {{ t("config.sitemap.title") }} >
+              </template>
               {{ t(`config.sitemap.${formattedChannel}`) }}
             </h2>
           </div>
@@ -514,7 +526,8 @@ export default {
     function askNameplateConfirm(channels) {
       const channelList = channels.join(", ");
       nameplateConfirmMessage.value =
-        t("config.comfirmtext1")+` ${channelList}.\n` +
+        t("config.comfirmtext1") +
+        ` ${channelList}.\n` +
         t("config.comfirmtext2");
       showNameplateConfirm.value = true;
 
@@ -802,9 +815,7 @@ export default {
 
     const restart = async () => {
       try {
-        const response = await axios.get(
-          `/setting/restartasset`
-        );
+        const response = await axios.get(`/setting/restartasset`);
         //console.log("Restart Response:", response);
 
         if (response.data.status === "1") {

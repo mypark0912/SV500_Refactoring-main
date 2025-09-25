@@ -19,7 +19,19 @@
               <h2
                 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold mb-3"
               >
+
+              <template
+                v-if="
+                  ![                   
+                    'Maintenance'
+                  ].includes(formattedChannel)
+                "
+              >
                 {{ t('sidebar.setup') }}  > 
+              </template>
+
+
+                
                 {{ t(`config.sitemap.${formattedChannel}`) }}
               </h2>
             </div>
