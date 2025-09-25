@@ -58,7 +58,7 @@
           </button>
           <button
             v-if="
-              authStore.getUserRole !== '1' || authStore.getUserRole !== '0'
+              isAdmin
             "
             @click="showAdvancedModal = true"
             class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
