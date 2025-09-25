@@ -52,7 +52,7 @@
               <span>{{ t('header.user') }}</span>
             </router-link>
           </li>
-          <li v-if="isAdmin">
+          <li v-if="isntekAdmin">
             <router-link class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3" to="/config/Maintenance" @click="dropdownOpen = false">
               <span>{{ t('header.maintenance') }}</span>
             </router-link>
@@ -88,7 +88,16 @@ export default {
     const user = computed(() => authStore?.getUser || ''); // ✅ undefined 
     const isAdmin = computed(() =>{
       const role = parseInt(authStore?.getUserRole);
+
       if (role > 1)
+        return true;
+      else
+        return false;
+    });
+    const isntekAdmin = computed(() =>{
+      const role = parseInt(authStore?.getUserRole);
+     
+      if (role > 2)
         return true;
       else
         return false;
@@ -166,6 +175,7 @@ export default {
       //langs,
       t,
       isAdmin,
+      isntekAdmin,
     };
   }
 };
