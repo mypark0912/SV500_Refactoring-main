@@ -1284,7 +1284,7 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
     
-@router.get('/restartasset/{flag}')  # save setup.json
+@router.get('/restartasset')  # save setup.json
 async def restartasset(request:Request, flag):
     redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
@@ -1294,28 +1294,23 @@ async def restartasset(request:Request, flag):
     try:
         # redis_state.client.hset("Service","save",1)
         # redis_state.client.hset("Service", "restart", 1)
-        if flag:
-            # response = await  http_state.client.get(f"/isServiceRestartNeeded")
-            # data = response.json()
-            if is_service_active("smartsystemsservice") and is_service_active("smartsystemsrestapiservice"):
-                async with httpx.AsyncClient(timeout=setting_timeout) as client:
-                    response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
-                    data = response.json()
-                    # if response.status_code in [400, 401, 500]:
-                    #     flag = await checkLoginAPI(request)
-                    #     if not flag:
-                    #         return {"success": False, "error": "Restful API Login Failed"}
-                    #     else:
-                    #         response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
-                    #         data = response.json()
-                if data['ServiceRestartRequired']:
-                    return {"status": "1", "success": True}
-                else:
-                    return {"status": "1", "success": False}
+        if is_service_active("smartsystemsrestapiservice"):
+            async with httpx.AsyncClient(timeout=setting_timeout) as client:
+                response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
+                data = response.json()
+                # if response.status_code in [400, 401, 500]:
+                #     flag = await checkLoginAPI(request)
+                #     if not flag:
+                #         return {"success": False, "error": "Restful API Login Failed"}
+                #     else:
+                #         response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
+                #         data = response.json()
+            if data['ServiceRestartRequired']:
+                return {"status": "1", "success": True}
             else:
                 return {"status": "1", "success": False}
         else:
-            return {"status": "1", "success": False}
+            return {"status": "0", "success": False, "error": "RestfulAPI Service is not running"}
     except Exception as e:
         print("Error:", e)
         return {"status": "0", "success": False, "error": "Redis Error"}

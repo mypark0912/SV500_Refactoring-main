@@ -803,7 +803,7 @@ export default {
     const restart = async () => {
       try {
         const response = await axios.get(
-          `/setting/restartasset/${checkNameplateflag.value}`
+          `/setting/restartasset`
         );
         //console.log("Restart Response:", response);
 
