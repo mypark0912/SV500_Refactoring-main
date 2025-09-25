@@ -175,7 +175,7 @@
               @click="createAsset"
               class="bg-gray-500 text-white px-3 py-2 rounded"
             >
-              Create
+              {{ t('config.channelPanel.Diagnosis.CreateAsset') }}
             </button>
             <button
               v-if="selectedbtn >= 1 && false"

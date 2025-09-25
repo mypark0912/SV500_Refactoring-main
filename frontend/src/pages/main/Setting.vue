@@ -514,8 +514,8 @@ export default {
     function askNameplateConfirm(channels) {
       const channelList = channels.join(", ");
       nameplateConfirmMessage.value =
-        `The changed settings will delete all previous calculations for ${channelList}.\n` +
-        `Would you like to proceed?`;
+        t("config.comfirmtext1")+` ${channelList}.\n` +
+        t("config.comfirmtext2");
       showNameplateConfirm.value = true;
 
       return new Promise((resolve) => {

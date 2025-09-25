@@ -501,6 +501,8 @@
         }
     },
     "config": {
+        "comfirmtext1":"The changed settings will delete all previous calculations for",
+        "comfirmtext2":"Would you like to proceed?",
         "sitemap": {
             "title": "Configuration",
             "Main Channel": "Main Channel",
@@ -618,7 +620,8 @@
                 "AssetType":"Asset Type",
                 "EquipmentName":"Equipment Name",
                 "transformerCapacity":"Transformer Capacity",
-                "EditConfiguration":"Edit Configuration"
+                "EditConfiguration":"Edit Configuration",
+                "CreateAsset":"Create"
 
 
             }

@@ -495,6 +495,8 @@
     }
   },
   "config": {
+    "comfirmtext1":"설비 주요 설정 변경 시 이전의 계산값이 모두 삭제됩니다.",
+    "comfirmtext2":"계속 진행하시겠습니까?",
     "sitemap": {
       "title": "설정",
       "Main Channel": "주채널",
@@ -605,7 +607,8 @@
                 "AssetType":"설비 타입",
                 "EquipmentName":"장비 이름",
                 "transformerCapacity":"변압기 수용량",
-                "EditConfiguration":"수정 여부"
+                "EditConfiguration":"수정 여부",
+                "CreateAsset":"생성"
             }
     },
     "system": {
