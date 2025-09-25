@@ -100,7 +100,7 @@
                 <template v-if="row.DataType === 3">
                   <select
                     v-model.number="row.Value"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center cursor-not-allowed"
+                    class="text-xs w-full border rounded p-1 text-center cursor-not-allowed readonly-input"
                     disabled
                   >
                     <option
@@ -117,7 +117,7 @@
                   <input
                     type="text"
                     v-model="row.Value"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center cursor-not-allowed"
+                    class="text-xs w-full border rounded p-1 text-center cursor-not-allowed readonly-input"
                     disabled
                   />
                 </template>
@@ -126,7 +126,7 @@
                   <input
                     v-model.number="row.Value"
                     type="number"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 rounded-md p-1 text-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed"
+                    class="text-xs w-full border rounded-md p-1 text-center cursor-not-allowed readonly-input"
                     :min="getMinValue(row)"
                     :max="getMaxValue(row)"
                     disabled
@@ -160,7 +160,8 @@
                 <template v-if="row.DataType === 3">
                   <select
                     v-model.number="row.Value"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500"
+                    class="text-xs w-full border rounded p-1 text-center"
+                    :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
                   >
                     <option
@@ -180,7 +181,8 @@
                   >
                     <select
                       v-model="row.Value"
-                      class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500"
+                      class="text-xs w-full border rounded p-1 text-center"
+                      :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                       :disabled="!isEditNameplates"
                       @change="onBearingChanged(row)"
                     >
@@ -189,7 +191,10 @@
                       </option>
                     </select>
                     <button
-                      class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                      class="text-xs px-2 py-1 border rounded transition-colors"
+                      :class="!isEditNameplates ? 
+                        'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed' : 
+                        'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200'"
                       :disabled="!isEditNameplates"
                       @click="openSearchModal(row)"
                     >
@@ -200,7 +205,8 @@
                     v-else
                     type="text"
                     v-model="row.Value"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500"
+                    class="text-xs w-full border rounded p-1 text-center"
+                    :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
                   />
                 </template>
@@ -211,7 +217,8 @@
                     v-model.number="row.Value"
                     :min="row.Min"
                     :max="row.Max"
-                    class="text-xs w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded p-1 text-center focus:ring-violet-500 focus:border-violet-500"
+                    class="text-xs w-full border rounded p-1 text-center"
+                    :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
                   />
                 </template>
@@ -338,11 +345,8 @@
               type="number"
               :id="`modal-input-${row.Title}`"
               :disabled="!isEditMode"
-              class="w-full text-center border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 rounded-md px-2 py-1 text-base focus:ring-violet-500 focus:border-violet-500"
-              :class="{
-                'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': !isEditMode,
-                'bg-white dark:bg-gray-800': isEditMode,
-              }"
+              class="w-full text-center border rounded-md px-2 py-1 text-base"
+              :class="!isEditMode ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
             />
             <div
               v-if="row.invalid"
@@ -762,7 +766,29 @@ const validateModalData = () => {
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
-/* 다크모드를 위한 포커스 및 호버 스타일 향상 */
+/* ✅ Readonly Input Styles - 항상 비활성화 (회색 계열) */
+.readonly-input {
+  @apply border-gray-400 dark:border-gray-500 
+         bg-gray-200 dark:bg-gray-700 
+         text-gray-600 dark:text-gray-400;
+}
+
+/* ✅ Disabled Input Styles - 조건부 비활성화 (연한 회색) */
+.disabled-input {
+  @apply border-gray-300 dark:border-gray-600 
+         bg-gray-100 dark:bg-gray-800 
+         text-gray-500 dark:text-gray-400
+         opacity-75;
+}
+
+/* ✅ Enabled Input Styles - 정상 상태 (흰색/어두운 배경) */
+.enabled-input {
+  @apply border-gray-300 dark:border-gray-500 
+         bg-white dark:bg-gray-900 
+         text-gray-800 dark:text-gray-100;
+}
+
+/* 포커스 및 호버 스타일 향상 */
 input:focus,
 select:focus {
   outline: none;
@@ -774,8 +800,20 @@ button:focus {
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5);
 }
 
+/* Disabled 상태에서는 포커스 효과 제거 */
+input:disabled:focus,
+select:disabled:focus {
+  box-shadow: none;
+  outline: none;
+}
+
 /* Edit 모드가 아닐 때 input 비활성화 스타일 */
 input:disabled {
   cursor: not-allowed;
+}
+
+/* Transition 효과 추가 */
+input, select {
+  transition: all 0.2s ease-in-out;
 }
 </style>

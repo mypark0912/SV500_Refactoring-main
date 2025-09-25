@@ -47,14 +47,21 @@
                                 v-if="!isNaNValue(item)"
                                 v-model.number="row.DefaultThresholds[index]"
                                 type="text"
-                                class="text-center border border-gray-300 dark:border-gray-600 rounded-md p-1 w-12 text-xs mr-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-violet-500 focus:border-violet-500"
+                                class="text-center border rounded-md p-1 w-12 text-xs mr-1 transition-all"
+                                :class="!isEditParameters ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                                 :disabled="!isEditParameters"
                             />
                         </template>
                     </div>
                     <div v-else class="text-gray-400 dark:text-gray-500 text-xs italic">No thresholds</div>
                     <div>
-                      <input type="checkbox" v-model="row.Acknowledged" :disabled="!isEditParameters" />
+                      <input 
+                        type="checkbox" 
+                        v-model="row.Acknowledged" 
+                        :disabled="!isEditParameters"
+                        class="transition-all"
+                        :class="!isEditParameters ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
+                      />
                     </div>
                     <div class="text-left text-xs text-gray-800 dark:text-gray-200">{{ checkTestType(row.TestType) }}</div>
                     <!-- Unit -->
@@ -172,14 +179,40 @@ const filteredParamData = computed(() =>
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
+/* ✅ Disabled Input Styles - 조건부 비활성화 */
+.disabled-input {
+  @apply border-gray-300 dark:border-gray-600 
+         bg-gray-100 dark:bg-gray-800 
+         text-gray-500 dark:text-gray-400
+         opacity-75;
+}
+
+/* ✅ Enabled Input Styles - 정상 상태 */
+.enabled-input {
+  @apply border-gray-300 dark:border-gray-500 
+         bg-white dark:bg-gray-900 
+         text-gray-800 dark:text-gray-100;
+}
+
 /* 다크모드를 위한 포커스 및 호버 스타일 향상 */
 input:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5);
 }
 
+/* Disabled 상태에서는 포커스 효과 제거 */
+input:disabled:focus {
+  box-shadow: none;
+  outline: none;
+}
+
 button:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5);
+}
+
+/* Transition 효과 추가 */
+input {
+  transition: all 0.2s ease-in-out;
 }
 </style>
