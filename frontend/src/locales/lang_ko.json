@@ -593,7 +593,20 @@
           "parameter": "발생 요소",
           "conditions": "발생 조건",
           "hysteresis": "편차 범위"
-      }
+      },
+            "Diagnosis":{
+                "title":"진단 설비 관리",
+                "AddAsset":"설비 추가",
+                "UnregisterAsset":"설비 등록 해제",
+                "registerAsset":"설비 등록",
+                "NameChange":"이름 변경",
+                "DeleteAsset":"설비 삭제",
+                "AssetName":"설비 이름",
+                "AssetType":"설비 타입",
+                "EquipmentName":"장비 이름",
+                "transformerCapacity":"변압기 수용량",
+                "EditConfiguration":"수정 여부"
+            }
     },
     "system": {
       "title_1": "주채널 초기화 명령어",

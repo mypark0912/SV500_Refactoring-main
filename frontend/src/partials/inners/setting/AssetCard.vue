@@ -27,7 +27,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Diagnostic asset management : {{ selectedAsset.name }}
+         {{ t('config.channelPanel.Diagnosis.title') }}  : {{ selectedAsset.name }}
         </h3>
       </header>
     </div>
@@ -58,21 +58,21 @@
             @click="addAsset"
             class="bg-blue-500 text-white px-4 py-2 rounded"
           >
-            Add Asset
+           {{ t('config.channelPanel.Diagnosis.AddAsset') }}
           </button>
           <button
             v-if="assetMode.name !== '' && selectedbtn == 2"
             @click="unregisterAsset"
             class="bg-sky-500 text-white px-4 py-2 rounded"
           >
-            Unregister Asset
+           {{ t('config.channelPanel.Diagnosis.UnregisterAsset') }}
           </button>
           <button
             v-if="selectedbtn != 2"
             @click="registerAsset"
             class="bg-green-500 text-white px-4 py-2 rounded"
           >
-            Register Asset
+            {{ t('config.channelPanel.Diagnosis.registerAsset') }}
           </button>
           <!-- <button
             v-if="selectedbtn != 2"
@@ -88,7 +88,7 @@
           <!-- 1행: Asset Type + Asset Name 수평 정렬 -->
           <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center gap-2">
-              <label class="w-24 text-sm font-medium">Asset Type</label>
+              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetType') }}</label>
               <select
                 v-model="assetMode.type"
                 class="form-select w-full bg-gray-100"
@@ -102,7 +102,7 @@
             </div>
 
             <div class="flex items-center gap-2" v-if="selectedbtn >= 1">
-              <label class="w-24 text-sm font-medium">Asset Name</label>
+              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
               <input
                 
                 v-model="assetMode.name"
@@ -112,7 +112,7 @@
               />
             </div>
             <div class="flex items-center gap-2" v-if="selectedbtn == 0">
-              <label class="w-24 text-sm font-medium">Asset Name</label>
+              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
               <input
                 
                 v-model="assetMode.newname"
@@ -125,7 +125,7 @@
           <div class="grid grid-cols-2 gap-4">
            
             <div v-if="showEquip && selectedbtn >= 2" class="flex items-center gap-2">
-              <label class="w-24 text-sm font-medium">Equipment Name</label>
+              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.EquipmentName') }}</label>
               <input
                 v-model="inputDict.assetInfo.nickname"
                 type="text"
@@ -137,7 +137,7 @@
               class="flex items-center gap-2"
             >
               <label class="w-48 text-sm font-medium"
-                >Transformer Capacity</label
+                >{{ t('config.channelPanel.Diagnosis.transformerCapacity') }}</label
               >
               <input
                 v-model="inputDict.n_kva"
@@ -161,14 +161,14 @@
               @click="renameAsset"
               class="bg-gray-500 text-white px-3 py-2 rounded"
             >
-              Name Change
+              {{ t('config.channelPanel.Diagnosis.NameChange') }}
             </button>
             <button
               v-if="selectedbtn == 0"
               @click="showCheckDelete = true"
               class="bg-gray-500 text-white px-3 py-2 rounded"
             >
-              Delete Asset
+              {{ t('config.channelPanel.Diagnosis.DeleteAsset') }}
             </button>
             <button
               v-if="selectedbtn == 1"
@@ -218,7 +218,7 @@
 
         <!-- 4. Edit Configuration 영역 -->
         <div v-if="selectedbtn == 2" class="space-y-3">
-          <label class="text-sm font-medium block">Edit Configuration</label>
+          <label class="text-sm font-medium block">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</label>
           <label class="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -278,6 +278,7 @@ import { useSetupStore } from "@/store/setup"; // ✅ Pinia store 사용
 import TreeRowAsset from "./TreeRowAsset.vue";
 import ModalBasic from "../../../pages/common/ModalBasic.vue";
 import { useI18n } from "vue-i18n"; 
+const { t } = useI18n();
 const { locale } = useI18n();
 const inputDict = inject("channel_inputDict");
 const changeDiagnosis = inject("changeDiagnosis");

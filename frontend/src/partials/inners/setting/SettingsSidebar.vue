@@ -60,7 +60,7 @@
 
         <!-- API User Tab (conditional) -->
         <router-link 
-          v-if="api && isNtek" 
+          v-if="api && isNtek && false" 
           to="/settings/Account/APIUser" 
           custom 
           v-slot="{ href, navigate, isExactActive }"
