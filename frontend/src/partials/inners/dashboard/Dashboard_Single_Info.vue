@@ -211,7 +211,7 @@ export default {
          if(chName != ''){
 
            try {
-             const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
+            const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${computedChannel.value}`);
 
              if (response.data.success) {
                 transData.value = response.data.data;

@@ -145,7 +145,7 @@ export default {
     const fetchRealData = async (chType, chName) => {
       transData.value = {};
       try {
-          const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
+        const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
 
           if (response.data.success) {
 

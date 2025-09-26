@@ -69,7 +69,8 @@ export default {
       try {
         //const ch = 'Fan';
         //console.log('locale...............=',locale.value);
-        const response = await axios.get(`/api/getDiagnosisDetail/${chName}`);
+        //const response = await axios.get(`/api/getDiagnosisDetail/${chName}`);
+        const response = await axios.get(`/api/getDiagnosisCached/${channel.value}/${chName}`);
         //console.log('Title...........='+response.data.data_status[0]["Titles"][locale.value])
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
