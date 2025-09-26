@@ -1534,6 +1534,8 @@ export default {
       );
     });
 
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     // Navigation functions
     const nextStep = async () => {
       // 현재 단계가 Main Test이고 에러가 있으면 진행 불가
@@ -1573,8 +1575,10 @@ export default {
 
         // Load data when entering main or sub test steps
         if (nextStepId === 2 && diagnosis_main.value) {
+          await delay(2000);
           await getCommision("main");
         } else if (nextStepId === 3 && diagnosis_sub.value) {
+          await delay(2000);
           await getCommision("sub");
         }
       }
@@ -1609,7 +1613,8 @@ export default {
 
         const response = await axios.get(`/setting/restartdevice`);
         if (response.data.success) {
-          await new Promise((resolve) => setTimeout(resolve, 4000));
+          //await new Promise((resolve) => setTimeout(resolve, 4000));
+          await delay(4000);
           return true;
         } else {
           return false;
