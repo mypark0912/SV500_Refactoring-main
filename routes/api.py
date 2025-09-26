@@ -406,6 +406,81 @@ def proc_eventFaultData(datas):
     ret = {"data_status": statuslist, "data_tree": superlist}
     return ret
 
+def proc_DiagnosisData_optimized(datas):
+    import time
+    start = time.time()
+
+    # 1. NodeType 집합으로 변환 (O(1) 조회)
+    superNodes = {item["NodeType"] for item in datas["BarGraph"]}
+
+    # 2. ParentID로 인덱싱 (O(n) -> O(1) 조회)
+    children_by_parent = {}
+    for item in datas["TreeList"]:
+        parent_id = item["ParentID"]
+        if parent_id not in children_by_parent:
+            children_by_parent[parent_id] = []
+        children_by_parent[parent_id].append(item)
+
+    # 3. superlist 생성 (한 번만 순회)
+    superlist = []
+    for item in datas["TreeList"]:
+        if item["NodeType"] in superNodes:
+            superdict = {
+                "ID": item["ID"],
+                "Name": item["Name"],
+                "Title": item["Title"],
+                "Titles": item["Titles"],
+                "AssemblyID": item["AssemblyID"],
+                "Description": item["Description"],
+                "Descriptions": item["Descriptions"],
+                "Path": item["Path"],
+                "Status": item["Status"],
+                "Value": item["Value"],
+                "isParent": True
+            }
+
+            # 4. 자식들 바로 추가 (인덱스 활용)
+            if item["ID"] in children_by_parent:
+                superdict["children"] = []
+                for child in children_by_parent[item["ID"]]:
+                    child_dict = {
+                        "ID": child["ID"],
+                        "Name": child["Name"],
+                        "Title": child["Title"],
+                        "Titles": child["Titles"],
+                        "AssemblyID": child["AssemblyID"],
+                        "Description": child["Description"],
+                        "Descriptions": child["Descriptions"],
+                        "Status": child["Status"],
+                        "Value": child["Value"],
+                        "NodeType": child["NodeType"],
+                        "isSub": child["NodeType"] == 10
+                    }
+
+                    # 5. NodeType 10의 자식들 (NodeType 11) 처리
+                    if child["NodeType"] == 10 and child["ID"] in children_by_parent:
+                        child_dict["children"] = []
+                        for subchild in children_by_parent[child["ID"]]:
+                            if subchild["NodeType"] == 11:
+                                child_dict["children"].append({
+                                    "ID": subchild["ID"],
+                                    "Name": subchild["Name"],
+                                    "Title": subchild["Title"],
+                                    "Titles": subchild["Titles"],
+                                    "AssemblyID": subchild["AssemblyID"],
+                                    "Description": subchild["Description"],
+                                    "Descriptions": subchild["Descriptions"],
+                                    "Status": subchild["Status"],
+                                    "Value": subchild["Value"]
+                                })
+
+                    superdict["children"].append(child_dict)
+
+            superlist.append(superdict)
+
+    print(f"Processing time: {time.time() - start:.3f}s")
+    return {"data_status": datas["BarGraph"], "data_tree": superlist}
+
 def proc_DiagnosisData(datas):
     superNodes = []
     statuslist = datas["BarGraph"]
@@ -525,7 +600,7 @@ async def get_diagnosis_cached(channel, asset):
 
     # 3. 데이터 처리 및 반환
     if datas and len(datas) > 0:
-        ret = proc_DiagnosisData(datas)
+        ret = proc_DiagnosisData_optimized(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
         return {"success": False, "error": "No Data"}
@@ -538,7 +613,7 @@ async def get_diagnosis(asset, request: Request):
         datas = response.json()
 
     if len(datas) > 0:
-        ret = proc_DiagnosisData(datas)
+        ret = proc_DiagnosisData_optimized(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
         return {"success": False, "error": "No Data"}
@@ -552,7 +627,7 @@ async def get_diagPQ(asset, request: Request):
         datas = response.json()
 
     if len(datas) > 0:
-        ret = proc_DiagnosisData(datas)
+        ret = proc_DiagnosisData_optimized(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
         return {"success": False, "error": "No Data"}
@@ -740,40 +815,42 @@ async def get_diagnosis(asset, request: Request):
     else:
         return {"success": False, "error": "No Data"}
 
+
 @router.get("/getStatuscached/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
-async def getStatus_cached(channel, asset):
+async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
     cache_key = f"SmartAPI:{channel}"
     cache_field = "Diagnosis"
-    datas = None
+    data = None  # datas -> data로 통일
 
     # 1. Redis에서 조회
     try:
         redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
-            data = json.loads(cached_data)
-            print(f"[Redis] Data found for {channel}")
+            data = json.loads(cached_data)  # ✅ 조회한 데이터 사용
+            print(f"[Redis HIT] Data found for {channel}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
     # 2. Redis에 없으면 API 호출
-    if datas is None:
+    if data is None:  # ✅ datas -> data
         try:
-            print(f"[API] Fetching data for {channel}")
+            print(f"[API CALL] Fetching data for {asset}")
             async with httpx.AsyncClient(timeout=api_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
                 data = response.json()
 
             # API에서 가져온 데이터 Redis에 저장
-            if datas:
+            if data:  # ✅ datas -> data
                 try:
-                    redis_state.client.hset(cache_key, cache_field, json.dumps(datas, ensure_ascii=False))
-                except:
-                    pass  # 저장 실패 무시
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))  # ✅ data 저장
+                    print(f"[Redis SAVE] Data saved for {channel}")
+                except Exception as e:
+                    print(f"[Redis Save Error] {e}")
 
         except Exception as e:
             return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
@@ -781,37 +858,32 @@ async def getStatus_cached(channel, asset):
     # 3. 데이터 처리 및 반환
     if data and len(data) > 0:
         runhours = get_running(channel)["total"]
-        # success가 True인지 확인
-        if len(data) == 0:
+
+        # BarGraph가 있는지 확인
+        if "BarGraph" not in data or len(data["BarGraph"]) == 0:
             return {"status": -1, "runhours": runhours}
 
-        # "data" 항목이 존재하는지 확인
+        # Status 추출
         status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
 
-        # print(status_list)
+        # 상태 판단
+        if not status_list:
+            return {"status": 0, "runhours": runhours}
 
-        # 모든 값이 1이면 "OK"
         if all(status == 1 for status in status_list):
             return {"status": 1, "runhours": runhours}
 
-        # 모든 값이 0이면 "No Data"
         if all(status == 0 for status in status_list):
             return {"status": 0, "runhours": runhours}
 
-        # 우선순위: Repair(4) > Inspect(3) > Warning(2)
-        if 4 in status_list:
-            return {"status": 4, "runhours": runhours}
-        elif 3 in status_list:
-            return {"status": 3, "runhours": runhours}
-        elif 2 in status_list:
-            return {"status": 2, "runhours": runhours}
-        elif 1 in status_list:
-            return {"status": 1, "runhours": runhours}
-        else:
-            return {"status": -2, "runhours": runhours}
+        # 우선순위 체크
+        for priority_status in [4, 3, 2, 1]:
+            if priority_status in status_list:
+                return {"status": priority_status, "runhours": runhours}
+
+        return {"status": -2, "runhours": runhours}
     else:
         return {"success": False, "error": "No Data"}
-
 
 @router.get("/getStatus/{asset}/{channel}")  # Master Dashboard Status
 @gc_after_large_data(threshold_mb=30)
@@ -863,7 +935,7 @@ async def getStatus(asset, channel):
         return {"status": -2, "runhours": runhours}
 
 
-@router.get("/getPQStatusCached/{asset}/{channel}")  # Master Dashboard Status
+@router.get("/getPQStatusCached/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
 async def getPQStatus_cached(asset, channel):
     cache_key = f"SmartAPI:{channel}"
@@ -876,21 +948,31 @@ async def getPQStatus_cached(asset, channel):
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)
-            print(f"[Redis] Data found for {channel}")
+            print(f"[Redis HIT] PQ data found for {channel}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
     # 2. Redis에 없으면 API 호출
     if data is None:
         try:
+            print(f"[API CALL] Fetching PQ data for {asset}")
             async with httpx.AsyncClient(timeout=api_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
-                data = response.json()  # JSON 데이터 파싱
+                data = response.json()
+
+            # ✅ Redis에 저장 (빠진 부분 추가!)
+            if data:
+                try:
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+                    print(f"[Redis SAVE] PQ data saved for {channel}")
+                except Exception as e:
+                    print(f"[Redis Save Error] {e}")
+
         except Exception as e:
             return {"status": -1}
 
-    # success가 True인지 확인
-    if len(data) == 0:
+    # 3. 데이터 처리 (기존 로직 그대로)
+    if not data or len(data) == 0:
         return {"status": -1}
 
     status_items = [
@@ -902,21 +984,16 @@ async def getPQStatus_cached(asset, channel):
     if not status_items:
         return {"status": -2}
 
-    # 모든 값이 0이면 "No Data"
     if all(item["Status"] == 0 for item in status_items):
         return {"status": 0, "item": "All"}
 
     if all(item["Status"] == 1 for item in status_items):
         return {"status": 1, "item": "All"}
 
-    # 상태가 높은 순으로 정렬 (내림차순)
     sorted_items = sorted(status_items, key=lambda x: x["Status"], reverse=True)
     highest_status = sorted_items[0]["Status"]
-
-    # 가장 높은 status를 가진 항목들 필터링
     top_items = [item for item in sorted_items if item["Status"] == highest_status]
 
-    # item 리턴 포맷 구성
     if len(top_items) == 1:
         item_label = top_items[0]["Title"]
     elif len(top_items) == 2:
@@ -996,7 +1073,7 @@ def get_running(channel):
         return {"total": 0, "current": 0}
 
 
-@router.get("/getRealTimeCached/{assettype}/{asset}/{channel}")  # Diagnosis, Report Vue : get Asset info
+@router.get("/getRealTimeCached/{assettype}/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
 async def get_asset_cached(assettype, asset, channel):
     cache_key = f"SmartAPI:{channel}"
@@ -1009,44 +1086,58 @@ async def get_asset_cached(assettype, asset, channel):
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)
-            print(f"[Redis] Data found for {channel}")
+            print(f"[Redis HIT] AssetData found for {channel}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
     # 2. Redis에 없으면 API 호출
     if data is None:
-        async with httpx.AsyncClient(timeout=api_timeout) as client:
-            response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
-            data = response.json()
-    if len(data) > 0:
-        datalist = list()
-        for i in range(0, len(data)):
-            if assettype != 'PowerSupply':
-                if data[i]["Name"] == "Speed":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "Torque":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-            else:
-                if data[i]["Name"] == "CurrentSwitchingHarmonics":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "VfdCapacitor":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "VoltageSwitchingHarmonics":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
+        try:
+            print(f"[API CALL] Fetching AssetData for {asset}")
+            async with httpx.AsyncClient(timeout=api_timeout) as client:
+                response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name={asset}")
+                data = response.json()
+
+            # ✅ Redis에 저장 (누락된 부분!)
+            if data:
+                try:
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+                    print(f"[Redis SAVE] AssetData saved for {channel}")
+                except Exception as e:
+                    print(f"[Redis Save Error] {e}")
+
+        except Exception as e:
+            return {"success": False, "error": f"API call failed: {str(e)}"}
+
+    # 3. 데이터 처리
+    if data and len(data) > 0:
+        datalist = []
+
+        if assettype != 'PowerSupply':
+            # Motor 관련 데이터
+            for item in data:
+                if item["Name"] in ["Speed", "Torque"]:
+                    datalist.append({
+                        "Assembly": item["AssemblyID"],
+                        "Title": item["Title"],
+                        "Value": item["Value"],
+                        "Unit": item["Unit"]
+                    })
+        else:
+            # PowerSupply 관련 데이터
+            target_names = ["CurrentSwitchingHarmonics", "VfdCapacitor", "VoltageSwitchingHarmonics"]
+            for item in data:
+                if item["Name"] in target_names:
+                    datalist.append({
+                        "Assembly": item["AssemblyID"],
+                        "Title": item["Title"],
+                        "Value": item["Value"],
+                        "Unit": item["Unit"]
+                    })
+
         return {"success": True, "data": datalist}
     else:
         return {"success": False, "error": "No Data"}
-
 
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
