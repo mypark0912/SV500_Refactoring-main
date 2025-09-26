@@ -1285,7 +1285,7 @@ async def saveSetting(channel: str, request: Request):
         return {"status": "0", "error": str(e)}
     
 @router.get('/restartasset')  # save setup.json
-async def restartasset(request:Request, flag):
+async def restartasset(request:Request):
     redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
