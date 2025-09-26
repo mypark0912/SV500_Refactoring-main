@@ -215,8 +215,7 @@
                   <input
                     type="number"
                     v-model.number="row.Value"
-                    :min="row.Min"
-                    :max="row.Max"
+                    :step="getStepValue(row)"
                     class="text-xs w-full border rounded p-1 text-center"
                     :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
@@ -445,7 +444,16 @@ const mapping = {
 // const hz = [8000, 4000, 2000, 1000];
 // const duration = [5, 10, 15, 20, 25, 30];
 // const intervalList = Array.from({ length: 13 }, (_, i) => i * 5);
-
+const getStepValue = (row) => {
+  const min = getMinValue(row);
+  const max = getMaxValue(row);
+  const range = max - min;
+  
+  // 범위가 작으면 더 세밀한 step 사용
+  if (range <= 1) return 0.1;
+  if (range <= 10) return 0.5;
+  return 1;
+};
 const BearingOptions = ref(["My Bearing"]);
 const BearingValues = ref([]);
 const isAdmin = computed(() => {
@@ -464,6 +472,7 @@ watchEffect(() => {
   readonlyRows.value = [];
   editableRows.value = [];
   console.log(inputDict.value);
+  console.log(tableData.value);
   tableData.value.forEach((row) => {
     //const children = row["children"]
     const path = mapping[row.Title];
