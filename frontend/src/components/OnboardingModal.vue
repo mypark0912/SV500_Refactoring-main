@@ -329,7 +329,10 @@
               >
                 Cancel
               </button>
-              <div v-if="isRestarting" class="flex items-center text-sm text-blue-600">
+              <div
+                v-if="isRestarting"
+                class="flex items-center text-sm text-blue-600"
+              >
                 <svg
                   class="animate-spin w-4 h-4 mr-2"
                   xmlns="http://www.w3.org/2000/svg"
@@ -407,7 +410,8 @@
                 </svg>
               </div>
               <div class="text-sm text-gray-500">
-                Loading main test result...This process may take 20 seconds or longer.
+                Loading main test result...This process may take 20 seconds or
+                longer.
               </div>
             </div>
 
@@ -609,7 +613,8 @@
                 </svg>
               </div>
               <div class="text-sm text-gray-500">
-                Loading sub test result...This process may take 20 seconds or longer.
+                Loading sub test result...This process may take 20 seconds or
+                longer.
               </div>
             </div>
 
@@ -991,7 +996,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, inject } from "vue";
 import LineChart from "../charts/connect/LineChart01_Echart2.vue";
 import { settingValidator } from "@/utils/validation.js";
 import axios from "axios";
@@ -1023,6 +1028,7 @@ export default {
     const isLoadingMain = ref(false);
     const isLoadingSub = ref(false);
     const stList = ref(["Info", "Pass", "Warning", "Error"]);
+    const diagnosis_detail = inject("diagnosis_detail");
     // Validation data
     const validationTimestamp = ref(new Date().toLocaleString());
     const validationResult = ref({
@@ -1043,8 +1049,7 @@ export default {
 
     const diagnosis_main = computed(() => {
       // props가 명시적으로 전달되지 않으면 undefined일 수 있음
-      if(Object.keys(setupDict.value).length == 0)
-        return false;
+      if (Object.keys(setupDict.value).length == 0) return false;
       if (setupDict.value.main.Enable) {
         if (
           setupDict.value.main.assetInfo.name != "" &&
@@ -1059,8 +1064,7 @@ export default {
     });
 
     const diagnosis_sub = computed(() => {
-      if(Object.keys(setupDict.value).length == 0)
-        return false;
+      if (Object.keys(setupDict.value).length == 0) return false;
       if (setupDict.value.sub.Enable) {
         if (
           setupDict.value.sub.assetInfo.name != "" &&
@@ -1095,7 +1099,7 @@ export default {
     const subWaveformLabelT = ref([]);
     const selectedSubChart = ref("Time Domain(Voltage)");
     const isRestarting = ref(false);
-    const restartMessage = ref('');
+    const restartMessage = ref("");
 
     // Chart types
     const ChartTypes = ref([
@@ -1104,6 +1108,169 @@ export default {
       "Frequency Domain(Voltage)",
       "Frequency Domain(Current)",
     ]);
+
+    // 간소화된 Diagnosis Detail 데이터 검증 함수
+    const validateDiagnosisDetails = () => {
+      const errors = [];
+      const warnings = [];
+
+      //console.log("diagnosis_detail", diagnosis_detail);
+      if (!diagnosis_detail || Object.keys(diagnosis_detail).length === 0) {
+        // diagnosis 기능이 활성화되었지만 설정이 없어도 경고만 표시
+        warnings.push("Diagnosis enabled, but no detailed settings");
+        return { isValid: true, errors, warnings };
+      }
+
+      // Main 채널 검증
+      if (
+        setupDict.value.General?.useFuction?.diagnosis_main &&
+        setupDict.value.main?.Enable
+      ) {
+        const mainValidation = validateChannelDiagnosisData(
+          diagnosis_detail.value.main,
+          "Main"
+        );
+
+        errors.push(
+          ...mainValidation.errors.map((err) => `[Main Channel] ${err}`)
+        );
+        warnings.push(
+          ...mainValidation.warnings.map((warn) => `[Main Channel] ${warn}`)
+        );
+      }
+
+      // Sub 채널 검증
+      if (
+        setupDict.value.General?.useFuction?.diagnosis_sub &&
+        setupDict.value.sub?.Enable
+      ) {
+        const subValidation = validateChannelDiagnosisData(
+          diagnosis_detail.value.sub,
+          "Sub"
+        );
+
+        errors.push(...subValidation.errors.map((err) => `[Sub Channel] ${err}`));
+        warnings.push(
+          ...subValidation.warnings.map((warn) => `[Sub Channel] ${warn}`)
+        );
+      }
+
+      return {
+        isValid: errors.length === 0,
+        errors,
+        warnings,
+      };
+    };
+
+    // 채널별 Diagnosis 데이터 검증
+    const validateChannelDiagnosisData = (channelData, channelName) => {
+      const errors = [];
+      const warnings = [];
+
+      //console.log(`${channelName} 채널 데이터 검증 시작:`, channelData);
+
+      // 채널 데이터가 없는 경우 - 허용
+      if (!channelData) {
+        //console.log(`${channelName} 채널 데이터가 없음 - 허용`);
+        return { errors, warnings };
+      }
+
+      // use 플래그가 false인 경우 - 허용
+      if (channelData.use === false) {
+        //console.log(`${channelName} 채널이 비활성화됨 - 허용`);
+        return { errors, warnings };
+      }
+
+      // 1. tableData 검증 (빈 배열 허용)
+      if (channelData.tableData && Array.isArray(channelData.tableData)) {
+        //console.log(`${channelName} tableData 검증:`, channelData.tableData);
+        const tableValidation = validateMinMaxRange(
+          channelData.tableData,
+          `${channelName} tableData`
+        );
+        errors.push(...tableValidation.errors);
+        warnings.push(...tableValidation.warnings);
+      } else {
+        console.log(
+          `${channelName} tableData 없음 또는 배열이 아님:`,
+          channelData.tableData
+        );
+      }
+
+      // 2. modalData 검증 (빈 배열 허용)
+      if (channelData.modalData && Array.isArray(channelData.modalData)) {
+        console.log(`${channelName} modalData 검증:`, channelData.modalData);
+        const modalValidation = validateMinMaxRange(
+          channelData.modalData,
+          `${channelName} modalData`
+        );
+        errors.push(...modalValidation.errors);
+        warnings.push(...modalValidation.warnings);
+      } else {
+        console.log(
+          `${channelName} modalData 없음 또는 배열이 아님:`,
+          channelData.modalData
+        );
+      }
+
+      // paramData는 min/max 기준이 없으므로 검증하지 않음
+
+      console.log(`${channelName} 채널 검증 완료:`, { errors, warnings });
+      return { errors, warnings };
+    };
+
+    // Min/Max 범위 검증만 수행하는 함수
+    const validateMinMaxRange = (data, dataLabel) => {
+      const errors = [];
+      const warnings = [];
+
+      // 빈 배열은 허용
+      if (!Array.isArray(data) || data.length === 0) {
+        return { errors, warnings };
+      }
+
+      data.forEach((item, index) => {
+        const itemLabel = `${dataLabel} ${index + 1}번 항목 (${
+          item.Name || "Unknown"
+        })`;
+
+        // 객체가 아닌 경우만 에러 처리
+        if (!item || typeof item !== "object") {
+          errors.push(`${itemLabel}: Must be a valid object`);
+          return;
+        }
+
+     
+
+        // Value가 Min/Max 범위 안에 있는지만 검증
+        const value = parseFloat(item.Value);
+        const min = parseFloat(item.Min);
+        const max = parseFloat(item.Max);
+
+        // Value, Min, Max가 모두 유효한 숫자인 경우에만 범위 검사
+        if (!isNaN(value) && !isNaN(min) && !isNaN(max)) {
+          // Min/Max 범위 자체가 유효한지 확인
+          if (min >= max) {
+            errors.push(
+              `${itemLabel}: Minimum value (${min}) must be less than maximum value (${max})`
+            );
+          } else {
+            // Value가 Min/Max 범위 안에 있는지 확인
+            if (value < min || value > max) {
+              errors.push(
+                `${itemLabel}: Value(${value}) is out of range (${min} ~ ${max})`
+              );
+            } else {
+              
+            }
+          }
+        } else {
+         
+        }
+      });
+
+      return { errors, warnings };
+    };
 
     // Settings validation function
     const validateSettings = () => {
@@ -1124,6 +1291,25 @@ export default {
           setupDict.value["main"],
           setupDict.value["sub"]
         );
+
+        // Diagnosis Detail 데이터 검증 추가 (Min/Max 범위만)
+        if (
+          setupDict.value.General?.useFuction?.diagnosis_main ||
+          setupDict.value.General?.useFuction?.diagnosis_sub
+        ) {
+          const diagnosisValidation = validateDiagnosisDetails();
+
+          // 기존 결과와 diagnosis 검증 결과 병합
+          result.errors = [...result.errors, ...diagnosisValidation.errors];
+          result.warnings = [
+            ...result.warnings,
+            ...diagnosisValidation.warnings,
+          ];
+          result.isValid = result.isValid && diagnosisValidation.isValid;
+          result.hasErrors = result.errors.length > 0;
+          result.hasWarnings = result.warnings.length > 0;
+        }
+
         validationResult.value = result;
         validationTimestamp.value = new Date().toLocaleString();
         return result;
@@ -1143,14 +1329,14 @@ export default {
     // Load settings data
     const GetSettingData = async () => {
       try {
-        console.log("Loading settings data...");
+        //console.log("Loading settings data...");
         isLoadingSettingsValidation.value = true;
 
         const response = await axios.get(`/setting/getSetting`);
 
         if (response.data.passOK == 1) {
           setupDict.value = response.data.data;
-          console.log("Settings loaded:", setupDict.value);
+          //console.log("Settings loaded:", setupDict.value);
 
           // Validate settings after loading
           validateSettings();
@@ -1222,7 +1408,7 @@ export default {
           "Setup:",
           isMain ? setupDict.value.main : setupDict.value.sub
         );
-        console.log(`Loading ${channel} test data for asset: ${assetName}`);
+        //console.log(`Loading ${channel} test data for asset: ${assetName}`);
 
         const response = await axios.get(`/setting/test/${assetName}`);
 
@@ -1352,7 +1538,6 @@ export default {
     const nextStep = async () => {
       // 현재 단계가 Main Test이고 에러가 있으면 진행 불가
 
-      
       if (currentStep.value === 2 && mainTestResult.value.err > 0) {
         return;
       }
@@ -1368,24 +1553,23 @@ export default {
 
         // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
         if (currentStep.value === 1) {
-
           const rest = await restartDevice();
 
-          if(rest && (nextStepId === 2 || nextStepId === 3)){
+          if (rest && (nextStepId === 2 || nextStepId === 3)) {
             isRestarting.value = true;
-            restartMessage.value = 'Waiting for acquire waveform file';
-              const response2 = await axios.get(`/setting/trigger`);
-                if (!response2.data.success) {
-                  const errorMessage = response2.data.error || "waveform file trigger failed. Please try again.";
-                  alert(errorMessage);
-                  return; // Stop navigation if restart fails
-                }
+            restartMessage.value = "Waiting for acquire waveform file";
+            const response2 = await axios.get(`/setting/trigger`);
+            if (!response2.data.success) {
+              const errorMessage =
+                response2.data.error ||
+                "waveform file trigger failed. Please try again.";
+              alert(errorMessage);
+              return; // Stop navigation if restart fails
             }
           }
+        }
 
         currentStep.value = nextStepId;
-        
-        
 
         // Load data when entering main or sub test steps
         if (nextStepId === 2 && diagnosis_main.value) {
@@ -1395,8 +1579,6 @@ export default {
         }
       }
     };
-
-
 
     // Handle main test next button - skip sub if not needed
     const handleMainTestNext = async () => {
@@ -1420,22 +1602,22 @@ export default {
       }
     };
 
-    const restartDevice = async() =>{
-      try{
+    const restartDevice = async () => {
+      try {
         isRestarting.value = true;
-        restartMessage.value = 'Waiting for restart firmware';
+        restartMessage.value = "Waiting for restart firmware";
 
         const response = await axios.get(`/setting/restartdevice`);
-          if (response.data.success) {
-            await new Promise(resolve => setTimeout(resolve, 4000));
-            return true;
-          }else{
-            return false;
-          }
-      }catch(error){
+        if (response.data.success) {
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
         return false;
       }
-    }
+    };
 
     const closeModal = () => {
       emit("close-modal");
@@ -1501,7 +1683,7 @@ export default {
 
     // Close on click outside
     const clickHandler = ({ target }) => {
-      return; 
+      return;
       if (!props.modalOpen || modalContent.value.contains(target)) return;
       closeModal();
     };
@@ -1565,6 +1747,7 @@ export default {
       restartDevice,
       isRestarting,
       restartMessage,
+      diagnosis_detail,
     };
   },
 };
