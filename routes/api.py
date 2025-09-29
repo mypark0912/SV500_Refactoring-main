@@ -632,6 +632,50 @@ async def get_diagPQ(asset, request: Request):
     else:
         return {"success": False, "error": "No Data"}
 
+@router.get("/getPQCached/{channel}/{asset}")
+@gc_after_large_data(threshold_mb=30)
+async def get_PQ_cached(channel, asset):
+    """
+    진단 데이터 조회 - Redis 우선, 없으면 API 호출
+    """
+    cache_key = f"SmartAPI:{channel}"
+    cache_field = "PQ"
+    datas = None
+
+    # 1. Redis에서 조회
+    try:
+        redis_state.client.select(1)
+        cached_data = redis_state.client.hget(cache_key, cache_field)
+        if cached_data:
+            datas = json.loads(cached_data)
+    except Exception as e:
+        print(f"[Redis Error] {e}")
+
+    # 2. Redis에 없으면 API 호출
+    if datas is None:
+        try:
+            print(f"[API CALL] Fetching PQ data for {asset}")
+            async with httpx.AsyncClient(timeout=api_timeout) as client:
+                response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
+                data = response.json()
+
+            # ✅ Redis에 저장 (빠진 부분 추가!)
+            if data:
+                try:
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+                except Exception as e:
+                    pass
+
+        except Exception as e:
+            return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
+
+    # 3. 데이터 처리 및 반환
+    if datas and len(datas) > 0:
+        ret = proc_DiagnosisData_optimized(datas)
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
+    else:
+        return {"success": False, "error": "No Data"}
+
 @router.get("/getFaults/{asset}")  # Diagnosis Vue : get diagnosis
 async def get_faults(asset, request: Request):
     async with httpx.AsyncClient(timeout=api_timeout) as client:
@@ -644,12 +688,98 @@ async def get_faults(asset, request: Request):
     else:
         return {"success": False, "error": "No Data"}
 
+@router.get("/getFaultCached/{channel}/{asset}")
+async def get_Fault_cached(channel, asset):
+    """
+    진단 데이터 조회 - Redis 우선, 없으면 API 호출
+    """
+    cache_key = f"SmartAPI:{channel}"
+    cache_field = "Fault"
+    datas = None
+
+    # 1. Redis에서 조회
+    try:
+        redis_state.client.select(1)
+        cached_data = redis_state.client.hget(cache_key, cache_field)
+        if cached_data:
+            datas = json.loads(cached_data)
+    except Exception as e:
+        print(f"[Redis Error] {e}")
+
+    # 2. Redis에 없으면 API 호출
+    if datas is None:
+        try:
+            print(f"[API] Fetching data for {channel}")
+            async with httpx.AsyncClient(timeout=api_timeout) as client:
+                response = await client.get(f"http://{os_spec.restip}:5000/api/getFaults?name={asset}")
+                datas = response.json()
+
+            # API에서 가져온 데이터 Redis에 저장
+            if datas:
+                try:
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(datas, ensure_ascii=False))
+                except:
+                    pass  # 저장 실패 무시
+
+        except Exception as e:
+            return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
+
+    # 3. 데이터 처리 및 반환
+    if datas and len(datas) > 0:
+        ret = proc_eventFaultData(datas)
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
+    else:
+        return {"success": False, "error": "No Data"}
+
 @router.get("/getEvents/{asset}")  # Diagnosis Vue : get diagnosis
 async def get_events(asset, request: Request):
     async with httpx.AsyncClient(timeout=api_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getEvents?name={asset}")
         datas = response.json()
     if len(datas) > 0:
+        ret = proc_eventFaultData(datas)
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
+    else:
+        return {"success": False, "error": "No Data"}
+
+@router.get("/getEventsCached/{channel}/{asset}")
+async def get_Event_cached(channel, asset):
+    """
+    진단 데이터 조회 - Redis 우선, 없으면 API 호출
+    """
+    cache_key = f"SmartAPI:{channel}"
+    cache_field = "Event"
+    datas = None
+
+    # 1. Redis에서 조회
+    try:
+        redis_state.client.select(1)
+        cached_data = redis_state.client.hget(cache_key, cache_field)
+        if cached_data:
+            datas = json.loads(cached_data)
+    except Exception as e:
+        print(f"[Redis Error] {e}")
+
+    # 2. Redis에 없으면 API 호출
+    if datas is None:
+        try:
+            print(f"[API] Fetching data for {channel}")
+            async with httpx.AsyncClient(timeout=api_timeout) as client:
+                response = await client.get(f"http://{os_spec.restip}:5000/api/getEvents?name={asset}")
+                datas = response.json()
+
+            # API에서 가져온 데이터 Redis에 저장
+            if datas:
+                try:
+                    redis_state.client.hset(cache_key, cache_field, json.dumps(datas, ensure_ascii=False))
+                except:
+                    pass  # 저장 실패 무시
+
+        except Exception as e:
+            return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
+
+    # 3. 데이터 처리 및 반환
+    if datas and len(datas) > 0:
         ret = proc_eventFaultData(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
