@@ -247,6 +247,7 @@
         btnClass,
         sendCmd,
         refDict,
+        channel,
       }
     }
   }
