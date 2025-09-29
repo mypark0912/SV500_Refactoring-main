@@ -1879,8 +1879,8 @@ const overLoadPercentage = computed(() => {
       const chName = channelComputed.value.toLowerCase() == 'main' ? asset.value.assetName_main : asset.value.assetName_sub;
       
       try {
-        const response = await axios.get(`/api/getDiagPQ/${chName}`);
-
+        //const response = await axios.get(`/api/getDiagPQ/${chName}`);
+        const response = await axios.get(`/api/getPQCached/${channelComputed.value}/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist = [], datalist = [];
           

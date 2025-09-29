@@ -97,7 +97,8 @@ export default {
       const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
       try {
         //const ch = 'Fan';
-        const response = await axios.get(`/api/getDiagPQ/${chName}`);
+        //const response = await axios.get(`/api/getDiagPQ/${chName}`);
+        const response = await axios.get(`/api/getPQCached/${channel.value}/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){
@@ -122,7 +123,8 @@ export default {
       const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
       try {
         //const ch = 'Fan';
-        const response = await axios.get(`/api/getFaults/${chName}`);
+        //const response = await axios.get(`/api/getFaults/${chName}`);
+        const response = await axios.get(`/api/getFaultCached/${channel.value}/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){
@@ -148,7 +150,8 @@ export default {
       const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
       try {
         //const ch = 'Fan';
-        const response = await axios.get(`/api/getEvents/${chName}`);
+        //const response = await axios.get(`/api/getEvents/${chName}`);
+        const response = await axios.get(`/api/getEventsCached/${channel.value}/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){

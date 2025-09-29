@@ -494,7 +494,9 @@ export default {
 
       if (chName != "") {
         try {
-          const response = await axios.get(`/api/getEvents/${chName}`);
+          //const response = await axios.get(`/api/getEvents/${chName}`);
+          const chUName = channel.value == "main" ? "Main" : "Sub"
+          const response = await axios.get(`/api/getEventsCached/${chUName}/${chName}`);
           if (response.data.success) {
             eventData.value = response.data.data_status;
           }
