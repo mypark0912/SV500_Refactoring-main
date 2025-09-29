@@ -32,6 +32,8 @@ class Post(BaseModel):
     smart_version: str = ""
 
 class CaliSet(BaseModel):
+    channel: str
+    type: str
     cmd: str
     ref : str
 
@@ -149,19 +151,29 @@ def cali_end():
     except Exception as e:
         return {'passOK': '0', 'error': 'No exist setup file'}
 
-@router.post('/calibrate/cmd/{types}')
-def set_cmd(data:CaliSet, types):
+@router.post('/calibrate/cmd')
+def set_cmd(data:CaliSet):
     try:
-        if types == 'SET':
-            if data.ref != 'None':
-                msg =  f"{data.cmd} {data.ref}"
-            else:
-                msg = data.cmd
+        if data.channel == 'Main':
+            mode = 0
+        elif data.channel == 'Sub':
+            mode = 1
         else:
-            msg = data.cmd
-        redis_state.client.execute_command("SELECT", 0)
-        redis_state.client.hset('calibration','command',msg)
-        redis_state.client.hset('calibration', 'cflag', 1)
+            mode = 2
+        if data.type == 'SET':
+            if data.ref != 'None':
+                val = int(data.ref)
+            else:
+                val = 0
+        else:
+            val = 0
+        msg = {
+            'channel':mode,
+            'cmd': data.cmd,
+            'ref': val
+        }
+        redis_state.client.select("SELECT", 0)
+        redis_state.client.lpush('cali_command',json.dumps(msg))
         return {'passOK': '1'}
     except Exception as e:
         print(str(e))

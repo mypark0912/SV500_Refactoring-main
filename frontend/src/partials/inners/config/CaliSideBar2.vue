@@ -143,6 +143,7 @@
         In:0,
         P:0
       });
+      const channel = ref('');
       onMounted(()=>{
         commands.value = props.commands;
       });
@@ -186,9 +187,14 @@
             data["ref"] = 'None'
           }
           data["cmd"] = commands.value[index]["name"]
+          data["channel"] = channel.value;
+          data["type"] = commands.value[index]["Type"];
           //console.log(formData);
           try {
-            const response = await axios.post(`/config/calibrate/cmd/${commands.value[index]["Type"]}`, data, {
+            /*const response = await axios.post(`/config/calibrate/cmd/${commands.value[index]["Type"]}`, data, {
+              headers: { "Content-Type": 'application/json' },
+            }); */
+            const response = await axios.post(`/config/calibrate/cmd`, data, {
               headers: { "Content-Type": 'application/json' },
             });
             if (response.data.passOK == "1") {
