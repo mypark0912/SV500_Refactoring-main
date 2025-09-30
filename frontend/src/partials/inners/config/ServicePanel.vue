@@ -379,8 +379,7 @@
       return result;
     }
 
-    watch(
-      () => ChannelState.value,
+    /*  () => ChannelState.value,
       (newVal, oldVal) => {
         if (newVal) {
           CheckAPI();
@@ -389,7 +388,7 @@
         }
       },
       { immediate: true }
-    );
+    );*/
 
     const ResetAll = async () => {
       const confirmed = confirm('All settings and account database will be erased and initialized.\nDo you want to proceed?');
