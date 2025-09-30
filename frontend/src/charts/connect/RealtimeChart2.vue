@@ -46,6 +46,52 @@ export default {
       }      
       chartDeviation.value.innerHTML = `${diff > 0 ? '+' : ''}${diff.toFixed(2)}%`
     }    
+
+    // 데이터 값의 범위를 체크하여 적절한 포맷 결정
+    const getTickFormat = (value, allValues) => {
+      // 데이터가 없거나 빈 배열인 경우 기본 포맷 반환
+      if (!allValues || allValues.length === 0) {
+        return value.toFixed(2)
+      }
+      
+      // 숫자 값만 필터링 (객체인 경우 y 값 추출)
+      const numericValues = allValues.map(v => {
+        if (typeof v === 'number') return v
+        if (v && typeof v === 'object' && 'y' in v) return v.y
+        return 0
+      }).filter(v => typeof v === 'number' && !isNaN(v))
+      
+      if (numericValues.length === 0) {
+        return value.toFixed(2)
+      }
+      
+      const maxValue = Math.max(...numericValues.map(v => Math.abs(v)))
+      
+      // 매우 작은 값들 (0.0001 미만)
+      if (maxValue < 0.0001) {
+        return value.toExponential(2)
+      }
+      // 작은 값들 (0.01 미만)
+      else if (maxValue < 0.01) {
+        return value.toFixed(4)
+      }
+      // 소수점 값들 (1 미만)
+      else if (maxValue < 1) {
+        return value.toFixed(3)
+      }
+      // 작은 정수 값들 (100 미만)
+      else if (maxValue < 100) {
+        return value.toFixed(2)
+      }
+      // 중간 값들 (10000 미만)
+      else if (maxValue < 10000) {
+        return value.toFixed(1)
+      }
+      // 큰 값들
+      else {
+        return value.toFixed(0)
+      }
+    }
     
     onMounted(() => {
       const ctx = canvas.value
@@ -61,11 +107,19 @@ export default {
               border: {
                 display: false,
               },
-              suggestedMin: 30,
-              suggestedMax: 80,
+              // suggestedMin, suggestedMax 제거 - 자동 스케일링 사용
               ticks: {
                 maxTicksLimit: 5,
-                callback: (value) => value,
+                callback: function(value) {
+                  // 차트 데이터가 있는지 확인
+                  if (!this.chart || !this.chart.data || !this.chart.data.datasets || 
+                      !this.chart.data.datasets[0] || !this.chart.data.datasets[0].data ||
+                      this.chart.data.datasets[0].data.length === 0) {
+                    return value.toFixed(2)
+                  }
+                  const allValues = this.chart.data.datasets[0].data
+                  return getTickFormat(value, allValues)
+                },
                 color: darkMode.value ? textColor.dark : textColor.light,
               },
               grid: {
@@ -107,7 +161,11 @@ export default {
                 weight: 600,
               },
               callbacks: {
-                label: (context) => parseFloat(context.parsed.y).toFixed(2),
+                label: (context) => {
+                  const value = context.parsed.y
+                  const allValues = context.chart.data.datasets[0].data
+                  return getTickFormat(value, allValues)
+                },
               },
               titleColor: darkMode.value ? tooltipTitleColor.dark : tooltipTitleColor.light,
               bodyColor: darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light,
