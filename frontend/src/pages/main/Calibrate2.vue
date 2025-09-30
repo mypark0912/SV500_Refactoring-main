@@ -54,7 +54,7 @@
   
   <script>
   import { useI18n } from 'vue-i18n' 
-  import { ref , computed, watch} from 'vue'
+  import { ref , computed, watch,provide} from 'vue'
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   //import UsersTabsCard from '../../partials/community/CaliCard.vue'
@@ -98,7 +98,11 @@
         channels.value = newChannel;
       }
     }, { immediate: true });
+      const showMainChannel = ref(true);
+      const showSubChannel = ref(true);
 
+      provide('showMainChannel', showMainChannel);
+      provide('showSubChannel', showSubChannel);
       const commands = ref([
       {
         "name":"Start", "Label":"Start"
@@ -257,6 +261,8 @@
         formattedChannel,
         commands,
         t,
+        showMainChannel,
+        showSubChannel,
         //installed,
       }  
     }
