@@ -206,39 +206,69 @@
       }
     };
 
-    watch(asset, (newVal) => {
-      if (newVal) {
-        if(channel.value == 'main')
-          assetTypes.value = newVal.assetType_main;
-        else
-          assetTypes.value = newVal.assetType_sub;
-        fetchData();
-        if(assetTypes.value != 'Transformer'){
-          fetchRealData();
-        }
-        fetchPQData();
-        //fetchAlarmData();
+    watch(asset, (newVal, oldVal) => {
+  if (newVal) {
+    if(channel.value == 'main')
+      assetTypes.value = newVal.assetType_main;
+    else
+      assetTypes.value = newVal.assetType_sub;
+      
+    fetchData();
+    if(assetTypes.value != 'Transformer'){
+      fetchRealData();
+    }
+    fetchPQData();
 
-        // 그리고 나서 주기 업데이트 걸어
-        if (updateInterval) {
-          clearInterval(updateInterval);  // ✅ 혹시 이전에 걸린 거 있으면 지우고
-        }
-        if (!updateInterval) {
-          updateInterval = setInterval(async () => {
-            await fetchData();
-             if(assetTypes.value != 'Transformer'){
-                await fetchRealData();
-              }
-            await fetchPQData();
-            //await fetchAlarmData();
-          }, 300000);  //5 x 60 × 1000 : 5min
-        }
+    // 타이머 재설정
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      updateInterval = null;  // ✅ 변수를 null로 초기화
+    }
+    
+    // 새 타이머 설정
+    updateInterval = setInterval(async () => {
+      await fetchData();
+      if(assetTypes.value != 'Transformer'){
+        await fetchRealData();
       }
-    }, { immediate: true }); // <-- 바로 실행 시도
+      await fetchPQData();
+    }, 300000);  // 5분
+  }
+}, { immediate: true });
+
+    // watch(asset, (newVal) => {
+    //   if (newVal) {
+    //     if(channel.value == 'main')
+    //       assetTypes.value = newVal.assetType_main;
+    //     else
+    //       assetTypes.value = newVal.assetType_sub;
+    //     fetchData();
+    //     if(assetTypes.value != 'Transformer'){
+    //       fetchRealData();
+    //     }
+    //     fetchPQData();
+    //     //fetchAlarmData();
+
+    //     // 그리고 나서 주기 업데이트 걸어
+    //     if (updateInterval) {
+    //       clearInterval(updateInterval);  // ✅ 혹시 이전에 걸린 거 있으면 지우고
+    //     }
+    //     if (!updateInterval) {
+    //       updateInterval = setInterval(async () => {
+    //         await fetchData();
+    //          if(assetTypes.value != 'Transformer'){
+    //             await fetchRealData();
+    //           }
+    //         await fetchPQData();
+    //         //await fetchAlarmData();
+    //       }, 300000);  //5 x 60 × 1000 : 5min
+    //     }
+    //   }
+    // }, { immediate: true }); // <-- 바로 실행 시도
  
-    onMounted(async () => {
-        await setupStore.checkSetting();   // ✅ setupStore에서 서버 데이터 다시 가져오기
-      });
+    // onMounted(async () => {
+    //     await setupStore.checkSetting();   // ✅ setupStore에서 서버 데이터 다시 가져오기
+    //   });
 
  
      onUnmounted(() => {

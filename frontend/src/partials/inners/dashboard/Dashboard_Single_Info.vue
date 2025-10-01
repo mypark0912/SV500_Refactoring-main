@@ -265,9 +265,9 @@ export default {
       } catch (error) {
         console.log("데이터 가져오기 실패:", error)
       }
-      if(chType != 'Transformer'){
-        fetchRealData(chName, chType);
-      }
+      // if(chType != 'Transformer'){
+      //   fetchRealData(chName, chType);
+      // }
     };
 
     // watch(
