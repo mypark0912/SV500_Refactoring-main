@@ -212,10 +212,10 @@ import transImg from '@/images/trans.png'
   
       const LoadFactor = computed(() => {
         let kva = -1;
-        if (computedChannel.value == 'Main' && stData.value.devType == 'Transformer') {
+        if (computedChannel.value == 'Main' && stData.value.devType?.includes('Transformer')) {
           kva = setupStore.getMkva;
         }
-        if (computedChannel.value == 'sub' && stData.value.devType == 'Transformer') {
+        if (computedChannel.value == 'Sub' && stData.value.devType?.includes('Transformer')) {
           kva = setupStore.getSkva;
         }
         return kva;
