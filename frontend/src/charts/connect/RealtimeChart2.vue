@@ -46,52 +46,6 @@ export default {
       }      
       chartDeviation.value.innerHTML = `${diff > 0 ? '+' : ''}${diff.toFixed(2)}%`
     }    
-
-    // 데이터 값의 범위를 체크하여 적절한 포맷 결정
-    const getTickFormat = (value, allValues) => {
-      // 데이터가 없거나 빈 배열인 경우 기본 포맷 반환
-      if (!allValues || allValues.length === 0) {
-        return value.toFixed(2)
-      }
-      
-      // 숫자 값만 필터링 (객체인 경우 y 값 추출)
-      const numericValues = allValues.map(v => {
-        if (typeof v === 'number') return v
-        if (v && typeof v === 'object' && 'y' in v) return v.y
-        return 0
-      }).filter(v => typeof v === 'number' && !isNaN(v))
-      
-      if (numericValues.length === 0) {
-        return value.toFixed(2)
-      }
-      
-      const maxValue = Math.max(...numericValues.map(v => Math.abs(v)))
-      
-      // 매우 작은 값들 (0.0001 미만)
-      if (maxValue < 0.0001) {
-        return value.toExponential(2)
-      }
-      // 작은 값들 (0.01 미만)
-      else if (maxValue < 0.01) {
-        return value.toFixed(4)
-      }
-      // 소수점 값들 (1 미만)
-      else if (maxValue < 1) {
-        return value.toFixed(3)
-      }
-      // 작은 정수 값들 (100 미만)
-      else if (maxValue < 100) {
-        return value.toFixed(2)
-      }
-      // 중간 값들 (10000 미만)
-      else if (maxValue < 10000) {
-        return value.toFixed(1)
-      }
-      // 큰 값들
-      else {
-        return value.toFixed(0)
-      }
-    }
     
     onMounted(() => {
       const ctx = canvas.value
@@ -104,21 +58,18 @@ export default {
           },
           scales: {
             y: {
+              min: 0,  // 최소값 0으로 고정
               border: {
                 display: false,
               },
-              // suggestedMin, suggestedMax 제거 - 자동 스케일링 사용
               ticks: {
                 maxTicksLimit: 5,
                 callback: function(value) {
-                  // 차트 데이터가 있는지 확인
-                  if (!this.chart || !this.chart.data || !this.chart.data.datasets || 
-                      !this.chart.data.datasets[0] || !this.chart.data.datasets[0].data ||
-                      this.chart.data.datasets[0].data.length === 0) {
-                    return value.toFixed(2)
-                  }
-                  const allValues = this.chart.data.datasets[0].data
-                  return getTickFormat(value, allValues)
+                  // 단순하게 값만 표시
+                  if (value === 0) return '0'
+                  if (value < 1) return value.toFixed(2)
+                  if (value < 10) return value.toFixed(1)
+                  return Math.round(value).toString()
                 },
                 color: darkMode.value ? textColor.dark : textColor.light,
               },
@@ -154,7 +105,7 @@ export default {
               display: false,
             },
             datalabels: {
-              display: false  // ✅ 표시 비활성화
+              display: false
             },
             tooltip: {
               titleFont: {
@@ -163,14 +114,18 @@ export default {
               callbacks: {
                 label: (context) => {
                   const value = context.parsed.y
-                  const allValues = context.chart.data.datasets[0].data
-                  return getTickFormat(value, allValues)
+                  // 단순히 숫자만 표시
+                  if (value === 0) return '0'
+                  if (value < 1) return value.toFixed(3)
+                  if (value < 10) return value.toFixed(2)
+                  if (value < 100) return value.toFixed(1)
+                  return Math.round(value).toString()
                 },
               },
               titleColor: darkMode.value ? tooltipTitleColor.dark : tooltipTitleColor.light,
               bodyColor: darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light,
               backgroundColor: darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light,
-              borderColor: darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light,               
+              borderColor: darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light,
             },
           },
           interaction: {
@@ -181,8 +136,6 @@ export default {
           maintainAspectRatio: false,
         },
       })
-      // output header values
-      //handleHeaderValues(props.data, chartValue, chartDeviation)
     })
 
     onUnmounted(() => chart.destroy())
@@ -192,9 +145,7 @@ export default {
       (data) => {
         // update chart
         chart.data = data
-        chart.update()
-        // update header values
-        //handleHeaderValues(data, chartValue, chartDeviation)        
+        chart.update()     
       }
     )
 
