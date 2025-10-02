@@ -90,7 +90,8 @@
     "singleinfo": {
       "title": "설비 현황",
       "Operatingtime": "운전 시간",
-      "EquipmentInformation": "설비 정보"
+      "EquipmentInformation": "설비 정보",
+      "OperationStatus":"운용 현황"
     },
     "sitemap": "대시보드",
     "meter": {

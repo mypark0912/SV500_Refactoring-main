@@ -6,7 +6,7 @@
          <h2 class="card-title">{{ t('dashboard.diagnosis.title') }}</h2>
          <div class="channel-info">
            <span class="channel-text">
-             {{ channel == 'main' ? t('dashboard.diagnosis.subtitle_main') : t('dashboard.diagnosis.subtitle_sub') }}
+             {{ channel.toLowerCase() == 'main' ? t('dashboard.diagnosis.subtitle_main') : t('dashboard.diagnosis.subtitle_sub') }}
            </span>
          </div>
        </header>
@@ -15,8 +15,8 @@
      <div class="content-section">
        <div class="grid grid-cols-12 gap-6">
          <!-- 상태 아이템 -->
-         <StatusItem v-if="DiagEnable" :channel="channel" :data="stData" mode="diagnosis" />
-         <StatusItem v-if="DiagEnable" :channel="channel" :data="pqData" mode="pq" />
+         <StatusItem :channel="channel" :data="stData" mode="diagnosis" />
+         <StatusItem :channel="channel" :data="pqData" mode="pq" />
        </div>
        <br/>
      </div>
@@ -55,48 +55,56 @@
      const stData = ref({
        devName:'',
        devType:'',
-       devStatus: -2
+       devStatus: -2,
+       devNickname : '',
+       Ig: 0,
+       runhour: 0,
      });
      const pqData = ref({
        devName:'',
        devStatus: -2
      });
-     const DiagEnable = ref(false);
+    //  const stData = ref({
+    //    devName:'',
+    //    devType:'',
+    //    devStatus: -2
+    //  });
+    //  const pqData = ref({
+    //    devName:'',
+    //    devStatus: -2
+    //  });
      const setupStore = useSetupStore();
      const channelStatus = computed(() => setupStore.getChannelSetting);
      const asset = computed(() => setupStore.getAssetConfig);
      const assetTypes = ref('');
      const status = ref('Normal');
-     const alarmContext = ref('');
      const data = ref([]);
-     const meterDictMain = inject('meterDictMain');
-     const meterDictSub = inject('meterDictSub');
      //const alarmEnable = ref(false);
      let updateInterval = null;
 
      const transData = ref({});
-       const LoadRate = ref(0);
+    //    const LoadRate = ref(0);
 
-    const LoadFactor = computed(()=>{
-      let kva = -1;
-      if(channel.value.toLowerCase() == 'main' && stData.value.devType=='Transformer'){
-        kva = setupStore.getMkva;
-      }
-      if(channel.value.toLowerCase() == 'sub' && stData.value.devType=='Transformer'){
-        kva = setupStore.getSkva;
-      }
-      return kva;
-    })
+    // const LoadFactor = computed(()=>{
+    //   let kva = -1;
+    //   if(channel.value.toLowerCase() == 'main' && stData.value.devType=='Transformer'){
+    //     kva = setupStore.getMkva;
+    //   }
+    //   if(channel.value.toLowerCase() == 'sub' && stData.value.devType=='Transformer'){
+    //     kva = setupStore.getSkva;
+    //   }
+    //   return kva;
+    // })
 
-    watch(
-      () => LoadFactor.value, // ✅ 이렇게 해야 실제 값이 감지됨
-      (newVal) => {
-        if (newVal > 0 && transData.value?.Stotal) {
-          LoadRate.value = ((transData.value.Stotal / newVal) * 100).toFixed(2);
-        }
-      },
-      { immediate: true }
-    );
+    // watch(
+    //   () => LoadFactor.value, // ✅ 이렇게 해야 실제 값이 감지됨
+    //   (newVal) => {
+    //     if (newVal > 0 && transData.value?.Stotal) {
+    //       LoadRate.value = ((transData.value.Stotal / newVal) * 100).toFixed(2);
+    //     }
+    //   },
+    //   { immediate: true }
+    // );
  
      const fetchData = async () => {
           if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
@@ -104,25 +112,29 @@
             //console.log(asset.value);
             return;
           }
-         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
-
+         const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+         const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+         const chNick = channel.value.toLowerCase() == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
          if(chName != ''){
-           const chN = channel.value == 'main'? 'Main' : 'Sub';
+           const chN = channel.value.toLowerCase() == 'main'? 'Main' : 'Sub';
            try {
              const response = await axios.get(`/api/getStatuscached/${chName}/${chN}`);
               //console.log(response.data.status);
              if (response.data.status >= 0) {
+                // stData.value.devName = chName;
+                // stData.value.devType = chType;
+                // stData.value.devStatus = response.data.status;
                 stData.value.devName = chName;
                 stData.value.devType = chType;
                 stData.value.devStatus = response.data.status;
-                if(assetTypes.value == 'Transformer'){                 
-                    if (channel.value === 'main') {
-                      transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
-                    } else {
-                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
-                    }
-                }
+                stData.value.devNickname = chNick;
+                // if(assetTypes.value == 'Transformer'){                 
+                //     if (channel.value === 'main') {
+                //       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
+                //     } else {
+                //       transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
+                //     }
+                // }
              }else{
                console.log('No Data');
              }
@@ -133,29 +145,29 @@
      };
 
      
-     const fetchRealData = async () => {
-          if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
-            //console.log("⏳ asset 준비 안됨. fetchData 대기중");
-            //console.log(asset.value);
-            return;
-          }
-         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
-         if(chName != ''){
+    //  const fetchRealData = async () => {
+    //       if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
+    //         //console.log("⏳ asset 준비 안됨. fetchData 대기중");
+    //         //console.log(asset.value);
+    //         return;
+    //       }
+    //      const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+    //      const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+    //      if(chName != ''){
 
-           try {
-            const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
+    //        try {
+    //         const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
 
-             if (response.data.success) {
-                transData.value = response.data.data;
-             }else{
-               console.log('No Data');
-             }
-           }catch (error) {
-             console.log("데이터 가져오기 실패:", error);
-           } 
-         }
-     };
+    //          if (response.data.success) {
+    //             transData.value = response.data.data;
+    //          }else{
+    //            console.log('No Data');
+    //          }
+    //        }catch (error) {
+    //          console.log("데이터 가져오기 실패:", error);
+    //        } 
+    //      }
+    //  };
 
     const fetchPQData = async () => {
           if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
@@ -163,8 +175,8 @@
             //console.log(asset.value);
             return;
           }
-         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+         const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+         const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
          if(chName != ''){
            try {
              const response = await axios.get(`/api/getPQStatusCached/${chName}/${channel.value}`);
@@ -181,31 +193,6 @@
      };
 
      
-     const fetchAlarmData = async () => {
-      try {
-        const chName = channel.value == 'main'?'Main':'Sub';
-        const response = await axios.get(`/api/getAlarmLast/${chName}`);
-        if (response.data.success) {
-            data.value = response.data.data;
-            if (data.value.length > 0){
-              status.value = 'Alarm';
-              alarmContext.value = `${response.data.last.AlarmChannel}, ${response.data.last.TimeStamp}`;
-              alarmEnable.value = true;
-            }
-            else{
-              status.value = 'Normal'
-              alarmContext.value = 'No Alarm'
-              alarmEnable.value = true;
-            }
-        }else{
-          alarmEnable.value = false;
-        }
-      } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
-        alarmEnable.value = false;
-      }
-    };
-
     watch(asset, (newVal, oldVal) => {
   if (newVal) {
     if(channel.value == 'main')
@@ -214,9 +201,6 @@
       assetTypes.value = newVal.assetType_sub;
       
     fetchData();
-    if(assetTypes.value != 'Transformer'){
-      fetchRealData();
-    }
     fetchPQData();
 
     // 타이머 재설정
@@ -277,30 +261,18 @@
        }
      });
  
-     watchEffect(() => {
-       if(channel.value == 'main')
-         DiagEnable.value = channelStatus.value.MainDiagnosis
-       else
-         DiagEnable.value = channelStatus.value.SubDiagnosis
-     });
  
      return {
        channel,
        stData,
        channelStatus,
-       DiagEnable,
        fetchData,
        asset,
        status,
        data,
        pqData,
-       alarmContext,
        assetTypes,
-       transData,
-       fetchRealData,
-       LoadFactor,
        t,
-       LoadRate,
      }    
    }
  }

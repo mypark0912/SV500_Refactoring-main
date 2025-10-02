@@ -1206,7 +1206,12 @@ def get_running(channel):
 @router.get("/getRealTimeCached/{assettype}/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
 async def get_asset_cached(assettype, asset, channel):
-    cache_key = f"SmartAPI:{channel}"
+    if channel.lower() == 'main':
+        ch = 'Main'
+    else:
+        ch = 'Sub'
+    cache_key = f"SmartAPI:{ch}"
+    # cache_key = f"SmartAPI:{channel}"
     cache_field = "AssetData"
     data = None
 
@@ -1216,7 +1221,7 @@ async def get_asset_cached(assettype, asset, channel):
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)
-            print(f"[Redis HIT] AssetData found for {channel}")
+            print(f"[Redis HIT] AssetData found for {ch}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
@@ -1232,7 +1237,7 @@ async def get_asset_cached(assettype, asset, channel):
             if data:
                 try:
                     redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
-                    print(f"[Redis SAVE] AssetData saved for {channel}")
+                    print(f"[Redis SAVE] AssetData saved for {ch}")
                 except Exception as e:
                     print(f"[Redis Save Error] {e}")
 
@@ -1264,8 +1269,10 @@ async def get_asset_cached(assettype, asset, channel):
                         "Value": item["Value"],
                         "Unit": item["Unit"]
                     })
+        runhours = get_running(ch)
 
-        return {"success": True, "data": datalist}
+        return {"success": True, "data": datalist, "runhours":runhours["total"]}
+        # return {"success": True, "data": datalist}
     else:
         return {"success": False, "error": "No Data"}
 

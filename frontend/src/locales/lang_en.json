@@ -90,7 +90,8 @@
        "singleinfo":{
             "title": "Equipment Info",
             "Operatingtime": "Running Hours",
-            "EquipmentInformation": "Equipment Information"
+            "EquipmentInformation": "Equipment Information",
+            "OperationStatus":"Operating Status"
         },
         "sitemap": "Dashboard",      
         "meter": {

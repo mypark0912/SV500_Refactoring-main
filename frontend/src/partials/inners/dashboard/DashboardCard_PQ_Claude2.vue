@@ -1,4 +1,4 @@
-<template>
+<template v-if="hasData">
   <div class="premium-dashboard-card">
     <!-- 헤더 -->
     <div class="card-header">
@@ -89,7 +89,7 @@
 <script>
 import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-
+import { useRealtimeStore } from '@/store/realtime' 
 export default {
   name: 'DashboardCard_PowerQuality',
   props: {
@@ -100,8 +100,18 @@ export default {
   setup(props, { emit }) {
     const { t } = useI18n()
     const channel = ref(props.channel)
-    const data2 = ref({})
+    //const data2 = ref({})
+    const store = useRealtimeStore()
+    const data2 = computed(() => {
+      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
+      const channelName = channel.value?.toLowerCase() === 'main' ? 'Main' : 'Sub'
+      return store.getChannelData(channelName) || {}
+    })
 
+    // 데이터 존재 확인
+    const hasData = computed(() => {
+      return Object.keys(data2.value).length > 0
+    })
     // 고조파 차트 데이터 설정
     const dataKeys = ['thdu total', 'thdi total', 'tddi total']
     const labels = ['THD-U', 'THD-I', 'TDD-I']
@@ -140,15 +150,15 @@ export default {
     }
 
     // props.data 감시
-    watch(
-      () => props.data,
-      (newData) => {
-        if (newData && Object.keys(newData).length > 0) {
-          data2.value = newData
-        }
-      },
-      { immediate: true }
-    )
+    // watch(
+    //   () => props.data,
+    //   (newData) => {
+    //     if (newData && Object.keys(newData).length > 0) {
+    //       data2.value = newData
+    //     }
+    //   },
+    //   { immediate: true }
+    // )
 
     return {
       channel,
@@ -156,6 +166,7 @@ export default {
       t,
       getUnbalanceClass,
       chartItems,
+      hasData,
     }
   },
 }

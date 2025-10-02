@@ -62,18 +62,18 @@ const stData = ref(props.data)
 const currentTime = ref(new Date())
 
 // 시간 업데이트
-let timeInterval = null
-onMounted(() => {
-  timeInterval = setInterval(() => {
-    currentTime.value = new Date()
-  }, 1000)
-})
+// let timeInterval = null
+// onMounted(() => {
+//   timeInterval = setInterval(() => {
+//     currentTime.value = new Date()
+//   }, 1000)
+// })
 
-onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval)
-  }
-})
+// onUnmounted(() => {
+//   if (timeInterval) {
+//     clearInterval(timeInterval)
+//   }
+// })
 
 // 표시할 상태들 (정지 제외)
 const displayedStatuses = computed(() => {
@@ -117,13 +117,13 @@ const getCurrentStatusText = () => {
 }
 
 // 현재 시간 포맷팅
-const getCurrentTime = () => {
-  return currentTime.value.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
+// const getCurrentTime = () => {
+//   return currentTime.value.toLocaleTimeString('ko-KR', {
+//     hour: '2-digit',
+//     minute: '2-digit',
+//     second: '2-digit'
+//   })
+// }
 </script>
 
 <style scoped>
