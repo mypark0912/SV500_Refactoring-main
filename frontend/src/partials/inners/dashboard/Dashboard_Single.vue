@@ -31,42 +31,6 @@
         <div class="data-grid">
             <Dash_InnerSingle :channel="computedChannel"/> 
             <Dash_InnerEquipment :channel="computedChannel" />
-
-          <!--div class="status-cards">
-              <div class="status-card hours-card">
-              <div class="status-value">
-                <span class="value-number">132</span>
-                <span class="value-unit">hrs</span>
-              </div>
-              <div class="status-label">{{ t('dashboard.singleinfo.Operatingtime') }}</div>
-            </div>
-            <div 
-              v-for="(item, index) in getVisibleTransData()" 
-              :key="index"
-              class="status-card"
-              :class="getCardClass(index)"
-            >
-              <div class="status-value">
-                <span class="value-number">{{ isNaN(item.Value) ? 0 : (item.Value?.toFixed(1) || 0) }}</span>
-                <span class="value-unit">{{ item.Unit || '' }}</span>
-              </div>
-              <div v-if="item.Title.length < 10" class="status-label" :title="`${item.Assembly} : ${item.Title}`">{{ item.Assembly }} : {{ item.Title }}</div>
-              <div v-else class="status-label" :title="`${item.Assembly} : ${item.Title}`">{{ item.Title }}</div>
-            </div>
-          </div>
-          <div class="data-table">
-            <div class="table-header">
-              <h4 class="table-title">{{ t('dashboard.singleinfo.EquipmentInformation') }}</h4>
-            </div>
-            <div class="table-content">
-              <div v-for="item in rawdata" :key="item.Name" class="data-row">
-                <span class="data-label">{{ t(`dashboard.transDiag.${item.Name}`) }}</span>
-                <span class="data-value">
-                  {{ item.Value }} <span class="data-unit">{{ item.Unit }}</span>
-                </span>
-              </div>
-            </div>
-          </div-->
         </div>
       </div>
     </div>
@@ -76,7 +40,6 @@
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useSetupStore } from '@/store/setup'
-  import { useRouter } from 'vue-router'
   import motorImg from '@/images/motor_m.png'
   import fanImg from '@/images/fan_m.png'
   import pumpImg from '@/images/pump_m.png'
@@ -100,7 +63,7 @@
       const setupStore = useSetupStore()
       //const router = useRouter()
       const AssetInfo = computed(() => setupStore.getAssetConfig)
-      const rawdata = ref([]);
+      //const rawdata = ref([]);
       // 반응형 데이터
       const channel = ref(props.channel)
 
@@ -139,142 +102,10 @@
         }
       })
 
-  
-      // 설비 상세로 이동
-    //   const goToEquipmentDetail = () => {
-    //     router.push(`/diagnosis/${computedChannel.value}`)
-    //   }
-  
-    //   const fetchRealData = async (chName, chType) => {
-  
-    //        if(chName != ''){
-  
-    //          try {
-    //           const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${computedChannel.value}`);
-  
-    //            if (response.data.success) {
-    //               transData.value = response.data.data;
-    //            }else{
-    //              console.log('No Data');
-    //            }
-    //          }catch (error) {
-    //            console.log("데이터 가져오기 실패:", error);
-    //          } 
-    //        }
-    //    };
-  
-    //    const fetchAsset = async () => {
-    //     if (!AssetInfo.value) {
-    //       await setupStore.checkSetting()
-    //     }
-  
-    //     const chName = channel.value.toLowerCase() === 'main' 
-    //       ? AssetInfo.value.assetName_main 
-    //       : AssetInfo.value.assetName_sub
-  
-    //     if (chName === '') {
-    //       alert('등록된 설비가 없습니다.')
-    //       return
-    //     }
-  
-    //     const chType = channel.value.toLowerCase() === 'main' 
-    //       ? AssetInfo.value.assetType_main 
-    //       : AssetInfo.value.assetType_sub
-  
-    //     try {
-    //       const response = await axios.get(`/api/getAsset/${chName}`)
-          
-    //       if (response.data.success) {
-    //         rawdata.value = response.data.data
-            
-    //         if(chType == 'Transformer'){
-    //           const ratedKVAItem = rawdata.value.find(item => item.Name === "RatedKVA")
-    //           if (ratedKVAItem) {
-    //             LoadFactor.value = parseFloat(ratedKVAItem.Value)
-    //           }
-    //           // 부하율 계산
-    //           if (LoadFactor.value > 0 && transData.value?.Stotal) {
-    //             LoadRate.value = ((transData.value.Stotal / LoadFactor.value) * 100).toFixed(2)
-    //           }
-    //         }
-  
-    //       } else {
-    //         console.log('No Data')
-    //       }
-    //     } catch (error) {
-    //       console.log("데이터 가져오기 실패:", error)
-    //     }
-    //     // if(chType != 'Transformer'){
-    //     //   fetchRealData(chName, chType);
-    //     // }
-    //   };
-  
-      // watch(
-      //   () => props.data,
-      //   (newVal) => {
-      //     console.log(newVal);
-      //     if (Object.keys(newVal).length > 0 ) {
-      //       stData.value = newVal;
-      //       fetchAsset();
-      //     }
-      //   },
-      //   { immediate: true }
-      // )
-    //   watch(
-    //     () => props.data,
-    //     (newData) => {
-    //       if (newData && Object.keys(newData).length > 0) {
-    //         const chType = channel.value.toLowerCase() === 'main' ? AssetInfo.value.assetType_main : AssetInfo.value.assetType_sub;
-  
-    //         if(chType == 'Transformer'){
-    //           transData.value = {
-    //             Temp: newData.Temp,
-    //             Ig: newData.Ig,
-    //             Stotal: newData.S4,
-    //             PF: newData.PF4,
-    //           }
-    //           //console.log(transData.value);
-    //         }
-  
-    //       }else{
-    //         if (Object.keys(newVal).length > 0 ) {
-    //           stData.value = newVal;
-    //         }
-    //       }
-    //       fetchAsset();
-    //     },
-    //     { immediate: true }
-    //   )
-  
-    //   const getLoadRateClass = (rate) => {
-    //     if (rate >= 90) return 'text-red-600 font-bold'
-    //     if (rate >= 80) return 'text-orange-500 font-semibold'
-    //     if (rate >= 60) return 'text-yellow-600 font-semibold'
-    //     return 'text-green-600'
-    //   }
-  
-    //   const getTemperatureStatus = (temp) => {
-    //     if (temp >= 80) return 'status-critical'
-    //     if (temp >= 60) return 'status-warning'
-    //     return 'status-normal'
-    //   }
-  
-    //   const getLoadStatus = (load) => {
-    //     if (load >= 90) return 'status-critical'
-    //     if (load >= 80) return 'status-warning'
-    //     return 'status-normal'
-    //   }
-  
-    //   const getPowerFactorStatus = (pf) => {
-    //     if (pf < 80) return 'status-warning'
-    //     if (pf < 90) return 'status-caution'
-    //     return 'status-normal'
-    //   }
-  
       return {
         // 데이터
         computedChannel,
-        rawdata,
+        //rawdata,
         // 계산된 속성
         motorImageSrc,
         AssetInfo,

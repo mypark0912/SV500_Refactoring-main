@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/store/auth'; // ✅ Pinia Store 사용
 import { nextTick } from 'vue'
-import Dashboard from './pages/main/DynamicDashboard.vue'
+import Dashboard from './pages/main/DynamicDashboard2.vue'
 import MasterDashboard from './pages/main/MasterDashboard.vue'
 import Meter from './pages/main/Meter.vue'
 import PowerQ from './pages/main/PowerQ.vue'
