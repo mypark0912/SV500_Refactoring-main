@@ -19,7 +19,7 @@
         <div class="summary-metric">
           <div class="summary-content">
             <div class="summary-value">
-              {{ data2.U4 || 0 }} <span class="summary-unit">V</span>
+              {{ data2?.U4 || 0 }} <span class="summary-unit">V</span>
             </div>
             <div class="summary-label">
               {{ t("dashboard.meter.avgvoltage") }}
@@ -31,7 +31,7 @@
         <div class="summary-metric">
           <div class="summary-content">
             <div class="summary-value">
-              {{ data2.Itot || 0 }} <span class="summary-unit">A</span>
+              {{ data2?.Itot || 0 }} <span class="summary-unit">A</span>
             </div>
             <div class="summary-label">
               {{ t("dashboard.meter.totcurrent") }}
@@ -43,7 +43,7 @@
         <div class="summary-metric">
           <div class="summary-content">
             <div class="summary-value">
-              {{ data2.Freq || 0 }} <span class="summary-unit">Hz</span>
+              {{ data2?.Freq || 0 }} <span class="summary-unit">Hz</span>
             </div>
             <div class="summary-label">
               {{ t("dashboard.meter.frequency") }}
@@ -55,7 +55,7 @@
         <div class="summary-metric">
           <div class="summary-content">
             <div class="summary-value">
-              {{ data2.PF4 || 0 }} <span class="summary-unit">%</span>
+              {{ data2?.PF4 || 0 }} <span class="summary-unit">%</span>
             </div>
             <div class="summary-label">{{ t("dashboard.pq.powerfactor") }}</div>
           </div>
@@ -65,7 +65,7 @@
         <div class="summary-metric">
           <div class="summary-content">
             <div class="summary-value">
-              {{ (data2.P4 / 1000).toFixed(2) || 0 }}
+              {{ (data2?.P4 / 1000).toFixed(2) || 0 }}
               <span class="summary-unit">kW</span>
             </div>
             <div class="summary-label">
@@ -133,7 +133,7 @@
                   class="unbalance-value"
                   :class="getUnbalanceClass(data2.Ubal1)"
                 >
-                  {{ (data2.Ubal1 || 0).toFixed(1) }}%
+                  {{ (data2?.Ubal1 || 0).toFixed(1) }}%
                 </span>
               </div>
               <div class="progress-container">
@@ -154,14 +154,14 @@
                   class="unbalance-value"
                   :class="getUnbalanceClass(data2.Ibal1)"
                 >
-                  {{ (data2.Ibal1 || 0).toFixed(1) }}%
+                  {{ (data2?.Ibal1 || 0).toFixed(1) }}%
                 </span>
               </div>
               <div class="progress-container">
                 <div class="progress-bar current">
                   <div
                     class="progress-fill"
-                    :style="{ width: Math.min(data2.Ibal1 || 0, 100) + '%' }"
+                    :style="{ width: Math.min(data2?.Ibal1 || 0, 100) + '%' }"
                   ></div>
                 </div>
               </div>
@@ -227,6 +227,7 @@ import { useI18n } from "vue-i18n";
 import DashboardCard_THD from "./DashboardCard_THD.vue";
 import StatusItem from "./StatusItem_Trans.vue";
 import { useSetupStore } from "@/store/setup";
+import { useRealtimeStore } from '@/store/realtime' 
 import axios from "axios";
 
 export default {
@@ -243,7 +244,17 @@ export default {
     const { t } = useI18n();
 
     const channel = ref(props.channel);
-    const data2 = ref({});
+    //const data2 = ref({});
+    const store = useRealtimeStore()
+    const data2 = computed(() => {
+      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
+      const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
+      console.log('useRealtimeStore',channelName,store.getChannelData(channelName))
+      return store.getChannelData(channelName) || {}
+    })
+
+
+
 
     // StatusItem 관련 추가 데이터
     const stData = ref({
@@ -273,10 +284,10 @@ export default {
 
     // 전체 시스템 상태 판정
     const getOverallStatus = () => {
-      const voltage = data2.value.U4 || 0;
-      const current = data2.value.Itot || 0;
-      const freq = data2.value.Freq || 0;
-      const pf = data2.value.PF4 || 0;
+      const voltage = data2.U4 || 0;
+      const current = data2.Itot || 0;
+      const freq = data2.Freq || 0;
+      const pf = data2.PF4 || 0;
 
       // 임계값 체크
       const voltageOk = voltage >= 200 && voltage <= 240;
@@ -312,8 +323,8 @@ export default {
     };
 
     const getUnbalanceStatusClass = () => {
-      const ubal = data2.value.Ubal1 || 0;
-      const ibal = data2.value.Ibal1 || 0;
+      const ubal = data2.Ubal1 || 0;
+      const ibal = data2.Ibal1 || 0;
       const maxUnbalance = Math.max(ubal, ibal);
 
       if (maxUnbalance >= 3) return "critical";
@@ -516,27 +527,27 @@ export default {
     };
 
     // 데이터 감시
-    watch(
-      () => props.data,
-      (newData) => {
-        if (newData && Object.keys(newData).length > 0) {
-          data2.value = {
-            U4: newData.U4 || 0,
-            U1: newData.U1 || 0,
-            U2: newData.U2 || 0,
-            U3: newData.U3 || 0,
-            Itot: newData.Itot || 0,
-            Freq: newData.Freq || 0,
-            PF4: newData.PF4 || 0,
-            P4: newData.P4 || 0,
-            Ubal1: newData.Ubal1 || 0,
-            Ibal1: newData.Ibal1 || 0,
-            ...newData,
-          };
-        }
-      },
-      { immediate: true }
-    );
+    // watch(
+    //   () => props.data,
+    //   (newData) => {
+    //     if (newData && Object.keys(newData).length > 0) {
+    //       data2.value = {
+    //         U4: newData.U4 || 0,
+    //         U1: newData.U1 || 0,
+    //         U2: newData.U2 || 0,
+    //         U3: newData.U3 || 0,
+    //         Itot: newData.Itot || 0,
+    //         Freq: newData.Freq || 0,
+    //         PF4: newData.PF4 || 0,
+    //         P4: newData.P4 || 0,
+    //         Ubal1: newData.Ubal1 || 0,
+    //         Ibal1: newData.Ibal1 || 0,
+    //         ...newData,
+    //       };
+    //     }
+    //   },
+    //   { immediate: true }
+    // );
 
     // asset 감시
     watch(
