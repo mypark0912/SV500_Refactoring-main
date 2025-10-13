@@ -34,7 +34,7 @@
  import { useSetupStore } from '@/store/setup'; // ✅ Pinia Store 사용
  import axios from 'axios'
  import { useI18n } from 'vue-i18n'  // ✅ 추가
- 
+ import { useRealtimeStore } from '@/store/realtime' 
  export default {
    name: 'DashboardCard04',
    props: {
@@ -71,9 +71,16 @@
      const assetTypes = ref('');
      const status = ref('Normal');
      const alarmContext = ref('');
+     const store = useRealtimeStore()
      const data = ref([]);
-     const meterDictMain = inject('meterDictMain');
-     const meterDictSub = inject('meterDictSub');
+     const meterDict = computed(() => {
+      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
+      const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'     
+      return store.getChannelData(channelName) || {}
+    })
+
+     
+
      //const alarmEnable = ref(false);
      let updateInterval = null;
 
@@ -99,14 +106,11 @@
                 stData.value.devStatus = response.data.status;
                 stData.value.devNickname = chNick;
                 stData.value.runhour = response.data.runhours;
-                if(assetTypes.value.includes('Transformer')){                 
-                    if (channel.value === 'main') {
-                      transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
-                    } else {
-                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictMain.value.S4 }
-                    }
+                if(assetTypes.value.includes('Transformer')){            
+                  transData.value = { Temp: meterDict.value.Temp, Ig: meterDict.value.Ig, Stotal:meterDict.value.S4 } 
+                
                 }else{
-                  stData.value.Ig = channel.value === 'main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
+                  stData.value.Ig =meterDict.value.Ig ;
                 }
              }else{
                console.log('No Data');
@@ -221,8 +225,7 @@
       }
     }, { immediate: true }); // <-- 바로 실행 시도
  
-    onMounted(async () => {
-      console.log('channel prop:', props.channel);
+    onMounted(async () => {     
         await setupStore.checkSetting();   // ✅ setupStore에서 서버 데이터 다시 가져오기
       });
 
