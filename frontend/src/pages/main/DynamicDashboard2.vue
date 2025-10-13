@@ -21,15 +21,15 @@
   
             <!-- 로딩 상태 표시 -->
             <div v-if="realtimeStore.isLoading" class="flex justify-center items-center h-64">
-              <div class="text-lg text-gray-600">데이터 로딩 중...</div>
+              <div class="text-lg text-gray-600">Data loading...</div>
             </div>
   
             <!-- 에러 상태 표시 -->
             <div v-else-if="realtimeStore.error" class="flex justify-center items-center h-64">
               <div class="text-lg text-red-600">
-                데이터 로딩 실패: {{ realtimeStore.error.message }}
+                Data loading failed: {{ realtimeStore.error.message }}
                 <button @click="retryLoading" class="ml-4 px-4 py-2 bg-blue-500 text-white rounded">
-                  재시도
+                  Retry
                 </button>
               </div>
             </div>

@@ -49,7 +49,9 @@
    },
    setup(props) {
      const { t } = useI18n();
+     
      const channel = ref(props.channel);
+     
      const stData = ref({
        devName:'',
        devType:'',
@@ -220,6 +222,7 @@
     }, { immediate: true }); // <-- 바로 실행 시도
  
     onMounted(async () => {
+      console.log('channel prop:', props.channel);
         await setupStore.checkSetting();   // ✅ setupStore에서 서버 데이터 다시 가져오기
       });
 

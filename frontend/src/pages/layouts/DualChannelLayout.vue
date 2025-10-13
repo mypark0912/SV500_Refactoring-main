@@ -4,9 +4,9 @@
     
     <!-- 메인 채널 카드들 -->
     <Dashboard_MeterCard 
-      v-if="Object.keys(mainData).length > 0 && channelState.MainEnable" 
+      v-if="channelState.MainEnable" 
       :channel="'main'" 
-      :data="mainData" 
+      
     />
     
     <DashboardCard04 
@@ -16,9 +16,9 @@
 
     <!-- 서브 채널 카드들 -->
     <Dashboard_MeterCard 
-      v-if="Object.keys(subData).length > 0 && channelState.SubEnable" 
+      v-if="channelState.SubEnable" 
       :channel="'sub'" 
-      :data="subData" 
+    
     />
     
     <DashboardCard04 

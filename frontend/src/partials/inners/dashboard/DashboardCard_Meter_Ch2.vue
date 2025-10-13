@@ -146,6 +146,7 @@ import { useI18n } from 'vue-i18n'
 //import BarChart_THD from '../../charts/THD_Chart_Claude.vue';
 import DashboardCard_THD from './DashboardCard_THD.vue';
 import { useSetupStore } from '@/store/setup'
+import { useRealtimeStore } from '@/store/realtime' 
 export default {
   name: 'PremiumDashboardCard',
   props: {
@@ -159,7 +160,15 @@ export default {
     const { t } = useI18n();
     const setupStore = useSetupStore();
     const channel = ref(props.channel);
-    const data2 = ref({});
+    
+    const store = useRealtimeStore()
+    const data2 = computed(() => {
+      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
+      const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
+      console.log('useRealtimeStore',channelName,store.getChannelData(channelName))
+      return store.getChannelData(channelName) || {}
+    })
+
     const unbalMode = computed(()=> setupStore.getUnbalance);
     // 전체 시스템 상태 판정
 
@@ -229,28 +238,7 @@ export default {
       //console.log('차트 데이터 변경:', chartInfo);
     };
 
-    // 데이터 감시
-    watch(
-      () => props.data,
-      (newData) => {
-        if (newData && Object.keys(newData).length > 0) {
-          data2.value = {
-            U4: newData.U4 || 0,
-            U1: newData.U1 || 0,
-            U2: newData.U2 || 0,
-            U3: newData.U3 || 0,
-            Itot: newData.Itot || 0,
-            Freq: newData.Freq || 0,
-            PF4: newData.PF4 || 0,
-            P4: newData.P4 || 0,
-            Ubal1: newData.Ubal1 || 0,
-            Ibal1: newData.Ibal1 || 0,
-            ...newData
-          };
-        }
-      },
-      { immediate: true }
-    );
+
 
     return {
       channel,
