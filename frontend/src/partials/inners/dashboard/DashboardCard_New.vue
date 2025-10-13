@@ -73,13 +73,16 @@
      const alarmContext = ref('');
      const store = useRealtimeStore()
      const data = ref([]);
-     const meterDict = computed(() => {
-      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
-      const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'     
-      return store.getChannelData(channelName) || {}
-    })
 
+     const meterDictMain = computed(() => {          
+      return store.getChannelData('Main') || {}
+     })
+     const meterDictSub = computed(() => {
+      return store.getChannelData('Sub') || {}
+     })
+ 
      
+
 
      //const alarmEnable = ref(false);
      let updateInterval = null;
@@ -106,11 +109,14 @@
                 stData.value.devStatus = response.data.status;
                 stData.value.devNickname = chNick;
                 stData.value.runhour = response.data.runhours;
-                if(assetTypes.value.includes('Transformer')){            
-                  transData.value = { Temp: meterDict.value.Temp, Ig: meterDict.value.Ig, Stotal:meterDict.value.S4 } 
-                
+                if(assetTypes.value.includes('Transformer')){                 
+                    if (channel.value === 'main') {
+                      transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
+                    } else {
+                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictMain.value.S4 }
+                    }
                 }else{
-                  stData.value.Ig =meterDict.value.Ig ;
+                  stData.value.Ig = channel.value === 'main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
                 }
              }else{
                console.log('No Data');

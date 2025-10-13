@@ -278,8 +278,12 @@ export default {
     const channelStatus = computed(() => setupStore.getChannelSetting);
     const asset = computed(() => setupStore.getAssetConfig);
     const assetTypes = ref("");
-    const meterDictMain = inject("meterDictMain");
-    const meterDictSub = inject("meterDictSub");
+    const meterDictMain = computed(() => {          
+      return store.getChannelData('Main') || {}
+     })
+     const meterDictSub = computed(() => {
+      return store.getChannelData('Sub') || {}
+     })
     let updateInterval = null;
 
     // 전체 시스템 상태 판정
@@ -433,7 +437,7 @@ export default {
             }
           }
         } catch (error) {
-          console.log("데이터 가져오기 실패:", error);
+          console.log("getStatuscached 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -461,7 +465,7 @@ export default {
             transData.value = response.data.data;
           }
         } catch (error) {
-          console.log("데이터 가져오기 실패:", error);
+          console.log("getRealTimeCached 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -486,7 +490,7 @@ export default {
             pqData.value.devStatus = response.data.status;
           }
         } catch (error) {
-          console.log("데이터 가져오기 실패:", error);
+          console.log("getPQStatusCached 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -512,7 +516,7 @@ export default {
             eventData.value = response.data.data_status;
           }
         } catch (error) {
-          console.log("데이터 가져오기 실패:", error);
+          console.log("getEventsCached 데이터 가져오기 실패:", error);
         }
       }
     };

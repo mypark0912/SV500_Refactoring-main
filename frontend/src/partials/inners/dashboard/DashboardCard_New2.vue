@@ -12,7 +12,7 @@
  import { useSetupStore } from '@/store/setup'; // ✅ Pinia Store 사용
  import axios from 'axios'
  import { useI18n } from 'vue-i18n'  // ✅ 추가
- 
+ import { useRealtimeStore } from '@/store/realtime' 
  export default {
    name: 'DashboardCard04',
    props: {
@@ -47,8 +47,13 @@
      const status = ref('Normal');
      const alarmContext = ref('');
      const data = ref([]);
-     const meterDictMain = inject('meterDictMain');
-     const meterDictSub = inject('meterDictSub');
+     const store = useRealtimeStore()
+     const meterDictMain = computed(() => {          
+      return store.getChannelData('Main') || {}
+     })
+     const meterDictSub = computed(() => {
+      return store.getChannelData('Sub') || {}
+     })
      //const alarmEnable = ref(false);
      let updateInterval = null;
 
