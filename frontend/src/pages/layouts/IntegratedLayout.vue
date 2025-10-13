@@ -12,8 +12,7 @@
     <!-- 메인 채널 카드들 -->
     <DashboardCard_Meter_Integrated 
       v-if="channelState.MainEnable" 
-      :channel="'main'" 
-      :data="mainData" 
+      :channel="'main'"       
     />
 
 
@@ -21,8 +20,7 @@
     <!-- 서브 채널 카드들 -->
     <DashboardCard_Meter_Integrated 
       v-if="channelState.SubEnable" 
-      :channel="'sub'" 
-      :data="subData" 
+      :channel="'sub'"       
     />
     
 
