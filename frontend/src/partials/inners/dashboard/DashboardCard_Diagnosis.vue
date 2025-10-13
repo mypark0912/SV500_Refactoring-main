@@ -212,9 +212,9 @@
     // 새 타이머 설정
     updateInterval = setInterval(async () => {
       await fetchData();
-      if(assetTypes.value != 'Transformer'){
-        await fetchRealData();
-      }
+      // if(assetTypes.value != 'Transformer'){
+      //   await fetchRealData();
+      // }
       await fetchPQData();
     }, 300000);  // 5분
   }
