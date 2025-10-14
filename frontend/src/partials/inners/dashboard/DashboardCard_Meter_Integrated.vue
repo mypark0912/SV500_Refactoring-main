@@ -420,13 +420,13 @@ export default {
                 transData.value = {
                   Temp: meterDictMain.value.Temp,
                   Ig: meterDictMain.value.Ig,
-                  Stotal: meterDictMain.value.S4,
+                  Stotal: meterDictSub.value.S4,
                 };
               } else {
                 transData.value = {
                   Temp: meterDictSub.value.Temp,
                   Ig: meterDictSub.value.Ig,
-                  Stotal: meterDictMain.value.S4,
+                  Stotal: meterDictSub.value.S4,
                 };
               }
             } else {
