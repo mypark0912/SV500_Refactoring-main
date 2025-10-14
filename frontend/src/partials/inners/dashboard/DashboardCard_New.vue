@@ -113,7 +113,7 @@
                     if (channel.value === 'main') {
                       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
                     } else {
-                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictMain.value.S4 }
+                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
                     }
                 }else{
                   stData.value.Ig = channel.value === 'main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
