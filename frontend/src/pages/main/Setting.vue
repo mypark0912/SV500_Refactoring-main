@@ -814,6 +814,12 @@ export default {
     };
 
     const restart = async () => {
+      if( devMode.value == 'device0'){
+        alert("✅ System restarted successfully");
+        isRestartDone.value = true;
+        return;
+      }
+        
       try {
         const response = await axios.get(`/setting/restartasset`);
         //console.log("Restart Response:", response);
