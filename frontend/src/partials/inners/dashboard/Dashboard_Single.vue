@@ -6,7 +6,7 @@
           <h2 class="card-title">{{ t('dashboard.singleinfo.title') }}</h2>
           <div class="channel-info">
             <span class="channel-text">
-              {{ computedChannel }} channel
+              {{ computedChannel == 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
             </span>
           </div>
         </header>

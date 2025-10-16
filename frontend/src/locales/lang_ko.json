@@ -96,6 +96,7 @@
     "sitemap": "대시보드",
     "meter": {
       "title": "계측 현황",
+      "singletitle": "전압,전류,주파수",
       "subtitle_main": "주 채널",
       "subtitle_sub": "보조 채널",
       "subtitle_main2": "Primary",
@@ -110,6 +111,7 @@
     },
     "pq": {
       "title": "전력 품질 현황",
+      "singletitle": "불평형률,고조파",
       "title2": "총 고조파 왜곡률",
       "subtitle_main": "주 채널",
       "subtitle_sub": "보조 채널",

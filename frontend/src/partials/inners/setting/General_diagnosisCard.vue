@@ -87,7 +87,7 @@
     id="advanced-modal"
     :modalOpen="advancedModalOpen"
     @close-modal="advancedModalOpen = false"
-    title="Adanced Setup"
+    title="Advanced Setup"
   >
   <!-- Modal content -->
     <div class="px-5 py-6">

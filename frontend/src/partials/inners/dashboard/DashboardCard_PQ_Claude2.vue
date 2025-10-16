@@ -3,7 +3,7 @@
     <!-- 헤더 -->
     <div class="card-header">
       <header class="header-content">
-        <h2 class="card-title">{{ t('dashboard.pq.title') }}</h2>
+        <h2 class="card-title">{{ t('dashboard.pq.singletitle') }}</h2>
         <div class="channel-info">
           <span class="channel-text">
             {{ channel == 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
