@@ -113,7 +113,11 @@
         if (opMode.value === 'device2') {
           return 'DualChannelLayout'
         } else {
-          return ChannelState.value?.SubEnable ? 'DualChannelLayout' : 'SingleChannelLayout'
+          if (ChannelState.value?.SubEnable && ChannelState.value?.MainEnable)
+            return 'DualChannelLayout'
+          else
+            return 'SingleChannelLayout'
+          //return ChannelState.value?.SubEnable ? 'DualChannelLayout' : 'SingleChannelLayout'
         }
       })
   

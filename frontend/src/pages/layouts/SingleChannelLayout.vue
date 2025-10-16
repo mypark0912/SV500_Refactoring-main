@@ -2,9 +2,14 @@
   <div class="grid grid-cols-12 gap-6">
     <!-- 1채널 전용 레이아웃 - 카드들이 더 크게 표시 -->
     <DashboardCard_Meter_Single v-if="channelState.MainEnable" :channel="channel" />
+    <DashboardCard_Meter_Single v-else-if="channelState.SubEnable" :channel="channel" />
     
     <DashboardCard_PQ_Claude 
       v-if="channelState.MainEnable" 
+      :channel="computedChannel"  
+    />
+    <DashboardCard_PQ_Claude 
+      v-else-if="channelState.SubEnable" 
       :channel="computedChannel"  
     />
     
@@ -16,12 +21,21 @@
     <Dashboard_Single v-if="computedType !== 'Transformer' && channelState.MainDiagnosis"
       :channel="computedChannel" 
     />
+    <Dashboard_Single v-else-if="computedType !== 'Transformer' && channelState.SubDiagnosis"
+      :channel="computedChannel" 
+    />
     
     <DashboardCard_kwh v-if="channelState.MainEnable"
       :channel="computedChannel" 
     />
+    <DashboardCard_kwh v-else-if="channelState.SubEnable"
+      :channel="computedChannel" 
+    />
     
     <DashboardCard_Diagnosis v-if="channelState.MainDiagnosis"
+      :channel="computedChannel" 
+    />
+    <DashboardCard_Diagnosis v-else-if="channelState.SubDiagnosis"
       :channel="computedChannel" 
     />
   </div>
