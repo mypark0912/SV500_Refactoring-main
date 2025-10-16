@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from states.global_state import influx_state, redis_state, os_spec
 from collections import defaultdict
-from .redismap import RedisMapDetail2, RedisMapped
+from .redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
 # from .auth import checkLoginAPI
 from .RedisBinary import RedisDataType
 from .DemandMap import DemandDataFormatter
@@ -2630,6 +2630,82 @@ def loaditems_json_from_redis(channel, item):
 def extract_key_list(key_dict_list):
     return [item["key"] for item in key_dict_list]
 
+def get_Calibrate(channel):
+    try:
+        redis_state.client.execute_command("SELECT", 1)
+        keyname = get_RedisKey(channel, "meter")
+        if not redis_state.client.exists(keyname):
+            return {"success": False, "error": f"No exist key"}
+
+        field_keys = (
+                extract_key_list(RedisMapCalibrate.p_voltage_keys) +
+                extract_key_list(RedisMapCalibrate.freq_keys) +
+                extract_key_list(RedisMapCalibrate.l_voltage_keys) +
+                extract_key_list(RedisMapCalibrate.current_keys) +
+                extract_key_list(RedisMapCalibrate.p_angle_keys) +
+                extract_key_list(RedisMapCalibrate.a_powers_keys) +
+                extract_key_list(RedisMapCalibrate.r_powers_keys) +
+                extract_key_list(RedisMapCalibrate.ap_powers_keys)
+        )
+        field_keys = list(set(field_keys))
+
+
+        # Redis에서 가져오기
+        values = redis_state.client.hmget(keyname, field_keys)
+        flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
+        # 그룹핑
+        meters = {k["key"]: flat_fields.get(k["key"]) for k in (
+                RedisMapCalibrate.p_voltage_keys +
+                RedisMapCalibrate.freq_keys +
+                RedisMapCalibrate.l_voltage_keys +
+                RedisMapCalibrate.current_keys +
+                RedisMapCalibrate.p_angle_keys +
+                RedisMapCalibrate.a_powers_keys +
+                RedisMapCalibrate.r_powers_keys +
+                RedisMapCalibrate.ap_powers_keys
+        )}
+        full_data = redis_state.client.hgetall(keyname)
+        if channel == 'Main':
+            ch = 'main'
+        else:
+            ch = 'sub'
+
+        processor = redis_state.processor
+        handler = redis_state.handler
+        parsed = processor.get_and_parse(
+            config_name="maxmin_1sec",
+            key=f"MAXMIN_{ch}",
+            data_type=RedisDataType.HASH,
+            field="1sec"  # 필수
+        )
+        p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.p_voltage_keys, 'V')
+        freq_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.freq_keys, 'Hz')
+        l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.l_voltage_keys, 'V')
+        current_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.current_keys, 'A')
+        angle_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.p_angle_keys, '%')
+        p_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.a_powers_keys, 'kw')
+        q_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.r_powers_keys, 'kvar')
+        s_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.ap_powers_keys, 'kVA')
+
+
+        result = {
+            "success": True,
+            "meterData": [
+                    {"subTitle": "Phase Voltage", "data": p_voltage_data},
+                    {"subTitle": "Line Voltage", "data": l_voltage_data},
+                    {"subTitle": "Current", "data": current_data},
+                    {"subTitle": "Frequency", "data": freq_data},
+                    {"subTitle": "PowerAngle", "data": angle_data},
+                    {"subTitle": "ActivePower", "data": p_data},
+                    {"subTitle": "ReactivePower", "data": q_data},
+                    {"subTitle": "ApparentPower", "data": s_data},
+                ]
+        }
+
+        return {"success": True, "retData": result}
+    except Exception as e:
+        print(str(e))
+        return {"success": False, "error": str(e)}
 
 @router.get("/getOnesfromRedis/{channel}/{unbal}")
 def get_OneSecond(channel, unbal):

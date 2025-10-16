@@ -217,3 +217,70 @@ class RedisMapDetail2:
             })
         return p_voltage_data
 
+class RedisMapCalibrate:
+    freq_keys = [
+        {"id": 0, "label": "-", "key": "Freq"}
+    ]
+
+    p_voltage_keys = [
+        {"id": 0, "label": "L1", "key": "U1"},
+        {"id": 1, "label": "L2", "key": "U2"},
+        {"id": 2, "label": "L3", "key": "U3"},
+        {"id": 3, "label": "Avg", "key": "U4"},
+    ]
+    p_angle_keys = [
+        {"id": 0, "label": "L1", "key": "Pangle1"},
+        {"id": 1, "label": "L2", "key": "Pangle2"},
+        {"id": 2, "label": "L3", "key": "Pangle3"},
+    ]
+    l_voltage_keys = [
+        {"id": 0, "label": "L1-L2", "key": "Upp1"},
+        {"id": 1, "label": "L2-L3", "key": "Upp2"},
+        {"id": 2, "label": "L3-L1", "key": "Upp3"},
+        {"id": 3, "label": "Avg", "key": "Upp4"},
+    ]
+    current_keys = [
+        {"id": 0, "label": "L1", "key": "I1"},
+        {"id": 1, "label": "L2", "key": "I2"},
+        {"id": 2, "label": "L3", "key": "I3"},
+        {"id": 3, "label": "Ground", "key": "Ig"},
+        {"id": 4, "label": "Sum", "key": "In"},
+    ]
+    current_angle_keys = [
+        {"id": 0, "label": "L1", "key": "Iangle1"},
+        {"id": 1, "label": "L2", "key": "Iangle2"},
+        {"id": 2, "label": "L3", "key": "Iangle3"},
+    ]
+    a_powers_keys = [
+        {"id": 0, "label": "L1", "key": "P1"},
+        {"id": 1, "label": "L2", "key": "P2"},
+        {"id": 2, "label": "L3", "key": "P3"},
+    ]
+    r_powers_keys = [
+        {"id": 0, "label": "L1", "key": "Q1"},
+        {"id": 1, "label": "L2", "key": "Q2"},
+        {"id": 2, "label": "L3", "key": "Q3"},
+    ]
+    ap_powers_keys = [
+        {"id": 0, "label": "L1", "key": "S1"},
+        {"id": 1, "label": "L2", "key": "S2"},
+        {"id": 2, "label": "L3", "key": "S3"},
+    ]
+
+    @classmethod
+    def get_Datadict(cls,meters, maxmin, keys, unit):
+        p_voltage_data = []
+        for item in keys:
+            key = item["key"]
+            p_voltage_data.append({
+                "id": item["id"],
+                "subTitle": item["label"],
+                "value": round(meters.get(key, 0), 2),
+                "max": round(maxmin.get(f"{key}_max", 0), 2),
+                "maxTime": maxmin.get(f"{key}_maxTime", ""),
+                "min": round(maxmin.get(f"{key}_min", 0), 2),
+                "minTime": maxmin.get(f"{key}_minTime", ""),
+                "unit": unit
+            })
+        return p_voltage_data
+

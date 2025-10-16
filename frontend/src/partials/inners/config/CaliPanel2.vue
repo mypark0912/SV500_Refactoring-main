@@ -37,7 +37,7 @@
   import FormBlock from './FormBlock.vue';
   import GroupTable from './GroupTable.vue';
   import { useRoute } from 'vue-router'
-  import { ref , watch, reactive, onMounted,inject} from 'vue'
+  import { ref , watch, reactive, onMounted,inject,onUnmounted} from 'vue'
   import { useSetupStore } from "@/store/setup"; // ✅ Pinia Store 사용
   import axios from 'axios';
   export default {
@@ -60,6 +60,7 @@
         const showMainChannel = inject('showMainChannel', ref(true));
         const showSubChannel = inject('showSubChannel', ref(true));
         const selectItem = ref('Time');
+        let updateInterval = null;
         const channels = reactive({
       "main":{       
         "Phase Voltage": {
@@ -197,6 +198,65 @@
         })
     
 
+    onMounted(async()=>{
+      await fetchData();
+      updateInterval = setInterval(() => {
+        fetchData();
+        }, 1000);
+    });
+
+    onUnmounted(()=>{
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+    });
+
+    const dataMapping = [
+  { index: 0, category: "Phase Voltage", dataCount: 4 },
+  { index: 1, category: "Phase Current", dataCount: 4 },
+  { index: 2, category: "Power Angle", dataCount: 3 },
+  { index: 3, category: "Active Power", dataCount: 3 },
+  { index: 4, category: "Reactive Power", dataCount: 3 },
+  { index: 5, category: "Apparent Power", dataCount: 3 }
+];
+
+// 자동화된 데이터 업데이트 함수
+function updateChannelData(response) {
+  // main과 sub 채널 동시 처리
+  ['main', 'sub'].forEach(channelType => {
+    const sourceData = channelType === 'main' ? response.mainData : response.subData;
+    
+    if (!sourceData) return;
+    
+    // 매핑 테이블에 따라 자동 업데이트
+    dataMapping.forEach(({ index, category, dataCount }) => {
+      if (sourceData[index]?.data) {
+        const targetView = channels[channelType][category].view;
+        
+        // 데이터 배열의 각 값을 view 배열에 할당
+        for (let i = 0; i < dataCount && i < targetView.length; i++) {
+          if (sourceData[index].data[i] !== undefined) {
+            //targetView[i].value = sourceData[index].data[i]["value"];
+            channels[channelType][category].view[i] = {
+              ...channels[channelType][category].view[i],
+              value: sourceData[index].data[i]["value"]
+            };
+          }
+        }
+      }
+    });
+  });
+}
+    const fetchData = async (ch) => {
+      try {
+        const response = await axios.get(`/config/calibrateNow`);
+        //console.log(response.data.mainData);
+        updateChannelData(response.data);
+        
+      } catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      }
+    };
 
     watch(() => props.channel, (newChannel) => {
       if (newChannel !== channel.value) {

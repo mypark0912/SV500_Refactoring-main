@@ -5,7 +5,7 @@ import ujson as json
 from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
-from .api import get_OneSecond
+from .api import get_Calibrate
 
 router = APIRouter()
 
@@ -119,10 +119,10 @@ def getUnbal():
                 setting = json.load(f)
     return { 'unbal': setting['unbalance']}
 
-@router.get('/calibrateNow/{unbal}')
-def cali_mount(unbal):
-    mainResponse = get_OneSecond('Main', unbal)
-    subResponse = get_OneSecond('Sub', unbal)
+@router.get('/calibrateNow')
+def cali_mount():
+    mainResponse = get_Calibrate('Main')
+    subResponse = get_Calibrate('Sub')
 
     return {'mainStatus': mainResponse['success'], 'mainData':mainResponse['retData']['meterData'],
             'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData']}
