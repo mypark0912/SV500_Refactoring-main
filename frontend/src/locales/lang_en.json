@@ -96,7 +96,7 @@
         "sitemap": "Dashboard",      
         "meter": {
             "title": "Meter",
-            "singletitle": "Voltage, Current, Frequency",
+            "singletitle": "Voltage/Current/Frequency",
             "subtitle_main": "main channel",
             "subtitle_sub": "sub channel",
             "subtitle_main2": "Primary",
@@ -111,7 +111,7 @@
         },
         "pq": {
             "title": "Power Quality",
-            "singletitle": "Unbalance, Harmonics",
+            "singletitle": "Unbalance/Harmonics",
             "title2": "THD",
             "subtitle_main": "main channel",
             "subtitle_sub": "sub channel",
