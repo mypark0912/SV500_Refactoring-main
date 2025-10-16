@@ -101,7 +101,7 @@
       const ChannelState = computed(() => setupStore.getChannelSetting)
       const setup = computed(() => setupStore.getSetup)
       const opMode = computed(() => authStore.getOpMode)
-      
+     
       // 데이터 준비 완료 상태 확인
       const isDataReady = computed(() => {
         if (!setup.value) return false
@@ -115,8 +115,15 @@
         } else {
           if (ChannelState.value?.SubEnable && ChannelState.value?.MainEnable)
             return 'DualChannelLayout'
-          else
+          else{
+            if (ChannelState.value?.MainEnable)
+              channel.value = 'main'
+            else
+              channel.value = 'sub'
+            
             return 'SingleChannelLayout'
+          }
+
           //return ChannelState.value?.SubEnable ? 'DualChannelLayout' : 'SingleChannelLayout'
         }
       })
