@@ -27,37 +27,37 @@
           <div class="grid grid-cols-12 gap-4">
             
             <MeterDetail2 v-if="Object.keys(meterDatas).length > 0" :data="meterDatas.meterData" :channel="channel" :title="'Meter'" />
-              <div class="col-span-5 md:col-span-5 flex flex-col gap-4">
-                <div class="col-span-5">
-                  <CanvasAngle2 v-if="Object.keys(phaseDict).length > 0"
-                    :degree="phaseDict.degree"
-                    :magnitude="phaseDict.magnitude"
-                    :texts="phaseDict.texts"
-                    :maxlist="phaseDict.max"
-                    :channel="channel"
-                  />
-                </div>
-                <div class="flex gap-4">
-                <div class="basis-1/2">
-                  <MeterKwh
-                    v-if="Object.keys(meterDatas).length > 0"
-                    :data="energyData"
-                    :channel="channel"
-                    :title="'Energy'"
-                    :mode="'import'"
-                  />
-                </div>
-                <div class="basis-1/2">
-                  <MeterKwh
-                    v-if="Object.keys(energyData).length > 0"
-                    :data="energyData"
-                    :channel="channel"
-                    :title="'Energy'"
-                    :mode="'export'"
-                  />
-                </div>
+            <div class="col-span-5 md:col-span-5 flex flex-col gap-4">
+              <div class="col-span-5">
+                <CanvasAngle2 v-if="Object.keys(phaseDict).length > 0"
+                  :degree="phaseDict.degree"
+                  :magnitude="phaseDict.magnitude"
+                  :texts="phaseDict.texts"
+                  :maxlist="phaseDict.max"
+                  :channel="channel"
+                />
               </div>
+              <div class="flex gap-4">
+              <div class="basis-1/2">
+                <MeterKwh
+                  v-if="Object.keys(meterDatas).length > 0"
+                  :data="energyData"
+                  :channel="channel"
+                  :title="'Energy'"
+                  :mode="'import'"
+                />
               </div>
+              <div class="basis-1/2">
+                <MeterKwh
+                  v-if="Object.keys(energyData).length > 0"
+                  :data="energyData"
+                  :channel="channel"
+                  :title="'Energy'"
+                  :mode="'export'"
+                />
+              </div>
+            </div>
+            </div>
 
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.thdData" :data="powerThd.thdData" :channel="channel" :title="'THD'" />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.demandDataP" :data="powerThd.demandDataP" :channel="channel" :title="'Demand'" />
