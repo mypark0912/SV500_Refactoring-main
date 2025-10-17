@@ -419,12 +419,12 @@ export class SettingValidator {
   // 전체 설정 검증 (General + 모든 Channel)
   validateAllSettings(generalDict, mainChannelDict, subChannelDict) {
     this.reset();
-    
+
     // 1. General 설정 검증
     this.validateGeneralSettingsInternal(generalDict);
     
     // 2. Main Channel 검증 (Enable되어 있을 때만)
-    if (mainChannelDict && mainChannelDict.Enable === 1) {
+    if (mainChannelDict && (mainChannelDict.Enable == 1 || mainChannelDict.Enable == true)) {
       const mainErrors = this.errors.length;
       const mainWarnings = this.warnings.length;
       
@@ -438,12 +438,14 @@ export class SettingValidator {
         this.warnings[i] = `[Main Channel] ${this.warnings[i]}`;
       }
     }
-    
+
     // 3. Sub Channel 검증 (Enable되어 있을 때만)
-    if (subChannelDict && subChannelDict.Enable === 1) {
+    if (subChannelDict && (subChannelDict.Enable == 1 || subChannelDict.Enable == true)) {
+
+
       const subErrors = this.errors.length;
       const subWarnings = this.warnings.length;
-      
+
       this.validateChannelSettingsInternal(subChannelDict);
       
       // Sub Channel 에러/경고에 접두사 추가
@@ -511,9 +513,9 @@ export class SettingValidator {
     if (!inputDict) return false;
     
     const currentErrors = this.errors.length;
-    
+
     // 채널이 Enable되어 있을 때만 세부 설정 검증
-    if (inputDict.Enable === 1) {
+    if (inputDict.Enable == 1) {
       this.validateCTSettings(inputDict.ctInfo);
       this.validatePTSettings(inputDict.ptInfo);
       this.validateSamplingSettings(inputDict.sampling);
@@ -525,7 +527,7 @@ export class SettingValidator {
       }
       
       // Power Quality가 활성화되어 있을 때 추가 검증
-      if (inputDict.PowerQuality === 1) {
+      if (inputDict.PowerQuality == 1) {
         this.validatePowerQualitySettings(inputDict);
       }
       
@@ -541,6 +543,7 @@ export class SettingValidator {
 
       // Alarm 설정 검증
       if (inputDict.alarm) {
+        
         this.validateAlarmSettings(inputDict.alarm);
       }
     }
@@ -551,11 +554,11 @@ export class SettingValidator {
   // General과 Channel 간의 크로스 검증
   validateCrossSettings(generalDict, mainChannelDict, subChannelDict) {
     // FTP와 Diagnosis 동시 사용 체크
-    const isFTPEnabled = generalDict?.useFuction?.ftp === 1;
-    const isMainDiagnosisEnabled = generalDict?.useFuction?.diagnosis_main === true || generalDict?.useFuction?.diagnosis_main === 1;
-    const isSubDiagnosisEnabled = generalDict?.useFuction?.diagnosis_sub === true || generalDict?.useFuction?.diagnosis_sub === 1;
-    const isMainChannelEnabled = mainChannelDict?.Enable === 1;
-    const isSubChannelEnabled = subChannelDict?.Enable === 1;
+    const isFTPEnabled = generalDict?.useFuction?.ftp == 1;
+    const isMainDiagnosisEnabled = generalDict?.useFuction?.diagnosis_main == true || generalDict?.useFuction?.diagnosis_main == 1;
+    const isSubDiagnosisEnabled = generalDict?.useFuction?.diagnosis_sub == true || generalDict?.useFuction?.diagnosis_sub == 1;
+    const isMainChannelEnabled = mainChannelDict?.Enable == 1;
+    const isSubChannelEnabled = subChannelDict?.Enable == 1;
     
     const isMainDiagnosisActive = isMainDiagnosisEnabled && isMainChannelEnabled;
     const isSubDiagnosisActive = isSubDiagnosisEnabled && isSubChannelEnabled;
