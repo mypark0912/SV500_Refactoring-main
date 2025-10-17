@@ -11,11 +11,13 @@ from routes.auth import checkLoginAPI,get_mac_address
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
+import sqlite3
+
 # Path 객체 절대경로
 from pathlib import Path
 base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
-
+BEARINGDB_PATH = SETTING_FOLDER / "bearing.db"
 setting_timeout = httpx.Timeout(
     connect=2.0,  # 연결에는 5초
     read=30.0,     # 응답 읽기는 2초
@@ -950,72 +952,272 @@ def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         return {'passOK': '0', 'error': str(e)}
-
 @router.get('/checkBearing')
-def load_and_merge_bearing_data():
-    filenames = ["Bearing.csv", "Bearing.json", "Bearings.csv", "Bearings.json"]
-    merged_list = []
-    seen_names = set()
-    nonExistCount = 0
-    for fname in filenames:
-        file_path = os.path.join(SETTING_FOLDER, fname)
-        if not os.path.isfile(file_path):
-            nonExistCount += 1
-            continue
+def load_bearings_from_db():
+    """DB에서 Bearing 데이터 로드"""
+    try:
+        # DB 경로 확인
+        print(f"DB Path: {BEARINGDB_PATH}")
+        
+        # DB 초기화 (테이블이 없으면 생성)
+        conn = sqlite3.connect(str(BEARINGDB_PATH))
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bearings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT UNIQUE NOT NULL,
+                BPFO REAL NOT NULL,
+                BPFI REAL NOT NULL,
+                BSF REAL NOT NULL,
+                FTF REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        
+        # 데이터 조회
+        cursor.execute('SELECT Name, BPFO, BPFI, BSF, FTF FROM bearings ORDER BY Name')
+        rows = cursor.fetchall()
+        
+        # 수동으로 딕셔너리 변환
+        result = []
+        for row in rows:
+            result.append({
+                'Name': row[0],
+                'BPFO': float(row[1]),
+                'BPFI': float(row[2]),
+                'BSF': float(row[3]),
+                'FTF': float(row[4])
+            })
+        
+        conn.close()
+        
+        print(f"Loaded {len(result)} bearings from DB")
+        
+        if len(result) == 0:
+            return {'passOK': '1', 'data': [], 'msg': 'No bearing data in database'}
+        
+        return {'passOK': '1', 'data': result}
+        
+    except Exception as e:
+        print(f"DB Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {'passOK': '0', 'msg': f'Database error: {str(e)}'}
+# @router.get('/checkBearing')
+# def load_and_merge_bearing_data():
+#     filenames = ["Bearing.csv", "Bearing.json", "Bearings.csv", "Bearings.json"]
+#     merged_list = []
+#     seen_names = set()
+#     nonExistCount = 0
+#     for fname in filenames:
+#         file_path = os.path.join(SETTING_FOLDER, fname)
+#         if not os.path.isfile(file_path):
+#             nonExistCount += 1
+#             continue
 
-        if fname.endswith(".csv"):
-            try:
-                with open(file_path, newline='', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        name = row.get("Name")
-                        if name and name not in seen_names:
-                            seen_names.add(name)
-                            merged_list.append(row)
-            except Exception as e:
-                return {'passOK': '0', 'msg': f"[CSV Error] {fname}: {e}"}
+#         if fname.endswith(".csv"):
+#             try:
+#                 with open(file_path, newline='', encoding='utf-8') as f:
+#                     reader = csv.DictReader(f)
+#                     for row in reader:
+#                         name = row.get("Name")
+#                         if name and name not in seen_names:
+#                             seen_names.add(name)
+#                             merged_list.append(row)
+#             except Exception as e:
+#                 return {'passOK': '0', 'msg': f"[CSV Error] {fname}: {e}"}
 
-        elif fname.endswith(".json"):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if not isinstance(data, list):
-                        print(f"[JSON Warning] {fname}는 리스트 형식이 아님, 무시됨")
-                        continue
-                    for item in data:
-                        name = item.get("Name")
-                        if name and name not in seen_names:
-                            seen_names.add(name)
-                            merged_list.append(item)
-            except Exception as e:
-                return {'passOK': '0', 'msg': f"[CSV JSON] {fname}: {e}"}
+#         elif fname.endswith(".json"):
+#             try:
+#                 with open(file_path, "r", encoding="utf-8") as f:
+#                     data = json.load(f)
+#                     if not isinstance(data, list):
+#                         print(f"[JSON Warning] {fname}는 리스트 형식이 아님, 무시됨")
+#                         continue
+#                     for item in data:
+#                         name = item.get("Name")
+#                         if name and name not in seen_names:
+#                             seen_names.add(name)
+#                             merged_list.append(item)
+#             except Exception as e:
+#                 return {'passOK': '0', 'msg': f"[CSV JSON] {fname}: {e}"}
 
-    if nonExistCount == len(filenames):
-        return {'passOK': '0', 'msg': f"No exist files"}
-    else:
-        return {'passOK': '1', 'data':merged_list}
+#     if nonExistCount == len(filenames):
+#         return {'passOK': '0', 'msg': f"No exist files"}
+#     else:
+#         return {'passOK': '1', 'data':merged_list}
 
-@router.post('/uploadBearing')  # upload setup.json
-def upload_file(file: UploadFile = File(...)):
+@router.post('/uploadBearing')
+def upload_bearing_to_db(file: UploadFile = File(...)):
+    """업로드된 Bearing 파일을 DB에 저장"""
     if file.filename == '':
         return {'passOK': '0', 'error': 'No selected file'}
 
-    # 기존 setup.json 파일 경로
-    original_file_path = os.path.join(SETTING_FOLDER, file.filename)
-
     try:
-
-        with open(original_file_path, "wb") as buffer:
+        # 임시 파일로 저장
+        temp_file_path = os.path.join(SETTING_FOLDER, file.filename)
+        with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        data = get_Bearing(original_file_path)
-
-        return {'passOK': '1', 'file_path': original_file_path, 'data':data}
+        # 파일에서 데이터 읽기
+        data = get_Bearing(temp_file_path)
+        
+        print(f"Parsed {len(data)} bearings from file")
+        
+        # DB에 삽입
+        conn = sqlite3.connect(str(BEARINGDB_PATH))
+        cursor = conn.cursor()
+        
+        inserted = []
+        skipped = []
+        
+        for bearing in data:
+            try:
+                # 데이터 타입 확인 및 변환
+                name = str(bearing.get('Name', ''))
+                bpfo = float(bearing.get('BPFO', 0))
+                bpfi = float(bearing.get('BPFI', 0))
+                bsf = float(bearing.get('BSF', 0))
+                ftf = float(bearing.get('FTF', 0))
+                
+                cursor.execute('''
+                    INSERT INTO bearings (Name, BPFO, BPFI, BSF, FTF)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (name, bpfo, bpfi, bsf, ftf))
+                
+                inserted.append({
+                    'Name': name,
+                    'BPFO': bpfo,
+                    'BPFI': bpfi,
+                    'BSF': bsf,
+                    'FTF': ftf
+                })
+                print(f"Inserted: {name}")
+                
+            except sqlite3.IntegrityError:
+                skipped.append(bearing.get('Name', 'Unknown'))
+                print(f"Skipped (duplicate): {bearing.get('Name', 'Unknown')}")
+                continue
+            except Exception as e:
+                print(f"Error inserting bearing: {e}")
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"Total inserted: {len(inserted)}, Skipped: {len(skipped)}")
+        
+        # 파일을 날짜와 함께 백업 저장
+        if os.path.exists(temp_file_path):
+            # 현재 날짜/시간 (YYYYMMDD_HHMMSS 형식)
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H")
+            
+            # 파일명과 확장자 분리
+            file_base, file_ext = os.path.splitext(file.filename)
+            
+            # 새 파일명: 원본파일명_YYYYMMDD_HHMMSS.확장자
+            backup_filename = f"{file_base}_{timestamp}{file_ext}"
+            backup_path = os.path.join(SETTING_FOLDER, backup_filename)
+            
+            # 파일 복사 (이동이 아닌 복사)
+            shutil.copy(temp_file_path, backup_path)
+            print(f"Backup saved: {backup_filename}")
+            
+            # 임시 파일 삭제
+            os.remove(temp_file_path)
+        
+        if len(inserted) == 0 and len(skipped) > 0:
+            return {
+                'passOK': '1', 
+                'data': [], 
+                'msg': f'All {len(skipped)} bearings already exist in database'
+            }
+        
+        return {
+            'passOK': '1', 
+            'data': inserted, 
+            'inserted': len(inserted),
+            'skipped': len(skipped)
+        }
 
     except Exception as e:
+        print(f"Upload Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {'passOK': '0', 'error': str(e)}
 
+def init_bearing_db():
+    """Bearing 데이터베이스 초기화"""
+    conn = sqlite3.connect(BEARINGDB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bearings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Name TEXT UNIQUE NOT NULL,
+            BPFO REAL NOT NULL,
+            BPFI REAL NOT NULL,
+            BSF REAL NOT NULL,
+            FTF REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 
+def get_all_bearings():
+    """DB에서 모든 Bearing 데이터 조회"""
+    try:
+        conn = sqlite3.connect(BEARINGDB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT Name, BPFO, BPFI, BSF, FTF FROM bearings ORDER BY Name')
+        rows = cursor.fetchall()
+        
+        result = [dict(row) for row in rows]
+        conn.close()
+        
+        return result
+    except Exception as e:
+        print(f"DB 조회 오류: {e}")
+        return []
+
+def insert_bearings(bearing_list):
+    """새로운 Bearing 데이터를 DB에 삽입 (중복 제외)"""
+    try:
+        conn = sqlite3.connect(BEARINGDB_PATH)
+        cursor = conn.cursor()
+        
+        inserted = []
+        for bearing in bearing_list:
+            try:
+                cursor.execute('''
+                    INSERT INTO bearings (Name, BPFO, BPFI, BSF, FTF)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    bearing['Name'],
+                    float(bearing['BPFO']),
+                    float(bearing['BPFI']),
+                    float(bearing['BSF']),
+                    float(bearing['FTF'])
+                ))
+                inserted.append(bearing)
+            except sqlite3.IntegrityError:
+                # 중복된 Name은 무시
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        return inserted
+    except Exception as e:
+        print(f"DB 삽입 오류: {e}")
+        return []
 @router.get('/download')  # download setup.json
 def download_setting():
     file_path = os.path.join(SETTING_FOLDER, 'setup.json')

@@ -236,6 +236,42 @@
       </div>
     </div>
   </div>
+
+  <!-- Notification Popup -->
+  <Teleport to="body">
+    <Transition name="notification">
+      <div
+        v-if="notification.show"
+        class="fixed top-4 right-4 z-50 min-w-[300px] max-w-[500px] rounded-lg shadow-lg p-4 flex items-start space-x-3"
+        :class="notificationClass"
+      >
+        <!-- Icon -->
+        <div class="flex-shrink-0">
+          <svg v-if="notification.type === 'success'" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <svg v-else-if="notification.type === 'error'" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <!-- Message -->
+        <div class="flex-1">
+          <p class="text-sm font-medium">{{ notification.title }}</p>
+          <p v-if="notification.message" class="text-sm mt-1 opacity-90">{{ notification.message }}</p>
+        </div>
+        <!-- Close button -->
+        <button
+          @click="closeNotification"
+          class="flex-shrink-0 ml-4 inline-flex text-current opacity-70 hover:opacity-100 focus:outline-none"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </div>
+    </Transition>
+  </Teleport>
+
   <ModalBasic
     id="feedback-modal"
     :modalOpen="feedbackModalOpen"
@@ -265,11 +301,6 @@
           />
         </div>
       </div>
-      <div class="text-sm">
-        <div class="font-medium text-gray-800 dark:text-gray-100 mb-3">
-          {{ message }}🙌
-        </div>
-      </div>
     </div>
     <!-- Modal footer -->
     <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
@@ -277,12 +308,14 @@
         <button
           class="btn-sm bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
           @click.prevent="uploadBearing"
+          :disabled="isUploading"
         >
-          Import
+          {{ isUploading ? 'Uploading...' : 'Import' }}
         </button>
         <button
           class="btn-sm border border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-200"
           @click.stop="feedbackModalOpen = false"
+          :disabled="isUploading"
         >
           Cancel
         </button>
@@ -430,6 +463,7 @@ const editableRows = ref([]);
 const targetRow = ref(null);
 const message = ref("");
 const selectedFile = ref("");
+const isUploading = ref(false);
 const mapping = {
   "Rated Current": "ctInfo.inorminal",
   "Rated Voltage": "ptInfo.vnorminal",
@@ -439,6 +473,45 @@ const mapping = {
   Channel: "channel",
   "Connection Type": "ptInfo.wiringmode",
   "Rated Frequency": "ptInfo.linefrequency",
+};
+
+// Notification state
+const notification = ref({
+  show: false,
+  type: 'info', // 'success', 'error', 'warning', 'info'
+  title: '',
+  message: ''
+});
+
+// Notification class computed property
+const notificationClass = computed(() => {
+  const classes = {
+    success: 'bg-green-500 text-white',
+    error: 'bg-red-500 text-white',
+    warning: 'bg-yellow-500 text-white',
+    info: 'bg-blue-500 text-white'
+  };
+  return classes[notification.value.type] || classes.info;
+});
+
+// Show notification function
+const showNotification = (type, title, message = '') => {
+  notification.value = {
+    show: true,
+    type,
+    title,
+    message
+  };
+  
+  // Auto-close after 5 seconds
+  setTimeout(() => {
+    closeNotification();
+  }, 5000);
+};
+
+// Close notification function
+const closeNotification = () => {
+  notification.value.show = false;
 };
 
 // const hz = [8000, 4000, 2000, 1000];
@@ -511,19 +584,60 @@ watchEffect(() => {
   // editableRows.value = setStructNameplate(editableRows.value);
 });
 
+// onMounted(async () => {
+//   try {
+//     const response = await axios.get("/setting/checkBearing");
+//     if (response.data.passOK == "1") {
+//       for (let i = 0; i < response.data.data.length; i++) {
+//         BearingValues.value.push(response.data.data[i]);
+//       }
+//     }
+//   } catch (error) {
+//     //message.value = "업로드 실패: " + error.response.data.error;
+//   }
+// });
 onMounted(async () => {
   try {
+    console.log("Loading bearing data from DB...");
+    
+    // DB에서 Bearing 데이터 로드
     const response = await axios.get("/setting/checkBearing");
+    
+    console.log("Response:", response.data);
+    
     if (response.data.passOK == "1") {
-      for (let i = 0; i < response.data.data.length; i++) {
-        BearingValues.value.push(response.data.data[i]);
+      const dbData = response.data.data || [];
+      
+      console.log(`Loaded ${dbData.length} bearings from DB`);
+      
+      // BearingValues에 DB 데이터 저장
+      BearingValues.value = dbData;
+      
+      // BearingOptions 초기화 및 Name 추출
+      BearingOptions.value = ["My Bearing"]; // 기본값
+      
+      for (let i = 0; i < dbData.length; i++) {
+        if (dbData[i].Name) {
+          BearingOptions.value.push(dbData[i].Name);
+        }
       }
+      
+      console.log("BearingOptions:", BearingOptions.value);
+      console.log("BearingValues:", BearingValues.value);
+      
+      if (dbData.length === 0) {
+        console.log("No bearing data in database");
+      }
+    } else {
+      console.error("Failed to load bearing data:", response.data.msg);
     }
   } catch (error) {
-    //message.value = "업로드 실패: " + error.response.data.error;
+    console.error("Bearing data load failed:", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+    }
   }
 });
-
 provide("BearingOptions", BearingOptions);
 provide("BearingValues", BearingValues);
 // provide('searchData',searchData);
@@ -644,10 +758,11 @@ const handleFileUpload = (event) => {
 
 const uploadBearing = async () => {
   if (!selectedFile.value) {
-    message.value = "파일을 선택하세요!";
+    showNotification('warning', 'need file selection', 'please select file to upload');
     return;
   }
 
+  isUploading.value = true;
   const formData = new FormData();
   formData.append("file", selectedFile.value);
   //console.log(formData);
@@ -656,18 +771,41 @@ const uploadBearing = async () => {
       headers: { "Content-Type": "multipart/form-data" },
     });
     if (response.data.passOK == "1") {
-      message.value = "Upload Success : " + response.data.file_path;
-      feedbackModalOpen.value = false;
       const uploadData = response.data.data;
       for (let i = 0; i < uploadData.length; i++) {
         BearingOptions.value.push(uploadData[i]["Name"]);
         BearingValues.value.push(uploadData[i]);
       }
+      
+      showNotification(
+        'success', 
+        'upload successful', 
+        `File uploaded successfully`
+      );
+      
+      // Close modal after successful upload
+      setTimeout(() => {
+        feedbackModalOpen.value = false;
+        selectedFile.value = null;
+        // Reset file input
+        const fileInput = document.getElementById('filename');
+        if (fileInput) fileInput.value = '';
+      }, 1000);
     } else {
-      message.value = response.data.error;
+      showNotification(
+        'error', 
+        'upload failed', 
+        response.data.error || 'An error occurred during upload'
+      );
     }
   } catch (error) {
-    message.value = "업로드 실패: " + error.response.data.error;
+    showNotification(
+      'error', 
+      'upload failed', 
+      error.response?.data?.error || 'An unexpected error occurred'
+    );
+  } finally {
+    isUploading.value = false;
   }
 };
 
@@ -824,5 +962,21 @@ input:disabled {
 /* Transition 효과 추가 */
 input, select {
   transition: all 0.2s ease-in-out;
+}
+
+/* Notification animation */
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
 }
 </style>
