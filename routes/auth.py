@@ -341,7 +341,8 @@ def join_admin(data: SignupAdmin):
     redis_state.client.hset("System", "mode", mode)
     redis_state.client.hset("Service", "save", 1)
     redis_state.client.hset("Service", "restart", 1)
-
+    redis_state.client.select(1)
+    redis_state.client.flushdb()
     if aesState.checkAdmin(adminPass):
         try:
             conn = get_db_connection()
