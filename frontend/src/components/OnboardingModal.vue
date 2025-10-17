@@ -570,7 +570,7 @@
                     : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                 "
                 @click="handleMainTestNext"
-                :disabled="mainTestResult.err > 0"
+                :disabled="!canProceedFromMain"
               >
                 {{
                   mainTestResult.err > 0 ? "Fix Errors First" : "Next Step →"
@@ -773,7 +773,7 @@
                     : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                 "
                 @click="nextStep"
-                :disabled="subTestResult.err > 0"
+                :disabled="!canProceedFromSub"
               >
                 {{ subTestResult.err > 0 ? "Fix Errors First" : "Next Step →" }}
               </button>
@@ -1024,7 +1024,7 @@ export default {
     const setupDict = ref({});
 
     // Loading states
-    const isLoadingSettingsValidation = ref(false);
+
     const isLoadingMain = ref(false);
     const isLoadingSub = ref(false);
     const stList = ref(["Info", "Pass", "Warning", "Error"]);
@@ -1079,6 +1079,7 @@ export default {
     });
 
     const mainTestResult = ref({ err: 0, warn: 0 });
+    const mainTestLoaded = ref(false);
     const showMainDiagChart = ref(false);
     const mainWaveformData = ref({});
     const mainWaveformDataT = ref([]);
@@ -1093,6 +1094,7 @@ export default {
       Commissions: [],
     });
     const subTestResult = ref({ err: 0, warn: 0 });
+    const subTestLoaded = ref(false);
     const showSubDiagChart = ref(false);
     const subWaveformData = ref({});
     const subWaveformDataT = ref([]);
@@ -1100,6 +1102,7 @@ export default {
     const selectedSubChart = ref("Time Domain(Voltage)");
     const isRestarting = ref(false);
     const restartMessage = ref("");
+    const isLoadingSettingsValidation = ref(false);
 
     // Chart types
     const ChartTypes = ref([
@@ -1396,10 +1399,11 @@ export default {
       const loadingRef = isMain ? isLoadingMain : isLoadingSub;
       const testDataRef = isMain ? mainTestData : subTestData;
       const testResultRef = isMain ? mainTestResult : subTestResult;
+      const testLoadedRef = isMain ? mainTestLoaded : subTestLoaded; // ✅ 추가
 
       try {
         loadingRef.value = true;
-
+        testLoadedRef.value = false;
         // Get asset name from setupStore
         const assetName = isMain
           ? setupDict.value["main"]["assetInfo"]["name"]
@@ -1425,17 +1429,31 @@ export default {
               warnCount += 1;
           }
           testResultRef.value = { err: errCount, warn: warnCount };
+          testLoadedRef.value = true; // ✅ 로딩 완료
 
           // Check if waveform data exists
         }
       } catch (e) {
         console.error(`Error loading ${channel} test:`, e);
         testResultRef.value = { err: 1, warn: 0 };
+        testLoadedRef.value = true; 
       } finally {
         loadingRef.value = false;
       }
     };
+    // 버튼 활성화 조건을 명확하게 computed로 정의
+    const canProceedFromMain = computed(() => {
+      // 로딩 중이거나, 데이터가 로드되지 않았거나, 에러가 있으면 비활성화
+      return !isLoadingMain.value && mainTestLoaded.value && mainTestResult.value.err === 0;
+    });
 
+    const canProceedFromSub = computed(() => {
+      return !isLoadingSub.value && subTestLoaded.value && subTestResult.value.err === 0;
+    });
+
+    const canProceedFromSettings = computed(() => {
+      return !isLoadingSettingsValidation.value && validationResult.value.isValid;
+    });
     // Update main chart data
     const updateMainChart = () => {
       if (
@@ -1753,6 +1771,11 @@ export default {
       isRestarting,
       restartMessage,
       diagnosis_detail,
+      mainTestLoaded,
+      subTestLoaded,
+      canProceedFromMain,
+      canProceedFromSub,
+      canProceedFromSettings,
     };
   },
 };
@@ -1782,5 +1805,9 @@ export default {
 
 .btn-sm {
   @apply px-3 py-1.5 rounded-lg font-medium transition-colors duration-200 text-sm;
+}
+/* Disabled 상태 추가 스타일 */
+.btn:disabled {
+  opacity: 0.6;
 }
 </style>
