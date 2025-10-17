@@ -597,7 +597,8 @@
           "alChannel": "알람 채널",
           "parameter": "발생 요소",
           "conditions": "발생 조건",
-          "hysteresis": "편차 범위"
+          "hysteresis": "편차 범위(%)",
+          "value": "기준 값"
       },
             "Diagnosis":{
                 "title":"진단 설비 관리",

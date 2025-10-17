@@ -354,7 +354,51 @@ export class SettingValidator {
     
     return this.errors.length === 0;
   }
-
+// Alarm 설정 검증
+  validateAlarmSettings(alarm) {
+    if (!alarm) return false;
+    
+    // CompareTimeDelay 검증
+    // if (alarm.CompareTimeDelay !== undefined) {
+    //   this.validateNumberRange(alarm.CompareTimeDelay, 0, 3600, 'Alarm Compare Time Delay');
+    // }
+    
+    // 각 알람 채널 검증 (1~32)
+    for (let i = 1; i <= 32; i++) {
+      if (alarm[i] && Array.isArray(alarm[i])) {
+        const alarmConfig = alarm[i];
+        
+        // 배열 길이 확인
+        if (alarmConfig.length !== 4) {
+          this.errors.push(`Alarm ${i}: Configuration must have exactly 4 values`);
+          continue;
+        }
+        
+        const [type, param1, param2, threshold] = alarmConfig;
+        
+        // Type이 0이 아닐 경우 (None이 아닐 경우)
+        if (Number(type) !== 0) {
+          // Threshold(4번째 값)가 0보다 커야 함
+          const thresholdNum = Number(threshold);
+          if (thresholdNum <= 0) {
+            this.errors.push(`Alarm ${i}: Level must be greater than 0 when alarm type is active (current: ${threshold})`);
+          }
+          
+          // Threshold 범위 검증
+          if (!isNaN(thresholdNum) && thresholdNum > 0) {
+            this.validateNumberRange(thresholdNum, 0.01, 999999, `Alarm ${i} Level`);
+          }
+        }
+        
+        // Type 값 자체도 유효한지 검증 (필요시 추가)
+        if (!Number.isInteger(Number(type)) || Number(type) < 0) {
+          this.errors.push(`Alarm ${i}: Type must be a non-negative integer (current: ${type})`);
+        }
+      }
+    }
+    
+    return this.errors.length === 0;
+  }
   // IP 주소인지 확인하는 헬퍼 함수
   isIPAddress(address) {
     const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -493,6 +537,11 @@ export class SettingValidator {
       // Event 설정 검증
       if (inputDict.eventInfo) {
         this.validateEventSettings(inputDict.eventInfo);
+      }
+
+      // Alarm 설정 검증
+      if (inputDict.alarm) {
+        this.validateAlarmSettings(inputDict.alarm);
       }
     }
     

@@ -544,8 +544,8 @@ watchEffect(() => {
 
   readonlyRows.value = [];
   editableRows.value = [];
-  console.log(inputDict.value);
-  console.log(tableData.value);
+  // console.log(inputDict.value);
+  // console.log(tableData.value);
   tableData.value.forEach((row) => {
     //const children = row["children"]
     const path = mapping[row.Title];
@@ -603,12 +603,12 @@ onMounted(async () => {
     // DB에서 Bearing 데이터 로드
     const response = await axios.get("/setting/checkBearing");
     
-    console.log("Response:", response.data);
+    //console.log("Response:", response.data);
     
     if (response.data.passOK == "1") {
       const dbData = response.data.data || [];
       
-      console.log(`Loaded ${dbData.length} bearings from DB`);
+      //console.log(`Loaded ${dbData.length} bearings from DB`);
       
       // BearingValues에 DB 데이터 저장
       BearingValues.value = dbData;
@@ -622,8 +622,8 @@ onMounted(async () => {
         }
       }
       
-      console.log("BearingOptions:", BearingOptions.value);
-      console.log("BearingValues:", BearingValues.value);
+      // console.log("BearingOptions:", BearingOptions.value);
+      // console.log("BearingValues:", BearingValues.value);
       
       if (dbData.length === 0) {
         console.log("No bearing data in database");

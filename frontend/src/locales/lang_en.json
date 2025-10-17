@@ -420,7 +420,7 @@
             "Timestamp": "Timestamp",
             "AlarmChannel": "Alarm Type",
             "State": "State",
-            "Value": "Value"
+            "Value": "Level"
         },
         "eventTable": {
             "index": "Index",
@@ -608,7 +608,8 @@
                 "alChannel":"Alarm Channel",
                 "parameter":"Parameter",
                 "conditions":"Conditions",
-                "hysteresis":"Hysteresis"       
+                "hysteresis":"Hysteresis(%)",
+                "value":"Level"
 
 
             },

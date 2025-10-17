@@ -82,7 +82,7 @@
                 <th class="border p-2 w-[10%]" v-if="true">
                    {{t("config.channelPanel.alarmCard.hysteresis") }}<!--Hysteresis-->
                   </th>
-                <th class="border p-2 w-[10%]"> {{t("common.value") }}<!--Value-->
+                <th class="border p-2 w-[10%]"> {{t("config.channelPanel.alarmCard.value") }}<!--Value-->
 
                 </th>
 
@@ -99,7 +99,7 @@
                     {{t("config.channelPanel.alarmCard.hysteresis") }}<!--Hysteresis-->
                 </th>
                 <th class="border p-2 w-[10%]">
-                  {{t("common.value") }}<!--Value-->
+                  {{t("config.channelPanel.alarmCard.value") }}<!--Value-->
                 </th>
               </tr>
             </thead>
