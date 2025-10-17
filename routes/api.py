@@ -1214,10 +1214,9 @@ async def get_asset_cached(assettype, asset, channel):
     # cache_key = f"SmartAPI:{channel}"
     cache_field = "AssetData"
     data = None
-
+    redis_state.client.select(1)
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)
