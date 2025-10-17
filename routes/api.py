@@ -566,24 +566,28 @@ async def get_diagnosis_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    cache_key = f"SmartAPI:{channel}"
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "Diagnosis"
     datas = None
-
+    redis_state.client.select(1)
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             datas = json.loads(cached_data)
-            print(f"[Redis] Data found for {channel}")
+            print(f"[Redis] Data found for {chName}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
     # 2. Redis에 없으면 API 호출
     if datas is None:
         try:
-            print(f"[API] Fetching data for {channel}")
+            print(f"[API] Fetching data for {chName}")
             async with httpx.AsyncClient(timeout=api_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
                 datas = response.json()
@@ -638,13 +642,18 @@ async def get_PQ_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    cache_key = f"SmartAPI:{channel}"
+    redis_state.client.select(1)
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "PQ"
     datas = None
 
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             datas = json.loads(cached_data)
@@ -693,13 +702,18 @@ async def get_Fault_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    cache_key = f"SmartAPI:{channel}"
+    redis_state.client.select(1)
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "Fault"
     datas = None
 
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+        # redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             datas = json.loads(cached_data)
@@ -709,7 +723,7 @@ async def get_Fault_cached(channel, asset):
     # 2. Redis에 없으면 API 호출
     if datas is None:
         try:
-            print(f"[API] Fetching data for {channel}")
+            print(f"[API] Fetching data for {chName}")
             async with httpx.AsyncClient(timeout=api_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getFaults?name={asset}")
                 datas = response.json()
@@ -747,7 +761,12 @@ async def get_Event_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    cache_key = f"SmartAPI:{channel}"
+    redis_state.client.select(1)
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "Event"
     datas = None
 
@@ -763,7 +782,7 @@ async def get_Event_cached(channel, asset):
     # 2. Redis에 없으면 API 호출
     if datas is None:
         try:
-            print(f"[API] Fetching data for {channel}")
+            print(f"[API] Fetching data for {chName}")
             async with httpx.AsyncClient(timeout=api_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getEvents?name={asset}")
                 datas = response.json()
@@ -1206,7 +1225,7 @@ def get_running(channel):
 @router.get("/getRealTimeCached/{assettype}/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
 async def get_asset_cached(assettype, asset, channel):
-    if channel.lower() == 'main':
+    if channel == 'main' or channel == 'Main':
         ch = 'Main'
     else:
         ch = 'Sub'
