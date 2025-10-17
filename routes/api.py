@@ -566,6 +566,7 @@ async def get_diagnosis_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
+    redis_state.client.select(1)
     if channel == 'main' or channel == 'Main':
         chName = 'Main'
     else:
@@ -573,7 +574,7 @@ async def get_diagnosis_cached(channel, asset):
     cache_key = f"SmartAPI:{chName}"
     cache_field = "Diagnosis"
     datas = None
-    redis_state.client.select(1)
+
     # 1. Redis에서 조회
     try:
 
@@ -772,7 +773,7 @@ async def get_Event_cached(channel, asset):
 
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+        # redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             datas = json.loads(cached_data)
@@ -971,17 +972,22 @@ async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    cache_key = f"SmartAPI:{channel}"
+    redis_state.client.select(1)
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "Diagnosis"
     data = None  # datas -> data로 통일
 
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+        # redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)  # ✅ 조회한 데이터 사용
-            print(f"[Redis HIT] Data found for {channel}")
+            print(f"[Redis HIT] Data found for {chName}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
@@ -993,13 +999,13 @@ async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
                 response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
                 data = response.json()
 
-            # API에서 가져온 데이터 Redis에 저장
-            if data:  # ✅ datas -> data
-                try:
-                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))  # ✅ data 저장
-                    print(f"[Redis SAVE] Data saved for {channel}")
-                except Exception as e:
-                    print(f"[Redis Save Error] {e}")
+            #API에서 가져온 데이터 Redis에 저장
+            # if data:  # ✅ datas -> data
+            #     try:
+            #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))  # ✅ data 저장
+            #         print(f"[Redis SAVE] Data saved for {chName}")
+            #     except Exception as e:
+            #         print(f"[Redis Save Error] {e}")
 
         except Exception as e:
             return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
@@ -1087,17 +1093,22 @@ async def getStatus(asset, channel):
 @router.get("/getPQStatusCached/{asset}/{channel}")
 @gc_after_large_data(threshold_mb=30)
 async def getPQStatus_cached(asset, channel):
-    cache_key = f"SmartAPI:{channel}"
+    redis_state.client.select(1)
+    if channel == 'main' or channel == 'Main':
+        chName = 'Main'
+    else:
+        chName = 'Sub'
+    cache_key = f"SmartAPI:{chName}"
     cache_field = "PQ"
     data = None
 
     # 1. Redis에서 조회
     try:
-        redis_state.client.select(1)
+        # redis_state.client.select(1)
         cached_data = redis_state.client.hget(cache_key, cache_field)
         if cached_data:
             data = json.loads(cached_data)
-            print(f"[Redis HIT] PQ data found for {channel}")
+            print(f"[Redis HIT] PQ data found for {chName}")
     except Exception as e:
         print(f"[Redis Error] {e}")
 
@@ -1110,12 +1121,12 @@ async def getPQStatus_cached(asset, channel):
                 data = response.json()
 
             # ✅ Redis에 저장 (빠진 부분 추가!)
-            if data:
-                try:
-                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
-                    print(f"[Redis SAVE] PQ data saved for {channel}")
-                except Exception as e:
-                    print(f"[Redis Save Error] {e}")
+            # if data:
+            #     try:
+            #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+            #         print(f"[Redis SAVE] PQ data saved for {channel}")
+            #     except Exception as e:
+            #         print(f"[Redis Save Error] {e}")
 
         except Exception as e:
             return {"status": -1}
@@ -1252,12 +1263,12 @@ async def get_asset_cached(assettype, asset, channel):
                 data = response.json()
 
             # ✅ Redis에 저장 (누락된 부분!)
-            if data:
-                try:
-                    redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
-                    print(f"[Redis SAVE] AssetData saved for {ch}")
-                except Exception as e:
-                    print(f"[Redis Save Error] {e}")
+            # if data:
+            #     try:
+            #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+            #         print(f"[Redis SAVE] AssetData saved for {ch}")
+            #     except Exception as e:
+            #         print(f"[Redis Save Error] {e}")
 
         except Exception as e:
             return {"success": False, "error": f"API call failed: {str(e)}"}
