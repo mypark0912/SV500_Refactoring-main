@@ -39,14 +39,6 @@ export default {
     DashboardCard04,
   },
   props: {
-    mainData: {
-      type: Object,
-      required: true
-    },
-    subData: {
-      type: Object,
-      required: true
-    },
     channelState: {
       type: Object,
       required: true

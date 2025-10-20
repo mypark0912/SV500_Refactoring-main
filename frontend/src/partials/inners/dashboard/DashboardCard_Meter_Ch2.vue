@@ -50,7 +50,7 @@
         <!-- 유효전력 카드 -->
         <div class="summary-metric">
           <div class="summary-content">
-            <div class="summary-value">{{ (data2.P4/1000).toFixed(2) || 0 }} <span class="summary-unit">kW</span></div>
+            <div class="summary-value">{{ data2.P4 || 0 }} <span class="summary-unit">kW</span></div>
             <div class="summary-label">{{ t('dashboard.meter.activepower') }}</div>
           </div>
         </div>
@@ -151,7 +151,6 @@ export default {
   name: 'PremiumDashboardCard',
   props: {
     channel: String,
-    data: Object,
   },
   components: {
     DashboardCard_THD,
@@ -165,8 +164,8 @@ export default {
     const data2 = computed(() => {
       // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
       const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
-
-      return store.getChannelData(channelName) || {}
+      //let getDt = store.getChannelData(channelName);
+      return store.getChannelData(channelName)  || {}
     })
 
     const unbalMode = computed(()=> setupStore.getUnbalance);

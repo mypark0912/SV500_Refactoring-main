@@ -61,8 +61,8 @@ export const useRealtimeStore = defineStore('realtime', {
             const hasChanges = JSON.stringify(this.meterDictMain) !== JSON.stringify(newData)
             if (hasChanges) {
               this.meterDictMain = { ...this.meterDictMain, ...newData }
-              if (!channelState?.SubEnable && this.meterDictMain.P4) {
-                this.meterDictMain.P4 = (this.meterDictMain.P4 / 1000).toFixed(2)
+              if (this.meterDictMain.P4) {
+                this.meterDictMain.P4 = parseFloat((this.meterDictMain.P4 / 1000).toFixed(2))
               }
             }
             this.isMainDataLoaded = true
@@ -72,7 +72,7 @@ export const useRealtimeStore = defineStore('realtime', {
             if (hasChanges) {
               this.meterDictSub = { ...this.meterDictSub, ...newData }
               if (this.meterDictSub.P4) {
-                this.meterDictSub.P4 = (this.meterDictSub.P4 / 1000).toFixed(2)
+                this.meterDictSub.P4 = parseFloat((this.meterDictSub.P4 / 1000).toFixed(2))
               }
             }
             this.isSubDataLoaded = true
