@@ -751,7 +751,8 @@ export default {
             ];
 
             // Threshold 데이터가 있는 인덱스 찾기
-            const thresholdCount = resData.Thresholds[0].Thresholds.length;
+            if(resData.Thresholds[0].Thresholds != null){
+              const thresholdCount = resData.Thresholds[0].Thresholds.length;
             
             for (let idx = 0; idx < thresholdCount; idx++) {
               // 해당 인덱스에 유효한 값이 하나라도 있는지 확인
@@ -801,6 +802,8 @@ export default {
                 isThreshold: true,
               });
             }
+            }
+            
           }
           // if (
           //   resData.Thresholds &&
