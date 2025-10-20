@@ -140,45 +140,113 @@ export function useReportData() {
         })
 
         // 2. Thresholds 처리
-        if (resData.Thresholds && resData.Thresholds.length == 2 && labels.length > 0) {
-          let timeList = []
-          for (let i = 0; i < resData.Thresholds.length; i++) {
-            timeList.push(new Date(resData.Thresholds[i].XAxis))
-          }
-          const t1 = new Date(resData.Thresholds[0].XAxis)
-          const t2 = new Date(resData.Thresholds[1].XAxis)
+        // if (resData.Thresholds && resData.Thresholds.length == 2 && labels.length > 0) {
+        //   let timeList = []
+        //   for (let i = 0; i < resData.Thresholds.length; i++) {
+        //     timeList.push(new Date(resData.Thresholds[i].XAxis))
+        //   }
+        //   const t1 = new Date(resData.Thresholds[0].XAxis)
+        //   const t2 = new Date(resData.Thresholds[1].XAxis)
 
-          resData.Thresholds[0].Thresholds.forEach((value, idx) => {
-            if (value !== "NaN" && value !== null && value !== undefined) {
-              const secondValue = resData.Thresholds[1].Thresholds[idx]
-              if (secondValue === "NaN" || secondValue === null || secondValue === undefined) {
-                return
-              }
+        //   resData.Thresholds[0].Thresholds.forEach((value, idx) => {
+        //     if (value !== "NaN" && value !== null && value !== undefined) {
+        //       const secondValue = resData.Thresholds[1].Thresholds[idx]
+        //       if (secondValue === "NaN" || secondValue === null || secondValue === undefined) {
+        //         return
+        //       }
 
+        //       const thresholdData = labels.map((lbl) => {
+        //         const dt = new Date(lbl)
+        //         return dt < t1 ? value : secondValue
+        //       })
+              
+        //       const ThresholdString = [
+        //         "Out of Range(Down side)",
+        //         "Repair",
+        //         "Inspect", 
+        //         "Warning",
+        //         "Warning",
+        //         "Inspect",
+        //         "Repair",
+        //         "Out of Range(Upper side)",
+        //       ]
+              
+        //       datasets.push({
+        //         name: ThresholdString[idx],
+        //         data: thresholdData,
+        //         isThreshold: true,
+        //       })
+        //     }
+        //   })
+        // }
+        if (resData.Thresholds && resData.Thresholds.length > 0 && labels.length > 0) {
+          // Threshold 문자열
+            const ThresholdString = [
+              "Out of Range(Down side)",
+              "Repair",
+              "Inspect",
+              "Warning",
+              "Warning",
+              "Inspect",
+              "Repair",
+              "Out of Range(Upper side)",
+            ];
+
+            // Threshold 데이터가 있는 인덱스 찾기
+            if(resData.Thresholds[0].Thresholds != null){
+              const thresholdCount = resData.Thresholds[0].Thresholds.length;
+            
+            for (let idx = 0; idx < thresholdCount; idx++) {
+              // 해당 인덱스에 유효한 값이 하나라도 있는지 확인
+              const hasValidValue = resData.Thresholds.some(t => {
+                const value = t.Thresholds[idx];
+                return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
+              });
+
+              if (!hasValidValue) continue;
+
+              // Threshold 시간 리스트 생성 (유효한 값만)
+              const timeList = resData.Thresholds
+                .filter(t => {
+                  const value = t.Thresholds[idx];
+                  return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
+                })
+                .map(t => ({
+                  time: new Date(t.XAxis),
+                  value: t.Thresholds[idx]
+                }))
+                .sort((a, b) => a.time - b.time);
+
+              if (timeList.length === 0) continue;
+
+              // 각 label에 대해 적절한 threshold 값 찾기
               const thresholdData = labels.map((lbl) => {
-                const dt = new Date(lbl)
-                return dt < t1 ? value : secondValue
-              })
-              
-              const ThresholdString = [
-                "Out of Range(Down side)",
-                "Repair",
-                "Inspect", 
-                "Warning",
-                "Warning",
-                "Inspect",
-                "Repair",
-                "Out of Range(Upper side)",
-              ]
-              
+                const labelTime = new Date(lbl);
+                
+                // labelTime에 해당하는 threshold 값 찾기
+                // labelTime보다 작거나 같은 가장 최근 threshold 사용
+                let applicableThreshold = timeList[0].value;
+                
+                for (let i = 0; i < timeList.length; i++) {
+                  if (labelTime >= timeList[i].time) {
+                    applicableThreshold = timeList[i].value;
+                  } else {
+                    break;
+                  }
+                }
+                
+                return applicableThreshold;
+              });
+
               datasets.push({
                 name: ThresholdString[idx],
                 data: thresholdData,
                 isThreshold: true,
-              })
+              });
             }
-          })
-        }
+            }
+            
+          }
 
         // 3. 차트 업데이트
         option = {
