@@ -172,7 +172,7 @@ def set_cmd(data:CaliSet):
             'cmd': data.cmd,
             'ref': val
         }
-        redis_state.client.select("SELECT", 0)
+        redis_state.client.select(0)
         redis_state.client.lpush('cali_command',json.dumps(msg))
         return {'passOK': '1'}
     except Exception as e:

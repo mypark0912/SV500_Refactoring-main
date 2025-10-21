@@ -122,6 +122,7 @@
               { subTitle: "I_A", value: 0, error: 0 },
               { subTitle: "I_B", value: 0, error: 0 },
               { subTitle: "I_C", value: 0, error: 0 },
+              { subTitle: "Ig", value: 0, error: 0 },
               { subTitle: "In", value: 0, error: 0 }
             ],
           },

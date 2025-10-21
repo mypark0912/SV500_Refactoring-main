@@ -2668,8 +2668,8 @@ def get_Calibrate(channel):
 
         field_keys = (
                 extract_key_list(RedisMapCalibrate.p_voltage_keys) +
-                extract_key_list(RedisMapCalibrate.freq_keys) +
-                extract_key_list(RedisMapCalibrate.l_voltage_keys) +
+                # extract_key_list(RedisMapCalibrate.freq_keys) +
+                # extract_key_list(RedisMapCalibrate.l_voltage_keys) +
                 extract_key_list(RedisMapCalibrate.current_keys) +
                 extract_key_list(RedisMapCalibrate.p_angle_keys) +
                 extract_key_list(RedisMapCalibrate.a_powers_keys) +
@@ -2685,8 +2685,8 @@ def get_Calibrate(channel):
         # 그룹핑
         meters = {k["key"]: flat_fields.get(k["key"]) for k in (
                 RedisMapCalibrate.p_voltage_keys +
-                RedisMapCalibrate.freq_keys +
-                RedisMapCalibrate.l_voltage_keys +
+                # RedisMapCalibrate.freq_keys +
+                # RedisMapCalibrate.l_voltage_keys +
                 RedisMapCalibrate.current_keys +
                 RedisMapCalibrate.p_angle_keys +
                 RedisMapCalibrate.a_powers_keys +
@@ -2708,8 +2708,8 @@ def get_Calibrate(channel):
             field="1sec"  # 필수
         )
         p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.p_voltage_keys, 'V')
-        freq_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.freq_keys, 'Hz')
-        l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.l_voltage_keys, 'V')
+        # freq_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.freq_keys, 'Hz')
+        # l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.l_voltage_keys, 'V')
         current_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.current_keys, 'A')
         angle_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.p_angle_keys, '%')
         p_data = handler.get_data_dict(meters, parsed, RedisMapCalibrate.a_powers_keys, 'kw')
@@ -2721,9 +2721,9 @@ def get_Calibrate(channel):
             "success": True,
             "meterData": [
                     {"subTitle": "Phase Voltage", "data": p_voltage_data},
-                    {"subTitle": "Line Voltage", "data": l_voltage_data},
+                    # {"subTitle": "Line Voltage", "data": l_voltage_data},
                     {"subTitle": "Current", "data": current_data},
-                    {"subTitle": "Frequency", "data": freq_data},
+                    # {"subTitle": "Frequency", "data": freq_data},
                     {"subTitle": "PowerAngle", "data": angle_data},
                     {"subTitle": "ActivePower", "data": p_data},
                     {"subTitle": "ReactivePower", "data": q_data},
