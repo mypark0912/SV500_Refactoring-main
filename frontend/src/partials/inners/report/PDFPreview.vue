@@ -471,7 +471,8 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import LineChart from '../../../charts/connect/LineChart02.vue'
+//import LineChart from '../../../charts/connect/LineChart02.vue'
+import LineChart from '../../../charts/connect/LineChart_ITIC.vue'
 import BarChart2 from '../../../charts/connect/BarChart01_Energy.vue'
 import BarChart from '../../../charts/connect/BarChart03.vue'
 import Diagnosis_Barchart from '../diagnosis/Diagnosis_BarChart2.vue'
@@ -558,6 +559,7 @@ export default {
       else
         return assetInfo.assetType_sub;
     })
+    const iticDataList = ref([]);
     // useReportData에서 실제 데이터 로드 함수들 가져오기
     const { 
       loadInfoData, 
@@ -567,7 +569,11 @@ export default {
       loadEnergyMonthlyData,
       getLoadFactorCalculated,
       getHeatmapLoadFactorData,
-      reportData 
+      reportData,
+      baseChart,
+      makeKey,
+      parseMask,
+      getfinValue 
     } = useReportData()
 
     // Power Quality Trends Variables
@@ -1672,63 +1678,65 @@ const overLoadPercentage = computed(() => {
         loadPatternChartInstance.setOption(option)
       }
     }
-
-    const baseChart = {
-      datasets: [
-        {
-          label: 'Series 0',
-          data: [
-            { x: 0.0001, y: 500 },
-            { x: 0.001, y: 200 },
-            { x: 0.003, y: 140 },
-            { x: 0.003, y: 120 },
-            { x: 0.02, y: 120 },
-            { x: 0.5, y: 120 },
-            { x: 0.5, y: 110 },
-            { x: 10, y: 110 },
-            { x: 100, y: 110 },
-          ],
-          borderColor: 'blue',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0,
-        },
-        {
-          label: 'Series 1',
-          data: [
-            { x: 0.02, y: 0 },
-            { x: 0.02, y: 70 },
-            { x: 0.5, y: 70 },
-            { x: 0.5, y: 80 },
-            { x: 10, y: 80 },
-            { x: 10, y: 90 },
-            { x: 100, y: 90 },
-          ],
-          borderColor: 'red',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0,
+    const fetchITICData = async () => {
+        try {
+          const response = await axios.get(`/api/getITIC/${props.channel}`);
+          if (response.data.success) {
+              const data = response.data.data;
+              const ratedV = parseInt(response.data.ratedV);
+              if(iticDataList.value.length > 0)
+                iticDataList.value = [];
+              for (let i = 0; i < data.length;i++){
+                let phaselist = parseMask(data[i]["mask"]);
+                  let levellist = [];
+                  levellist.push(data[i]["level_l1"]);
+                  levellist.push(data[i]["level_l2"]);
+                  levellist.push(data[i]["level_l3"]);
+                  let Yvalue = (getfinValue(phaselist, levellist, data[i].event_type)*100)/ratedV;
+                  let Xvalue = data[i]["duration"]/1000.0;
+                  iticDataList.value.push({
+                    label: 'Selected Point',
+                    type: 'scatter',
+                    data: [{ x: Xvalue, y: Yvalue.toFixed(2) }],
+                    backgroundColor: data[i].event_type == 'SWELL'? 'green' : 'orange',
+                    pointRadius: 3,
+                    pointHoverRadius: 8,
+                    showLine: false,
+                  });
+              }
+          } else {
+              console.warn("서버 응답이 success: false 입니다.");
+          }
+        } catch (error) {
+          console.log("데이터 가져오기 실패:", error);
         }
-      ]
-    }
+      };
 
-    const linechartData = computed(() => {
-      const base = JSON.parse(JSON.stringify(baseChart));
-      if (selectedX.value != null) {
-        base.datasets.push({
-            label: 'Selected Point',
-            type: 'scatter',
-            data: [{ x: selectedX.value, y: 125 }],
-            backgroundColor: 'orange',
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            showLine: false,
-          })
-      }
-      return base
-    })
+      const linechartData = computed(() => {
+        const base = JSON.parse(JSON.stringify(baseChart));
+        if(iticDataList.value.length > 0){
+          for(let i = 0 ; i < iticDataList.value.length;i++){
+            base.datasets.push(iticDataList.value[i]);
+          }
+        }
+        return base
+      })
+
+    // const linechartData = computed(() => {
+    //   const base = JSON.parse(JSON.stringify(baseChart));
+    //   if (selectedX.value != null) {
+    //     base.datasets.push({
+    //         label: 'Selected Point',
+    //         type: 'scatter',
+    //         data: [{ x: selectedX.value, y: 125 }],
+    //         backgroundColor: 'orange',
+    //         pointRadius: 6,
+    //         pointHoverRadius: 8,
+    //         showLine: false,
+    //       })
+    //   }
+    //   return base
+    // })
 
     const ischartDataValid = computed(() => {
       return diagData.value.chartdata && 
@@ -1784,39 +1792,6 @@ const overLoadPercentage = computed(() => {
         "Pst": [15, 16, 17],
         "Plt": [18, 19, 20],
         "Signal Vol.": [21, 22, 23]
-    }
-
-    const makeKey = (param, phase) => {
-      const suffixMap = {
-        L1: "L1",
-        L2: "L2",
-        L3: "L3",
-        "Multi Phase": "Multi Phase"
-      }
-
-      if (param === "Frequency Variation 1") {
-        return phase === 'L1' ? "Frequency Variation 1(%)" : undefined
-      }
-      if (param === "Frequency Variation 2") {
-        return phase === 'L1' ? "Frequency Variation 2(%)" : undefined
-      }
-      if (param === "Voltage Unbalance") {
-        return phase === 'L1' ? "Voltage Unbalance(%)" : undefined
-      }
-      if (param === "Voltage Variation 1") return `Voltage Variation 1 ${suffixMap[phase]}(%)`
-      if (param === "Voltage Variation 2") return `Voltage Variation 2 ${suffixMap[phase]}(%)`
-      if (param === "THD") return `THDs Variation ${suffixMap[phase]}(%)`
-      if (param === "Harmonics") return `Harmonics Variatiopn ${suffixMap[phase]}(%)`
-      if (param === "Pst") return `Flickers Pst ${suffixMap[phase]}(%)`
-      if (param === "Plt") return `Flickers Plt ${suffixMap[phase]}(%)`
-      if (param === "Signal Vol.") return `Signaling Voltage ${suffixMap[phase]}(%)`
-      if (param === "Voltage Sag") return `Voltage Dips ${suffixMap[phase]}`
-      if (param === "Voltage Swell") return `Voltage Swells ${suffixMap[phase]}`
-      if (param === "Short Interruption") return `Short Interruptions ${suffixMap[phase]}`
-      if (param === "Long Interruption") return `Long Interruptions ${suffixMap[phase]}`
-      if (param === "Signaling Volt.") return `Signaling Voltage ${suffixMap[phase]}(%)`
-
-      return `${param} ${suffixMap[phase]}`
     }
     
     const getComp = (param) => {
@@ -2042,7 +2017,7 @@ const overLoadPercentage = computed(() => {
       fetchEn();
       fetchPQData();
       fetchRawData();
-      
+      fetchITICData();
       // 에너지 데이터 로드 추가
       console.log('Starting energy data load...');
       await loadEnergyData();
@@ -2380,6 +2355,7 @@ async function processChartElement(pdf, element, name, options, yPosition) {
       fetchData,
       fetchEn,
       fetchRawData,
+      fetchITICData,
       linechartData,
       hourlyChartData,
       dailyChartData,
@@ -2445,6 +2421,7 @@ async function processChartElement(pdf, element, name, options, yPosition) {
       loadHeatmapData, // 히트맵 데이터 로드 함수 추가
       t,
       assettypes,
+      iticDataList,
     }
   }
 }

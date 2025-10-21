@@ -149,21 +149,6 @@
                 </header>
               </div>
               <div class="px-4 py-4 space-y-3">
-                <div class="flex flex-wrap -space-x-px">
-                    <!--<button
-                    v-for="option in options2"
-                    :key="option.value"
-                    :value="option.value"
-                    @click.prevent="setSelectedOption2(option.value)"
-                    :class="[
-                            'btn border px-4 py-2 transition-colors duration-200 rounded-none first:rounded-l-lg last:rounded-r-lg',
-                            selectedOption2 === option.value
-                              ? 'bg-violet-500 text-white border-violet-500'
-                              : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900'
-                          ]">
-                    {{ option.label }}
-                  </button>  -->
-                  </div>
                 <div class="flex items-center gap-x-6 mb-4">
                   <div class="flex items-center gap-x-2">
                     <span class="w-3 h-3 rounded-full" style="background-color: orange"></span>
@@ -189,7 +174,7 @@
   import Report_PQ_detail from './Report_PQ_detail.vue'
   import axios from 'axios'
   import { useI18n } from 'vue-i18n'
-  
+  import { useReportData } from '@/composables/reportDict'
   export default {
     name: 'ReportComponent',
     components:{
@@ -215,9 +200,9 @@
       const { t } = useI18n();
       const channel = ref(props.channel);
       const mode = computed(()=>props.mode );
-      const selectedX = ref(null);
+      //const selectedX = ref(null);
       const iticDataList = ref([]);
-      const selectedOption2 = ref('voltage_sag')
+      //const selectedOption2 = ref('voltage_sag')
 
       const options2 = ref([
         { label: "Voltage Sag", value: "voltage_sag" },
@@ -239,11 +224,16 @@
         "Plt": [18, 19, 20],
         "Signal Vol.": [21, 22, 23]
       }
+      const { 
+          baseChart,
+          parseMask,
+          getfinValue,
+          makeKey
+      } = useReportData()
 
       onMounted(()=>{
         fetchData();
         fetchITICData();
-        setSelectedOption2(selectedOption2.value); 
       });
 
       const fetchData = async () => {
@@ -260,43 +250,6 @@
           tbdata.value = {}; // 에러 시에도 빈 객체로 설정
         }
       };
-
-      const parseMask = (mask) => {
-          const phases = [];
-          if (mask & 0b001) phases.push("L1");
-          if (mask & 0b010) phases.push("L2");
-          if (mask & 0b100) phases.push("L3");
-          return phases;
-      }
-
-      const getfinValue = (phaselist, levellist, mode) =>{
-        let finalValue = 0;
-        if (phaselist.length === 1) {
-            // phaselist가 하나일 때 해당하는 Level 값 선택
-            switch (phaselist[0]) {
-              case "L1":
-                finalValue = levellist[0];
-                break;
-              case "L2":
-                finalValue = levellist[1];
-                break;
-              case "L3":
-                finalValue = levellist[2];
-                break;
-              default:
-                finalValue = null; // 예상 외 값일 경우 처리
-            }
-          } else if (phaselist.length > 1) {
-            // 2개 이상일 때 가장 큰 값 선택
-            if (mode == 'SWELL')
-              finalValue = Math.max(...levellist);
-            else
-            finalValue = Math.min(...levellist);
-          } else {
-            finalValue = null; // phaselist가 비어있는 경우
-          }
-          return finalValue;
-      }
 
       const fetchITICData = async () => {
         try {
@@ -331,62 +284,6 @@
           console.log("데이터 가져오기 실패:", error);
         }
       };
-  
-      const setSelectedOption2 = (value) => {
-        selectedOption2.value = value;
-        switch(selectedOption2.value){
-          case "voltage_sag":
-            selectedX.value = 0.02;
-            break;
-          case "over_voltage":
-            selectedX.value=0.5;
-            break;
-          case "short_interruptions":
-            selectedX.value=10;
-            break;
-        }
-      };
-
-      const baseChart = {
-        datasets: [
-          {
-            label: 'Series 0',
-            data: [
-              { x: 0.0001, y: 500 },
-              { x: 0.001, y: 200 },
-              { x: 0.003, y: 140 },
-              { x: 0.003, y: 120 },
-              { x: 0.02, y: 120 },
-              { x: 0.5, y: 120 },
-              { x: 0.5, y: 110 },
-              { x: 10, y: 110 },
-              { x: 100, y: 110 },
-            ],
-            borderColor: 'blue',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0,
-          },
-          {
-            label: 'Series 1',
-            data: [
-              { x: 0.02, y: 0 },
-              { x: 0.02, y: 70 },
-              { x: 0.5, y: 70 },
-              { x: 0.5, y: 80 },
-              { x: 10, y: 80 },
-              { x: 10, y: 90 },
-              { x: 100, y: 90 },
-            ],
-            borderColor: 'red',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0,
-          }
-        ]
-      }
 
       const linechartData = computed(() => {
         const base = JSON.parse(JSON.stringify(baseChart));
@@ -395,64 +292,9 @@
             base.datasets.push(iticDataList.value[i]);
           }
         }
-        // if (selectedX.value != null) {
-        //   base.datasets.push({
-        //       label: 'Selected Point',
-        //       type: 'scatter',
-        //       data: [{ x: selectedX.value, y: 125 }],
-        //       backgroundColor: 'orange',
-        //       pointRadius: 6,
-        //       pointHoverRadius: 8,
-        //       showLine: false,
-        //     },
-        //   {
-        //       label: 'Selected Point2',
-        //       type: 'scatter',
-        //       data: [{ x: selectedX.value+20, y: 225 }],
-        //       backgroundColor: 'green',
-        //       pointRadius: 6,
-        //       pointHoverRadius: 8,
-        //       showLine: false,
-        //     })
-        // }
-
         return base
       })
 
-      const makeKey = (param, phase) => {
-        const suffixMap = {
-          L1: "L1",
-          L2: "L2",
-          L3: "L3",
-          "Multi Phase": "Multi Phase"
-        }
-
-        // 예외 처리
-        if (param === "Frequency Variation 1") {
-          return phase === 'L1' ? "Frequency Variation 1" : undefined
-        }
-        if (param === "Frequency Variation 2") {
-          return phase === 'L1' ? "Frequency Variation 2" : undefined
-        }
-        if (param === "Voltage Unbalance") {
-          return phase === 'L1' ? "Voltage Unbalance" : undefined
-        }
-        if (param === "Voltage Variation 1") return `Voltage Variation 1 ${suffixMap[phase]}(%)`
-        if (param === "Voltage Variation 2") return `Voltage Variation 2 ${suffixMap[phase]}(%)`
-        if (param === "THD") return `THDs Variation ${suffixMap[phase]}(%)`
-        if (param === "Harmonics") return `Harmonics Variatiopn ${suffixMap[phase]}(%)`
-        if (param === "Pst") return `Flickers Pst ${suffixMap[phase]}(%)`
-        if (param === "Plt") return `Flickers Plt ${suffixMap[phase]}(%)`
-        if (param === "Signal Vol.") return `Signaling Voltage ${suffixMap[phase]}(%)`
-        if (param === "Voltage Sag") return `Voltage Dips ${suffixMap[phase]}`
-        if (param === "Voltage Swell") return `Voltage Swells ${suffixMap[phase]}`
-        if (param === "Short Interruption") return `Short Interruptions ${suffixMap[phase]}`
-        if (param === "Long Interruption") return `Long Interruptions ${suffixMap[phase]}`
-        if (param === "Signaling Volt.") return `Signaling Voltage ${suffixMap[phase]}(%)`
-
-        // 기본값
-        return `${param} ${suffixMap[phase]}`
-      }
       
       const getComp = (param) => {
         if (!tbdata.value || !tbdata.value["status&compliance"]) return "-"
@@ -466,16 +308,13 @@
       }
   
       return {
-        setSelectedOption2,
         channel,
         linechartData,
         options2,
-        selectedOption2,
         mode,
         tbdata,
         makeKey,
         getComp,
-        selectedX,
         t,
         iticDataList,
       }

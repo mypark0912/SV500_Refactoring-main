@@ -33,6 +33,47 @@ const reportData = reactive({
   }
 })
 
+const baseChart = {
+  datasets: [
+    {
+      label: 'Series 0',
+      data: [
+        { x: 0.0001, y: 500 },
+        { x: 0.001, y: 200 },
+        { x: 0.003, y: 140 },
+        { x: 0.003, y: 120 },
+        { x: 0.02, y: 120 },
+        { x: 0.5, y: 120 },
+        { x: 0.5, y: 110 },
+        { x: 10, y: 110 },
+        { x: 100, y: 110 },
+      ],
+      borderColor: 'blue',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0,
+    },
+    {
+      label: 'Series 1',
+      data: [
+        { x: 0.02, y: 0 },
+        { x: 0.02, y: 70 },
+        { x: 0.5, y: 70 },
+        { x: 0.5, y: 80 },
+        { x: 10, y: 80 },
+        { x: 10, y: 90 },
+        { x: 100, y: 90 },
+      ],
+      borderColor: 'red',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0,
+    }
+  ]
+}
+
 export function useReportData() {
   // ✅ API 호출 함수들을 composable에 포함
     const loadInfoData = async (chName) => {
@@ -582,8 +623,80 @@ export function useReportData() {
     energyData: reportData.energyData
   })
 
+  const parseMask = (mask) => {
+    const phases = [];
+    if (mask & 0b001) phases.push("L1");
+    if (mask & 0b010) phases.push("L2");
+    if (mask & 0b100) phases.push("L3");
+    return phases;
+}
+
+const getfinValue = (phaselist, levellist, mode) =>{
+  let finalValue = 0;
+  if (phaselist.length === 1) {
+      // phaselist가 하나일 때 해당하는 Level 값 선택
+      switch (phaselist[0]) {
+        case "L1":
+          finalValue = levellist[0];
+          break;
+        case "L2":
+          finalValue = levellist[1];
+          break;
+        case "L3":
+          finalValue = levellist[2];
+          break;
+        default:
+          finalValue = null; // 예상 외 값일 경우 처리
+      }
+    } else if (phaselist.length > 1) {
+      // 2개 이상일 때 가장 큰 값 선택
+      if (mode == 'SWELL')
+        finalValue = Math.max(...levellist);
+      else
+      finalValue = Math.min(...levellist);
+    } else {
+      finalValue = null; // phaselist가 비어있는 경우
+    }
+    return finalValue;
+}
+const makeKey = (param, phase) => {
+  const suffixMap = {
+    L1: "L1",
+    L2: "L2",
+    L3: "L3",
+    "Multi Phase": "Multi Phase"
+  }
+
+  // 예외 처리
+  if (param === "Frequency Variation 1") {
+    return phase === 'L1' ? "Frequency Variation 1" : undefined
+  }
+  if (param === "Frequency Variation 2") {
+    return phase === 'L1' ? "Frequency Variation 2" : undefined
+  }
+  if (param === "Voltage Unbalance") {
+    return phase === 'L1' ? "Voltage Unbalance" : undefined
+  }
+  if (param === "Voltage Variation 1") return `Voltage Variation 1 ${suffixMap[phase]}(%)`
+  if (param === "Voltage Variation 2") return `Voltage Variation 2 ${suffixMap[phase]}(%)`
+  if (param === "THD") return `THDs Variation ${suffixMap[phase]}(%)`
+  if (param === "Harmonics") return `Harmonics Variatiopn ${suffixMap[phase]}(%)`
+  if (param === "Pst") return `Flickers Pst ${suffixMap[phase]}(%)`
+  if (param === "Plt") return `Flickers Plt ${suffixMap[phase]}(%)`
+  if (param === "Signal Vol.") return `Signaling Voltage ${suffixMap[phase]}(%)`
+  if (param === "Voltage Sag") return `Voltage Dips ${suffixMap[phase]}`
+  if (param === "Voltage Swell") return `Voltage Swells ${suffixMap[phase]}`
+  if (param === "Short Interruption") return `Short Interruptions ${suffixMap[phase]}`
+  if (param === "Long Interruption") return `Long Interruptions ${suffixMap[phase]}`
+  if (param === "Signaling Volt.") return `Signaling Voltage ${suffixMap[phase]}(%)`
+
+  // 기본값
+  return `${param} ${suffixMap[phase]}`
+}
+
   return {
     reportData,
+    baseChart,
     loadInfoData,
     loadDiagnosisData,
     loadPowerQualityData,
@@ -596,5 +709,8 @@ export function useReportData() {
     loadAllData,
     getAllData,
     loadPQData,
+    parseMask,
+    getfinValue,
+    makeKey,
   }
 }
