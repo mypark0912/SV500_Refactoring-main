@@ -61,7 +61,7 @@
         </label>
         <input
           class="h-9 w-full p-2 text-xs border border-gray-300 rounded-md"
-          type="text"
+          type="text" v-model="macAddr"
           disabled
         />
       </div>
@@ -94,6 +94,12 @@
           >
             Upload
           </button>
+          <button
+            class="h-9 px-4 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+            @click="applySetup"
+          >
+            Apply
+          </button>
         </div>
       </div>
       
@@ -105,116 +111,149 @@
     
     <!-- Time & ErrorLimit -->
     <div
-      class="flex flex-col gap-2 border-b border-gray-200 dark:border-gray-700/60 pb-3 mb-3"
-    >
-      <div
-        class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase"
-      >
-        Time & ErrorLimit
-      </div>
-      <div class="grid grid-cols-2 gap-2">
-        <div class="flex flex-col gap-1">
-          <label
-            for="syncTimeBtn"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            DateTime
-          </label>
-          <button
-            id="syncTimeBtn"
-            @click="SetTime"
-            class="h-8 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Set Time</span>
-          </button>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label
-            for="errorLimit"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            Error Limit
-          </label>
-          <input
-            id="errorLimit"
-            type="text"
-            class="h-8 px-2 text-xs rounded-md border border-gray-300"
-          />
-        </div>
-      </div>
+  class="flex flex-col gap-2 border-b border-gray-200 dark:border-gray-700/60 pb-3 mb-3"
+>
+  <div
+    class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase"
+  >
+    DateTime
+  </div>
+  
+  <!-- 장비 시간 표시 -->
+  <div v-if="deviceTime" class="p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+    <div class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-100">
+      {{ deviceTime }}
     </div>
+  </div>
+  
+  <!-- Get Time, Set Time 버튼 -->
+  <div class="flex gap-2">
+    <button
+      id="getTimeBtn"
+      @click="getTime"
+      class="flex-1 h-9 w-24 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center justify-center gap-1"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>Get Time</span>
+    </button>
+    <button
+      id="syncTimeBtn"
+      @click="SetTime"
+      class="flex-1 h-9 w-24 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>Set Time</span>
+    </button>
+  </div>
+</div>
     
     <!-- Reference -->
     <div
-      class="flex flex-col gap-2 border-b border-gray-200 dark:border-gray-700/60 pb-3 mb-3"
-    >
-      <div
-        class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase"
+  class="flex flex-col gap-2 border-b border-gray-200 dark:border-gray-700/60 pb-3 mb-3"
+>
+  <div
+    class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase"
+  >
+    Reference
+  </div>
+  
+  <!-- 첫 번째 줄: U Ref, I Ref, In Ref -->
+  <div class="grid grid-cols-3 gap-1">
+    <div class="flex flex-col gap-0.5">
+      <label
+        for="uRef"
+        class="text-xs font-bold text-gray-700 dark:text-gray-300"
       >
-        Reference
-      </div>
-      <div class="grid grid-cols-2 gap-2">
-        <div class="flex flex-col gap-1">
-          <label
-            for="uRef"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            U ref
-          </label>
-          <input
-            id="uRef"
-            v-model.number="refDict.U"
-            type="text"
-            class="h-8 px-2 text-xs rounded-md border border-gray-300"
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label
-            for="iRef"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            I Ref
-          </label>
-          <input
-            id="iRef"
-            v-model.number="refDict.I"
-            type="text"
-            class="h-8 px-2 text-xs rounded-md border border-gray-300"
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label
-            for="inRef"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            In Ref
-          </label>
-          <input
-            id="inRef"
-            type="text"
-            v-model.number="refDict.In"
-            class="h-8 px-2 text-xs rounded-md border border-gray-300"
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label
-            for="phaseAngle"
-            class="text-xs font-bold text-gray-700 dark:text-gray-300"
-          >
-            Phase Angle
-          </label>
-          <input
-            id="phaseAngle"
-            type="text"
-            v-model.number="refDict.P"
-            class="h-8 px-2 text-xs rounded-md border border-gray-300"
-          />
-        </div>
-      </div>
+        U ref
+      </label>
+      <input
+        id="uRef"
+        v-model.number="refDict.U"
+        type="text"
+        class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+      />
     </div>
+    <div class="flex flex-col gap-0.5">
+      <label
+        for="iRef"
+        class="text-xs font-bold text-gray-700 dark:text-gray-300"
+      >
+        I Ref
+      </label>
+      <input
+        id="iRef"
+        v-model.number="refDict.I"
+        type="text"
+        class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+      />
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <label
+        for="inRef"
+        class="text-xs font-bold text-gray-700 dark:text-gray-300"
+      >
+        In Ref
+      </label>
+      <input
+        id="inRef"
+        type="text"
+        v-model.number="refDict.In"
+        class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+      />
+    </div>
+  </div>
+  
+  <!-- 두 번째 줄: Phase Angle, Error Limit -->
+  <div class="grid grid-cols-3 gap-1">
+  <div class="flex flex-col gap-0.5">
+    <label
+      for="phaseAngle"
+      class="text-xs font-bold text-gray-700 dark:text-gray-300"
+    >
+      Phase Angle
+    </label>
+    <input
+      id="phaseAngle"
+      type="text"
+      v-model.number="refDict.P"
+      class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+    />
+  </div>
+  <div class="flex flex-col gap-0.5">
+    <label
+      for="errorLimit"
+      class="text-xs font-bold text-gray-700 dark:text-gray-300"
+    >
+      Error Limit
+    </label>
+    <input
+      id="errorLimit"
+      v-model.number="errorLimit"
+      type="text"
+      class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+    />
+  </div>
+  <!-- Action 버튼 (div로 감싸기) -->
+  <div class="flex flex-col gap-0.5">
+    <label
+      for="sa"
+      class="text-xs font-bold text-gray-700 dark:text-gray-300"
+    >
+      Action
+    </label>
+    <button
+      class="h-8 px-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+      @click="saveRef"
+    >
+      Send
+    </button>
+  </div>
+</div>
+</div>
     
     <!-- Command -->
     <div
@@ -360,25 +399,29 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, inject } from "vue";
+import { ref, computed, onMounted, watch, inject, onUnmounted } from "vue";
 import axios from "axios";
 import { useSetupStore } from "@/store/setup";
 
 export default {
   name: "CaliSidebar",
   props: ["commands"],
-  setup(props) {
+  emits: ['startPolling', 'stopPolling'],
+  setup(props, { emit }) {
     const setupStore = useSetupStore();
     const selectedFile = ref(null);
     const message = ref("");
     const setupList = ref([]);
+    const macAddr = ref('');
     const commands = ref([]);
     const select_setupList = ref([]);
-    const selectSetup = ref(0);
+    const selectSetup = ref(-1);
+    const errorLimit = ref(0);
     const showUploadModal = ref(false);
     const showMainChannel = inject("showMainChannel", ref(true));
     const showSubChannel = inject("showSubChannel", ref(true));
-    
+    const deviceTime = ref('');
+    //let updateInterval = null;
     // Channel selection handlers
     const handleMainChannelChange = () => {
       if (!showMainChannel.value && !showSubChannel.value) {
@@ -397,6 +440,7 @@ export default {
       I: 0,
       In: 0,
       P: 0,
+      Error: 0,
     });
 
     onMounted(() => {
@@ -410,23 +454,51 @@ export default {
         return "h-9 bg-pink-900 text-white rounded-md hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white";
     };
 
+    const sendRef = async() =>{
+      refDict.value["Error"] = errorLimit.value
+      if (Object.values(refDict.value).every(val => val === 0)) {
+          alert("모든 값이 0입니다. 최소 하나 이상의 값을 입력해주세요.");
+          return;
+        }
+        try {
+            const response = await axios.post(`/config/calibrate/saveRef`, refDict.value, {
+              headers: { "Content-Type": "application/json" },
+            });
+            if (response.data.passOK == "1") {
+              alert("Ref Save Success");
+            } else {
+              alert(response.data.error);
+            }
+          } catch (error) {
+            alert(error);
+          }
+    }
+
     const sendCmd = async (index) => {
       if (index == 0) {
-        try {
-          const response = await axios.get("/config/calibrate/start");
-          if (response.data.passOK == "1") {
-            alert(commands.value[index]["name"] + " Success");
-          } else {
-            alert(response.data.error);
-          }
-        } catch (error) {
-          alert(error);
-        }
+        emit('startPolling');
+        // if (Object.values(refDict.value).every(val => val === 0)) {
+        //   alert("모든 값이 0입니다. 최소 하나 이상의 값을 입력해주세요.");
+        //   return;
+        // }
+        // try {
+        //     const response = await axios.post(`/config/calibrate/start`, refDict.value, {
+        //       headers: { "Content-Type": "application/json" },
+        //     });
+        //     if (response.data.passOK == "1") {
+        //       alert("Ref Save Success");
+        //     } else {
+        //       alert(response.data.error);
+        //     }
+        //   } catch (error) {
+        //     alert(error);
+        //   }
       } else if (index == 1) {
         try {
           const response = await axios.get("/config/calibrate/end");
           if (response.data.passOK == "1") {
             alert(commands.value[index]["name"] + " Success");
+            emit('stopPolling');
           } else {
             alert(response.data.error);
           }
@@ -436,8 +508,10 @@ export default {
       } else {
         let data = {};
         if ("Param" in commands.value[index]) {
+          data["param"] = commands.value[index]["Param"];
           data["ref"] = refDict.value[commands.value[index]["Param"]].toString();
         } else {
+          data["param"] = "None";
           data["ref"] = "None";
         }
         data["cmd"] = commands.value[index]["name"];
@@ -511,6 +585,19 @@ export default {
       }
     };
 
+    const applySetup = async()=> {
+      try {
+            const response = await axios.get("/config/calibrate/applySetup");
+            if (response.data.passOK == "1") {
+              message.value = commands.value[index]["name"] + " Success";            
+            } else {
+              message.value = response.data.error;
+            }
+      } catch (error) {
+        alert(error);
+      }
+    }
+
     const uploadFromModal = async () => {
       await upload();
       if (message.value.includes("Success")) {
@@ -531,7 +618,10 @@ export default {
         const response = await axios.get("/config/checkSetup");
         if (response.data.passOK == "1") {
           select_setupList.value = response.data.data;
+          macAddr.value = response.data.mac;
           if (!setupStore.getCalib) setupStore.setCalib(true);
+        }else{
+          macAddr.value = response.data.mac;
         }
       } catch (error) {
         const msg = "업로드 실패: " + error.response.data.error;
@@ -539,8 +629,41 @@ export default {
       }
     };
 
+    const getTime = async () => {
+      try {
+        const response = await axios.get('/config/calibrate/gettime');
+        const deviceDate = new Date(response.data.deviceTime);
+        deviceTime.value = deviceDate.toLocaleString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        
+        // 시간 차이 계산 (초 단위)
+        // const browserDate = new Date();
+        // timeDiff.value = (deviceDate - browserDate) / 1000;
+        
+      } catch (error) {
+        console.error('Failed to get device time:', error);
+        // statusMessage.value = 'Failed to get device time';
+        // statusType.value = 'error';
+      }
+    };
+
     onMounted(() => {
       fetchsetupList();
+      // updateInterval = setInterval(() => {
+      //   getDeviceTime();
+      //   }, 1000);
+    });
+    onUnmounted(()=>{
+      // if (updateInterval) {
+      //   clearInterval(updateInterval);
+      // }
     });
 
     return {
@@ -562,6 +685,12 @@ export default {
       selectedFile,
       showUploadModal,
       SetTime,
+      applySetup,
+      deviceTime,
+      getTime,
+      macAddr,
+      errorLimit,
+      sendRef,
     };
   },
 };

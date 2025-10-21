@@ -2,7 +2,7 @@
     <div class="flex h-[100dvh] overflow-hidden">
   
       <!-- Sidebar -->
-      <Sidebar :sidebarOpen="sidebarOpen" @close-sidebar="sidebarOpen = false" :channel="channels" />
+      <Sidebar :sidebarOpen="sidebarOpen" @close-sidebar="sidebarOpen = false" :channel="channel" />
   
       <!-- Content area -->
       <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
@@ -37,10 +37,10 @@
             </div>
             </div>
             <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl mb-8">
-              <ServicePanel v-if="channels == 'Service'"/>
-                <div v-else-if="channels == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px">
-                  <CaliPanel :items="items" :channel="channels"/>
-                  <CaliSidebar :channel="channels" :commands="commands" />
+              <ServicePanel v-if="channel == 'Service'"/>
+                <div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px">
+                  <CaliPanel :items="items" :channel="channel"/>
+                  <CaliSidebar :channel="channel" :commands="commands"  @startPolling="startPolling" @stopPolling="stopPolling" />
                 </div>
                 <Maintenance v-else />
             </div>
@@ -54,7 +54,7 @@
   
   <script>
   import { useI18n } from 'vue-i18n' 
-  import { ref , computed, watch,provide} from 'vue'
+  import { ref , computed, watch,provide, reactive} from 'vue'
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   //import UsersTabsCard from '../../partials/community/CaliCard.vue'
@@ -64,7 +64,7 @@
   import Maintenance from '../../partials/inners/config/MaintenancePanel.vue'
   //import { useAuthStore } from "@/store"; // ✅ Pinia Store 사용
    import { useRoute } from 'vue-router'
-  
+   import axios from 'axios';
   export default {
     name: 'Calibrate',
     props:['channel'],
@@ -84,18 +84,19 @@
       //const langset = computed(() => authStore.getLang);
       //const installed = computed(() => authStore.getInstalled);
       const sidebarOpen = ref(false)
-      const channels = ref(props.channel);
+      const channel = ref(props.channel);
+      let updateInterval = null;
 
       watch(() => props.channel, (newChannel) => {
-      if (newChannel !== channels.value) {
-        channels.value = newChannel;
+      if (newChannel !== channel.value) {
+        channel.value = newChannel;
       }
     }, { immediate: true });
 
   // route.params.channel 변경 감시
     watch(() => route.params.channel, (newChannel) => {
-      if (newChannel !== channels.value) {
-        channels.value = newChannel;
+      if (newChannel !== channel.value) {
+        channel.value = newChannel;
       }
     }, { immediate: true });
       const showMainChannel = ref(true);
@@ -198,9 +199,9 @@
       ])
       const formattedChannel = computed(() => {
 
-        if (channels.value === "Service") {
+        if (channel.value === "Service") {
           return "Service";
-        } else if (channels.value === "Calibrate") {
+        } else if (channel.value === "Calibrate") {
           return "Calibrate";
         } else {
           return "Maintenance";
@@ -251,18 +252,186 @@
           unit:"kVA"
         },     
       ])
+      const channels = reactive({
+      "main":{       
+        "Phase Voltage": {
+            "view":[
+              { subTitle: "U_A", value: 0, error: 0 },
+              { subTitle: "U_B", value: 0, error: 0 },
+              { subTitle: "U_C", value: 0, error: 0 },
+              { subTitle: "Upp", value: 0, error: 0 }
+            ],
+          },
+          "Phase Current":{
+              "view": [
+              { subTitle: "I_A", value: 0, error: 0 },
+              { subTitle: "I_B", value: 0, error: 0 },
+              { subTitle: "I_C", value: 0, error: 0 },
+              { subTitle: "In", value: 0, error: 0 }
+            ],
+          },
+        "Power Angle": {
+            "view":[
+              { subTitle: "Angle_A", value: 0, error: 0 },
+              { subTitle: "Angle_B", value: 0, error: 0 },
+              { subTitle: "Angle_C", value: 0, error: 0 }
+            ],
+          },
+          "Active Power":{
+            "view" :[
+              { subTitle: "Watt_A", value: 0, error: 0 },
+              { subTitle: "Watt_B", value: 0, error: 0 },
+              { subTitle: "Watt_C", value: 0, error: 0 }
+            ]
+          },
+          "Reactive Power":{
+            "view":[
+              { subTitle: "Var_A", value: 0, error: 0 },
+              { subTitle: "Var_B", value: 0, error: 0 },
+              { subTitle: "Var_C", value: 0, error: 0 }
+            ]
+          },
+          "Apparent Power":{
+            "view":[
+              { subTitle: "VA_A", value: 0, error: 0 },
+              { subTitle: "VA_B", value: 0, error: 0 },
+              { subTitle: "VA_C", value: 0, error: 0 }
+            ]
+          },
+      },
+      "sub":{       
+        "Phase Voltage": {
+            "view":[
+              { subTitle: "U_A", value: 0, error: 0 },
+              { subTitle: "U_B", value: 0, error: 0 },
+              { subTitle: "U_C", value: 0, error: 0 },
+              { subTitle: "Upp", value: 0, error: 0 }
+            ],
+          },
+          "Phase Current":{
+              "view": [
+              { subTitle: "I_A", value: 0, error: 0 },
+              { subTitle: "I_B", value: 0, error: 0 },
+              { subTitle: "I_C", value: 0, error: 0 },
+              { subTitle: "Ig", value: 0, error: 0 },
+              { subTitle: "In", value: 0, error: 0 }
+            ],
+          },
+        "Power Angle": {
+            "view":[
+              { subTitle: "Angle_A", value: 0, error: 0 },
+              { subTitle: "Angle_B", value: 0, error: 0 },
+              { subTitle: "Angle_C", value: 0, error: 0 }
+            ],
+          },
+          "Active Power":{
+            "view" :[
+              { subTitle: "Watt_A", value: 0, error: 0 },
+              { subTitle: "Watt_B", value: 0, error: 0 },
+              { subTitle: "Watt_C", value: 0, error: 0 }
+            ]
+          },
+          "Reactive Power":{
+            "view":[
+              { subTitle: "Var_A", value: 0, error: 0 },
+              { subTitle: "Var_B", value: 0, error: 0 },
+              { subTitle: "Var_C", value: 0, error: 0 }
+            ]
+          },
+          "Apparent Power":{
+            "view":[
+              { subTitle: "VA_A", value: 0, error: 0 },
+              { subTitle: "VA_B", value: 0, error: 0 },
+              { subTitle: "VA_C", value: 0, error: 0 }
+            ]
+          },
+      },
+    });
+    provide('channels', channels);
+const dataMapping = [
+  { index: 0, category: "Phase Voltage", dataCount: 4, refKey: "U" },
+  { index: 1, category: "Phase Current", dataCount: 4, refKey: "I" },
+  { index: 2, category: "Power Angle", dataCount: 3, refKey: "P" },
+  { index: 3, category: "Active Power", dataCount: 3, refKey: null },
+  { index: 4, category: "Reactive Power", dataCount: 3, refKey: null },
+  { index: 5, category: "Apparent Power", dataCount: 3, refKey: null }
+];
+
+
+function updateChannelData(response) {
+  // main과 sub 채널 동시 처리
+  ['main', 'sub'].forEach(channelType => {
+    const sourceData = channelType === 'main' ? response.mainData : response.subData;
+    const refData = channelType === 'main' ? response.mainRef : response.subRef; // refData 가져오기
+    
+    if (!sourceData) return;
+    
+    // 매핑 테이블에 따라 자동 업데이트
+    dataMapping.forEach(({ index, category, dataCount, refKey }) => {
+      if (sourceData[index]?.data) {
+        const targetView = channels[channelType][category].view;
+        
+        // 데이터 배열의 각 값을 view 배열에 할당
+        for (let i = 0; i < dataCount && i < targetView.length; i++) {
+          if (sourceData[index].data[i] !== undefined) {
+            const value = sourceData[index].data[i]["value"];
+            let error = 0;
+            
+            // refData가 있고 해당 category의 refKey가 있으면 오차 계산
+            if (refData && refKey && refData[refKey] !== undefined && refData[refKey] !== 0) {
+              const refValue = refData[refKey];
+              error = ((value - refValue) / refValue * 100).toFixed(2); // 백분율로 계산
+            }
+            
+            channels[channelType][category].view[i] = {
+              ...channels[channelType][category].view[i],
+              value: value,
+              error: error
+            };
+          }
+        }
+      }
+    });
+  });
+}
+    const startPolling = () => {
+      if (updateInterval) clearInterval(updateInterval);
+      updateInterval = setInterval(() => fetchData(), 1000);
+    };
+
+    const stopPolling = () => {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+    };
+    const fetchData = async (ch) => {
+      try {
+        const response = await axios.get(`/config/calibrateNow`);
+        updateChannelData(response.data);
+        
+      } catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      }
+    };
+
+    
   
       return {
         sidebarOpen,
         items,
         //langset,
         items2,
-        channels,
+        channel,
         formattedChannel,
         commands,
         t,
         showMainChannel,
         showSubChannel,
+        channels,
+        fetchData,
+        startPolling,
+        stopPolling,
         //installed,
       }  
     }

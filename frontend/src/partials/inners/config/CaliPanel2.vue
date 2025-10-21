@@ -61,101 +61,102 @@
         const showSubChannel = inject('showSubChannel', ref(true));
         const selectItem = ref('Time');
         let updateInterval = null;
-        const channels = reactive({
-      "main":{       
-        "Phase Voltage": {
-            "view":[
-              { subTitle: "U_A", value: 0, error: 0 },
-              { subTitle: "U_B", value: 0, error: 0 },
-              { subTitle: "U_C", value: 0, error: 0 },
-              { subTitle: "Upp", value: 0, error: 0 }
-            ],
-          },
-          "Phase Current":{
-              "view": [
-              { subTitle: "I_A", value: 0, error: 0 },
-              { subTitle: "I_B", value: 0, error: 0 },
-              { subTitle: "I_C", value: 0, error: 0 },
-              { subTitle: "In", value: 0, error: 0 }
-            ],
-          },
-        "Power Angle": {
-            "view":[
-              { subTitle: "Angle_A", value: 0, error: 0 },
-              { subTitle: "Angle_B", value: 0, error: 0 },
-              { subTitle: "Angle_C", value: 0, error: 0 }
-            ],
-          },
-          "Active Power":{
-            "view" :[
-              { subTitle: "Watt_A", value: 0, error: 0 },
-              { subTitle: "Watt_B", value: 0, error: 0 },
-              { subTitle: "Watt_C", value: 0, error: 0 }
-            ]
-          },
-          "Reactive Power":{
-            "view":[
-              { subTitle: "Var_A", value: 0, error: 0 },
-              { subTitle: "Var_B", value: 0, error: 0 },
-              { subTitle: "Var_C", value: 0, error: 0 }
-            ]
-          },
-          "Apparent Power":{
-            "view":[
-              { subTitle: "VA_A", value: 0, error: 0 },
-              { subTitle: "VA_B", value: 0, error: 0 },
-              { subTitle: "VA_C", value: 0, error: 0 }
-            ]
-          },
-      },
-      "sub":{       
-        "Phase Voltage": {
-            "view":[
-              { subTitle: "U_A", value: 0, error: 0 },
-              { subTitle: "U_B", value: 0, error: 0 },
-              { subTitle: "U_C", value: 0, error: 0 },
-              { subTitle: "Upp", value: 0, error: 0 }
-            ],
-          },
-          "Phase Current":{
-              "view": [
-              { subTitle: "I_A", value: 0, error: 0 },
-              { subTitle: "I_B", value: 0, error: 0 },
-              { subTitle: "I_C", value: 0, error: 0 },
-              { subTitle: "Ig", value: 0, error: 0 },
-              { subTitle: "In", value: 0, error: 0 }
-            ],
-          },
-        "Power Angle": {
-            "view":[
-              { subTitle: "Angle_A", value: 0, error: 0 },
-              { subTitle: "Angle_B", value: 0, error: 0 },
-              { subTitle: "Angle_C", value: 0, error: 0 }
-            ],
-          },
-          "Active Power":{
-            "view" :[
-              { subTitle: "Watt_A", value: 0, error: 0 },
-              { subTitle: "Watt_B", value: 0, error: 0 },
-              { subTitle: "Watt_C", value: 0, error: 0 }
-            ]
-          },
-          "Reactive Power":{
-            "view":[
-              { subTitle: "Var_A", value: 0, error: 0 },
-              { subTitle: "Var_B", value: 0, error: 0 },
-              { subTitle: "Var_C", value: 0, error: 0 }
-            ]
-          },
-          "Apparent Power":{
-            "view":[
-              { subTitle: "VA_A", value: 0, error: 0 },
-              { subTitle: "VA_B", value: 0, error: 0 },
-              { subTitle: "VA_C", value: 0, error: 0 }
-            ]
-          },
-      },
-    })
+        const channels = inject('channels');
+    //     const channels = reactive({
+    //   "main":{       
+    //     "Phase Voltage": {
+    //         "view":[
+    //           { subTitle: "U_A", value: 0, error: 0 },
+    //           { subTitle: "U_B", value: 0, error: 0 },
+    //           { subTitle: "U_C", value: 0, error: 0 },
+    //           { subTitle: "Upp", value: 0, error: 0 }
+    //         ],
+    //       },
+    //       "Phase Current":{
+    //           "view": [
+    //           { subTitle: "I_A", value: 0, error: 0 },
+    //           { subTitle: "I_B", value: 0, error: 0 },
+    //           { subTitle: "I_C", value: 0, error: 0 },
+    //           { subTitle: "In", value: 0, error: 0 }
+    //         ],
+    //       },
+    //     "Power Angle": {
+    //         "view":[
+    //           { subTitle: "Angle_A", value: 0, error: 0 },
+    //           { subTitle: "Angle_B", value: 0, error: 0 },
+    //           { subTitle: "Angle_C", value: 0, error: 0 }
+    //         ],
+    //       },
+    //       "Active Power":{
+    //         "view" :[
+    //           { subTitle: "Watt_A", value: 0, error: 0 },
+    //           { subTitle: "Watt_B", value: 0, error: 0 },
+    //           { subTitle: "Watt_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //       "Reactive Power":{
+    //         "view":[
+    //           { subTitle: "Var_A", value: 0, error: 0 },
+    //           { subTitle: "Var_B", value: 0, error: 0 },
+    //           { subTitle: "Var_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //       "Apparent Power":{
+    //         "view":[
+    //           { subTitle: "VA_A", value: 0, error: 0 },
+    //           { subTitle: "VA_B", value: 0, error: 0 },
+    //           { subTitle: "VA_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //   },
+    //   "sub":{       
+    //     "Phase Voltage": {
+    //         "view":[
+    //           { subTitle: "U_A", value: 0, error: 0 },
+    //           { subTitle: "U_B", value: 0, error: 0 },
+    //           { subTitle: "U_C", value: 0, error: 0 },
+    //           { subTitle: "Upp", value: 0, error: 0 }
+    //         ],
+    //       },
+    //       "Phase Current":{
+    //           "view": [
+    //           { subTitle: "I_A", value: 0, error: 0 },
+    //           { subTitle: "I_B", value: 0, error: 0 },
+    //           { subTitle: "I_C", value: 0, error: 0 },
+    //           { subTitle: "Ig", value: 0, error: 0 },
+    //           { subTitle: "In", value: 0, error: 0 }
+    //         ],
+    //       },
+    //     "Power Angle": {
+    //         "view":[
+    //           { subTitle: "Angle_A", value: 0, error: 0 },
+    //           { subTitle: "Angle_B", value: 0, error: 0 },
+    //           { subTitle: "Angle_C", value: 0, error: 0 }
+    //         ],
+    //       },
+    //       "Active Power":{
+    //         "view" :[
+    //           { subTitle: "Watt_A", value: 0, error: 0 },
+    //           { subTitle: "Watt_B", value: 0, error: 0 },
+    //           { subTitle: "Watt_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //       "Reactive Power":{
+    //         "view":[
+    //           { subTitle: "Var_A", value: 0, error: 0 },
+    //           { subTitle: "Var_B", value: 0, error: 0 },
+    //           { subTitle: "Var_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //       "Apparent Power":{
+    //         "view":[
+    //           { subTitle: "VA_A", value: 0, error: 0 },
+    //           { subTitle: "VA_B", value: 0, error: 0 },
+    //           { subTitle: "VA_C", value: 0, error: 0 }
+    //         ]
+    //       },
+    //   },
+    // })
         const Forms = ref({
             "row1":{
                 "lbl":"U Ref",
@@ -199,65 +200,73 @@
         })
     
 
-    onMounted(async()=>{
-      await fetchData();
-      updateInterval = setInterval(() => {
-        fetchData();
-        }, 1000);
-    });
+    // onMounted(async()=>{
+    //   await fetchData();
+    //   updateInterval = setInterval(() => {
+    //     fetchData();
+    //     }, 1000);
+    // });
 
-    onUnmounted(()=>{
-      if (updateInterval) {
-        clearInterval(updateInterval);
-      }
-    });
+    // onUnmounted(()=>{
+    //   if (updateInterval) {
+    //     clearInterval(updateInterval);
+    //   }
+    // });
 
-    const dataMapping = [
-  { index: 0, category: "Phase Voltage", dataCount: 4 },
-  { index: 1, category: "Phase Current", dataCount: 4 },
-  { index: 2, category: "Power Angle", dataCount: 3 },
-  { index: 3, category: "Active Power", dataCount: 3 },
-  { index: 4, category: "Reactive Power", dataCount: 3 },
-  { index: 5, category: "Apparent Power", dataCount: 3 }
-];
+// const dataMapping = [
+//   { index: 0, category: "Phase Voltage", dataCount: 4, refKey: "U" },
+//   { index: 1, category: "Phase Current", dataCount: 4, refKey: "I" },
+//   { index: 2, category: "Power Angle", dataCount: 3, refKey: "P" },
+//   { index: 3, category: "Active Power", dataCount: 3, refKey: null },
+//   { index: 4, category: "Reactive Power", dataCount: 3, refKey: null },
+//   { index: 5, category: "Apparent Power", dataCount: 3, refKey: null }
+// ];
 
-// 자동화된 데이터 업데이트 함수
-function updateChannelData(response) {
-  // main과 sub 채널 동시 처리
-  ['main', 'sub'].forEach(channelType => {
-    const sourceData = channelType === 'main' ? response.mainData : response.subData;
+// function updateChannelData(response) {
+//   // main과 sub 채널 동시 처리
+//   ['main', 'sub'].forEach(channelType => {
+//     const sourceData = channelType === 'main' ? response.mainData : response.subData;
+//     const refData = channelType === 'main' ? response.mainRef : response.subRef; // refData 가져오기
     
-    if (!sourceData) return;
+//     if (!sourceData) return;
     
-    // 매핑 테이블에 따라 자동 업데이트
-    dataMapping.forEach(({ index, category, dataCount }) => {
-      if (sourceData[index]?.data) {
-        const targetView = channels[channelType][category].view;
+//     // 매핑 테이블에 따라 자동 업데이트
+//     dataMapping.forEach(({ index, category, dataCount, refKey }) => {
+//       if (sourceData[index]?.data) {
+//         const targetView = channels[channelType][category].view;
         
-        // 데이터 배열의 각 값을 view 배열에 할당
-        for (let i = 0; i < dataCount && i < targetView.length; i++) {
-          if (sourceData[index].data[i] !== undefined) {
-            //targetView[i].value = sourceData[index].data[i]["value"];
-            channels[channelType][category].view[i] = {
-              ...channels[channelType][category].view[i],
-              value: sourceData[index].data[i]["value"]
-            };
-          }
-        }
-      }
-    });
-  });
-}
-    const fetchData = async (ch) => {
-      try {
-        const response = await axios.get(`/config/calibrateNow`);
-        //console.log(response.data.mainData);
-        updateChannelData(response.data);
+//         // 데이터 배열의 각 값을 view 배열에 할당
+//         for (let i = 0; i < dataCount && i < targetView.length; i++) {
+//           if (sourceData[index].data[i] !== undefined) {
+//             const value = sourceData[index].data[i]["value"];
+//             let error = 0;
+            
+//             // refData가 있고 해당 category의 refKey가 있으면 오차 계산
+//             if (refData && refKey && refData[refKey] !== undefined && refData[refKey] !== 0) {
+//               const refValue = refData[refKey];
+//               error = ((value - refValue) / refValue * 100).toFixed(2); // 백분율로 계산
+//             }
+            
+//             channels[channelType][category].view[i] = {
+//               ...channels[channelType][category].view[i],
+//               value: value,
+//               error: error
+//             };
+//           }
+//         }
+//       }
+//     });
+//   });
+// }
+//     const fetchData = async (ch) => {
+//       try {
+//         const response = await axios.get(`/config/calibrateNow`);
+//         updateChannelData(response.data);
         
-      } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
-      }
-    };
+//       } catch (error) {
+//         console.log("데이터 가져오기 실패:", error);
+//       }
+//     };
 
     watch(() => props.channel, (newChannel) => {
       if (newChannel !== channel.value) {

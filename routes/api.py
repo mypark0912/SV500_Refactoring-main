@@ -2661,6 +2661,11 @@ def extract_key_list(key_dict_list):
 
 def get_Calibrate(channel):
     try:
+        redis_state.client.select(0)
+        refdict = None
+        if redis_state.client.hexists("calibration","ref"):
+            refStr = redis_state.client.hget("calibration","ref")
+            refdict = json.loads(refStr)
         redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
         if not redis_state.client.exists(keyname):
@@ -2728,7 +2733,8 @@ def get_Calibrate(channel):
                     {"subTitle": "ActivePower", "data": p_data},
                     {"subTitle": "ReactivePower", "data": q_data},
                     {"subTitle": "ApparentPower", "data": s_data},
-                ]
+                ],
+            "refData": refdict
         }
 
         return {"success": True, "retData": result}

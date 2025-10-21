@@ -6,7 +6,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-
+from .auth import get_mac_address
+from datetime import datetime
 router = APIRouter()
 
 # Path 객체 절대경로
@@ -36,6 +37,14 @@ class CaliSet(BaseModel):
     type: str
     cmd: str
     ref : str
+    param: str
+
+class CaliRef(BaseModel):
+    U: str
+    I: str
+    In: str
+    P: str
+    Error: str
 
 def parse_csv(file_path):
     data = []
@@ -92,13 +101,14 @@ def upload_file(file: UploadFile = File(...)):
 
 @router.get('/checkSetup')
 def check_setup():
+    mac = get_mac_address()
     redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
-        return {'passOK': '1', 'data':datalist}
+        return {'passOK': '1', 'data':datalist, 'mac': mac}
     else:
-        return {'passOK': '0', 'error': 'No exist calibration setup'}
+        return {'passOK': '0', 'error': 'No exist calibration setup', 'mac':mac}
 
 @router.get('/calibrate/getUnbal')
 def getUnbal():
@@ -124,32 +134,60 @@ def cali_mount():
     mainResponse = get_Calibrate('Main')
     subResponse = get_Calibrate('Sub')
 
-    return {'mainStatus': mainResponse['success'], 'mainData':mainResponse['retData']['meterData'],
-            'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData']}
+    return {'mainStatus': mainResponse['success'], 'mainData':mainResponse['retData']['meterData'], 'mainRef':mainResponse['retData']['refData'],
+            'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData'], 'subRef': subResponse['retData']['refData']}
 
-@router.get('/calibrate/start')
+@router.get('/calibrate/applySetup')
 def cali_start():
     redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
         redis_state.client.hset("System", "setup", json.dumps(datalist))
+        redis_state.client.hset('service', 'cflag', 1)
         redis_state.client.hset('Service', 'apply', 1)
         return {'passOK': '1'}
     else:
         return {'passOK': '0', 'error': 'No exist calibration setup'}
 
+@router.post('/calibrate/saveRef')
+def set_cmd(data:CaliRef):
+    try:
+        redis_state.client.select(0)
+        refdata = {"U": int(data.U), "I": int(data.I), "In": int(data.In), "P": int(data.P), "Error": int(data.Error)}
+        redis_state.client.hset("calibration", "ref", json.dumps(refdata))
+        return {'passOK': '1'}
+    except Exception as e:
+        print(str(e))
+        return {'passOK': '0'}
+
 @router.get('/calibrate/end')
 def cali_end():
-    file_path = os.path.join(SETTING_FOLDER, 'setup.json')
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            setting = json.load(f)
-            redis_state.client.execute_command("SELECT", 0)
-            redis_state.client.hset("System", "setup", json.dumps(setting))
-            return {'passOK': '1'}
-    except Exception as e:
-        return {'passOK': '0', 'error': 'No exist setup file'}
+    redis_state.client.select(0)
+    if redis_state.client.hexists('calibration', 'setup') and redis_state.client.hexists('calibration','cflag'):
+        if redis_state.client.hget('calibration', 'cflag') == 1:
+            endflag = True
+            redis_state.client.hset('calibration', 'cflag', 0)
+        else:
+            endflag = False
+    else:
+        endflag = False
+
+    if endflag:
+        file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+                redis_state.client.execute_command("SELECT", 0)
+                redis_state.client.hset("System", "setup", json.dumps(setting))
+                redis_state.client.hdel("calibration", "setup")
+                return {'passOK': '1'}
+        except Exception as e:
+            return {'passOK': '0', 'error': 'No exist setup file'}
+    else:
+        if redis_state.client.hexists("calibration","ref"):
+            redis_state.client.hdel("calibration","ref")
+        return {'passOK': '1'}
 
 @router.post('/calibrate/cmd')
 def set_cmd(data:CaliSet):
@@ -173,11 +211,29 @@ def set_cmd(data:CaliSet):
             'ref': val
         }
         redis_state.client.select(0)
+        refdict = json.loads(redis_state.client.hget("calibration", "ref"))
+        if data.param != 'None':
+            refdict[data.param] = val
+            redis_state.client.hset("calibration", "ref", json.dumps(refdict))
         redis_state.client.lpush('cali_command',json.dumps(msg))
         return {'passOK': '1'}
     except Exception as e:
         print(str(e))
         return {'passOK': '0'}
+
+@router.get("/calibrate/gettime")
+async def get_device_time():
+    """
+    현재 장비 시간 조회
+    """
+    try:
+        return {
+            "success": True,
+            "deviceTime": datetime.now().isoformat(),
+            "timestamp": datetime.now().timestamp()
+        }
+    except Exception as e:
+        return {"success": False }
 
 @router.post('/savePost/{mode}/{idx}')
 def save_post(data: Post, mode: int, idx:int):
