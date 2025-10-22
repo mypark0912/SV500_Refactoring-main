@@ -247,7 +247,7 @@
     </label>
     <button
       class="h-8 px-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-      @click="saveRef"
+      @click="sendRef"
     >
       Send
     </button>
