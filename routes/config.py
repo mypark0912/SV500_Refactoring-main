@@ -49,6 +49,9 @@ class CaliRef(BaseModel):
     P: str
     Error: str
 
+setting_file = os.path.join(SETTING_FOLDER, 'setup.json')
+backup_file = os.path.join(SETTING_FOLDER, 'setup_backup.json')
+
 def parse_csv(file_path):
     data = []
     with open(file_path, mode='r', encoding='utf-8') as csvfile:
@@ -141,12 +144,15 @@ def cali_mount():
             'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData'], 'subRef': subResponse['retData']['refData']}
 
 @router.get('/calibrate/applySetup')
-def cali_start():
+def cali_setup():
     redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
+        shutil.copy(backup_file, setting_file)
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
         redis_state.client.hset("System", "setup", json.dumps(datalist))
+        with open(SETTING_FOLDER, "w", encoding="utf-8") as f:
+            json.dump(datalist, f, indent=4)
         redis_state.client.hset('service', 'cflag', 1)
         redis_state.client.hset('Service', 'save', 1)
         return {'passOK': '1'}
@@ -154,7 +160,7 @@ def cali_start():
         return {'passOK': '0', 'error': 'No exist calibration setup'}
 
 @router.post('/calibrate/saveRef')
-def set_cmd(data:CaliRef):
+def set_saveref(data:CaliRef):
     try:
         redis_state.client.select(0)
         refdata = {"U": int(data.U), "I": int(data.I), "In": int(data.In), "P": int(data.P), "Error": int(data.Error)}
@@ -164,9 +170,19 @@ def set_cmd(data:CaliRef):
         print(str(e))
         return {'passOK': '0'}
 
+@router.get('/calibrate/start')
+def cali_start():
+    try:
+        redis_state.client.select(0)
+        redis_state.client.hset('Service','calibration', 1)
+        return {'passOK': '1'}
+    except Exception as e:
+        return {'passOK': '0', 'error': str(e)}
+
 @router.get('/calibrate/end')
 def cali_end():
     redis_state.client.select(0)
+    redis_state.client.hset('Service', 'calibration', 0)
     if redis_state.client.hexists('calibration', 'setup') and redis_state.client.hexists('calibration','cflag'):
         if redis_state.client.hget('calibration', 'cflag') == 1:
             endflag = True
@@ -177,14 +193,15 @@ def cali_end():
         endflag = False
 
     if endflag:
-        file_path = os.path.join(SETTING_FOLDER, 'setup.json')
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            shutil.copy(setting_file, backup_file)
+            with open(setting_file, "r", encoding="utf-8") as f:
                 setting = json.load(f)
                 redis_state.client.execute_command("SELECT", 0)
                 redis_state.client.hset("System", "setup", json.dumps(setting))
-                redis_state.client.hdel("calibration", "setup")
-                return {'passOK': '1'}
+            redis_state.client.hdel("calibration", "setup")
+            redis_state.client.hset("Service", "save", 1)
+            return {'passOK': '1'}
         except Exception as e:
             return {'passOK': '0', 'error': 'No exist setup file'}
     else:

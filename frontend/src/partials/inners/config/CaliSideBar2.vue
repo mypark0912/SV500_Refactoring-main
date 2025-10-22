@@ -264,6 +264,9 @@
       >
         Command
       </div>
+      <div v-if="cmdMessage" class="font-medium text-xs text-gray-800 dark:text-gray-100">
+        {{ cmdMessage }}🙌
+      </div>
       <div class="grid grid-cols-2 gap-1.5">
         <button
           v-for="(row, index) in commands"
@@ -433,6 +436,7 @@ export default {
     const showMainChannel = inject("showMainChannel", ref(true));
     const showSubChannel = inject("showSubChannel", ref(true));
     const deviceTime = ref('');
+    const cmdMessage = ref('');
     //let updateInterval = null;
     // Channel selection handlers
     const handleMainChannelChange = () => {
@@ -501,34 +505,28 @@ export default {
 
     const sendCmd = async (index) => {
       if (index == 0) {
-        emit('startPolling');
-        // if (Object.values(refDict.value).every(val => val === 0)) {
-        //   alert("모든 값이 0입니다. 최소 하나 이상의 값을 입력해주세요.");
-        //   return;
-        // }
-        // try {
-        //     const response = await axios.post(`/config/calibrate/start`, refDict.value, {
-        //       headers: { "Content-Type": "application/json" },
-        //     });
-        //     if (response.data.passOK == "1") {
-        //       alert("Ref Save Success");
-        //     } else {
-        //       alert(response.data.error);
-        //     }
-        //   } catch (error) {
-        //     alert(error);
-        //   }
+        try {
+          const response = await axios.get("/config/calibrate/start");
+          if (response.data.passOK == "1") {
+            cmdMessage.value = commands.value[index]["name"] + " Success";
+            emit('startPolling');
+          } else {
+            cmdMessage.value = response.data.error;
+          }
+        } catch (error) {
+          cmdMessage.value = error;
+        }
       } else if (index == 1) {
         try {
           const response = await axios.get("/config/calibrate/end");
           if (response.data.passOK == "1") {
-            alert(commands.value[index]["name"] + " Success");
+            cmdMessage.value = commands.value[index]["name"] + " Success";
             emit('stopPolling');
           } else {
-            alert(response.data.error);
+            cmdMessage.value = response.data.error;
           }
         } catch (error) {
-          alert(error);
+          cmdMessage.value = error;
         }
       } else {
         let data = {};
@@ -564,11 +562,12 @@ export default {
           });
           if (response.data.passOK == "1") {
             alert(commands.value[index]["name"] + " Success");
+            cmdMessage.value = commands.value[index]["name"] + " Success"
           } else {
-            alert(response.data.error);
+            cmdMessage.value = response.data.error;
           }
         } catch (error) {
-          alert(error);
+          cmdMessage.value = error;
         }
       }
     };
@@ -757,7 +756,8 @@ export default {
       SaveCal,
       showReportModal,
       reportInfo,
-      handleReportSent
+      handleReportSent,
+      cmdMessage,
     };
   },
 };
