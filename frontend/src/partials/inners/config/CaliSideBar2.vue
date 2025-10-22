@@ -290,6 +290,7 @@
         </span>
       </button>
       <button
+      @click="showReportModal = true"
         class="h-9 px-3 text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
       >
         <span class="flex items-center justify-center gap-1.5">
@@ -299,6 +300,13 @@
           Send Report
         </span>
       </button>
+          <!-- Send Report Modal -->
+    <SendReportModal
+      :is-open="showReportModal"
+      :report-data="reportInfo"
+      @close="showReportModal = false"
+      @send="handleReportSent"
+    />
     </section>
     
     <!-- Upload Modal -->
@@ -403,10 +411,13 @@
 import { ref, computed, onMounted, watch, inject, onUnmounted } from "vue";
 import axios from "axios";
 import { useSetupStore } from "@/store/setup";
-
+import SendReportModal from './Sendreportmodal.vue';
 export default {
   name: "CaliSidebar",
   props: ["commands"],
+    components: {
+    SendReportModal
+  },
   emits: ['startPolling', 'stopPolling'],
   setup(props, { emit }) {
     const setupStore = useSetupStore();
@@ -435,7 +446,20 @@ export default {
         showSubChannel.value = true;
       }
     };
-
+    const reportInfo = ref({
+      tester: '',
+      approver: '',
+      sn: '',
+      manufactureDate: '',
+      StandardEquipmentName: '',
+      Uncertainty: '',
+      frequency: ''
+    });
+    const showReportModal = ref(false);
+    const handleReportSent = (data) => {
+      console.log('Report sent:', data);
+      // 리포트 전송 후 처리 로직
+    };
     const refDict = ref({
       U: 0,
       I: 0,
@@ -731,6 +755,9 @@ export default {
       errorLimit,
       sendRef,
       SaveCal,
+      showReportModal,
+      reportInfo,
+      handleReportSent
     };
   },
 };

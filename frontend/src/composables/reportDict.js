@@ -588,7 +588,7 @@ export function useReportData() {
         // 전체 응답 반환 (Vue 컴포넌트에서 success, distribution 등 사용 가능)
         return response.data;
       } else {
-        console.error('히트맵 데이터 로드 실패');
+        //console.error('히트맵 데이터 로드 실패');
         return {
           success: false,
           heatmapData: [],
@@ -596,7 +596,7 @@ export function useReportData() {
         };
       }
     } catch (error) {
-      console.error('히트맵 데이터 로딩 실패:', error);
+      //console.error('히트맵 데이터 로딩 실패:', error);
       return {
         success: false,
         heatmapData: [],

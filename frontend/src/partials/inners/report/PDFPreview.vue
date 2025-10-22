@@ -1144,7 +1144,7 @@ export default {
             createLoadPatternChart();
           }
         } else {
-          console.error('히트맵 API 실패, 더미 데이터 사용');
+
           // API 실패 시 더미 데이터 사용
           loadPatternData.value = generateLoadPatternData();
           if (loadPatternChartInstance) {
@@ -1152,7 +1152,7 @@ export default {
           }
         }
       } catch (error) {
-        console.error('히트맵 데이터 로딩 실패:', error);
+    
         // 에러 시 더미 데이터 사용
         loadPatternData.value = generateLoadPatternData();
         if (loadPatternChartInstance) {
