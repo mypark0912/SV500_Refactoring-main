@@ -236,25 +236,30 @@ def set_cmd(data:CaliSet):
             'ref1': val1,
             'ref2': val2
         }
+
         redis_state.client.select(0)
-        refdict = json.loads(redis_state.client.hget("calibration", "ref"))
-        if data.param != 'None':
-            if "," in data.param:
-                refdict["U"] = float(data.ref1)
-                refdict["I"] = float(data.ref2)
-            else:
-                refdict[data.param] = float(data.ref1)
-            redis_state.client.hset("calibration", "ref", json.dumps(refdict))
+        if redis_state.client.hexists("calibration","ref"):
+            refdict = json.loads(redis_state.client.hget("calibration", "ref"))
+            if data.param != 'None':
+                if "," in data.param:
+                    refdict["U"] = float(data.ref1)
+                    refdict["I"] = float(data.ref2)
+                else:
+                    refdict[data.param] = float(data.ref1)
+                redis_state.client.hset("calibration", "ref", json.dumps(refdict))
 
         format_string = 'iiff'
 
         # 바이너리 데이터 생성
+
+        redis_state.binary_client.select(0)
         binary_data = struct.pack(format_string,
-                                  msg['id'],
-                                  msg['cmd'],
-                                  msg['ref1'],
-                                  msg['ref2'])
-        redis_state.client.lpush('cali_command',binary_data)
+                              int(msg['id']),      # 명시적 변환
+                              int(msg['cmd']),     # 명시적 변환
+                              float(msg['ref1']),  # 명시적 변환
+                              float(msg['ref2']))  # 명시적 변환
+
+        redis_state.binary_client.lpush('cali_command',binary_data)
         return {'passOK': '1'}
     except Exception as e:
         print(str(e))
