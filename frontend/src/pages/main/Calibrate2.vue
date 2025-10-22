@@ -112,47 +112,48 @@
         "name":"End", "Label":"End"
       },
       {
-        "name":"CALV", "Label":"Set U", "Param":"U", "Type":"SET"
+        "name":"CAL_VGAIN","number":1, "Label":"Set U", "Param":"U", "Type":"SET"
       },
       {
-        "name":"CLRV", "Label":"Clear U", "Type":"CLEAR"
+        "name":"CLR_VGAIN","number":7, "Label":"Clear U", "Type":"CLEAR"
       },
       {
-        "name":"CALVPP", "Label":"Set Upp", "Type":"SET"
+        "name":"CAL_VPPGAIN","number":2, "Label":"Set Upp","Param":"U", "Type":"SET"
       },
       {
-        "name":"CLRVPP", "Label":"Clear Upp", "Type":"CLEAR"
+        "name":"CLR_VPPGAIN","number":8, "Label":"Clear Upp", "Type":"CLEAR"
       },
       {
-        "name":"CALA", "Label":"Set I", "Param":"I", "Type":"SET"
+        "name":"CAL_IGAIN","number":3, "Label":"Set I", "Param":"I", "Type":"SET"
       },
       {
-        "name":"CLRA", "Label":"Clear I", "Type":"CLEAR"
+        "name":"CLR_IGAIN","number":9, "Label":"Clear I", "Type":"CLEAR"
       },
       {
-        "name":"CALIN", "Label":"Set In", "Param":"In", "Type":"SET"
+        "name":"CAL_INGAIN","number":4, "Label":"Set In", "Param":"In", "Type":"SET"
       },
       {
-        "name":"CLRIN", "Label":"Clear In", "Type":"CLEAR"
+        "name":"CLR_INGAIN","number":12, "Label":"Clear In", "Type":"CLEAR"
       },
       {
-        "name":"CALW", "Label":"Set Power", "Type":"SET"
+        "name":"CAL_WGAIN", "number":5,"Label":"Set Power", "Param":"U,I","Type":"SET"
       },
       {
-        "name":"CLRW", "Label":"Clear Power", "Type":"CLEAR"
+        "name":"CLR_WGAIN", "number":11,"Label":"Clear Power", "Type":"CLEAR"
       },
       {
-        "name":"CALP", "Label":"Set Phase", "Param":"P", "Type":"SET"
+        "name":"CAL_PHGAIN","number":6, "Label":"Set Phase", "Param":"P", "Type":"SET"
       },
       {
-        "name":"CLRP", "Label":"Clear Phase", "Type":"CLEAR"
-      },
-      {
-        "name":"CALDCos", "Label":"Set DCos", "Type":"SET"
-      },
-      {
-        "name":"CLRDCos", "Label":"Clear DCos", "Type":"CLEAR"
-      }]);
+        "name":"CLR_PHGAIN", "number":10,"Label":"Clear Phase", "Type":"CLEAR"
+      }
+      // {
+      //   "name":"CALDCos", "Label":"Set DCos", "Type":"SET"
+      // },
+      // {
+      //   "name":"CLRDCos", "Label":"Clear DCos", "Type":"CLEAR"
+      // }
+    ]);
       const items = ref([
         {
           id: 0,
@@ -267,6 +268,7 @@
               { subTitle: "I_A", value: 0, error: 0 },
               { subTitle: "I_B", value: 0, error: 0 },
               { subTitle: "I_C", value: 0, error: 0 },
+              { subTitle: "Ig", value: 0, error: 0 },
               { subTitle: "In", value: 0, error: 0 }
             ],
           },

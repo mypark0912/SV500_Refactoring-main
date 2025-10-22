@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File
 from states.global_state import redis_state
 import os, csv, sqlite3, shutil
 import ujson as json
+import struct
 from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
@@ -36,7 +37,9 @@ class CaliSet(BaseModel):
     channel: str
     type: str
     cmd: str
-    ref : str
+    cmdnum: str
+    ref1 : str
+    ref2 : str
     param: str
 
 class CaliRef(BaseModel):
@@ -145,7 +148,7 @@ def cali_start():
         datalist = json.loads(data)
         redis_state.client.hset("System", "setup", json.dumps(datalist))
         redis_state.client.hset('service', 'cflag', 1)
-        redis_state.client.hset('Service', 'apply', 1)
+        redis_state.client.hset('Service', 'save', 1)
         return {'passOK': '1'}
     else:
         return {'passOK': '0', 'error': 'No exist calibration setup'}
@@ -199,23 +202,42 @@ def set_cmd(data:CaliSet):
         else:
             mode = 2
         if data.type == 'SET':
-            if data.ref != 'None':
-                val = int(data.ref)
+            if data.ref1 != 'None':
+                val1 = float(data.ref1)
             else:
-                val = 0
+                val1 = 0.0
+            if data.ref2 != 'None':
+                val2 = float(data.ref2)
+            else:
+                val2 = 0.0
         else:
-            val = 0
+            val1 = 0.0
+            val2 = 0.0
         msg = {
-            'channel':mode,
-            'cmd': data.cmd,
-            'ref': val
+            'id':mode,
+            'cmd': data.cmdnum,
+            'ref1': val1,
+            'ref2': val2
         }
         redis_state.client.select(0)
         refdict = json.loads(redis_state.client.hget("calibration", "ref"))
         if data.param != 'None':
-            refdict[data.param] = val
+            if "," in data.param:
+                refdict["U"] = float(data.ref1)
+                refdict["I"] = float(data.ref2)
+            else:
+                refdict[data.param] = float(data.ref1)
             redis_state.client.hset("calibration", "ref", json.dumps(refdict))
-        redis_state.client.lpush('cali_command',json.dumps(msg))
+
+        format_string = 'iiff'
+
+        # 바이너리 데이터 생성
+        binary_data = struct.pack(format_string,
+                                  msg['id'],
+                                  msg['cmd'],
+                                  msg['ref1'],
+                                  msg['ref2'])
+        redis_state.client.lpush('cali_command',binary_data)
         return {'passOK': '1'}
     except Exception as e:
         print(str(e))

@@ -280,7 +280,8 @@
     <section class="grid grid-cols-2 gap-2 pt-1">
       <button
         class="h-9 px-3 text-xs font-semibold bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black text-white rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-      >
+        @click="SaveCal"
+        >
         <span class="flex items-center justify-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2"></path>
@@ -509,12 +510,21 @@ export default {
         let data = {};
         if ("Param" in commands.value[index]) {
           data["param"] = commands.value[index]["Param"];
-          data["ref"] = refDict.value[commands.value[index]["Param"]].toString();
+          if(data["param"].includes(",")){
+            data["ref1"] =  refDict.value["U"].toString();
+            data["ref2"] =  refDict.value["I"].toString();
+          }else{
+            data["ref1"] = refDict.value[commands.value[index]["Param"]].toString();
+            data["ref2"] = "None";
+          }
+          
         } else {
           data["param"] = "None";
-          data["ref"] = "None";
+          data["ref1"] = "None";
+          data["ref2"] = "None";
         }
         data["cmd"] = commands.value[index]["name"];
+        data["cmdnum"] = commands.value[index]["number"];
         if (showMainChannel.value && showSubChannel.value) {
           data["channel"] = "Both";
         } else if (showMainChannel.value) {
@@ -537,6 +547,35 @@ export default {
           alert(error);
         }
       }
+    };
+
+    const SaveCal = async() =>{
+      let data = {};
+      data["param"] = "None";
+      data["ref1"] = "None";
+      data["ref2"] = "None";
+      data["cmd"] = "CAL_SAVE"
+      data["cmdnum"] = 99
+      if (showMainChannel.value && showSubChannel.value) {
+          data["channel"] = "Both";
+        } else if (showMainChannel.value) {
+          data["channel"] = "Main";
+        } else if (showSubChannel.value) {
+          data["channel"] = "Sub";
+        }
+        data["type"] = "SAVE"
+        try {
+          const response = await axios.post(`/config/calibrate/cmd`, data, {
+            headers: { "Content-Type": "application/json" },
+          });
+          if (response.data.passOK == "1") {
+            alert("Save Success");
+          } else {
+            alert(response.data.error);
+          }
+        } catch (error) {
+          alert(error);
+        }
     };
 
     const SetTime = () => {
@@ -691,6 +730,7 @@ export default {
       macAddr,
       errorLimit,
       sendRef,
+      SaveCal,
     };
   },
 };
