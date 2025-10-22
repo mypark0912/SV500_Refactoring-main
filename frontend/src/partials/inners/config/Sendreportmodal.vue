@@ -182,17 +182,9 @@
             </button>
             <button
               @click="handleSendReport"
-              :disabled="isSending"
-              class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-200"
+              class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all duration-200"
             >
-              <span v-if="!isSending">전송하기</span>
-              <span v-else class="flex items-center gap-2">
-                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                전송 중...
-              </span>
+              전송하기
             </button>
           </div>
         </div>
@@ -203,7 +195,6 @@
 
 <script>
 import { ref, watch } from 'vue';
-import axios from 'axios';
 
 export default {
   name: 'SendReportModal',
@@ -223,18 +214,12 @@ export default {
         Uncertainty: '',
         frequency: ''
       })
-    },
-    excelFile: {
-      type: File,
-      default: null
     }
   },
   emits: ['close', 'send'],
   setup(props, { emit }) {
     const selectedLanguage = ref('kr');
-    const isSending = ref(false);
     
-    // 입력 폼 데이터
     const formData = ref({
       tester: '',
       approver: '',
@@ -245,97 +230,24 @@ export default {
       frequency: ''
     });
 
-    // props가 변경될 때 formData 업데이트
     watch(() => props.reportData, (newData) => {
       formData.value = { ...newData };
     }, { immediate: true, deep: true });
 
     const closeModal = () => {
-      if (!isSending.value) {
-        emit('close');
-      }
+      emit('close');
     };
 
-    // CSV 파일 생성 함수
-    const generateCSV = (data) => {
-      const headers = ['항목', '값'];
-      const rows = [
-        ['성적서 번호', data.sn || ''],
-        ['시험일자', new Date().toLocaleDateString('ko-KR')],
-        ['시험자', data.tester || ''],
-        ['승인자', data.approver || ''],
-        ['제조일', data.manufactureDate || ''],
-        ['주파수', data.frequency || ''],
-        ['표준기기명', data.StandardEquipmentName || ''],
-        ['불확도', data.Uncertainty || ''],
-        ['언어', data.language === 'kr' ? '한국어' : 'English']
-      ];
-
-      let csvContent = '\uFEFF'; // UTF-8 BOM for Excel compatibility
-      csvContent += headers.join(',') + '\n';
-      rows.forEach(row => {
-        csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+    const handleSendReport = () => {
+      emit('send', {
+        ...formData.value,
+        language: selectedLanguage.value
       });
-
-      return csvContent;
-    };
-
-    const handleSendReport = async () => {
-      isSending.value = true;
-      
-      try {
-        // FormData 생성
-        const formDataToSend = new FormData();
-        
-        // 폼 데이터 추가
-        Object.keys(formData.value).forEach(key => {
-          formDataToSend.append(key, formData.value[key]);
-        });
-        formDataToSend.append('language', selectedLanguage.value);
-
-        // CSV 파일 생성 및 추가
-        const csvContent = generateCSV({
-          ...formData.value,
-          language: selectedLanguage.value
-        });
-        const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const csvFileName = `TestReport_${formData.value.sn || 'unknown'}_${Date.now()}.csv`;
-        formDataToSend.append('csvFile', csvBlob, csvFileName);
-
-        // 원본 엑셀 파일이 있으면 추가
-        if (props.excelFile) {
-          formDataToSend.append('excelFile', props.excelFile);
-        }
-
-        // API 호출
-        const response = await axios.post('/api/send-report', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-        if (response.data.success) {
-          alert('리포트와 CSV 파일이 성공적으로 전송되었습니다.');
-          emit('send', {
-            ...formData.value,
-            language: selectedLanguage.value,
-            csvFileName: csvFileName
-          });
-          closeModal();
-        } else {
-          alert('리포트 전송에 실패했습니다: ' + response.data.message);
-        }
-      } catch (error) {
-        console.error('Failed to send report:', error);
-        alert('리포트 전송 중 오류가 발생했습니다.');
-      } finally {
-        isSending.value = false;
-      }
+      emit('close');
     };
 
     return {
       selectedLanguage,
-      isSending,
       formData,
       closeModal,
       handleSendReport
@@ -345,7 +257,6 @@ export default {
 </script>
 
 <style scoped>
-/* Modal Transition */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;

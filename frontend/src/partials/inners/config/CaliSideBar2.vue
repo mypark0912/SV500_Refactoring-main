@@ -304,12 +304,12 @@
         </span>
       </button>
           <!-- Send Report Modal -->
-    <SendReportModal
-      :is-open="showReportModal"
-      :report-data="reportInfo"
-      @close="showReportModal = false"
-      @send="handleReportSent"
-    />
+      <SendReportModal
+        :isOpen="showReportModal"
+        :reportData="reportData"
+        @close="showReportModal = false"
+        @send="handleSend"
+      />
     </section>
     
     <!-- Upload Modal -->
@@ -461,10 +461,153 @@ export default {
     });
 
     const showReportModal = ref(false);
-    const handleReportSent = (data) => {
-      console.log('Report sent:', reportInfo.value);
-      // 리포트 전송 후 처리 로직
+    const handleSend = (data) => {
+        try {
+        // CSV 데이터 생성
+        const csvContent = generateCSV();
+        console.log(csvContent);
+        // Blob 생성 및 다운로드
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        // 파일명 생성 (날짜 포함)
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+        const fileName = `TestReport_${dateStr}.csv`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('CSV 파일이 다운로드되었습니다.');
+        showReportModal.value = false;
+      } catch (error) {
+        console.error('CSV 다운로드 실패:', error);
+        alert('CSV 다운로드 중 오류가 발생했습니다.');
+      }
+      console.log('전송 버튼 눌림!', data);
+      // 여기서 원하는 작업 수행
     };
+
+
+ // CSV 생성 함수 (더미 데이터)
+    const generateCSV = () => {
+      let csv = '';
+      
+      // 제목
+      csv += `${reportInfo.value.modelName} 시험 성적서\n\n`;
+      
+      // 1. 기본 정보
+      csv += '1. 기본 정보 (Basic Information)\n';
+      csv += `성적서 번호,${reportInfo.value.reportNumber}\n`;
+      csv += `시험일자,${reportInfo.value.testDate}\n`;
+      csv += `시험자,${reportInfo.value.tester}\n`;
+      csv += `승인자,${reportInfo.value.approver}\n\n`;
+      
+      // 2. 피시험기기 정보
+      csv += '2. 피시험기기 정보\n';
+      csv += `모델명,${reportInfo.value.modelName}\n`;
+      csv += `시리얼번호,${reportInfo.value.serialNumber}\n`;
+      csv += `제조일자,${reportInfo.value.manufactureDate}\n\n`;
+      
+      // 3. 시험 조건
+      csv += '3. 시험 조건\n';
+      csv += '항목,값\n';
+      csv += `정격전압,${reportInfo.value.ratedVoltage}\n`;
+      csv += `정격전류,${reportInfo.value.ratedCurrent}\n`;
+      csv += `주파수,${reportInfo.value.frequency}\n`;
+      csv += `역률,cosφ=0.5 지상\n\n`;
+      
+      // 4. 표준기기
+      csv += '4. 표준기기\n';
+      csv += '장비명,모델명,불확도\n';
+      csv += '전압전류 발생기,ZERA,±0.1\n\n';
+      
+      // 더미 데이터 생성 함수
+      const generateDummyData = (standard, variation = 0.3) => {
+        // 표준값 기준으로 ±variation% 범위의 랜덤 측정값 생성
+        const measured = standard * (1 + (Math.random() * variation * 2 - variation) / 100);
+        const error = ((measured - standard) / standard * 100).toFixed(2);
+        const pass = Math.abs(error) <= errorLimit.value ? '적합' : '부적합';
+        return { measured: measured.toFixed(2), error, pass };
+      };
+      
+      // 5. 전압 정밀도 시험
+      csv += '5. 전압 정밀도 시험\n';
+      csv += '위상,표준값 (V),측정값 (V),오차 (%),허용오차 (%),판정\n';
+      const voltageStandard = refDict.value.U;
+      ['L1', 'L2', 'L3'].forEach(phase => {
+        const data = generateDummyData(voltageStandard);
+        csv += `${phase},${voltageStandard},${data.measured},${data.error},${errorLimit.value},${data.pass}\n`;
+      });
+      csv += '\n';
+      
+      // 6. 전류 정밀도 시험
+      csv += '6. 전류 정밀도 시험\n';
+      csv += '위상,표준값 (A),측정값 (A),오차 (%),허용오차 (%),판정\n';
+      const currentStandard = refDict.value.I * 5;
+      ['L1', 'L2', 'L3'].forEach(phase => {
+        const data = generateDummyData(currentStandard);
+        csv += `${phase},${currentStandard},${data.measured},${data.error},${errorLimit.value},${data.pass}\n`;
+      });
+      csv += '\n';
+      
+      // 7. 유효전력 정밀도 시험
+      csv += '7. 유효전력 정밀도 시험\n';
+      csv += '위상,표준값 (W),측정값 (W),오차 (%),허용오차 (%),판정\n';
+      const activePowerStandard = refDict.value.U * refDict.value.I * 5 * 0.5; // P = U * I * cosφ
+      ['L1', 'L2', 'L3'].forEach(phase => {
+        const data = generateDummyData(activePowerStandard, 0.4);
+        csv += `${phase},${activePowerStandard.toFixed(0)},${parseFloat(data.measured).toFixed(0)},${data.error},${errorLimit.value},${data.pass}\n`;
+      });
+      csv += '\n';
+      
+      // 8. 무효전력 정밀도 시험
+      csv += '8. 무효전력 정밀도 시험\n';
+      csv += '위상,표준값 (var),측정값 (var),오차 (%),허용오차 (%),판정\n';
+      const reactivePowerStandard = Math.round(refDict.value.U * refDict.value.I * 5 * Math.sin(Math.acos(0.5))); // Q = U * I * sinφ
+      ['L1', 'L2', 'L3'].forEach(phase => {
+        const data = generateDummyData(reactivePowerStandard, 0.4);
+        csv += `${phase},${reactivePowerStandard},${parseFloat(data.measured).toFixed(0)},${data.error},${errorLimit.value},${data.pass}\n`;
+      });
+      csv += '\n';
+      
+      // 9. 피상전력 정밀도 시험
+      csv += '9. 피상전력 정밀도 시험 cosφ = 0.5 지상\n';
+      csv += '위상,표준값 (VA),측정값 (VA),오차 (%),허용오차 (%),판정\n';
+      const apparentPowerStandard = refDict.value.U * refDict.value.I * 5; // S = U * I
+      ['L1', 'L2', 'L3'].forEach(phase => {
+        const data = generateDummyData(apparentPowerStandard, 0.4);
+        csv += `${phase},${apparentPowerStandard.toFixed(0)},${parseFloat(data.measured).toFixed(0)},${data.error},${errorLimit.value},${data.pass}\n`;
+      });
+      csv += '\n';
+      
+      // 10. 종합 판정
+      csv += '10. 종합 판정 (Overall Assessment)\n';
+      csv += '시험항목,판정,비고\n';
+      csv += '전압 정밀도,☑ 적합 □ 부적합,\n';
+      csv += '전류 정밀도,☑ 적합 □ 부적합,\n';
+      csv += '유효전력 정밀도,☑ 적합 □ 부적합,\n';
+      csv += '무효전력 정밀도,☑ 적합 □ 부적합,\n';
+      csv += '피상전력 정밀도,☑ 적합 □ 부적합,\n\n';
+      
+      csv += '\n';
+      csv += '최종 판정:,☑ 적합 □ 부적합\n';
+      csv += '시험자:,,,승인자:\n';
+      csv += '_________________ (서명/날짜),,,_________________ (서명/날짜)\n';
+      
+      return csv;
+    };
+
+
+
+
+
+
     const refDict = ref({
       U: 0,
       I: 0,
@@ -757,7 +900,7 @@ export default {
       SaveCal,
       showReportModal,
       reportInfo,
-      handleReportSent,
+      handleSend,
       cmdMessage,
     };
   },
