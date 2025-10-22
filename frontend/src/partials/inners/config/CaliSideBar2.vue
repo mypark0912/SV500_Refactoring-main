@@ -459,9 +459,10 @@ export default {
       Uncertainty: '',
       frequency: ''
     });
+
     const showReportModal = ref(false);
     const handleReportSent = (data) => {
-      console.log('Report sent:', data);
+      console.log('Report sent:', reportInfo.value);
       // 리포트 전송 후 처리 로직
     };
     const refDict = ref({

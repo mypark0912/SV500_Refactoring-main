@@ -223,6 +223,10 @@ export default {
         Uncertainty: '',
         frequency: ''
       })
+    },
+    excelFile: {
+      type: File,
+      default: null
     }
   },
   emits: ['close', 'send'],
@@ -252,21 +256,70 @@ export default {
       }
     };
 
+    // CSV 파일 생성 함수
+    const generateCSV = (data) => {
+      const headers = ['항목', '값'];
+      const rows = [
+        ['성적서 번호', data.sn || ''],
+        ['시험일자', new Date().toLocaleDateString('ko-KR')],
+        ['시험자', data.tester || ''],
+        ['승인자', data.approver || ''],
+        ['제조일', data.manufactureDate || ''],
+        ['주파수', data.frequency || ''],
+        ['표준기기명', data.StandardEquipmentName || ''],
+        ['불확도', data.Uncertainty || ''],
+        ['언어', data.language === 'kr' ? '한국어' : 'English']
+      ];
+
+      let csvContent = '\uFEFF'; // UTF-8 BOM for Excel compatibility
+      csvContent += headers.join(',') + '\n';
+      rows.forEach(row => {
+        csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+      });
+
+      return csvContent;
+    };
+
     const handleSendReport = async () => {
       isSending.value = true;
       
       try {
-        // API 호출
-        const response = await axios.post('/api/send-report', {
+        // FormData 생성
+        const formDataToSend = new FormData();
+        
+        // 폼 데이터 추가
+        Object.keys(formData.value).forEach(key => {
+          formDataToSend.append(key, formData.value[key]);
+        });
+        formDataToSend.append('language', selectedLanguage.value);
+
+        // CSV 파일 생성 및 추가
+        const csvContent = generateCSV({
           ...formData.value,
           language: selectedLanguage.value
         });
+        const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const csvFileName = `TestReport_${formData.value.sn || 'unknown'}_${Date.now()}.csv`;
+        formDataToSend.append('csvFile', csvBlob, csvFileName);
+
+        // 원본 엑셀 파일이 있으면 추가
+        if (props.excelFile) {
+          formDataToSend.append('excelFile', props.excelFile);
+        }
+
+        // API 호출
+        const response = await axios.post('/api/send-report', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
 
         if (response.data.success) {
-          alert('리포트가 성공적으로 전송되었습니다.');
+          alert('리포트와 CSV 파일이 성공적으로 전송되었습니다.');
           emit('send', {
             ...formData.value,
-            language: selectedLanguage.value
+            language: selectedLanguage.value,
+            csvFileName: csvFileName
           });
           closeModal();
         } else {
