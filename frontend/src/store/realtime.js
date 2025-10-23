@@ -40,20 +40,20 @@ export const useRealtimeStore = defineStore('realtime', () => {
     if (opMode === '') return false
 
     const startTime = Date.now()
-    console.log(`[${channel}] 요청 시작:`, new Date().toISOString())
+    //console.log(`[${channel}] 요청 시작:`, new Date().toISOString())
 
     try {
       const response = await axios.get(`/api/getMeterRedisNew/${channel}/${opMode}`)
       
-      console.log(`[${channel}] 응답 완료: ${Date.now() - startTime}ms`)
+      //console.log(`[${channel}] 응답 완료: ${Date.now() - startTime}ms`)
       
       if (response.data.success) {
         const newData = response.data.data
         
-        console.log(`[${channel}] 받은 데이터:`, {
-          U4: newData.U4,
-          Itot: newData.Itot
-        })
+        // console.log(`[${channel}] 받은 데이터:`, {
+        //   U4: newData.U4,
+        //   Itot: newData.Itot
+        // })
         
         if (channel === 'Main') {
           // 🔥 ref.value에 새 객체 할당
@@ -62,7 +62,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
             P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
           }
           isMainDataLoaded.value = true
-          console.log('[Main] 스토어 업데이트 완료:', meterDictMain.value.U4)
+          //console.log('[Main] 스토어 업데이트 완료:', meterDictMain.value.U4)
         } else {
           // 🔥 ref.value에 새 객체 할당
           meterDictSub.value = {
@@ -70,7 +70,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
             P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
           }
           isSubDataLoaded.value = true
-          console.log('[Sub] 스토어 업데이트 완료:', meterDictSub.value.U4)
+          //console.log('[Sub] 스토어 업데이트 완료:', meterDictSub.value.U4)
         }
         
         lastUpdateTime.value = new Date()
@@ -93,11 +93,11 @@ export const useRealtimeStore = defineStore('realtime', () => {
     }
 
     //console.log('🔄 초기 데이터 로딩 시작')
-    console.log('🔄 초기 데이터 로딩 시작', {
-      opMode,
-      SubEnable: channelState?.SubEnable,
-      MainEnable: channelState?.MainEnable
-    })
+    // console.log('🔄 초기 데이터 로딩 시작', {
+    //   opMode,
+    //   SubEnable: channelState?.SubEnable,
+    //   MainEnable: channelState?.MainEnable
+    // })
     isLoading.value = true
     error.value = null
     
@@ -106,7 +106,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
         await fetchChannelData('Main', opMode, channelState)
       } else {
         if (channelState?.SubEnable) {
-          console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
+          //console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
           await Promise.all([
             fetchChannelData('Main', opMode, channelState),
             fetchChannelData('Sub', opMode, channelState)

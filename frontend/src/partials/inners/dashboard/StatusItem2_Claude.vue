@@ -149,6 +149,7 @@ export default {
     
     const stData = ref(props.data);
     const transData = ref(props.transData);
+    //console.log('transData', transData);
     const LoadRate = ref(0);
 
     const strList = computed(() => {

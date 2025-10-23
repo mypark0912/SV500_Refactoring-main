@@ -187,6 +187,7 @@
         // 그리고 나서 주기 업데이트 걸어
         if (updateInterval) {
           clearInterval(updateInterval);  // ✅ 혹시 이전에 걸린 거 있으면 지우고
+          updateInterval = null;
         }
         if (!updateInterval) {
           updateInterval = setInterval(async () => {
@@ -209,6 +210,7 @@
      onUnmounted(() => {
        if (updateInterval) {
          clearInterval(updateInterval);
+         updateInterval = null;
        }
      });
  

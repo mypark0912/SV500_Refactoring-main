@@ -131,6 +131,7 @@
       onUnmounted(() => {
         if (updateInterval) {
           clearInterval(updateInterval);
+          updateInterval = null;
         }
       });
   

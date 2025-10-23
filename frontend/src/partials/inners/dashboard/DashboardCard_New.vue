@@ -175,31 +175,7 @@
          }
      };
 
-     
-     const fetchAlarmData = async () => {
-      try {
-        const chName = channel.value == 'main'?'Main':'Sub';
-        const response = await axios.get(`/api/getAlarmLast/${chName}`);
-        if (response.data.success) {
-            data.value = response.data.data;
-            if (data.value.length > 0){
-              status.value = 'Alarm';
-              alarmContext.value = `${response.data.last.AlarmChannel}, ${response.data.last.TimeStamp}`;
-              alarmEnable.value = true;
-            }
-            else{
-              status.value = 'Normal'
-              alarmContext.value = 'No Alarm'
-              alarmEnable.value = true;
-            }
-        }else{
-          alarmEnable.value = false;
-        }
-      } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
-        alarmEnable.value = false;
-      }
-    };
+    
 
     watch(asset, (newVal) => {
       if (newVal) {
@@ -216,18 +192,29 @@
 
         // 그리고 나서 주기 업데이트 걸어
         if (updateInterval) {
-          clearInterval(updateInterval);  // ✅ 혹시 이전에 걸린 거 있으면 지우고
+          console.log(`[${channel.value}] 🛑 기존 폴링 정리:`, updateInterval);
+          clearInterval(updateInterval);
+          updateInterval = null;  // ✅ 반드시 null로!
         }
-        if (!updateInterval) {
+        console.log(`[${channel.value}] ✅ 새 폴링 시작`);
           updateInterval = setInterval(async () => {
+            console.log(`[${channel.value}] ⏰ 5분 폴링 실행`);
             await fetchData();
-             if(!assetTypes.value.includes('Transformer')){
-                await fetchRealData();
-              }
+            if(!assetTypes.value.includes('Transformer')){
+              await fetchRealData();
+            }
             await fetchPQData();
-            //await fetchAlarmData();
-          }, 300000);  //5 x 60 × 1000 : 5min
-        }
+          }, 300000);
+        // if (!updateInterval) {
+        //   updateInterval = setInterval(async () => {
+        //     await fetchData();
+        //      if(!assetTypes.value.includes('Transformer')){
+        //         await fetchRealData();
+        //       }
+        //     await fetchPQData();
+        //     //await fetchAlarmData();
+        //   }, 300000);  //5 x 60 × 1000 : 5min
+        // }
       }
     }, { immediate: true }); // <-- 바로 실행 시도
  
@@ -237,9 +224,11 @@
 
  
      onUnmounted(() => {
-       if (updateInterval) {
-         clearInterval(updateInterval);
-       }
+        console.log(`[${channel.value}] 🧹 컴포넌트 언마운트 - 폴링 정리`);
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
      });
  
      watchEffect(() => {

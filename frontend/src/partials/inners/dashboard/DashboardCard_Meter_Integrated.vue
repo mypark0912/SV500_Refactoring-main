@@ -570,6 +570,7 @@ export default {
 
           if (updateInterval) {
             clearInterval(updateInterval);
+            updateInterval = null;
           }
           if (!updateInterval) {
             updateInterval = setInterval(async () => {
@@ -604,6 +605,7 @@ export default {
     onUnmounted(() => {
       if (updateInterval) {
         clearInterval(updateInterval);
+        updateInterval = null;
       }
     });
 
