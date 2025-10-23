@@ -147,6 +147,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardCard_THD from './DashboardCard_THD.vue';
 import { useSetupStore } from '@/store/setup'
 import { useRealtimeStore } from '@/store/realtime' 
+import { storeToRefs } from 'pinia'
 export default {
   name: 'PremiumDashboardCard',
   props: {
@@ -160,13 +161,40 @@ export default {
     const setupStore = useSetupStore();
     const channel = ref(props.channel);
     
-    const store = useRealtimeStore()
+    const store = useRealtimeStore();
+
     const data2 = computed(() => {
-      // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
       const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
-      //let getDt = store.getChannelData(channelName);
-      return store.getChannelData(channelName)  || {}
-    })
+      const data = store.getChannelData(channelName)
+      
+      // console.log(`[${props.channel}] data2 computed 실행:`, {
+      //   U4: data?.U4,
+      //   Itot: data?.Itot,
+      //   hasData: !!data && Object.keys(data).length > 0
+      // })
+      
+      return data
+    });
+    
+    // 🔥 강제로 reactive 확인
+    // watch(
+    //   () => props.channel?.toLowerCase() === 'main' 
+    //     ? store.meterDictMain 
+    //     : store.meterDictSub,
+    //   (newVal) => {
+    //     console.log(`[${props.channel}] STORE 변경 감지:`, {
+    //       U4: newVal?.U4,
+    //       Itot: newVal?.Itot,
+    //       timestamp: new Date().toISOString()
+    //     })
+    //   },
+    //   { deep: true, immediate: true }
+    // );
+  //   const data2 = computed(() => {
+  //       const isMain = props.channel?.toLowerCase() === 'main'
+  //       // 🔥 getter를 computed 안에서 직접 호출
+  //       return isMain ? store.getMainData : store.getSubData
+  //     });
 
     const unbalMode = computed(()=> setupStore.getUnbalance);
     // 전체 시스템 상태 판정

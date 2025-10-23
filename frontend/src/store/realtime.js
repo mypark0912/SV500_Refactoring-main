@@ -1,170 +1,191 @@
 // store/realtime.js
 import { defineStore } from 'pinia'
+import { ref } from 'vue'  // 🔥 ref 추가
 import axios from 'axios'
 
-export const useRealtimeStore = defineStore('realtime', {
-  state: () => ({
-    meterDictMain: {},
-    meterDictSub: {},
-    isMainDataLoaded: false,
-    isSubDataLoaded: false,
-    isLoading: false,
-    updateInterval: null,
-    lastUpdateTime: null,
-    error: null
-  }),
+export const useRealtimeStore = defineStore('realtime', () => {
+  // 🔥 state를 ref로 직접 정의
+  const meterDictMain = ref({})
+  const meterDictSub = ref({})
+  const isMainDataLoaded = ref(false)
+  const isSubDataLoaded = ref(false)
+  const isLoading = ref(false)
+  const updateInterval = ref(null)
+  const lastUpdateTime = ref(null)
+  const error = ref(null)
 
-  getters: {
-    // 데이터 준비 완료 상태
-    isDataReady: (state) => (channelState, opMode) => {
-      if (!opMode || opMode === '') {
-        return false
-      }
-
-      if (opMode === 'device2') {
-        return state.isMainDataLoaded
-      } else {
-        const needsSubData = channelState?.SubEnable
-        return state.isMainDataLoaded && (needsSubData ? state.isSubDataLoaded : true)
-      }
-    },
-
-    // Main 데이터 getter
-    getMainData: (state) => state.meterDictMain || {},
-
-    // Sub 데이터 getter
-    getSubData: (state) => state.meterDictSub || {},
-
-    // 특정 채널 데이터 가져오기
-    getChannelData: (state) => (channel) => {
-      //return channel === 'Main' ? state.meterDictMain : state.meterDictSub
-      const data = channel === 'Main' ? state.meterDictMain : state.meterDictSub
-       return data || {}  // null/undefined 방지
+  // getters
+  const isDataReady = (channelState, opMode) => {
+    if (!opMode || opMode === '') {
+      return false
     }
-  },
 
-  actions: {
-    // 데이터 페칭 함수
-    async fetchChannelData(channel, opMode, channelState) {
-      if (opMode === '') {
-        return false
-      }
+    if (opMode === 'device2') {
+      return isMainDataLoaded.value
+    } else {
+      const needsSubData = channelState?.SubEnable
+      return isMainDataLoaded.value && (needsSubData ? isSubDataLoaded.value : true)
+    }
+  }
 
-      try {
-        const response = await axios.get(`/api/getMeterRedisNew/${channel}/${opMode}`)
+  const getMainData = () => meterDictMain.value || {}
+  const getSubData = () => meterDictSub.value || {}
+  const getChannelData = (channel) => {
+    const data = channel === 'Main' ? meterDictMain.value : meterDictSub.value
+    return data || {}
+  }
+
+  // actions
+  const fetchChannelData = async (channel, opMode, channelState) => {
+    if (opMode === '') return false
+
+    const startTime = Date.now()
+    console.log(`[${channel}] 요청 시작:`, new Date().toISOString())
+
+    try {
+      const response = await axios.get(`/api/getMeterRedisNew/${channel}/${opMode}`)
+      
+      console.log(`[${channel}] 응답 완료: ${Date.now() - startTime}ms`)
+      
+      if (response.data.success) {
+        const newData = response.data.data
         
-        if (response.data.success) {
-          const newData = response.data.data
-          
-          if (channel === 'Main') {
-            // 변경된 데이터만 업데이트 (재렌더링 최소화)
-            const hasChanges = JSON.stringify(this.meterDictMain) !== JSON.stringify(newData)
-            if (hasChanges) {
-              this.meterDictMain = { ...this.meterDictMain, ...newData }
-              if (this.meterDictMain.P4) {
-                this.meterDictMain.P4 = parseFloat((this.meterDictMain.P4 / 1000).toFixed(2))
-              }
-            }
-            this.isMainDataLoaded = true
-          } else {
-            // Sub 채널 데이터
-            const hasChanges = JSON.stringify(this.meterDictSub) !== JSON.stringify(newData)
-            if (hasChanges) {
-              this.meterDictSub = { ...this.meterDictSub, ...newData }
-              if (this.meterDictSub.P4) {
-                this.meterDictSub.P4 = parseFloat((this.meterDictSub.P4 / 1000).toFixed(2))
-              }
-            }
-            this.isSubDataLoaded = true
+        console.log(`[${channel}] 받은 데이터:`, {
+          U4: newData.U4,
+          Itot: newData.Itot
+        })
+        
+        if (channel === 'Main') {
+          // 🔥 ref.value에 새 객체 할당
+          meterDictMain.value = {
+            ...newData,
+            P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
           }
-          
-          this.lastUpdateTime = new Date()
-          return true
+          isMainDataLoaded.value = true
+          console.log('[Main] 스토어 업데이트 완료:', meterDictMain.value.U4)
         } else {
-          console.log(`❌ ${channel} 채널: 서버에서 success=false 응답`)
-          return false
+          // 🔥 ref.value에 새 객체 할당
+          meterDictSub.value = {
+            ...newData,
+            P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
+          }
+          isSubDataLoaded.value = true
+          console.log('[Sub] 스토어 업데이트 완료:', meterDictSub.value.U4)
         }
-      } catch (error) {
-        console.error(`❌ ${channel} 채널 데이터 가져오기 실패:`, error)
-        this.error = error
+        
+        lastUpdateTime.value = new Date()
+        return true
+      } else {
+        console.log(`❌ ${channel} 채널: 서버에서 success=false 응답`)
         return false
       }
-    },
-
-    // 초기 데이터 로딩
-    async loadInitialData(opMode, channelState) {
-      if (!opMode || opMode === '') {
-        console.log('❌ 초기 조건 불만족으로 데이터 로딩 중단')
-        return
-      }
-
-      console.log('🔄 초기 데이터 로딩 시작')
-      this.isLoading = true
-      this.error = null
-      
-      try {
-        if (opMode === 'device2') {
-          await this.fetchChannelData('Main', opMode, channelState)
-        } else {
-          await this.fetchChannelData('Main', opMode, channelState)
-          if (channelState?.SubEnable) {
-            await this.fetchChannelData('Sub', opMode, channelState)
-          } else {
-            this.isSubDataLoaded = true // Sub 데이터가 필요없으면 완료로 표시
-          }
-        }
-      } catch (error) {
-        console.error('초기 데이터 로딩 실패:', error)
-        this.error = error
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    // 주기적 업데이트 시작
-    startPolling(opMode, channelState, interval = 10000) {
-      // 기존 인터벌 정리
-      this.stopPolling()
-
-      // 초기 데이터 로드
-      this.loadInitialData(opMode, channelState)
-
-      // 주기적 업데이트 설정
-      this.updateInterval = setInterval(async () => {
-        if (!opMode) return
-
-        await this.fetchChannelData('Main', opMode, channelState)
-        if (channelState?.SubEnable) {
-          await this.fetchChannelData('Sub', opMode, channelState)
-        }
-      }, interval)
-    },
-
-    // 주기적 업데이트 중지
-    stopPolling() {
-      if (this.updateInterval) {
-        clearInterval(this.updateInterval)
-        this.updateInterval = null
-      }
-    },
-
-    // 데이터 초기화
-    resetData() {
-      this.meterDictMain = {}
-      this.meterDictSub = {}
-      this.isMainDataLoaded = false
-      this.isSubDataLoaded = false
-      this.error = null
-    },
-
-    // 채널 상태 변경 시 호출
-    async onChannelStateChange(opMode, channelState) {
-      // 데이터 상태 초기화
-      this.isMainDataLoaded = false
-      this.isSubDataLoaded = false
-      
-      // 데이터 다시 로딩 및 폴링 재시작
-      this.startPolling(opMode, channelState)
+    } catch (err) {
+      console.error(`❌ ${channel} 채널 실패:`, err)
+      error.value = err
+      return false
     }
+  }
+
+  const loadInitialData = async (opMode, channelState) => {
+    if (!opMode || opMode === '') {
+      console.log('❌ 초기 조건 불만족으로 데이터 로딩 중단')
+      return
+    }
+
+    //console.log('🔄 초기 데이터 로딩 시작')
+    console.log('🔄 초기 데이터 로딩 시작', {
+      opMode,
+      SubEnable: channelState?.SubEnable,
+      MainEnable: channelState?.MainEnable
+    })
+    isLoading.value = true
+    error.value = null
+    
+    try {
+      if (opMode === 'device2') {
+        await fetchChannelData('Main', opMode, channelState)
+      } else {
+        if (channelState?.SubEnable) {
+          console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
+          await Promise.all([
+            fetchChannelData('Main', opMode, channelState),
+            fetchChannelData('Sub', opMode, channelState)
+          ])
+        } else {
+          await fetchChannelData('Main', opMode, channelState)
+          isSubDataLoaded.value = true
+        }
+      }
+    } catch (err) {
+      console.error('초기 데이터 로딩 실패:', err)
+      error.value = err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const startPolling = (opMode, channelState, interval = 10000) => {
+    stopPolling()
+    loadInitialData(opMode, channelState)
+
+    updateInterval.value = setInterval(async () => {
+      if (!opMode) return
+
+      if (channelState?.SubEnable) {
+        await Promise.all([
+          fetchChannelData('Main', opMode, channelState),
+          fetchChannelData('Sub', opMode, channelState)
+        ])
+      } else {
+        await fetchChannelData('Main', opMode, channelState)
+      }
+    }, interval)
+  }
+
+  const stopPolling = () => {
+    if (updateInterval.value) {
+      clearInterval(updateInterval.value)
+      updateInterval.value = null
+    }
+  }
+
+  const resetData = () => {
+    meterDictMain.value = {}
+    meterDictSub.value = {}
+    isMainDataLoaded.value = false
+    isSubDataLoaded.value = false
+    error.value = null
+  }
+
+  const onChannelStateChange = async (opMode, channelState) => {
+    console.log('🔄 채널 상태 변경 감지')
+    stopPolling()
+    isMainDataLoaded.value = false
+    isSubDataLoaded.value = false
+    startPolling(opMode, channelState)
+  }
+
+  return {
+    // state
+    meterDictMain,
+    meterDictSub,
+    isMainDataLoaded,
+    isSubDataLoaded,
+    isLoading,
+    updateInterval,
+    lastUpdateTime,
+    error,
+    // getters
+    isDataReady,
+    getMainData,
+    getSubData,
+    getChannelData,
+    // actions
+    fetchChannelData,
+    loadInitialData,
+    startPolling,
+    stopPolling,
+    resetData,
+    onChannelStateChange
   }
 })

@@ -96,7 +96,7 @@
       const setupStore = useSetupStore()
       const authStore = useAuthStore()
       const realtimeStore = useRealtimeStore()
-      
+      const isInitialized = ref(false)
       // Computed from stores
       const ChannelState = computed(() => setupStore.getChannelSetting)
       const setup = computed(() => setupStore.getSetup)
@@ -134,26 +134,44 @@
       }
   
       // 채널 상태 변화 감시
+      // watch(() => ChannelState.value, async (newVal) => {
+      //   console.log('🔄 ChannelState 변경됨:', newVal)
+        
+      //   if (!setup.value) {
+      //     realtimeStore.stopPolling()
+      //     return
+      //   }
+  
+      //   // Store에서 채널 상태 변경 처리
+      //   await realtimeStore.onChannelStateChange(opMode.value, newVal)
+      // }, { immediate: true })
       watch(() => ChannelState.value, async (newVal) => {
         console.log('🔄 ChannelState 변경됨:', newVal)
         
-        if (!setup.value) {
-          realtimeStore.stopPolling()
+        if (!setup.value || !isInitialized.value) {
           return
         }
-  
-        // Store에서 채널 상태 변경 처리
+
+        // 실제 변경 시에만 재시작
         await realtimeStore.onChannelStateChange(opMode.value, newVal)
-      }, { immediate: true })
+      })
   
       // setup 값 변화 감시
+      // watch(() => setup.value, async (newSetup) => {
+      //   console.log('🔄 Setup 변경됨:', newSetup)
+        
+      //   if (newSetup && opMode.value && opMode.value !== '') {
+      //     realtimeStore.startPolling(opMode.value, ChannelState.value)
+      //   }
+      // })
       watch(() => setup.value, async (newSetup) => {
         console.log('🔄 Setup 변경됨:', newSetup)
         
-        if (newSetup && opMode.value && opMode.value !== '') {
+        if (newSetup && opMode.value && opMode.value !== '' && !isInitialized.value) {
+          isInitialized.value = true
           realtimeStore.startPolling(opMode.value, ChannelState.value)
         }
-      })
+      });
   
       onMounted(async () => {
         console.log('=== Dashboard onMounted 시작 ===')
@@ -166,6 +184,10 @@
         await setupStore.checkSetting()
         
         // 초기 데이터 로딩은 watch에서 처리됨 (immediate: true)
+        if (opMode.value && opMode.value !== '') {
+          isInitialized.value = true
+          realtimeStore.startPolling(opMode.value, ChannelState.value)
+        }
         console.log('=== Dashboard onMounted 완료 ===')
       })
   
@@ -186,6 +208,7 @@
         realtimeStore,
         isDataReady,
         retryLoading,
+        isInitialized,
       }
     }
   }
