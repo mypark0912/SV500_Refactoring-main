@@ -292,8 +292,10 @@
           Save
         </span>
       </button>
+
+      <!-- @click="showReportModal = true" -->
       <button
-      @click="showReportModal = true"
+      
         class="h-9 px-3 text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
       >
         <span class="flex items-center justify-center gap-1.5">
