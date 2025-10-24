@@ -39,7 +39,7 @@ class OsSpec:
             else:
                 self.influxip = '127.0.0.1'
                 self.restip = '127.0.0.1'
-                self.logpath = '/home/root/logs'
+                self.logpath = '/usr/local/sv500/logs/web'
 
 
     def get_os_info(self):
