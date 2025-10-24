@@ -122,7 +122,7 @@
   <!-- 장비 시간 표시 -->
   <div v-if="deviceTime" class="p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
     <div class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-100">
-      {{ deviceTime }}
+      <span>{{ timemode }} </span> {{ deviceTime }}
     </div>
   </div>
   
@@ -140,7 +140,7 @@
     </button>
     <button
       id="syncTimeBtn"
-      @click="SetTime"
+      @click="syncSystemTime"
       class="flex-1 h-9 w-24 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1"
     >
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,6 +438,7 @@ export default {
     const showMainChannel = inject("showMainChannel", ref(true));
     const showSubChannel = inject("showSubChannel", ref(true));
     const deviceTime = ref('');
+    const timemode = ref('');
     const cmdMessage = ref('');
     //let updateInterval = null;
     // Channel selection handlers
@@ -747,20 +748,53 @@ export default {
         }
     };
 
-    const SetTime = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
+    // const SetTime = () => {
+    //   const now = new Date();
+    //   const year = now.getFullYear();
+    //   const month = String(now.getMonth() + 1).padStart(2, '0');
+    //   const day = String(now.getDate()).padStart(2, '0');
+    //   const hours = String(now.getHours()).padStart(2, '0');
+    //   const minutes = String(now.getMinutes()).padStart(2, '0');
+    //   const seconds = String(now.getSeconds()).padStart(2, '0');
       
-      const pcTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-      console.log("PC Time:", pcTime);
+    //   const pcTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    //   console.log("PC Time:", pcTime);
       
-      // 나중에 여기서 서버로 시간을 전송
-      // axios.post('/config/synctime', { time: pcTime });
+    //   // 나중에 여기서 서버로 시간을 전송
+    //   // axios.post('/config/synctime', { time: pcTime });
+    // };
+    const syncSystemTime = async () => {
+      try {
+        // 브라우저 현재 시간 가져오기
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        const pcTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        console.log("PC Time:", pcTime);
+        
+        // 타임존 가져오기
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log("Timezone:", timeZone);
+        
+        // FastAPI로 전송
+        const response = await axios.post('/config/calibrate/setSystemTime', {
+          datetime_str: pcTime,
+          timezone: timeZone || "Asia/Seoul"
+        });
+        if (response.data.success){
+          timemode.value = 'SetTime -';
+          deviceTime.value = response.data.current_time;
+        }
+        
+      } catch (error) {
+        console.error("시간 동기화 실패:", error);
+        alert("시간 설정 실패: " + error.message);
+      }
     };
 
     const handleFileUpload = (event) => {
@@ -850,7 +884,7 @@ export default {
           second: '2-digit',
           hour12: false
         });
-        
+        timemode.value = "Device Time - "
         // 시간 차이 계산 (초 단위)
         // const browserDate = new Date();
         // timeDiff.value = (deviceDate - browserDate) / 1000;
@@ -892,7 +926,7 @@ export default {
       handleSubChannelChange,
       selectedFile,
       showUploadModal,
-      SetTime,
+      syncSystemTime,
       applySetup,
       deviceTime,
       getTime,
@@ -904,6 +938,7 @@ export default {
       reportInfo,
       handleSend,
       cmdMessage,
+      timemode,
     };
   },
 };

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File
 from states.global_state import redis_state
-import os, csv, sqlite3, shutil
+import os, csv, sqlite3, shutil, logging
 import ujson as json
-import struct
+import struct, subprocess
 from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
@@ -51,6 +51,10 @@ class CaliRef(BaseModel):
 
 setting_file = os.path.join(SETTING_FOLDER, 'setup.json')
 backup_file = os.path.join(SETTING_FOLDER, 'setup_backup.json')
+
+class TimeSetRequest(BaseModel):
+    datetime_str: str  # "2024-10-24T15:30:00"
+    timezone: str = "Asia/Seoul"
 
 def parse_csv(file_path):
     data = []
@@ -262,7 +266,7 @@ def set_cmd(data:CaliSet):
         redis_state.binary_client.lpush('cali_command',binary_data)
         return {'passOK': '1'}
     except Exception as e:
-        print(str(e))
+        logging.error(f"Error: {e}")
         return {'passOK': '0'}
 
 @router.get("/calibrate/gettime")
@@ -278,6 +282,31 @@ async def get_device_time():
         }
     except Exception as e:
         return {"success": False }
+
+@router.post("/calibrate/setSystemTime")
+async def set_system_time(request: TimeSetRequest):
+    try:
+        tz_cmd = f"timedatectl set-timezone {request.timezone}"
+        subprocess.run(tz_cmd, shell=True, check=True)
+        date_cmd = f"date -s '{request.datetime_str}'"
+        result = subprocess.run(date_cmd, shell=True, check=True, capture_output=True, text=True)
+        print(f"System time set to: {request.datetime_str}")
+
+        # 3. 하드웨어 시계 동기화
+        subprocess.run("hwclock -w", shell=True, check=True)
+
+        # 4. 현재 시간 확인
+        current = subprocess.run("date", shell=True, capture_output=True, text=True)
+
+        return {
+            "success": True,
+            "message": "System time updated",
+            "current_time": current.stdout.strip(),
+            "timezone": request.timezone
+        }
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return { "success": False }
 
 @router.post('/savePost/{mode}/{idx}')
 def save_post(data: Post, mode: int, idx:int):
