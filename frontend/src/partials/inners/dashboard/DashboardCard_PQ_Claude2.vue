@@ -94,10 +94,9 @@ export default {
   name: 'DashboardCard_PowerQuality',
   props: {
     channel: String,
-    data: Object,
   },
-  emits: ['data-change'],
-  setup(props, { emit }) {
+  // emits: ['data-change'],
+  setup(props) {
     const { t } = useI18n()
     const channel = ref(props.channel)
     //const data2 = ref({})
@@ -135,7 +134,7 @@ export default {
       })
       
       // 데이터 변경 이벤트 발생
-      emit('data-change', { data: items })
+      //emit('data-change', { data: items })
       
       return items
     })
