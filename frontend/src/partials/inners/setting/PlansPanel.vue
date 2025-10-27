@@ -373,14 +373,17 @@
               <div class="flex space-x-3">
                 <div class="flex-1">
                   <label class="block text-sm font-medium mb-2" for="rtu_use">
-                    ON/OFF</label
+                    {{ t("config.plansPanel.modbus.rtu_use")
+                }}</label
                   >
                   <select
                     v-model.number="inputDict.modbus.rtu_use"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >
-                    <option :value="0">Off</option>
-                    <option :value="1">On</option>
+                    <option :value="0">{{ t("config.plansPanel.modbus.no")
+                }}</option>
+                    <option :value="1">{{ t("config.plansPanel.modbus.yes")
+                }}</option>
              
                   </select>
                 </div>

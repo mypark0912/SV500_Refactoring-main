@@ -562,7 +562,10 @@
         "baudrate": "통신 속도",
         "parity": "패리티",
         "dbits": "데이터 비트",
-        "sbits": "스톱 비트"
+        "sbits": "스톱 비트",
+        "rtu_use":"사용",
+        "yes":"예",
+        "no":"아니오"
       },
       "demand": {
         "title": "수요 전력",

@@ -568,7 +568,10 @@
                 "baudrate":"Baud Rate",
                 "parity":"Parity",
                 "dbits":"Data Bits",
-                "sbits":"Stop Bits"
+                "sbits":"Stop Bits",
+                "rtu_use":"USE",
+                "yes":"Yes",
+                "no":"No"
 
             },
             "demand":{
