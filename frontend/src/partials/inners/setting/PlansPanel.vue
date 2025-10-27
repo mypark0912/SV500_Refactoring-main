@@ -370,17 +370,38 @@
                 {{ t("config.plansPanel.modbus.snInfor")
                 }}<!--Serial Information-->
               </div>
-              <div>
+              <div class="flex space-x-3">
+                <div class="flex-1">
+                  <label class="block text-sm font-medium mb-2" for="rtu_use">
+                    ON/OFF</label
+                  >
+                  <select
+                    v-model.number="inputDict.modbus.rtu_use"
+                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option :value="0">Off</option>
+                    <option :value="1">On</option>
+             
+                  </select>
+                </div>
+                <div class="flex-1">
+                <div>
                 <label class="block text-sm font-medium mb-2" for="rtu-id">
                   {{ t("config.plansPanel.modbus.rtuid")
                   }}<!--RTU/ID--></label
                 >
                 <input
+                  :disabled="inputDict.modbus.rtu_use == 0"
                   v-model.number="inputDict.modbus.modbus_id"
                   class="form-input w-full"
                   type="number"
                 />
               </div>
+                </div>
+
+
+              </div>
+
 
               <!-- Baud Rate and Parity in one row -->
               <div class="flex space-x-3">
@@ -390,6 +411,7 @@
                     }}<!--Baud Rate--></label
                   >
                   <select
+                    :disabled="inputDict.modbus.rtu_use == 0"
                     v-model.number="inputDict.modbus.baud_rate"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >
@@ -407,6 +429,7 @@
                     }}<!--Parity--></label
                   >
                   <select
+                    :disabled="inputDict.modbus.rtu_use == 0"
                     v-model.number="inputDict.modbus.parity"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >
@@ -425,6 +448,7 @@
                     }}<!--Data Bits-->
                   </label>
                   <select
+                    :disabled="inputDict.modbus.rtu_use == 0"
                     v-model.number="inputDict.modbus.data_bits"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >
@@ -439,6 +463,7 @@
                     }}<!--Stop Bits-->
                   </label>
                   <select
+                    :disabled="inputDict.modbus.rtu_use == 0"
                     v-model.number="inputDict.modbus.stop_bits"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >

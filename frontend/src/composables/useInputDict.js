@@ -35,7 +35,8 @@ export function useInputDict() {
       baud_rate: 0,
       parity: 0,
       data_bits:7,
-      stop_bits:1
+      stop_bits:1,
+      rtu_use:0
     },
     
     pf_sign: 0,
