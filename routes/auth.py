@@ -330,6 +330,7 @@ def join_admin(data: SignupAdmin):
     with open(SETUP_PATH, "r", encoding="utf-8") as f:
         setting = json.load(f)
         setting["mode"] = mode
+        setting["lang"] = lang
         setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
         setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
 
