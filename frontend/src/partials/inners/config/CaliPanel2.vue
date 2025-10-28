@@ -62,6 +62,7 @@
         const selectItem = ref('Time');
         let updateInterval = null;
         const channels = inject('channels');
+
     //     const channels = reactive({
     //   "main":{       
     //     "Phase Voltage": {

@@ -5,9 +5,9 @@
         <thead class="bg-gray-100 dark:bg-gray-800 text-left">
           <tr>
             <th class="border-r border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-40 text-gray-900 dark:text-gray-100">Title</th>
-            <th class="border-r border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-40 text-gray-900 dark:text-gray-100">SubTitle</th>
-            <th class="border-r border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-40 text-center text-gray-900 dark:text-gray-100">Value</th>
-            <th class="border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-40 text-center text-gray-900 dark:text-gray-100">Error</th>
+            <th class="border-r border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-20 text-gray-900 dark:text-gray-100">SubTitle</th>
+            <th class="border-r border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-30 text-center text-gray-900 dark:text-gray-100">Value</th>
+            <th class="border-b border-gray-300 dark:border-gray-600 px-4 py-2 w-30 text-center text-gray-900 dark:text-gray-100">Error</th>
           </tr>
         </thead>
         <tbody>
@@ -36,7 +36,7 @@
                 </td>
                 <td class="border-b border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800"
                     :class="{ 'border-b-0': isLastRow(titleKey, rowIndex) }">
-                  {{ row.error }}
+                    <span :class="row.limit === 1 ? 'text-red-600' : 'text-green-600'">{{ row.error }}</span>
                 </td>
               </tr>
             </template>
@@ -62,6 +62,7 @@ const isLastRow = (titleKey, rowIndex) => {
   
   return titleKey === lastKey && rowIndex === group.view.length - 1;
 }
+
 </script>
 
 <style scoped>

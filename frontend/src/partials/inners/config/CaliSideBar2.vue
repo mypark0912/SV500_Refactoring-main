@@ -708,7 +708,7 @@ export default {
             headers: { "Content-Type": "application/json" },
           });
           if (response.data.passOK == "1") {
-            alert(commands.value[index]["name"] + " Success");
+            //alert(commands.value[index]["name"] + " Success");
             cmdMessage.value = commands.value[index]["name"] + " Success"
           } else {
             cmdMessage.value = response.data.error;

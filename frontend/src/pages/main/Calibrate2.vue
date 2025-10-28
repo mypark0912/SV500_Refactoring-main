@@ -38,9 +38,19 @@
             </div>
             <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl mb-8">
               <ServicePanel v-if="channel == 'Service'"/>
-                <div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px">
+                <!--div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px">
                   <CaliPanel :items="items" :channel="channel"/>
                   <CaliSidebar :channel="channel" :commands="commands"  @startPolling="startPolling" @stopPolling="stopPolling" />
+                </div-->
+                <div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px gap-4">
+                  <div class="md:w-3/4">
+                    <!-- 또는 md:w-3/5, md:flex-[2] 등 -->
+                    <CaliPanel :items="items" :channel="channel"/>
+                  </div>
+                  <div class="md:w-1/4">
+                    <!-- 또는 md:w-2/5, md:flex-[1] 등 -->
+                    <CaliSidebar :channel="channel" :commands="commands" @startPolling="startPolling" @stopPolling="stopPolling" />
+                  </div>
                 </div>
                 <Maintenance v-else />
             </div>
@@ -257,94 +267,94 @@
       "main":{       
         "Phase Voltage": {
             "view":[
-              { subTitle: "U_A", value: 0, error: 0 },
-              { subTitle: "U_B", value: 0, error: 0 },
-              { subTitle: "U_C", value: 0, error: 0 },
-              { subTitle: "Upp", value: 0, error: 0 }
+              { subTitle: "U_A", value: 0, error: 0, limit:0 },
+              { subTitle: "U_B", value: 0, error: 0, limit:0 },
+              { subTitle: "U_C", value: 0, error: 0, limit:0 },
+              { subTitle: "Upp", value: 0, error: 0, limit:0 }
             ],
           },
           "Phase Current":{
               "view": [
-              { subTitle: "I_A", value: 0, error: 0 },
-              { subTitle: "I_B", value: 0, error: 0 },
-              { subTitle: "I_C", value: 0, error: 0 },
-              { subTitle: "Ig", value: 0, error: 0 },
-              { subTitle: "In", value: 0, error: 0 }
+              { subTitle: "I_A", value: 0, error: 0, limit:0 },
+              { subTitle: "I_B", value: 0, error: 0, limit:0 },
+              { subTitle: "I_C", value: 0, error: 0, limit:0 },
+              { subTitle: "Ig", value: 0, error: 0, limit:0 },
+              { subTitle: "In", value: 0, error: 0, limit:0 }
             ],
           },
         "Power Angle": {
             "view":[
-              { subTitle: "Angle_A", value: 0, error: 0 },
-              { subTitle: "Angle_B", value: 0, error: 0 },
-              { subTitle: "Angle_C", value: 0, error: 0 }
+              { subTitle: "Angle_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Angle_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Angle_C", value: 0, error: 0, limit:0 }
             ],
           },
           "Active Power":{
             "view" :[
-              { subTitle: "Watt_A", value: 0, error: 0 },
-              { subTitle: "Watt_B", value: 0, error: 0 },
-              { subTitle: "Watt_C", value: 0, error: 0 }
+              { subTitle: "Watt_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Watt_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Watt_C", value: 0, error: 0, limit:0 }
             ]
           },
           "Reactive Power":{
             "view":[
-              { subTitle: "Var_A", value: 0, error: 0 },
-              { subTitle: "Var_B", value: 0, error: 0 },
-              { subTitle: "Var_C", value: 0, error: 0 }
+              { subTitle: "Var_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Var_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Var_C", value: 0, error: 0, limit:0 }
             ]
           },
           "Apparent Power":{
             "view":[
-              { subTitle: "VA_A", value: 0, error: 0 },
-              { subTitle: "VA_B", value: 0, error: 0 },
-              { subTitle: "VA_C", value: 0, error: 0 }
+              { subTitle: "VA_A", value: 0, error: 0, limit:0 },
+              { subTitle: "VA_B", value: 0, error: 0, limit:0 },
+              { subTitle: "VA_C", value: 0, error: 0, limit:0 }
             ]
           },
       },
       "sub":{       
         "Phase Voltage": {
             "view":[
-              { subTitle: "U_A", value: 0, error: 0 },
-              { subTitle: "U_B", value: 0, error: 0 },
-              { subTitle: "U_C", value: 0, error: 0 },
-              { subTitle: "Upp", value: 0, error: 0 }
+              { subTitle: "U_A", value: 0, error: 0, limit:0 },
+              { subTitle: "U_B", value: 0, error: 0, limit:0 },
+              { subTitle: "U_C", value: 0, error: 0, limit:0 },
+              { subTitle: "Upp", value: 0, error: 0, limit:0 }
             ],
           },
           "Phase Current":{
               "view": [
-              { subTitle: "I_A", value: 0, error: 0 },
-              { subTitle: "I_B", value: 0, error: 0 },
-              { subTitle: "I_C", value: 0, error: 0 },
-              { subTitle: "Ig", value: 0, error: 0 },
-              { subTitle: "In", value: 0, error: 0 }
+              { subTitle: "I_A", value: 0, error: 0, limit:0 },
+              { subTitle: "I_B", value: 0, error: 0, limit:0 },
+              { subTitle: "I_C", value: 0, error: 0, limit:0 },
+              { subTitle: "Ig", value: 0, error: 0, limit:0 },
+              { subTitle: "In", value: 0, error: 0, limit:0 }
             ],
           },
         "Power Angle": {
             "view":[
-              { subTitle: "Angle_A", value: 0, error: 0 },
-              { subTitle: "Angle_B", value: 0, error: 0 },
-              { subTitle: "Angle_C", value: 0, error: 0 }
+              { subTitle: "Angle_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Angle_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Angle_C", value: 0, error: 0, limit:0 }
             ],
           },
           "Active Power":{
             "view" :[
-              { subTitle: "Watt_A", value: 0, error: 0 },
-              { subTitle: "Watt_B", value: 0, error: 0 },
-              { subTitle: "Watt_C", value: 0, error: 0 }
+              { subTitle: "Watt_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Watt_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Watt_C", value: 0, error: 0, limit:0 }
             ]
           },
           "Reactive Power":{
             "view":[
-              { subTitle: "Var_A", value: 0, error: 0 },
-              { subTitle: "Var_B", value: 0, error: 0 },
-              { subTitle: "Var_C", value: 0, error: 0 }
+              { subTitle: "Var_A", value: 0, error: 0, limit:0 },
+              { subTitle: "Var_B", value: 0, error: 0, limit:0 },
+              { subTitle: "Var_C", value: 0, error: 0, limit:0 }
             ]
           },
           "Apparent Power":{
             "view":[
-              { subTitle: "VA_A", value: 0, error: 0 },
-              { subTitle: "VA_B", value: 0, error: 0 },
-              { subTitle: "VA_C", value: 0, error: 0 }
+              { subTitle: "VA_A", value: 0, error: 0, limit:0 },
+              { subTitle: "VA_B", value: 0, error: 0, limit:0 },
+              { subTitle: "VA_C", value: 0, error: 0, limit:0 }
             ]
           },
       },
@@ -378,17 +388,19 @@ function updateChannelData(response) {
           if (sourceData[index].data[i] !== undefined) {
             const value = sourceData[index].data[i]["value"];
             let error = 0;
-            
+            let limit = 0;
             // refData가 있고 해당 category의 refKey가 있으면 오차 계산
             if (refData && refKey && refData[refKey] !== undefined && refData[refKey] !== 0) {
               const refValue = refData[refKey];
-              error = ((value - refValue) / refValue * 100).toFixed(2); // 백분율로 계산
+              error = (Math.abs(value - refValue) / refValue * 100).toFixed(3); // 백분율로 계산
+              limit = error > limit ? 1 : 0;
             }
             
             channels[channelType][category].view[i] = {
               ...channels[channelType][category].view[i],
               value: value,
-              error: error
+              error: error,
+              limit: limit,
             };
           }
         }
