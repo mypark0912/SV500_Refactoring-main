@@ -244,7 +244,6 @@ class RedisMapCalibrate:
         {"id": 1, "label": "L2", "key": "I2"},
         {"id": 2, "label": "L3", "key": "I3"},
         {"id": 3, "label": "Ground", "key": "Ig"},
-        {"id": 4, "label": "Sum", "key": "In"},
     ]
     current_angle_keys = [
         {"id": 0, "label": "L1", "key": "Iangle1"},

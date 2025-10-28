@@ -387,18 +387,11 @@
                           <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">System</span>
                         </a>
                       </li>
-                    </router-link>
-                    <router-link to="/config/Calibrate" custom v-slot="{ href, navigate, isExactActive }">
-                      <li class="mb-1 last:mb-0">
-                        <a class="block transition truncate" :class="isExactActive ? 'text-violet-500' : 'text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'" :href="href" @click="navigate">
-                          <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">{{ t('sidebar.calibration') }}</span>
-                        </a>
-                      </li>
-                    </router-link>                
+                    </router-link>              
                   </ul>
                 </div>
               </SidebarLinkGroup>
-              <SidebarLinkGroup v-if="isAdmin && isNtek" v-slot="parentLink" :activeCondition="currentRoute.fullPath.includes('config')">
+              <SidebarLinkGroup v-if="isAdmin" v-slot="parentLink" :activeCondition="currentRoute.fullPath.includes('config')">
                 <a class="block text-gray-800 dark:text-gray-100 truncate transition" :class="currentRoute.fullPath.includes('config') ? '' : 'hover:text-gray-900 dark:hover:text-white'" href="#0" @click.prevent="parentLink.handleClick(); sidebarExpanded = true">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center">
@@ -431,10 +424,24 @@
                 </a>
                 <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
                   <ul class="pl-8 mt-1" :class="!parentLink.expanded && 'hidden'">
-                    <router-link to="/config/Service" custom v-slot="{ href, navigate, isExactActive }">
+                    <router-link to="/config/Calibrate" custom v-slot="{ href, navigate, isExactActive }">
+                      <li class="mb-1 last:mb-0">
+                        <a class="block transition truncate" :class="isExactActive ? 'text-violet-500' : 'text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'" :href="href" @click="navigate">
+                          <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">{{ t('sidebar.calibration') }}</span>
+                        </a>
+                      </li>
+                    </router-link>  
+                    <router-link v-if="isNtek" to="/config/Service" custom v-slot="{ href, navigate, isExactActive }">
                       <li class="mb-1 last:mb-0">
                         <a class="block transition truncate" :class="isExactActive ? 'text-violet-500' : 'text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'" :href="href" @click="navigate">
                           <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">{{ t('sidebar.service') }}</span>
+                        </a>
+                      </li>
+                    </router-link>
+                    <router-link v-if="isNtek" to="/config/Maintenance" custom v-slot="{ href, navigate, isExactActive }">
+                      <li class="mb-1 last:mb-0">
+                        <a class="block transition truncate" :class="isExactActive ? 'text-violet-500' : 'text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'" :href="href" @click="navigate">
+                          <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">{{ t('header.maintenance') }}</span>
                         </a>
                       </li>
                     </router-link>          

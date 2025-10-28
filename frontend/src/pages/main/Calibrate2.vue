@@ -140,10 +140,10 @@
         "name":"CLR_IGAIN","number":9, "Label":"Clear I", "Type":"CLEAR"
       },
       {
-        "name":"CAL_INGAIN","number":4, "Label":"Set In", "Param":"In", "Type":"SET"
+        "name":"CAL_INGAIN","number":4, "Label":"Set Ig", "Param":"In", "Type":"SET"
       },
       {
-        "name":"CLR_INGAIN","number":12, "Label":"Clear In", "Type":"CLEAR"
+        "name":"CLR_INGAIN","number":12, "Label":"Clear Ig", "Type":"CLEAR"
       },
       {
         "name":"CAL_WGAIN", "number":5,"Label":"Set Power", "Param":"U,I","Type":"SET"
@@ -278,8 +278,7 @@
               { subTitle: "I_A", value: 0, error: 0, limit:0 },
               { subTitle: "I_B", value: 0, error: 0, limit:0 },
               { subTitle: "I_C", value: 0, error: 0, limit:0 },
-              { subTitle: "Ig", value: 0, error: 0, limit:0 },
-              { subTitle: "In", value: 0, error: 0, limit:0 }
+              { subTitle: "Ig", value: 0, error: 0, limit:0 }
             ],
           },
         "Power Angle": {
@@ -325,8 +324,7 @@
               { subTitle: "I_A", value: 0, error: 0, limit:0 },
               { subTitle: "I_B", value: 0, error: 0, limit:0 },
               { subTitle: "I_C", value: 0, error: 0, limit:0 },
-              { subTitle: "Ig", value: 0, error: 0, limit:0 },
-              { subTitle: "In", value: 0, error: 0, limit:0 }
+              { subTitle: "Ig", value: 0, error: 0, limit:0 }
             ],
           },
         "Power Angle": {
