@@ -226,7 +226,6 @@ class RedisMapCalibrate:
         {"id": 0, "label": "L1", "key": "U1"},
         {"id": 1, "label": "L2", "key": "U2"},
         {"id": 2, "label": "L3", "key": "U3"},
-        {"id": 3, "label": "Avg", "key": "U4"},
     ]
     p_angle_keys = [
         {"id": 0, "label": "L1", "key": "Pangle1"},
@@ -237,7 +236,6 @@ class RedisMapCalibrate:
         {"id": 0, "label": "L1-L2", "key": "Upp1"},
         {"id": 1, "label": "L2-L3", "key": "Upp2"},
         {"id": 2, "label": "L3-L1", "key": "Upp3"},
-        {"id": 3, "label": "Avg", "key": "Upp4"},
     ]
     current_keys = [
         {"id": 0, "label": "L1", "key": "I1"},

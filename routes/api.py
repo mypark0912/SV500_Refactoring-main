@@ -2818,6 +2818,8 @@ def get_OneSecond(channel, unbal):
                 data_type=RedisDataType.HASH,
                 field="1sec"  # 필수
             )
+            if parsed is None:
+                logging.error('OneS Maxmin is None')
             p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.p_voltage_keys, 'V')
             freq_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.freq_keys, 'Hz')
             l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.l_voltage_keys, 'V')
@@ -2996,6 +2998,8 @@ def get_FifthMfromRedis(channel):
                 data_type=RedisDataType.HASH,
                 field="15min"  # 필수
             )
+            if parsed is None:
+                logging.error('Fifth Maxmin is None')
             a_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.a_powers_keys, 'kW')
             r_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.r_powers_keys, 'kVar')
             ap_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.ap_powers_keys, 'kVA')
@@ -4406,8 +4410,7 @@ def get_weekly_load_factor_data(channel: str, end_date: str = None, days: int = 
         for date, stats in daily_stats.items():
             day_data = [item for item in weekly_data if item['date'] == date and item['load_factor_percent'] > 0]
             if day_data:
-                stats['avg_load_factor'] = round(sum(item['load_factor_percent'] for item in day_data) / len(day_data),
-                                                 2)
+                stats['avg_load_factor'] = round(sum(item['load_factor_percent'] for item in day_data) / len(day_data), 2)
             if stats['min_load_factor'] == float('inf'):
                 stats['min_load_factor'] = 0
 

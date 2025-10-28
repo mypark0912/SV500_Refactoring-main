@@ -269,8 +269,7 @@
             "view":[
               { subTitle: "U_A", value: 0, error: 0, limit:0 },
               { subTitle: "U_B", value: 0, error: 0, limit:0 },
-              { subTitle: "U_C", value: 0, error: 0, limit:0 },
-              { subTitle: "Upp", value: 0, error: 0, limit:0 }
+              { subTitle: "U_C", value: 0, error: 0, limit:0 }
             ],
           },
           "Phase Current":{
@@ -315,8 +314,7 @@
             "view":[
               { subTitle: "U_A", value: 0, error: 0, limit:0 },
               { subTitle: "U_B", value: 0, error: 0, limit:0 },
-              { subTitle: "U_C", value: 0, error: 0, limit:0 },
-              { subTitle: "Upp", value: 0, error: 0, limit:0 }
+              { subTitle: "U_C", value: 0, error: 0, limit:0 }
             ],
           },
           "Phase Current":{
@@ -359,7 +357,7 @@
     });
     provide('channels', channels);
 const dataMapping = [
-  { index: 0, category: "Phase Voltage", dataCount: 4, refKey: "U" },
+  { index: 0, category: "Phase Voltage", dataCount: 3, refKey: "U" },
   { index: 1, category: "Phase Current", dataCount: 4, refKey: "I" },
   { index: 2, category: "Power Angle", dataCount: 3, refKey: "P" },
   { index: 3, category: "Active Power", dataCount: 3, refKey: null },
@@ -389,7 +387,13 @@ function updateChannelData(response) {
             let limit = 0;
             // refData가 있고 해당 category의 refKey가 있으면 오차 계산
             if (refData && refKey && refData[refKey] !== undefined && refData[refKey] !== 0) {
-              const refValue = refData[refKey];
+              let refValue;
+              if(index == 1 && i == 3){
+                refValue = refData["In"];
+              }else{
+                refValue = refData[refKey];
+              }
+              //const refValue = refData[refKey];
               error = (Math.abs(value - refValue) / refValue * 100).toFixed(3); // 백분율로 계산
               limit = error > limit ? 1 : 0;
             }
