@@ -37,10 +37,10 @@
               </td>
               <td class="p-2 text-left">{{ item.subTitle }}</td>
               <td class="p-2 text-center font-bold">{{ item.value }} {{ item.unit }}</td>
-              <td class="p-2 text-center">{{ item.min }} <span v-if="item.min !== '-'"> {{ item.unit }}</span></td>
-              <td class="p-2 text-center">{{ item.max }} <span v-if="item.max !== '-'"> {{ item.unit }}</span></td>  
-              <td class="p-2 text-center">{{ item.minTime.split('.')[0] }} </td>         
-              <td class="p-2 text-center">{{ item.maxTime.split('.')[0] }} </td>           
+              <td class="p-2 text-center">{{ item.minTime ? `${item.min} ${item.unit}` : '-' }}</td>
+              <td class="p-2 text-center">{{ item.maxTime ? `${item.max} ${item.unit}` : '-' }}</td>  
+              <td class="p-2 text-center">{{item.minTime ? item.minTime.split('.')[0] : '-'}} </td>         
+              <td class="p-2 text-center">{{item.maxTime ? item.maxTime.split('.')[0] : '-'}} </td>           
             </tr>
           </template>
         </tbody>
@@ -62,6 +62,7 @@ setup(props){
   const channel = ref(props.channel);
   const datlist = ref([]);
   const { t } = useI18n();
+  console.log(props.data);
   // ✅ `watch()`에서 props.data의 변화를 감지하고 UI 강제 갱신
   // watch(
   //   () => props.data,
