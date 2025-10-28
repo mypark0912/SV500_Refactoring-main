@@ -208,8 +208,9 @@ export default {
     const changeTab = (tabName) => {
       activeTab.value = tabName;
     };
-
-    const startDate = ref(new Date());
+    const nowDate = new Date();
+    const twoDaysAgo = new Date(nowDate.setDate(nowDate.getDate() - 2));
+    const startDate = ref(twoDaysAgo);
     const endDate = ref(new Date());
     const chartContainer = ref(null);
     let chartInstance = null;

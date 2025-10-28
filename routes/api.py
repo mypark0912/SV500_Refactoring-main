@@ -3333,7 +3333,7 @@ def getMeterTrend(channel, startDate: str = None, endDate: str = None):
     range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
 
     if startDate and endDate:
-        range_filter = f'from(bucket: "ntek") |> range(start:{startDate}, stop:{endDate})'
+        range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
     query = (
         f'{range_filter} '
         f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
@@ -3371,7 +3371,7 @@ def getEnergyTrend(channel, startDate: str = None, endDate: str = None):
     range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
 
     if startDate and endDate:
-        range_filter = f'from(bucket: "ntek") |> range(start:{startDate}, stop:{endDate})'
+        range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
     query = (
         f'{range_filter} '
         f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '

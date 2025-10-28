@@ -412,53 +412,100 @@ export default {
       items.value.forEach(traverse);
     }
 
+    // const formatToISOString = (date, soe) => {
+    //   if (typeof date === "string") {
+    //     date = new Date(date);
+    //   }
+    //   if (!(date instanceof Date) || isNaN(date)) {
+    //     throw new Error("Invalid date");
+    //   }
+
+    //   const pad = (num, size = 2) => String(num).padStart(size, "0");
+
+    //   const year = date.getFullYear();
+    //   const month = pad(date.getMonth() + 1); // 월은 0부터 시작
+    //   const day = pad(date.getDate());
+    //   let hours, minutes, seconds, milliseconds;
+
+    //   if (soe === 0) {
+    //     hours = pad(0);
+    //     minutes = pad(0);
+    //     seconds = pad(0);
+    //     milliseconds = pad(1, 7);
+    //   } else if (soe === 1) {
+    //     hours = pad(23);
+    //     minutes = pad(59);
+    //     seconds = pad(59);
+    //     milliseconds = pad(999, 7);
+    //   } else if (soe === 2) {
+    //     hours = pad(0);
+    //     minutes = pad(0);
+    //     seconds = pad(0);
+    //     milliseconds = pad(1, 2);
+    //   } else {
+    //     hours = pad(23);
+    //     minutes = pad(59);
+    //     seconds = pad(59);
+    //     milliseconds = pad(99, 2);
+    //   }
+    //   // 타임존 오프셋 계산
+    //   const timezoneOffset = -date.getTimezoneOffset();
+    //   const offsetSign = timezoneOffset >= 0 ? "+" : "-";
+    //   const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
+    //   const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
+    //   if (soe === 2 || soe === 3) {
+    //     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+    //   } else {
+    //     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
+    //   }
+    // };
+
     const formatToISOString = (date, soe) => {
-      if (typeof date === "string") {
-        date = new Date(date);
-      }
-      if (!(date instanceof Date) || isNaN(date)) {
-        throw new Error("Invalid date");
-      }
+  if (typeof date === "string") {
+    date = new Date(date);
+  }
+  if (!(date instanceof Date) || isNaN(date)) {
+    throw new Error("Invalid date");
+  }
 
-      const pad = (num, size = 2) => String(num).padStart(size, "0");
+  const pad = (num, size = 2) => String(num).padStart(size, "0");
 
-      const year = date.getFullYear();
-      const month = pad(date.getMonth() + 1); // 월은 0부터 시작
-      const day = pad(date.getDate());
-      let hours, minutes, seconds, milliseconds;
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  let hours, minutes, seconds, milliseconds;
 
-      if (soe === 0) {
-        hours = pad(0);
-        minutes = pad(0);
-        seconds = pad(0);
-        milliseconds = pad(1, 7);
-      } else if (soe === 1) {
-        hours = pad(23);
-        minutes = pad(59);
-        seconds = pad(59);
-        milliseconds = pad(999, 7);
-      } else if (soe === 2) {
-        hours = pad(0);
-        minutes = pad(0);
-        seconds = pad(0);
-        milliseconds = pad(1, 2);
-      } else {
-        hours = pad(23);
-        minutes = pad(59);
-        seconds = pad(59);
-        milliseconds = pad(99, 2);
-      }
-      // 타임존 오프셋 계산
-      const timezoneOffset = -date.getTimezoneOffset();
-      const offsetSign = timezoneOffset >= 0 ? "+" : "-";
-      const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
-      const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
-      if (soe === 2 || soe === 3) {
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}Z`;
-      } else {
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
-      }
-    };
+  if (soe === 0) {
+    hours = pad(0);
+    minutes = pad(0);
+    seconds = pad(0);
+    //milliseconds = pad(1, 7);
+  } else if (soe === 1) {
+    hours = pad(23);
+    minutes = pad(59);
+    seconds = pad(59);
+    //milliseconds = pad(999, 7);
+  } else if (soe === 2) {
+    hours = pad(0);
+    minutes = pad(0);
+    seconds = pad(0);
+    //milliseconds = pad(1, 2);
+  } else {
+    hours = pad(23);
+    minutes = pad(59);
+    seconds = pad(59);
+    //milliseconds = pad(99, 2);
+  }
+  
+  // 타임존 오프셋 계산
+  const timezoneOffset = -date.getTimezoneOffset();
+  const offsetSign = timezoneOffset >= 0 ? "+" : "-";
+  const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
+  const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
+  
+  // ✅ 모든 경우에 타임존 포함 (Z 제거)
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}` //`${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
+};
 
     const drawMeterChart = async () => {
       // checkedNames가 빈 배열이면 API 요청하지 않음
@@ -470,11 +517,16 @@ export default {
         //console.log("Selected Parameters:", checkedNames.value);
 
         let url = `/api/getMeterTrend/${channel.value}`;
-        const StartDate = formatToISOString(props.startdate, 2);
-        const EndDate = formatToISOString(props.enddate, 3);
-        url += `?startDate=${StartDate}&endDate=${EndDate}`;
+        // const StartDate = formatToISOString(props.startdate, 2);
+        // const EndDate = formatToISOString(props.enddate, 3);
+        // url += `?startDate=${StartDate}&endDate=${EndDate}`;
 
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+          params:{
+            startDate: formatToISOString(props.startdate, 2),
+            endDate : formatToISOString(props.enddate, 3)
+          }
+        });
 
         //console.log("dblenght:", response.data.data.length);
         //console.log(response.data);
@@ -560,12 +612,17 @@ export default {
         }
 
         let url = `/api/getEnergyTrend/${channel.value}`;
-        const StartDate = formatToISOString(props.startdate, 2);
-        const EndDate = formatToISOString(props.enddate, 3);
-        url += `?startDate=${StartDate}&endDate=${EndDate}`;
+        // const StartDate = formatToISOString(props.startdate, 2);
+        // const EndDate = formatToISOString(props.enddate, 3);
+        // url += `?startDate=${StartDate}&endDate=${EndDate}`;
 
-        // console.log("Energy API 호출:", url);
-        const response = await axios.get(url);
+        console.log("Energy API 호출:", url);
+        const response = await axios.get(url, {
+          params:{
+            startDate: formatToISOString(props.startdate, 2),
+            endDate : formatToISOString(props.enddate, 3)
+          }
+        });
 
         if (response.data.result){
           const responseData = response.data.data;
@@ -706,7 +763,7 @@ export default {
         StartDate: formatToISOString(props.startdate, 0),
         EndDate: formatToISOString(props.enddate, 1),
       };
-
+      //console.log(trendDataRequest);
       try {
         const url = `/api/getTrendData`; // FastAPI 엔드포인트
         const response = await axios.post(url, trendDataRequest, {
