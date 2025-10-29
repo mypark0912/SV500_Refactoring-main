@@ -2,7 +2,8 @@
     <div class="grow">
   
       <!-- Panel body -->
-      <div class="p-4">
+      <div class="p-4 md:pl-4 md:pr-0">
+        <!-- 데스크탑에서 오른쪽 패딩 제거 -->
         <div class="mt-2 grid grid-cols-2 gap-4 border-b border-gray-200 dark:border-gray-700/60 p-2 pb-4">
             <div v-if="showMainChannel">
               <h2 class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-5"> Main Channel</h2>
@@ -22,10 +23,6 @@
             </div>
           
         </section>
-        <!--section class="mt-2 pb-6 border-b border-gray-200 dark:border-gray-700/60">
-          <CaliCard v-for="item in items" :item="item"/>
-        </section-->
-
       </div>
   
     </div>
