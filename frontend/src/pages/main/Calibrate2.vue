@@ -29,7 +29,7 @@
               >
                 
               </template>
-
+                {{ t('sidebar.config') }}  > 
 
                 
                 {{ t(`config.sitemap.${formattedChannel}`) }}
