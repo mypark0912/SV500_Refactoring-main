@@ -10,8 +10,8 @@
         <!-- Site header -->
         <Header :sidebarOpen="sidebarOpen" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
   
-        <main class="grow">
-        <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
+        <main class="grow flex flex-col">
+        <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full flex-1">
           <!-- Page header -->
           <div class="sm:flex sm:justify-between sm:items-center mb-4">
             <!-- Left: Title -->
@@ -27,7 +27,7 @@
                   ].includes(formattedChannel)
                 "
               >
-                {{ t('sidebar.setup') }}  > 
+                
               </template>
 
 
@@ -36,22 +36,23 @@
               </h2>
             </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl mb-8">
+            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl mb-8 flex-1 flex flex-col">
               <ServicePanel v-if="channel == 'Service'"/>
                 <!--div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px">
                   <CaliPanel :items="items" :channel="channel"/>
                   <CaliSidebar :channel="channel" :commands="commands"  @startPolling="startPolling" @stopPolling="stopPolling" />
                 </div-->
-                <div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px gap-4">
+                <div v-else-if="channel == 'Calibrate'" class="flex flex-col md:flex-row md:-mr-px gap-4 flex-1">
                   <div class="md:w-3/4">
                     <!-- 또는 md:w-3/5, md:flex-[2] 등 -->
                     <CaliPanel :items="items" :channel="channel"/>
                   </div>
-                  <div class="md:w-1/4">
+                  <div class="md:w-1/4 md:flex">
                     <!-- 또는 md:w-2/5, md:flex-[1] 등 -->
-                    <CaliSidebar :channel="channel" :commands="commands" @startPolling="startPolling" @stopPolling="stopPolling" />
+                    <CaliSidebar class="flex-1 w-full" :channel="channel" :commands="commands" @startPolling="startPolling" @stopPolling="stopPolling" />
                   </div>
                 </div>
+                <System v-else-if="channel == 'Command'" />
                 <Maintenance v-else />
             </div>
         </div>
@@ -72,6 +73,7 @@
   import CaliPanel from '../../partials/inners/config/CaliPanel2.vue'
   import ServicePanel from '../../partials/inners/config/ServicePanel.vue'
   import Maintenance from '../../partials/inners/config/MaintenancePanel.vue'
+  import System from '../../partials/inners/config/CommandPanel.vue'
   //import { useAuthStore } from "@/store"; // ✅ Pinia Store 사용
    import { useRoute } from 'vue-router'
    import axios from 'axios';
@@ -86,6 +88,7 @@
       CaliPanel,
       ServicePanel,
       Maintenance,
+      System,
     },
     setup(props) {
       //const authStore = useAuthStore();
@@ -209,11 +212,13 @@
         },     
       ])
       const formattedChannel = computed(() => {
-
+        console.log("channel:", channel.value);
         if (channel.value === "Service") {
           return "Service";
         } else if (channel.value === "Calibrate") {
           return "Calibrate";
+        }else if (channel.value === "Command") {
+          return "Command";
         } else {
           return "Maintenance";
         }
