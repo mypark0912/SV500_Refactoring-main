@@ -278,8 +278,16 @@ class BinaryDataProcessor:
         """
         binary_data = self.get_redis_data(key, data_type, field, index)
 
-        if not binary_data:
+        if binary_data is None:
+            logging.error("데이터가 존재하지 않음")
             return None
+        elif len(binary_data) == 0:  # 또는 binary_data == b''
+            logging.error("빈 데이터가 저장되어 있음")
+            # 빈 값도 유효한 데이터로 처리할지 결정
+            return None
+
+        # if not binary_data:
+        #     return None
 
         try:
             return self.parse_data(config_name, binary_data)
