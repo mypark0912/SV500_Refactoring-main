@@ -1480,22 +1480,22 @@ async def saveSetting(channel: str, request: Request):
         redis_state.client.select(0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
 
-        if setting["General"]["useFuction"]["diagnosis_main"] or setting["General"]["useFuction"]["diagnosis_sub"]:
-            if not is_service_enabled("smartsystemsrestapiservice"):
-                if not is_service_active("smartsystemsrestapiservice"):
-                    sysService("start", "SmartAPI")
-                sysService("enable","SmartAPI")
-            if not is_service_enabled("smartsystemsservice"):
-                sysService("enable","smartsystemsservice")
-        else:
-            if is_service_enabled("smartsystemsrestapiservice"):
-                if is_service_active("smartsystemsrestapiservice"):
-                    sysService("stop", "SmartAPI")
-                sysService("disable", "SmartAPI")
-            if is_service_enabled("smartsystemsservice"):
-                if is_service_active("smartsystemsservice"):
-                    sysService("stop", "SmartSystems")
-                sysService("disable", "SmartSystems")
+        # if setting["General"]["useFuction"]["diagnosis_main"] or setting["General"]["useFuction"]["diagnosis_sub"]:
+        #     if not is_service_enabled("smartsystemsrestapiservice"):
+        #         if not is_service_active("smartsystemsrestapiservice"):
+        #             sysService("start", "SmartAPI")
+        #         sysService("enable","SmartAPI")
+        #     if not is_service_enabled("smartsystemsservice"):
+        #         sysService("enable","smartsystemsservice")
+        # else:
+        #     if is_service_enabled("smartsystemsrestapiservice"):
+        #         if is_service_active("smartsystemsrestapiservice"):
+        #             sysService("stop", "SmartAPI")
+        #         sysService("disable", "SmartAPI")
+        #     if is_service_enabled("smartsystemsservice"):
+        #         if is_service_active("smartsystemsservice"):
+        #             sysService("stop", "SmartSystems")
+        #         sysService("disable", "SmartSystems")
 
         return {"status": "1", "data": setting}
     except Exception as e:
