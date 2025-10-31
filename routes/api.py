@@ -4365,7 +4365,7 @@ def get_weekly_load_factor_data(channel: str, end_date: str = None, days: int = 
 
                 # 부하율 계산
                 if apparent_power and apparent_power > 0:
-                    load_factor_percent = (apparent_power / ratedKVA) * 100
+                    load_factor_percent = ((apparent_power/1000) / ratedKVA) * 100
                 else:
                     load_factor_percent = 0
 
