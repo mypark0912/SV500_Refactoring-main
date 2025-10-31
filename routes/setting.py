@@ -1487,6 +1487,15 @@ async def saveSetting(channel: str, request: Request):
                 sysService("enable","SmartAPI")
             if not is_service_enabled("smartsystemsservice"):
                 sysService("enable","smartsystemsservice")
+        else:
+            if is_service_enabled("smartsystemsrestapiservice"):
+                if is_service_active("smartsystemsrestapiservice"):
+                    sysService("stop", "SmartAPI")
+                sysService("disable", "SmartAPI")
+            if is_service_enabled("smartsystemsservice"):
+                if is_service_active("smartsystemsservice"):
+                    sysService("stop", "SmartSystems")
+                sysService("disable", "SmartSystems")
 
         return {"status": "1", "data": setting}
     except Exception as e:
