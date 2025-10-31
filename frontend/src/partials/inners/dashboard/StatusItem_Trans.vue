@@ -71,7 +71,8 @@
   
   onUnmounted(() => {
     if (timeInterval) {
-      clearInterval(timeInterval)
+      clearInterval(timeInterval);
+      timeInterval = null;
     }
   })
   

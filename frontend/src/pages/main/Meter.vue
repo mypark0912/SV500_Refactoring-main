@@ -197,15 +197,19 @@ export default {
     const ReleaseInterval = () =>{
       if (updateInterval_ones) {
         clearInterval(updateInterval_ones);
+        updateInterval_ones = null
       }
       if (updateInterval_onem) {
         clearInterval(updateInterval_onem);
+        updateInterval_onem = null
       }
       if (updateInterval_fifthm) {
         clearInterval(updateInterval_fifthm);
+        updateInterval_fifthm = null
       }
       if (updateInterval_oneh) {
         clearInterval(updateInterval_oneh);
+        updateInterval_oneh = null
       }
     };
     
@@ -384,25 +388,37 @@ export default {
     // };
 
     const startFetching = () => {
-      if (updateInterval_ones) clearInterval(updateInterval_ones);
+      if (updateInterval_ones) {
+        clearInterval(updateInterval_ones);
+        updateInterval_ones = null
+      }
       fetchRedisOnesData(channel.value);
         updateInterval_ones = setInterval(() => {
           fetchRedisOnesData(channel.value);
         }, 1000);
 
-      if (updateInterval_onem) clearInterval(updateInterval_onem);
+      if (updateInterval_onem){
+        clearInterval(updateInterval_onem);
+        updateInterval_onem = null
+      } 
       fetchRedisOnemData(channel.value);
         updateInterval_onem = setInterval(() => {
           fetchRedisOnemData(channel.value);
         }, 60*1000);
 
-      if (updateInterval_fifthm) clearInterval(updateInterval_fifthm);
+      if (updateInterval_fifthm){
+        clearInterval(updateInterval_fifthm);
+        updateInterval_fifthm = null
+      } 
       fetchRedisfifthmData(channel.value);
         updateInterval_fifthm = setInterval(() => {
           fetchRedisfifthmData(channel.value);
         }, 15*60*1000);
 
-      if (updateInterval_oneh) clearInterval(updateInterval_oneh);
+      if (updateInterval_oneh) {
+        clearInterval(updateInterval_oneh);
+        updateInterval_oneh = null
+      }
       fetchRedisOnehData(channel.value);
         updateInterval_oneh = setInterval(() => {
           fetchRedisOnehData(channel.value);

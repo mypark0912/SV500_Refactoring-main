@@ -68,6 +68,7 @@ export default {
       if (newVal !== oldVal && oldVal !== undefined) {
         if (interval) {
           clearInterval(interval);
+          interval = null;
         }
         
         await fetchData(newVal);
@@ -92,6 +93,7 @@ export default {
     onUnmounted(() => {
       if (interval) {
         clearInterval(interval)
+        interval = null;
       }
     })
 

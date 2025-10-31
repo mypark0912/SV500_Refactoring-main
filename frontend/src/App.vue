@@ -38,6 +38,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   clearInterval(sessionCheckInterval);
+  sessionCheckInterval = null
 });
 
 watch(

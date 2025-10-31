@@ -238,6 +238,7 @@ export default {
     const setupPeriodicUpdate = () => {
       if (updateInterval) {
         clearInterval(updateInterval)
+        updateInterval = null
       }
 
       updateInterval = setInterval(async () => {
@@ -321,6 +322,7 @@ export default {
     onUnmounted(() => {
       if (updateInterval) {
         clearInterval(updateInterval)
+        updateInterval = null
       }
     })
 

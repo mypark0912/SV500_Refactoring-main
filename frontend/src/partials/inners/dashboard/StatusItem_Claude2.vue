@@ -72,6 +72,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (timeInterval) {
     clearInterval(timeInterval)
+    timeInterval = null;
   }
 })
 
