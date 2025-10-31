@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from .auth import get_mac_address
+from .util import get_mac_address, Post, save_post, get_db_connection
 from datetime import datetime
 router = APIRouter()
 
@@ -17,21 +17,12 @@ base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
 DB_PATH = os.path.join(SETTING_FOLDER, "maintenance.db")
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # → dict처럼 row 접근 가능
-    return conn
+# def get_db_connection():
+#     conn = sqlite3.connect(DB_PATH)
+#     conn.row_factory = sqlite3.Row  # → dict처럼 row 접근 가능
+#     return conn
+#
 
-class Post(BaseModel):
-    title: str
-    context: str
-    mtype: int
-    utype: str
-    f_version: str = ""
-    a_version: str = ""
-    w_version: str = ""
-    c_version: str = ""
-    smart_version: str = ""
 
 class CaliSet(BaseModel):
     channel: str
@@ -309,37 +300,38 @@ async def set_system_time(request: TimeSetRequest):
         return { "success": False }
 
 @router.post('/savePost/{mode}/{idx}')
-def save_post(data: Post, mode: int, idx:int):
-    title = data.title
-    context = data.context
-    mtype = data.mtype
-    utype = data.utype
-    f_version = data.f_version
-    a_version = data.a_version
-    w_version = data.w_version
-    c_version = data.c_version
-    smart_version = data.smart_version
-    today = date.today()
-    formatted = today.strftime("%Y-%m-%d")
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        if mode == 0:
-            cursor.execute(
-                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version,date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, formatted)
-            )
-        else:
-            cursor.execute(
-                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, date=? where id=?",
-                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, formatted, idx )
-            )
-        conn.commit()
-        conn.close()
-        return {"passOK": "1"}
-    except Exception as e:
-        print(str(e))
-        return {"passOK": "0", "msg": str(e)}
+def save_maintanence(data: Post, mode: int, idx:int):
+    save_post(data,mode, idx)
+    # title = data.title
+    # context = data.context
+    # mtype = data.mtype
+    # utype = data.utype
+    # f_version = data.f_version
+    # a_version = data.a_version
+    # w_version = data.w_version
+    # c_version = data.c_version
+    # smart_version = data.smart_version
+    # today = date.today()
+    # formatted = today.strftime("%Y-%m-%d")
+    # try:
+    #     conn = get_db_connection()
+    #     cursor = conn.cursor()
+    #     if mode == 0:
+    #         cursor.execute(
+    #             "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version,date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    #             (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, formatted)
+    #         )
+    #     else:
+    #         cursor.execute(
+    #             "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, date=? where id=?",
+    #             (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, formatted, idx )
+    #         )
+    #     conn.commit()
+    #     conn.close()
+    #     return {"passOK": "1"}
+    # except Exception as e:
+    #     print(str(e))
+    #     return {"passOK": "0", "msg": str(e)}
 
 @router.get('/getPost')
 def get_post():
@@ -388,6 +380,34 @@ def get_post():
         flag = False
     if flag:
         return {"result": 1, "data": result}
+    else:
+        return {"result": 0}
+
+@router.get('/getLastPost')
+def get_post():
+    last_record = {}
+    try:
+        # db_exists = os.path.exists(DB_PATH)
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('''
+                        SELECT * FROM maintenance 
+                        ORDER BY id DESC 
+                        LIMIT 1
+                    ''')
+        last_record = cursor.fetchone()
+        if len(last_record) > 0:
+            flag = True
+        else:
+            flag = False
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(str(e))
+        flag = False
+    if flag:
+        return {"result": 1, "data": dict(last_record)}
     else:
         return {"result": 0}
 

@@ -819,45 +819,74 @@ export default {
         isRestartDone.value = true;
         return;
       }
-        
-      try {
-        const response = await axios.get(`/setting/restartasset`);
-        //console.log("Restart Response:", response);
+      if(inputDict.value.useFuction.diagnosis_main || inputDict.value.useFuction.diagnosis_sub){
+        try {
+          const response = await axios.get(`/setting/restartasset`);
+          //console.log("Restart Response:", response);
 
-        if (response.data.status === "1") {
-          if (response.data.success) {
-            const servicflag = await serviceRestart("restart", "SmartSystems");
-            const apiflag = await serviceRestart("restart", "SmartAPI");
-            if (servicflag["result"] && apiflag["result"]) {
-              alert("✅ Service restarted successfully");
+          if (response.data.status === "1") {
+            if (response.data.success) {
+              const servicflag = await serviceRestart("restart", "SmartSystems");
+              const apiflag = await serviceRestart("restart", "SmartAPI");
+              if (servicflag["result"] && apiflag["result"]) {
+                alert("✅ Service restarted successfully");
+                //isModalOpen.value = false;
+                isRestartDone.value = true;
+              } else if (servicflag["result"] && apiflag["result"]) {
+                alert("❌ SmartSystem Restart failed");
+              } else {
+                alert(
+                  "❌ Restart failed: " +
+                    (serviceflag["result"]
+                      ? apiflag["msg"]
+                      : serviceflag["msg"]) || "Unknown error"
+                );
+              }
+            } else {
               //isModalOpen.value = false;
               isRestartDone.value = true;
-            } else if (servicflag["result"] && apiflag["result"]) {
-              alert("❌ SmartSystem Restart failed");
-            } else {
-              alert(
-                "❌ Restart failed: " +
-                  (serviceflag["result"]
-                    ? apiflag["msg"]
-                    : serviceflag["msg"]) || "Unknown error"
-              );
+
+              alert("✅ System restarted successfully");
             }
-          } else {
+          }else {
             //isModalOpen.value = false;
-            isRestartDone.value = true;
+            //isRestartDone.value = true;
 
-            alert("✅ System restarted successfully");
+            alert("✅ System restarted failed: " + response.data.error);
           }
-        } else {
-          //isModalOpen.value = false;
-          //isRestartDone.value = true;
-
-          alert("✅ System restarted failed: " + response.data.error);
+        } catch (e) {
+          console.error("Error occurred:", e);
+          alert("❌ Error occurred while restarting: " + e.message);
         }
-      } catch (e) {
-        console.error("Error occurred:", e);
-        alert("❌ Error occurred while restarting: " + e.message);
+      }else{
+        alert("✅ Service restarted successfully");
+        isRestartDone.value = true;
       }
+      //else{
+      //   const servicflag = await serviceRestart("stop", "SmartSystems");
+      //   const apiflag = await serviceRestart("stop", "SmartAPI");
+      //   if(servicflag["result"]){
+      //     servicflag["result"] = await serviceRestart("disable", "SmartSystems");
+      //   }
+      //   if(apiflag["result"]){
+      //     apiflag["result"] = await serviceRestart("disable", "SmartAPI");
+      //   }
+      //       if (servicflag["result"] && apiflag["result"]) {
+      //         alert("✅ Service restarted successfully");
+      //         //isModalOpen.value = false;
+      //         isRestartDone.value = true;
+      //       } else if (servicflag["result"] && apiflag["result"]) {
+      //         alert("❌ SmartSystem Restart failed");
+      //       } else {
+      //         alert(
+      //           "❌ Restart failed: " +
+      //             (serviceflag["result"]
+      //               ? apiflag["msg"]
+      //               : serviceflag["msg"]) || "Unknown error"
+      //         );
+      //       }
+      // }
+        
     };
 
     const serviceRestart = async (cmd, item) => {
