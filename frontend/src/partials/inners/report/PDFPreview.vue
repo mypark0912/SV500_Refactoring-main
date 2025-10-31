@@ -13,17 +13,17 @@
                 <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
               </svg>
             </div>
-            <h1 class="text-2xl text-gray-800 dark:text-gray-100 font-bold">{{ channelComputed }} Channel Report</h1>
+            <h1 class="text-2xl text-gray-800 font-bold">{{ channelComputed }} Channel Report</h1>
           </div>
         </div>
 
-        <div v-if="channelComputed === 'Main'? setupMenu.MainDiagnosis : setupMenu.SubDiagnosis" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div v-if="channelComputed === 'Main'? setupMenu.MainDiagnosis : setupMenu.SubDiagnosis" class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header with gradient -->
           <div class="bg-gradient-to-r from-slate-500 to-slate-700 p-3 text-white">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
                 <img :src="equipImageSrc" alt="장비 이미지"
-                    class="w-8 h-8 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
+                    class="w-8 h-8 object-cover rounded-lg shadow-md border border-gray-300" />
               </div>
               <div>
                 <h3 class="text-xl font-bold">{{ t(`report.cardTitle.Channel`) }}</h3>
@@ -36,19 +36,19 @@
             <div class="space-y-6">
             <!-- 첫 번째 줄: 이름/타입 (col-12 꽉 차게) -->
             <div class="w-full">
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
                 <div class="grid grid-cols-3 gap-6">
                     <div class="flex flex-col">
-                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.name`) }}</span>
-                    <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ channelComputed.toLowerCase() == 'main'? asset.assetNickname_main : asset.assetNickname_sub }}</span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.name`) }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{ channelComputed.toLowerCase() == 'main'? asset.assetNickname_main : asset.assetNickname_sub }}</span>
                     </div>
                     <div class="flex flex-col">
-                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.type`) }}</span>
-                    <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ channelComputed.toLowerCase() == 'main'? asset.assetType_main : asset.assetType_sub }}</span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.type`) }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{ channelComputed.toLowerCase() == 'main'? asset.assetType_main : asset.assetType_sub }}</span>
                     </div>
                     <div v-if="devLocation != ''" class="flex flex-col">
-                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.location`) }}</span>
-                    <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ devLocation }}</span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.location`) }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{ devLocation }}</span>
                     </div>
                 </div>
                 </div>
@@ -56,12 +56,12 @@
 
             <!-- 두 번째 줄: 나머지 항목들 (col-12 박스 안에 수평 정렬) -->
             <div class="w-full">
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     <div v-for="(item, index) in datalist" :key="index" class="group hover:scale-105 transition-transform duration-200">
                     <div class="flex flex-col h-full">
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{{ t(`dashboard.transDiag.${item.Name}`) }}</span>
-                        <span class="text-lg font-bold text-gray-800 dark:text-gray-100 group-hover:text-blue-600 transition-colors">{{ item.Value }} {{ item.Unit }}</span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`dashboard.transDiag.${item.Name}`) }}</span>
+                        <span class="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{{ item.Value }} {{ item.Unit }}</span>
                     </div>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
       <section v-if="mode" ref="DiagnosisInfo" class="mt-8">
         <div class="space-y-6">
           <!-- Status Information -->
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-3 text-white">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -92,7 +92,7 @@
               </div>
             </div>
             <div class="p-6">
-               <Diagnosis_Barchart v-if="ischartDataValid" :channel="channelComputed" :data="diagData.chartdata" :mode="'PowerQuality'" class="h-auto" />
+               <Diagnosis_Barchart v-if="ischartDataValid" :channel="channelComputed" :data="diagData.chartdata" :mode="'DiagnosisDetail'" class="h-auto" />
             </div>
             <div class="flex flex-col gap-4 p-2 pl-4 pr-4 mb-1">
                 <template v-for="item in diagData.items">
@@ -104,7 +104,7 @@
       </section>
 
       <section v-if="mode && ischartDataValid && diagData.items.length > 0" ref="DiagnosisDetail" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div class="bg-gradient-to-r from-pink-500 to-rose-600 p-3 text-white">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -113,7 +113,7 @@
                   </svg>
                 </div>
                 <div>
-                  <h3 class="text-xl font-bold">진단 세부항목 트렌드</h3>
+                  <h3 class="text-xl font-bold">{{ t('diagnosis.tabTitle.detailTitle_trend') }}</h3>
                 </div>
               </div>
             </div>
@@ -130,7 +130,7 @@
       <section v-if="mode" ref="PQStatusisInfo" class="mt-8">
         <div class="space-y-6">
           <!-- Status Information -->
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-3 text-white">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -158,7 +158,7 @@
       </section>
 
       <section v-if="mode && ispqValid && pqdata.items.length > 0" ref="PQDetail" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div class="bg-gradient-to-r from-pink-500 to-rose-600 p-3 text-white">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -167,7 +167,7 @@
                   </svg>
                 </div>
                 <div>
-                  <h3 class="text-xl font-bold">전력품질 세부항목 트렌드</h3>
+                  <h3 class="text-xl font-bold">{{ t('diagnosis.tabTitle.detailTitle_trend_pq') }}</h3>
                 </div>
               </div>
             </div>
@@ -182,7 +182,7 @@
       </section>
 
       <section ref="PQTable" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-blue-500 to-blue-700 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -207,7 +207,7 @@
                 <div v-if="!tbdata || Object.keys(tbdata).length === 0" 
                      class="flex flex-col items-center justify-center py-12">
                   <svg 
-                    class="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" 
+                    class="w-16 h-16 text-gray-400 mb-4" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24" 
@@ -220,30 +220,30 @@
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p class="text-lg font-medium text-gray-500 dark:text-gray-400">No Data Available</p>
-                  <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">EN50160 data will appear here when available</p>
+                  <p class="text-lg font-medium text-gray-500">No Data Available</p>
+                  <p class="text-sm text-gray-400 mt-1">EN50160 data will appear here when available</p>
                 </div>
               <table v-else class="w-full">
                 <thead>
-                  <tr class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
-                    <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider rounded-tl-lg">Parameter</th>
-                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">L1</th>
-                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">L2</th>
-                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">L3</th>
-                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Compliance</th>
-                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider rounded-tr-lg">Required Quality</th>
+                  <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider rounded-tl-lg">Parameter</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">L1</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">L2</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">L3</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">Compliance</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider rounded-tr-lg">Required Quality</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="(row, index) in pqTableData" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ row.parameter }}</td>
-                    <td class="px-6 py-4 text-sm text-center text-gray-700 dark:text-gray-300">
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="(row, index) in pqTableData" :key="index" class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ row.parameter }}</td>
+                    <td class="px-6 py-4 text-sm text-center text-gray-700">
                       {{ tbdata[makeKey(row.parameter, 'L1')] ?? '-' }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-center text-gray-700 dark:text-gray-300">
+                    <td class="px-6 py-4 text-sm text-center text-gray-700">
                       {{ tbdata[makeKey(row.parameter, 'L2')] ?? '-' }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-center text-gray-700 dark:text-gray-300">
+                    <td class="px-6 py-4 text-sm text-center text-gray-700">
                       {{ tbdata[makeKey(row.parameter, 'L3')] ?? '-' }}
                     </td>
                     <td class="px-6 py-4 text-center">
@@ -251,7 +251,7 @@
                         {{ getComp(row.parameter) ?? '-' }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-center text-gray-700 dark:text-gray-300">{{ row.required }}</td>
+                    <td class="px-6 py-4 text-sm text-center text-gray-700">{{ row.required }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -262,7 +262,7 @@
 
       <!-- Power Quality Chart Section -->
       <section ref="PQChart" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -281,7 +281,7 @@
 
           <!-- Chart Content -->
           <div class="p-6">
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4">
               <LineChart :data="linechartData" width="595" height="248" />
             </div>
           </div>
@@ -290,7 +290,7 @@
 
       <!-- Energy Section - Hourly -->
       <section ref="EnergyHourly" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -307,7 +307,7 @@
 
           <!-- Chart Content -->
           <div class="p-6">
-            <div class="bg-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-white rounded-xl p-4">
               <BarChart2 :data="hourlyChartData" width="595" height="248" />
             </div>
           </div>
@@ -316,7 +316,7 @@
 
       <!-- Energy Section - Daily -->
       <section ref="EnergyDaily" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -333,7 +333,7 @@
 
           <!-- Chart Content -->
           <div class="p-6">
-            <div class="bg-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-white rounded-xl p-4">
               <BarChart2 :data="dailyChartData" width="595" height="248" />
             </div>
           </div>
@@ -342,7 +342,7 @@
 
       <!-- Energy Section - Monthly -->
       <section ref="EnergyMonthly" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -359,7 +359,7 @@
 
           <!-- Chart Content -->
           <div class="p-6">
-            <div class="bg-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-white rounded-xl p-4">
               <BarChart2 :data="monthlyChartData" width="595" height="248" />
             </div>
           </div>
@@ -368,7 +368,7 @@
 
       <!-- Power Load Trend Section - 전력량 & 부하율 추이 -->
       <section v-if="assettypes == 'Transformer'" ref="PowerLoadTrend" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-cyan-500 to-blue-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -385,23 +385,23 @@
 
           <!-- Chart Content -->
           <div class="p-6">
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4">
               <div ref="dualAxisChart" class="dual-axis-chart"></div>
             </div>
             
             <!-- 통계 정보 -->
             <div class="grid grid-cols-3 gap-4 mt-4">
-              <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-600 dark:text-gray-400">{{ t(`report.cardContext.averageLoadRate`) }}<!--평균 부하율--></div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ averageLoadRate.toFixed(1) }}%</div>
+              <div class="bg-gray-50 rounded-lg p-3 text-center">
+                <div class="text-sm text-gray-600">{{ t(`report.cardContext.averageLoadRate`) }}<!--평균 부하율--></div>
+                <div class="text-2xl font-bold text-gray-900">{{ averageLoadRate.toFixed(1) }}%</div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-600 dark:text-gray-400">{{ t(`report.cardContext.maxLoadRate`) }}<!--최대 부하율--></div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ maxLoadRate.toFixed(1) }}%</div>
+              <div class="bg-gray-50 rounded-lg p-3 text-center">
+                <div class="text-sm text-gray-600">{{ t(`report.cardContext.maxLoadRate`) }}<!--최대 부하율--></div>
+                <div class="text-2xl font-bold text-gray-900">{{ maxLoadRate.toFixed(1) }}%</div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                <div class="text-sm text-gray-600 dark:text-gray-400">{{ t(`report.cardContext.overloadCount`) }}<!--과부하 횟수--></div>
-                <div class="text-2xl font-bold" :class="overloadCount > 0 ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'">
+              <div class="bg-gray-50 rounded-lg p-3 text-center">
+                <div class="text-sm text-gray-600">{{ t(`report.cardContext.overloadCount`) }}<!--과부하 횟수--></div>
+                <div class="text-2xl font-bold" :class="overloadCount > 0 ? 'text-red-600' : 'text-gray-900'">
                   {{ overloadCount }}
                 </div>
               </div>
@@ -412,7 +412,7 @@
 
       <!-- Load Pattern Analysis Section -->
       <section v-if="assettypes == 'Transformer'" ref="LoadPatternAnalysis" class="mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header -->
           <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 text-white">
             <div class="flex items-center gap-3">
@@ -431,31 +431,31 @@
           <!-- Content -->
           <div class="p-6">
             <!-- Heatmap Chart -->
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4">
+            <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4">
               <div ref="loadPatternChart" class="heatmap-chart"></div>
             </div>
 
             <!-- Weekly Load Pattern Summary -->
             <div class="mt-6">
-              <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">{{ t(`report.cardTitle.weeklyLoadDistribution`) }}<!--주간 부하율 분포 통계--></h4>
+              <h4 class="text-lg font-semibold text-gray-800 mb-4">{{ t(`report.cardTitle.weeklyLoadDistribution`) }}<!--주간 부하율 분포 통계--></h4>
               <div class="grid grid-cols-4 gap-4">
                 <div class="border-l-4 border-green-500 pl-4">
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ t(`report.cardContext.lightLoadHours`) }}<!--경부하 시간--></div>
+                  <div class="text-sm text-gray-600 mb-1">{{ t(`report.cardContext.lightLoadHours`) }}<!--경부하 시간--></div>
                   <div class="text-2xl font-bold text-green-600">{{ lightLoadPercentage }}%</div>
                   <div class="text-xs text-gray-500">0-50% {{ t(`report.cardContext.loadRate`) }}<!--부하율--></div>
                 </div>
                 <div class="border-l-4 border-yellow-500 pl-4">
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ t(`report.cardContext.mediumLoadHours`) }}<!--중간부하 시간--></div>
+                  <div class="text-sm text-gray-600 mb-1">{{ t(`report.cardContext.mediumLoadHours`) }}<!--중간부하 시간--></div>
                   <div class="text-2xl font-bold text-yellow-600">{{ mediumLoadPercentage }}%</div>
                   <div class="text-xs text-gray-500">50-80% {{ t(`report.cardContext.loadRate`) }}<!--부하율--></div>
                 </div>
                 <div class="border-l-4 border-orange-500 pl-4">
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ t(`report.cardContext.heavyLoadHours`) }}<!--고부하 시간--></div>
+                  <div class="text-sm text-gray-600 mb-1">{{ t(`report.cardContext.heavyLoadHours`) }}<!--고부하 시간--></div>
                   <div class="text-2xl font-bold text-orange-600">{{ highLoadPercentage }}%</div>
                   <div class="text-xs text-gray-500">80-100% {{ t(`report.cardContext.loadRate`) }}<!--부하율--></div>
                 </div>
                 <div class="border-l-4 border-red-500 pl-4">
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ t(`report.cardContext.overLoadHours`) }}<!--과부하 시간--></div>
+                  <div class="text-sm text-gray-600 mb-1">{{ t(`report.cardContext.overLoadHours`) }}<!--과부하 시간--></div>
                   <div class="text-2xl font-bold text-red-600">{{ overLoadPercentage }}%</div>
                   <div class="text-xs text-gray-500">100% {{ t(`report.cardContext.overload`) }}<!--초과부하율--></div>
                 </div>
@@ -470,6 +470,7 @@
 </template>
 
 <script>
+// script 부분은 변경 없음 (동일하게 유지)
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 //import LineChart from '../../../charts/connect/LineChart02.vue'
 import LineChart from '../../../charts/connect/LineChart_ITIC.vue'
@@ -915,51 +916,6 @@ export default {
           });
 
           // 2. Thresholds 처리
-          // if (
-          //   resData.Thresholds &&
-          //   resData.Thresholds.length == 2 &&
-          //   labels.length > 0
-          // ) {
-          //   let timeList = []
-          //   for(let i = 0 ; i < resData.Thresholds.length;i++){
-          //     timeList.push(new Date(resData.Thresholds[i].XAxis));
-          //   }
-          //   const t1 = new Date(resData.Thresholds[0].XAxis);
-          //   const t2 = new Date(resData.Thresholds[1].XAxis);
-
-          //   resData.Thresholds[0].Thresholds.forEach((value, idx) => {
-          //     if (value !== "NaN" && value !== null && value !== undefined) {
-          //       const secondValue = resData.Thresholds[1].Thresholds[idx];
-          //       if (
-          //         secondValue === "NaN" ||
-          //         secondValue === null ||
-          //         secondValue === undefined
-          //       ) {
-          //         return;
-          //       }
-
-          //       const thresholdData = labels.map((lbl) => {
-          //         const dt = new Date(lbl);
-          //         return dt < t1 ? value : secondValue;
-          //       });
-          //       const ThresholdString = [
-          //         "Out of Range(Down side)",
-          //         "Repair",
-          //         "Inspect",
-          //         "Warning",
-          //         "Warning",
-          //         "Inspect",
-          //         "Repair",
-          //         "Out of Range(Upper side)",
-          //       ];
-          //       datasets.push({
-          //         name: ThresholdString[idx],
-          //         data: thresholdData,
-          //         isThreshold: true,
-          //       });
-          //     }
-          //   });
-          // }
           if (resData.Thresholds && resData.Thresholds.length > 0 && labels.length > 0) {
           // Threshold 문자열
             const ThresholdString = [
@@ -1211,8 +1167,6 @@ const createDualAxisChart = () => {
   if (!dualAxisChartInstance) return;
   
   console.log('=== createDualAxisChart 실행 ===');
-  //console.log('reportData.energyHourlyData:', reportData.energyHourlyData);
-  //console.log('reportData.loadrateData:', reportData.loadrateData);
 
   let times = [];
   let powerData = [];
@@ -1220,7 +1174,6 @@ const createDualAxisChart = () => {
   
   // 실제 전력량 데이터 처리
   if (reportData.energyHourlyData && Array.isArray(reportData.energyHourlyData) && reportData.energyHourlyData.length > 0) {
-    //'실제 전력량 데이터 사용');
     
     const now = dayjs();
     const currentHour = now.hour();
@@ -1240,16 +1193,14 @@ const createDualAxisChart = () => {
     }
   } else {
     // 더미 데이터 생성 - 모든 값을 0으로
-    //console.log('전력량 더미 데이터 사용');
     for (let i = 0; i < 24; i++) {
       times.push(`${i.toString().padStart(2, '0')}:00`);
-      powerData.push(0); // ✅ 모든 값을 0으로 변경
+      powerData.push(0);
     }
   }
 
   // 실제 부하율 데이터 처리
   if (reportData.loadrateData && Array.isArray(reportData.loadrateData) && reportData.loadrateData.length > 0) {
-    //console.log('실제 부하율 데이터 사용');
     
     const loadDataMap = {};
     reportData.loadrateData.forEach(item => {
@@ -1263,7 +1214,7 @@ const createDualAxisChart = () => {
   } else {
     // 더미 데이터 생성 - 모든 값을 0으로
     console.log('부하율 더미 데이터 사용');
-    loadData = times.map(() => 0); // ✅ 모든 값을 0으로 변경
+    loadData = times.map(() => 0);
   }
 
   const maxPowerValue = Math.max(...powerData.filter(val => !isNaN(val)), 100);
@@ -1370,7 +1321,6 @@ const createDualAxisChart = () => {
 };
 
     // Load distribution statistics - API 데이터 기반
-// Load distribution statistics - API 데이터 기반
 const lightLoadPercentage = computed(() => {
   // API 데이터가 있으면 사용
   if (apiHeatmapStats.value && Object.keys(apiHeatmapStats.value).length > 0) {
@@ -1383,8 +1333,7 @@ const lightLoadPercentage = computed(() => {
     return Math.round(((apiHeatmapStats.value.light || 0) / total) * 100);
   }
   
-  // 더미 데이터 fallback - 모든 값을 0으로
-  return 0; // ✅ 더미 데이터 계산 대신 0 반환
+  return 0;
 })
 
 const mediumLoadPercentage = computed(() => {
@@ -1399,8 +1348,7 @@ const mediumLoadPercentage = computed(() => {
     return Math.round(((apiHeatmapStats.value.medium || 0) / total) * 100);
   }
   
-  // 더미 데이터 fallback - 모든 값을 0으로
-  return 0; // ✅ 더미 데이터 계산 대신 0 반환
+  return 0;
 })
 
 const highLoadPercentage = computed(() => {
@@ -1415,8 +1363,7 @@ const highLoadPercentage = computed(() => {
     return Math.round(((apiHeatmapStats.value.high || 0) / total) * 100);
   }
   
-  // 더미 데이터 fallback - 모든 값을 0으로
-  return 0; // ✅ 더미 데이터 계산 대신 0 반환
+  return 0;
 })
 
 const overLoadPercentage = computed(() => {
@@ -1431,8 +1378,7 @@ const overLoadPercentage = computed(() => {
     return Math.round(((apiHeatmapStats.value.overload || 0) / total) * 100);
   }
   
-  // 더미 데이터 fallback - 모든 값을 0으로
-  return 0; // ✅ 더미 데이터 계산 대신 0 반환
+  return 0;
 })
 
     // Create timeseries chart
@@ -1577,7 +1523,7 @@ const overLoadPercentage = computed(() => {
               const hour = hours[params.data[0]]
               const day = days[params.data[1]]
               const value = params.data[2]
-              return `${day}t('report.cardContext.days.week') ${hour}:00<br/>t('report.cardContext.loadRate') : ${value}%`
+              return `${day}${t('report.cardContext.days.week')} ${hour}:00<br/>${t('report.cardContext.loadRate')}: ${value}%`
             }
           },
           grid: { height: '50%', top: '10%' },
@@ -1607,7 +1553,7 @@ const overLoadPercentage = computed(() => {
             inRange: {
               color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
             },
-            text: [ t('report.cardContext.hight'),t('report.cardContext.low')]
+            text: [t('report.cardContext.hight'), t('report.cardContext.low')]
           },
           series: [{
             name: t('report.cardContext.loadRate'),
@@ -1631,7 +1577,7 @@ const overLoadPercentage = computed(() => {
         
         const { data, days, hours } = loadPatternData.value
         
-        // ✅ 더미 데이터를 모두 0으로 변경
+        // 더미 데이터를 모두 0으로 변경
         const zeroData = data.map(item => [item[0], item[1], 0]);
         
         const option = {
@@ -1641,9 +1587,7 @@ const overLoadPercentage = computed(() => {
               const hour = hours[params.data[0]]
               const day = days[params.data[1]]
               const value = params.data[2]
-              //return `${day}요일 ${hour}:00<br/>부하율: ${value}%`
-              return `${day}${t('report.cardContext.days.week') }${hour}:00<br/>${t('report.cardContext.loadRate') }: ${value}%`
-          
+              return `${day}${t('report.cardContext.days.week')} ${hour}:00<br/>${t('report.cardContext.loadRate')}: ${value}%`
             }
           },
           grid: { height: '50%', top: '10%' },
@@ -1664,12 +1608,12 @@ const overLoadPercentage = computed(() => {
             inRange: {
               color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
             },
-            text: [t('report.cardContext.hight'),t('report.cardContext.low')]
+            text: [t('report.cardContext.hight'), t('report.cardContext.low')]
           },
           series: [{
             name: t('report.cardContext.loadRate'),
             type: 'heatmap',
-            data: zeroData, // ✅ 0으로 변경된 데이터 사용
+            data: zeroData,
             label: { show: false },
             emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
           }]
@@ -1678,6 +1622,7 @@ const overLoadPercentage = computed(() => {
         loadPatternChartInstance.setOption(option)
       }
     }
+    
     const fetchITICData = async () => {
         try {
           const response = await axios.get(`/api/getITIC/${props.channel}`);
@@ -1721,22 +1666,6 @@ const overLoadPercentage = computed(() => {
         }
         return base
       })
-
-    // const linechartData = computed(() => {
-    //   const base = JSON.parse(JSON.stringify(baseChart));
-    //   if (selectedX.value != null) {
-    //     base.datasets.push({
-    //         label: 'Selected Point',
-    //         type: 'scatter',
-    //         data: [{ x: selectedX.value, y: 125 }],
-    //         backgroundColor: 'orange',
-    //         pointRadius: 6,
-    //         pointHoverRadius: 8,
-    //         showLine: false,
-    //       })
-    //   }
-    //   return base
-    // })
 
     const ischartDataValid = computed(() => {
       return diagData.value.chartdata && 
@@ -1922,7 +1851,6 @@ const overLoadPercentage = computed(() => {
       const chName = channelComputed.value.toLowerCase() == 'main' ? asset.value.assetName_main : asset.value.assetName_sub;
       
       try {
-        //const response = await axios.get(`/api/getDiagPQ/${chName}`);
         const response = await axios.get(`/api/getPQCached/${channelComputed.value}/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist = [], datalist = [];

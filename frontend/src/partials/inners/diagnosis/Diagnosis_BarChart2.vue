@@ -1,7 +1,8 @@
 <template>
     <div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 mt-1 p-2">
         <BarChart v-if="mode == 'Status'" :data="chartData" width="450" height="360" />
-        <BarChart_PQ v-else-if="mode == 'PowerQuality'" :data="chartData" width="450" height="360" />
+        <BarChart_PQ v-else-if="mode == 'PowerQuality'" :data="chartData" :mode="mode" width="450" height="360" />
+        <BarChart_PQ v-else-if="mode == 'DiagnosisDetail'" :data="chartData" :mode="mode" width="450" height="360" />
         <BarChart_FaultEvent v-else-if="mode == 'Fault'" :data="chartData" width="450" height="360" />
         <BarChart_Event_Claude v-else :data="chartData" width="450" height="360" />
     </div>

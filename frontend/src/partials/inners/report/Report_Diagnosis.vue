@@ -35,7 +35,7 @@
                 </header>
               </div>
               <div class="grid grid-cols-12 p-2">
-                  <Diagnosis_Barchart v-if="chartdata !== null" :channel="channel" :data="chartdata" :mode="'Status'" class="h-auto" />
+                  <Diagnosis_Barchart v-if="chartdata !== null" :channel="channel" :data="chartdata" :mode="'DiagnosisDetail'" class="h-auto" />
               </div>
               <div class="flex flex-col gap-4 p-2 pl-4 pr-4">
                 <template v-for="item in items">

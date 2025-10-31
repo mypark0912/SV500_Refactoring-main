@@ -594,7 +594,7 @@ const createDualAxisChart = () => {
       }
     },
     legend: { 
-      data: ['전력량', '부하율'],
+      data: [t('report.cardTitle.Energy'), t('report.cardContext.loadRate')],
       top: '2%',  // ✅ 범례를 위로 올려서 공간 절약
       textStyle: { fontSize: 12 }
     },
@@ -616,7 +616,7 @@ const createDualAxisChart = () => {
     yAxis: [
       {
         type: 'value',
-        name: '전력량(kWh)',
+        name: t('report.cardTitle.Energy')+' (kWh)',
         position: 'left',
         axisLabel: { 
           formatter: function(value) {
@@ -632,7 +632,7 @@ const createDualAxisChart = () => {
       },
       {
         type: 'value',
-        name: '부하율(%)',
+        name: t('report.cardContext.loadRate') + '(%)',
         position: 'right',
         axisLabel: { 
           formatter: function(value) {
@@ -649,7 +649,7 @@ const createDualAxisChart = () => {
     ],
     series: [
       {
-        name: '전력량',
+        name: t('report.cardTitle.Energy'),
         type: 'bar',
         yAxisIndex: 0,
         data: powerData,
@@ -662,7 +662,7 @@ const createDualAxisChart = () => {
         }
       },
       {
-        name: '부하율',
+        name: t('report.cardContext.loadRate'),
         type: 'line',
         yAxisIndex: 1,
         data: loadData,
@@ -671,7 +671,11 @@ const createDualAxisChart = () => {
         areaStyle: { opacity: 0.1, color: '#ff6b6b' },
         smooth: true
       }
-    ]
+    ],
+    tooltip: {
+  trigger: 'axis',
+  valueFormatter: (value) => value.toFixed(2)
+}
   };
   
   //console.log('ECharts 옵션 설정 완료');

@@ -250,7 +250,9 @@
             "detailTitle":"Diagnostic detail item status",
             "detailTitle_pq":"Power Quality detail item status",
             "detailTitle_event":"Event detail item status",
-            "detailTitle_fault":"Fault detail item status"
+            "detailTitle_fault":"Fault detail item status",
+            "detailTitle_trend": "Diagnostic detail item trend",
+            "detailTitle_trend_pq": "Power Quality detail item trend"
         },
         "tabContext": {
             "th_title": "Item",
@@ -488,7 +490,8 @@
         },
         "Linechart": {
             "TrendChart": "Trend Chart",
-            "nodata": "There is no data for the selected period"
+            "nodata": "There is no data for the selected period",
+            "parametercount": "Maximum 15 parameters can be selected"
         },
         "tabTitle": {
             "Meter": "Meter",

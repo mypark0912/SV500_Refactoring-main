@@ -117,6 +117,7 @@
                   <input
                     type="text"
                     v-model="row.Value"
+                    :step="getStepValue(row)"
                     class="text-xs w-full border rounded p-1 text-center cursor-not-allowed readonly-input"
                     disabled
                   />
@@ -129,6 +130,7 @@
                     class="text-xs w-full border rounded-md p-1 text-center cursor-not-allowed readonly-input"
                     :min="getMinValue(row)"
                     :max="getMaxValue(row)"
+                    :step="getStepValue(row)"
                     disabled
                   />
                 </template>
@@ -205,6 +207,7 @@
                     v-else
                     type="text"
                     v-model="row.Value"
+                    :step="getStepValue(row)"
                     class="text-xs w-full border rounded p-1 text-center"
                     :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
@@ -521,10 +524,10 @@ const getStepValue = (row) => {
   const min = getMinValue(row);
   const max = getMaxValue(row);
   const range = max - min;
-  
+
   // 범위가 작으면 더 세밀한 step 사용
-  if (range <= 1) return 0.1;
-  if (range <= 10) return 0.5;
+  if (range < 1) return 0.1;
+  
   return 1;
 };
 const BearingOptions = ref(["My Bearing"]);

@@ -513,6 +513,59 @@ export default {
         meterOption.value = { lineLabels: [], lineData: [] };
         return;
       }
+  // 파라미터 그룹 정의 (Energy 제외)
+  const paramMap = {
+    Temp: ["Temp"],
+    U1: ["U1"],
+    U2: ["U2"],
+    U3: ["U3"],
+    U4: ["U4"],
+    Upp1: ["Upp1"],
+    Upp2: ["Upp2"],
+    Upp3: ["Upp3"],
+    Upp4: ["Upp4"],          
+    I1: ["I1"],
+    I2: ["I2"],
+    I3: ["I3"],
+    P4: ["P4"],
+    Q4: ["Q4"],
+    S4: ["S4"],
+    Freq: ["Freq"],      
+    PF1: ["PF1"],
+    PF2: ["PF2"],
+    PF3: ["PF3"],
+    vunbal: ["Ubal1"],
+    curunbal: ["Ibal1"],
+    THD_U1: ["THD_U1"],
+    THD_U2: ["THD_U2"],
+    THD_U3: ["THD_U3"],
+    THD_Upp1: ["THD_Upp1"],
+    THD_Upp2: ["THD_Upp2"],
+    THD_Upp3: ["THD_Upp3"],
+    THD_I1: ["THD_I1"],
+    THD_I2: ["THD_I2"],
+    THD_I3: ["THD_I3"],
+    TDD_I1: ["TDD_I1"],
+    TDD_I2: ["TDD_I2"],
+    TDD_I3: ["TDD_I3"],
+    Ubal1: ["Ubal1"],
+    Ibal1: ["Ibal1"],
+  };
+
+  // ✅ paramMap에 포함된 실제 파라미터 개수 계산
+  let actualParamCount = 0;
+  checkedNames.value.forEach((param) => {
+    const keys = paramMap[param];
+    if (keys) {
+      actualParamCount += keys.length;
+    }
+  });
+
+  // ✅ 15개 초과 체크
+  if (actualParamCount > 15) {       
+    alert(t("trend.Linechart.parametercount"));
+    return;
+  }
       try {
         //console.log("Selected Parameters:", checkedNames.value);
 
@@ -539,44 +592,7 @@ export default {
         // 1. 시간 라벨 (_time)
         labels.push(...responseData.map((row) => row._time));
 
-        // 2. 파라미터 그룹 정의 (Energy 제외)
-        const paramMap = {
-          Temp: ["Temp"],
-          U1: ["U1"],
-          U2: ["U2"],
-          U3: ["U3"],
-          U4: ["U4"],
-          Upp1: ["Upp1"],
-          Upp2: ["Upp2"],
-          Upp3: ["Upp3"],
-          Upp4: ["Upp4"],          
-          I1: ["I1"],
-          I2: ["I2"],
-          I3: ["I3"],
-          P4: ["P4"],
-          Q4: ["Q4"],
-          S4: ["S4"],
-          Freq: ["Freq"],      
-          PF1: ["PF1"],
-          PF2: ["PF2"],
-          PF3: ["PF3"],
-          vunbal: ["Ubal1"],
-          curunbal: ["Ibal1"],
-          THD_U1: ["THD_U1"],
-          THD_U2: ["THD_U2"],
-          THD_U3: ["THD_U3"],
-          THD_Upp1: ["THD_Upp1"],
-          THD_Upp2: ["THD_Upp2"],
-          THD_Upp3: ["THD_Upp3"],
-          THD_I1: ["THD_I1"],
-          THD_I2: ["THD_I2"],
-          THD_I3: ["THD_I3"],
-          TDD_I1: ["TDD_I1"],
-          TDD_I2: ["TDD_I2"],
-          TDD_I3: ["TDD_I3"],
-          Ubal1: ["Ubal1"],
-          Ibal1: ["Ibal1"],
-        };
+
         console.log("selectedParams",selectedParams)
         // 3. 선택된 항목만 datasets 생성
         selectedParams.forEach((param) => {
@@ -756,6 +772,11 @@ export default {
           lineLabels: [],
           lineData: [],
         };
+        return;
+      }
+
+      if(effectiveIds.length > 15){
+        alert(t("trend.Linechart.parametercount"));
         return;
       }
       const trendDataRequest = {
