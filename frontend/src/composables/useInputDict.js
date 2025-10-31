@@ -80,7 +80,7 @@ export function useInputDict() {
   const channel_main = ref({
     channel: "",
     Enable: false,
-    PowerQuality: false,
+    PowerQuality: true,
     ctInfo: {
       direction: [0, 0, 0],
       startingcurrent: 1,
@@ -147,7 +147,7 @@ export function useInputDict() {
   const channel_sub = ref({
     channel: "",
     Enable: false,
-    PowerQuality: false,
+    PowerQuality: true,
     ctInfo: {
       direction: [0, 0, 0],
       startingcurrent: 1,

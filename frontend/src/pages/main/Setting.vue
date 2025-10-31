@@ -168,7 +168,7 @@
                       ></div>
                     </button>
                     <button
-                      v-if="channel_main.Enable"
+                      v-if="false"
                       class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
                       :class="
                         channel_main.PowerQuality
@@ -263,7 +263,7 @@
                     </button>
 
                     <button
-                      v-if="channel_sub.Enable"
+                      v-if="false"
                       class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
                       :class="
                         channel_sub.PowerQuality
@@ -611,7 +611,7 @@ export default {
         // 보조채널이 활성화에서 비활성화로 변경될 때만
         if (wasOldEnabled && !isNewEnabled) {
           // 전력품질과 진단 모두 비활성화
-          channel_sub.value.PowerQuality = false;
+          //channel_sub.value.PowerQuality = false;
           inputDict.value.useFuction.diagnosis_sub = false;
         }
       }
