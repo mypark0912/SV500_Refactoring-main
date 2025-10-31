@@ -301,7 +301,7 @@ async def set_system_time(request: TimeSetRequest):
 
 @router.post('/savePost/{mode}/{idx}')
 def save_maintanence(data: Post, mode: int, idx:int):
-    save_post(data,mode, idx)
+    return save_post(data,mode, idx)
     # title = data.title
     # context = data.context
     # mtype = data.mtype
