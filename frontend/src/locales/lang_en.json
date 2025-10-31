@@ -490,7 +490,8 @@
         },
         "Linechart": {
             "TrendChart": "Trend Chart",
-            "nodata": "There is no data for the selected period"
+            "nodata": "There is no data for the selected period",
+            "parametercount": "Maximum 15 parameters can be selected"
         },
         "tabTitle": {
             "Meter": "Meter",

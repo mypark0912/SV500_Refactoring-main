@@ -484,7 +484,8 @@
     },
     "Linechart": {
       "TrendChart": "트렌드 차트",
-      "nodata": "선택한 기간에 대한 데이터가 없습니다"
+      "nodata": "선택한 기간에 대한 데이터가 없습니다",
+      "parametercount": "최대 15개 파라미터 선택 가능"
     },
     "tabTitle": {
       "Meter": "계측",
