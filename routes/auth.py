@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request
 import bcrypt, os, logging, shutil
 from pydantic import BaseModel
-import sqlite3, httpx,uuid, psutil, subprocess
+import sqlite3, httpx, subprocess
 import ujson as json
-
+from .util import save_post, Post, get_mac_address
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 
 router = APIRouter()
@@ -90,37 +90,6 @@ def is_service_active(service_name):
     except Exception as e:
         logging.info(f"❌ 서비스 상태 확인 실패: {service_name} - {e}")
         return False
-
-def get_mac_address():
-    """지정된 네트워크 카드들의 MAC 주소 가져오기"""
-
-    # 사용할 네트워크 인터페이스 이름들 지정 (우선순위 순으로)
-    TARGET_INTERFACES = ['sw0ep', 'end1']  # 필요에 따라 변경 가능
-
-    try:
-        # 지정된 인터페이스들을 순서대로 확인
-        network_interfaces = psutil.net_if_addrs()
-
-        for interface_name in TARGET_INTERFACES:
-            if interface_name in network_interfaces:
-                for addr in network_interfaces[interface_name]:
-                    if addr.family == psutil.AF_LINK:  # MAC 주소
-                        mac = addr.address.replace('-', '').replace(':', '').lower()
-                        if mac and mac != '000000000000':
-                            return mac
-
-        # 지정된 인터페이스들이 모두 없으면 uuid.getnode() 사용
-        mac_int = uuid.getnode()
-        mac_address = f'{mac_int:012x}'
-        return mac_address
-
-    except Exception as e:
-        print(f"MAC 주소 가져오기 실패: {e}")
-        # 예외 발생 시에도 uuid.getnode() 사용
-        mac_int = uuid.getnode()
-        mac_address = f'{mac_int:012x}'
-        return mac_address
-
 
 @router.get('/getInfluxdb')
 def get_influxkey():
@@ -304,6 +273,49 @@ def check_Db():
 #     else:
 #         return {"passOK": "0", "msg" : 'Admin Password is Wrong'}
 #
+def getVersionSave(mode):
+    versionPath = '/home/root/versionInfo.txt'
+    version_dict = {}
+    if os.path.exists(versionPath):
+        with open(versionPath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and '=' in line:
+                    key, value = line.split('=')
+                    version_dict[key.strip()] = value.strip()
+        if mode == 'device0':
+            install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
+                           f_version=version_dict['fw'],
+                           a_version=version_dict['a35'],
+                           w_version=version_dict['web'],
+                           c_version=version_dict['core'],
+                           smart_version=''
+                           )
+        else:
+            install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
+                           f_version=version_dict['fw'],
+                           a_version=version_dict['a35'],
+                           w_version=version_dict['web'],
+                           c_version=version_dict['core'],
+                           smart_version=version_dict['smartsystem']
+                           )
+    else:
+        if mode == 'device0':
+            install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
+                           f_version='1.0.0',
+                           a_version='1.0.0',
+                           w_version='1.0.0',
+                           c_version='1.0.0',
+                           smart_version=''
+                           )
+        else:
+            install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
+                           f_version='1.0.0',
+                           a_version='1.0.0',
+                           w_version='1.0.0',
+                           c_version='1.0.0',
+                           smart_version='1.0.0')
+    save_post(install, 0, 0)
 
 @router.post('/joinAdmin')
 def join_admin(data: SignupAdmin):
@@ -372,7 +384,7 @@ def join_admin(data: SignupAdmin):
             )
             join(client_admin)
             join(client_guest)
-
+            getVersionSave(mode)
             return {"passOK": "1"}
         except Exception as e:
             print(str(e))

@@ -421,6 +421,25 @@ export default {
           const newData = response.data.data || [];
           contents.value.splice(0, contents.value.length, ...newData);
           currentPage.value = 1;
+          await getLastContents();
+        } else {
+          contents.value.splice(0);
+        }
+      } catch (err) {
+        contents.value.splice(0);
+      }
+    };
+
+    const getLastContents = async () => {
+      try {
+        const response = await axios.get('/config/getLastPost');
+        if (response.data.result === 1) {
+          const newData = response.data.data || {};
+          versions.value.fw = newData['f_version'];
+          versions.value.a35 = newData['a_version'];
+          versions.value.web = newData['w_version'];
+          versions.value.core = newData['c_version'];
+          versions.value.smartsystem = newData['smart_version']
         } else {
           contents.value.splice(0);
         }

@@ -7,7 +7,8 @@ import shutil, subprocess, logging, subprocess
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
-from routes.auth import checkLoginAPI,get_mac_address
+from routes.auth import checkLoginAPI
+from routes.util import get_mac_address
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
@@ -1301,7 +1302,7 @@ async def modifyAsset(request: Request):
         return {"status": "0", "error": "Modify Failed"}
 
 @router.get('/deleteAsset/{asset}')
-async def deleteAsset(asset, request: Request):
+async def deleteAsset(asset):
     try:
         # response = await  http_state.client.get(f"/deleteAsset?name={asset}")
         # datas = response.json()
@@ -1478,16 +1479,22 @@ async def saveSetting(channel: str, request: Request):
 
         redis_state.client.select(0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
-        # redis_state.client.hset("Service","save",1)
-        # redis_state.client.hset("Service", "restart", 1)
+
+        if setting["General"]["useFuction"]["diagnosis_main"] or setting["General"]["useFuction"]["diagnosis_sub"]:
+            if not is_service_enabled("smartsystemsrestapiservice"):
+                if not is_service_active("smartsystemsrestapiservice"):
+                    sysService("start", "SmartAPI")
+                sysService("enable","SmartAPI")
+            if not is_service_enabled("smartsystemsservice"):
+                sysService("enable","smartsystemsservice")
 
         return {"status": "1", "data": setting}
     except Exception as e:
         print("Error:", e)
         return {"status": "0", "error": str(e)}
-    
+
 @router.get('/restartasset')  # save setup.json
-async def restartasset(request:Request):
+async def restartasset():
     redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
@@ -1835,6 +1842,19 @@ async def test_asset(asset, request:Request):
 #         return {"success":True, "data":data}
 #     else:
 #         return {"success":False, "msg":"No Data"}
+
+def is_service_enabled(name):
+    """서비스 부팅 시 자동 시작 여부 확인 (enabled/disabled)"""
+    try:
+        result = subprocess.run(['systemctl', 'is-enabled', name],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                                timeout=2)
+        return result.stdout.strip() == "enabled"
+    except Exception as e:
+        print(f"❌ 서비스 enabled 상태 확인 실패: {name} - {e}")
+        return False
 
 def is_service_active(name):
     try:
