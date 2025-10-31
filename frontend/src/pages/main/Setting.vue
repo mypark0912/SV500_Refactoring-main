@@ -78,7 +78,7 @@
                     <button
                       class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
                       :class="getFTPButtonClass()"
-                      :disabled="isDiagnosisEnabled"
+                      :disabled="isDiagnosisEnabled || isSaving"
                       @click="toggleFTP"
                     >
                       <span class="relative z-10">
@@ -91,7 +91,7 @@
                       ></div>
                       <!-- 비활성화 상태 표시 -->
                       <div
-                        v-if="isDiagnosisEnabled"
+                        v-if="isDiagnosisEnabled || isSaving"
                         class="absolute inset-0 bg-gray-500 bg-opacity-70 rounded-md"
                       ></div>
                     </button>
@@ -103,6 +103,7 @@
                           ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white'
                           : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                       "
+                      :disabled="isSaving"
                       @click="
                         inputDict.useFuction.sntp =
                           inputDict.useFuction.sntp === 1 ? 0 : 1
@@ -156,6 +157,7 @@
                           ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white'
                           : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                       "
+                      :disabled="isSaving"
                       @click="channel_main.Enable = !channel_main.Enable"
                     >
                       <span class="relative z-10">
@@ -175,6 +177,7 @@
                           ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white'
                           : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                       "
+                      :disabled="isSaving"
                       @click="
                         channel_main.PowerQuality = !channel_main.PowerQuality
                       "
@@ -193,7 +196,7 @@
                       v-if="showDiagnosisOption && channel_main.Enable"
                       class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
                       :class="getDiagnosisButtonClass('main')"
-                      :disabled="isFTPEnabled"
+                      :disabled="isFTPEnabled || isSaving"
                       @click="toggleDiagnosis('main')"
                     >
                       <span class="relative z-10">
@@ -206,7 +209,7 @@
                       ></div>
                       <!-- 비활성화 상태 표시 -->
                       <div
-                        v-if="isFTPEnabled"
+                        v-if="isFTPEnabled || isSaving"
                         class="absolute inset-0 bg-gray-500 bg-opacity-70 rounded-md"
                       ></div>
                     </button>
@@ -250,6 +253,7 @@
                           ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white'
                           : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                       "
+                      :disabled="isSaving"
                       @click="channel_sub.Enable = !channel_sub.Enable"
                     >
                       <span class="relative z-10">
@@ -270,6 +274,7 @@
                           ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white'
                           : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
                       "
+                      :disabled="isSaving"
                       @click="
                         channel_sub.PowerQuality = !channel_sub.PowerQuality
                       "
@@ -288,7 +293,7 @@
                       v-if="showDiagnosisOption && channel_sub.Enable"
                       class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
                       :class="getDiagnosisButtonClass('sub')"
-                      :disabled="isFTPEnabled"
+                      :disabled="isFTPEnabled || isSaving"
                       @click="toggleDiagnosis('sub')"
                     >
                       <span class="relative z-10">
@@ -301,7 +306,7 @@
                       ></div>
                       <!-- 비활성화 상태 표시 -->
                       <div
-                        v-if="isFTPEnabled"
+                        v-if="isFTPEnabled || isSaving"
                         class="absolute inset-0 bg-gray-500 bg-opacity-70 rounded-md"
                       ></div>
                     </button>
@@ -313,10 +318,12 @@
               <div class="flex items-center space-x-3">
                 <!-- Save Button -->
                 <button
-                  class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg"
+                  class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="isSaving"
                   @click.prevent="savefile"
                 >
                   <svg
+                    v-if="!isSaving"
                     class="w-4 h-4 mr-2 inline-block"
                     fill="none"
                     stroke="currentColor"
@@ -329,12 +336,35 @@
                       d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  {{ t("config.save") }}
+                  <!-- 로딩 스피너 -->
+                  <svg
+                    v-else
+                    class="animate-spin h-4 w-4 mr-2 inline-block"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  {{ isSaving ? (t("config.saving") || "Saving...") : t("config.save") }}
                 </button>
 
                 <!-- Apply Button -->
                 <button
-                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg"
+                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="isSaving"
                   @click.stop.prevent="apply"
                 >
                   <svg
@@ -518,11 +548,14 @@ export default {
     const mode = ref(props.mode);
     const checkNameplateflag = ref(false);
     const isRestartDone = ref(false);
+    const isSaving = ref(false); // ✅ 저장 중 상태 추가
+    
     //const langset = computed(() => authStore.getLang);
     const isAdmin = computed(() => {
       if (parseInt(authStore.getUserRole) > 1) return true;
       else return false;
     });
+    
     function askNameplateConfirm(channels) {
       const channelList = channels.join(", ");
       nameplateConfirmMessage.value =
@@ -535,6 +568,7 @@ export default {
         resolveNameplateConfirm = resolve;
       });
     }
+    
     function handleConfirm(ok) {
       showNameplateConfirm.value = false;
       if (resolveNameplateConfirm) {
@@ -542,6 +576,7 @@ export default {
         resolveNameplateConfirm = null;
       }
     }
+    
     const {
       setupDict,
       inputDict,
@@ -601,6 +636,7 @@ export default {
         inputDict.value.useFuction?.diagnosis_sub
       );
     });
+    
     watch(
       () => channel_sub.value?.Enable,
       (newEnable, oldEnable) => {
@@ -630,8 +666,8 @@ export default {
 
     // FTP 버튼 클래스 동적 계산
     const getFTPButtonClass = () => {
-      if (isDiagnosisEnabled.value) {
-        // Diagnosis가 활성화되어 있으면 비활성화 스타일
+      if (isDiagnosisEnabled.value || isSaving.value) {
+        // Diagnosis가 활성화되어 있거나 저장 중이면 비활성화 스타일
         return "bg-gray-400 text-gray-600 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400 opacity-50";
       } else if (inputDict.value.useFuction.ftp) {
         // FTP가 활성화되어 있으면 활성화 스타일
@@ -644,8 +680,8 @@ export default {
 
     // Diagnosis 버튼 클래스 동적 계산
     const getDiagnosisButtonClass = (channelType) => {
-      if (isFTPEnabled.value) {
-        // FTP가 활성화되어 있으면 비활성화 스타일
+      if (isFTPEnabled.value || isSaving.value) {
+        // FTP가 활성화되어 있거나 저장 중이면 비활성화 스타일
         return "bg-gray-400 text-gray-600 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400 opacity-50";
       } else if (inputDict.value.useFuction[`diagnosis_${channelType}`]) {
         // Diagnosis가 활성화되어 있으면 활성화 스타일
@@ -658,12 +694,15 @@ export default {
 
     // FTP 토글 함수
     const toggleFTP = () => {
+      if (isSaving.value) return; // 저장 중이면 실행 안 함
       inputDict.value.useFuction.ftp =
         inputDict.value.useFuction.ftp === 1 ? 0 : 1;
     };
 
     // Diagnosis 토글 함수
     const toggleDiagnosis = (channelType) => {
+      if (isSaving.value) return; // 저장 중이면 실행 안 함
+      
       // Sub 채널의 경우 채널이 Enable되어 있는지 확인
       if (channelType === "sub" && !channel_sub.value?.Enable) {
         alert(
@@ -718,6 +757,7 @@ export default {
       },
       { immediate: true }
     );
+    
     // FTP와 Diagnosis 충돌 감지 및 자동 해제
     watch(
       () => [
@@ -763,6 +803,7 @@ export default {
         message.value = "업로드 실패: " + error.response.data.error;
       }
     };
+    
     const download = async () => {
       try {
         const response = await axios.get("/setting/download", {
@@ -805,6 +846,9 @@ export default {
     });
 
     const apply = async () => {
+      if (isSaving.value) {
+        return; // 저장 중이면 Apply 불가
+      }
       isModalOpen.value = true;
     };
 
@@ -862,31 +906,6 @@ export default {
         alert("✅ Service restarted successfully");
         isRestartDone.value = true;
       }
-      //else{
-      //   const servicflag = await serviceRestart("stop", "SmartSystems");
-      //   const apiflag = await serviceRestart("stop", "SmartAPI");
-      //   if(servicflag["result"]){
-      //     servicflag["result"] = await serviceRestart("disable", "SmartSystems");
-      //   }
-      //   if(apiflag["result"]){
-      //     apiflag["result"] = await serviceRestart("disable", "SmartAPI");
-      //   }
-      //       if (servicflag["result"] && apiflag["result"]) {
-      //         alert("✅ Service restarted successfully");
-      //         //isModalOpen.value = false;
-      //         isRestartDone.value = true;
-      //       } else if (servicflag["result"] && apiflag["result"]) {
-      //         alert("❌ SmartSystem Restart failed");
-      //       } else {
-      //         alert(
-      //           "❌ Restart failed: " +
-      //             (serviceflag["result"]
-      //               ? apiflag["msg"]
-      //               : serviceflag["msg"]) || "Unknown error"
-      //         );
-      //       }
-      // }
-        
     };
 
     const serviceRestart = async (cmd, item) => {
@@ -929,6 +948,7 @@ export default {
         errorMessage.value = "데이터를 불러오는 중 오류가 발생했습니다.";
       }
     };
+    
     // Diagnosisfile 데이터 불러오기
     const GetDiagnosisSetting = async () => {
       try {
@@ -944,6 +964,7 @@ export default {
         errorMessage.value = "데이터를 불러오는 중 오류가 발생했습니다.";
       }
     };
+    
     const GetSettingData = async () => {
       try {
         const response = await axios.get(`/setting/getSetting`);
@@ -1118,6 +1139,11 @@ export default {
     };
 
     const savefile = async () => {
+      // 이미 저장 중이면 중단
+      if (isSaving.value) {
+        return;
+      }
+
       // 충돌 상황 체크 - 업데이트된 로직
       if (showConflictWarning.value) {
         alert(
@@ -1125,170 +1151,182 @@ export default {
         );
         return;
       }
-      // 진단 미사용 채널의 Asset 등록 체크
-      for (const channelName in diagnosis_detail.value) {
-        const channelData = diagnosis_detail.value[channelName];
-        
-        // Main/Sub 채널별 diagnosis 사용 여부 확인
-        const isDiagnosisEnabledForChannel =
-          channelName === "main"
-            ? inputDict.value.useFuction.diagnosis_main
-            : inputDict.value.useFuction.diagnosis_sub;
 
-        // 진단이 OFF인데 Asset이 등록되어 있는 경우
-        if (
-          !isDiagnosisEnabledForChannel &&
-          channelData.assetName &&
-          channelData.assetName !== ""
-        ) {
-          alert(
-            `Diagnosis is disabled for ${channelName} channel, but an asset (${channelData.assetName}) is registered. Please remove the asset or enable diagnosis.`
-          );
-          return;
+      try {
+        isSaving.value = true; // ✅ 저장 시작
+
+        // 진단 미사용 채널의 Asset 등록 체크
+        for (const channelName in diagnosis_detail.value) {
+          const channelData = diagnosis_detail.value[channelName];
+          
+          // Main/Sub 채널별 diagnosis 사용 여부 확인
+          const isDiagnosisEnabledForChannel =
+            channelName === "main"
+              ? inputDict.value.useFuction.diagnosis_main
+              : inputDict.value.useFuction.diagnosis_sub;
+
+          // 진단이 OFF인데 Asset이 등록되어 있는 경우
+          if (
+            !isDiagnosisEnabledForChannel &&
+            channelData.assetName &&
+            channelData.assetName !== ""
+          ) {
+            alert(
+              `Diagnosis is disabled for ${channelName} channel, but an asset (${channelData.assetName}) is registered. Please remove the asset or enable diagnosis.`
+            );
+            return;
+          }
         }
-      }
 
-      // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
-      let needsNameplateConfirmation = false;
-      let nameplateChannels = [];
+        // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
+        let needsNameplateConfirmation = false;
+        let nameplateChannels = [];
 
-      for (const channelName in diagnosis_detail.value) {
-        const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
+        for (const channelName in diagnosis_detail.value) {
+          const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
 
-        // Main/Sub 채널별 diagnosis 사용 여부 확인
-        const isDiagnosisEnabledForChannel =
-          channelName === "main"
-            ? inputDict.value.useFuction.diagnosis_main
-            : inputDict.value.useFuction.diagnosis_sub;
+          // Main/Sub 채널별 diagnosis 사용 여부 확인
+          const isDiagnosisEnabledForChannel =
+            channelName === "main"
+              ? inputDict.value.useFuction.diagnosis_main
+              : inputDict.value.useFuction.diagnosis_sub;
 
-        // assetName과 tableData 검증 및 nameplate 체크
-        if (
-          channelData.use &&
-          isDiagnosisEnabledForChannel &&
-          channelData.assetName &&
-          channelData.assetName !== "" &&
-          channelData.tableData &&
-          Array.isArray(channelData.tableData) &&
-          channelData.tableData.length > 0
-        ) {
-          try {
+          // assetName과 tableData 검증 및 nameplate 체크
+          if (
+            channelData.use &&
+            isDiagnosisEnabledForChannel &&
+            channelData.assetName &&
+            channelData.assetName !== "" &&
+            channelData.tableData &&
+            Array.isArray(channelData.tableData) &&
+            channelData.tableData.length > 0
+          ) {
+            try {
+              const combinedData = [
+                ...channelData.tableData,
+                ...(channelData.modalData && Array.isArray(channelData.modalData)
+                  ? channelData.modalData
+                  : []),
+              ];
+              const nameplateFlag = await checkNameplateConfig(
+                combinedData,
+                channelData.assetName
+              );
+              console.log(
+                channelData.assetName,
+                "Nameplate check result:",
+                nameplateFlag
+              );
+              if (nameplateFlag) {
+                needsNameplateConfirmation = true;
+                nameplateChannels.push(
+                  `${channelName} channel(${channelData.assetName})`
+                );
+              }
+            } catch (error) {
+              console.error(
+                `Error checking nameplate for ${channelName}:`,
+                error
+              );
+              alert(
+                `An error occurred while checking nameplate configuration for ${channelName}: ${error.message}`
+              );
+              return;
+            }
+          }
+        }
+
+        // 2. Nameplate 변경이 필요한 경우 사용자 확인
+        if (needsNameplateConfirmation) {
+          const channelList = nameplateChannels.join(", ");
+          const userConfirmed = await askNameplateConfirm(nameplateChannels);
+          if (!userConfirmed) return;
+        }
+
+        for (const channelName in diagnosis_detail.value) {
+          const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
+          // Main/Sub 채널별 diagnosis 사용 여부 확인
+          const isDiagnosisEnabledForChannel =
+            channelName === "main"
+              ? inputDict.value.useFuction.diagnosis_main
+              : inputDict.value.useFuction.diagnosis_sub;
+
+          // Nameplate 설정 저장
+          if (
+            channelData.use &&
+            isDiagnosisEnabledForChannel &&
+            channelData.assetName &&
+            channelData.assetName !== "" &&
+            channelData.tableData &&
+            Array.isArray(channelData.tableData) &&
+            channelData.tableData.length > 0
+          ) {
             const combinedData = [
               ...channelData.tableData,
               ...(channelData.modalData && Array.isArray(channelData.modalData)
                 ? channelData.modalData
                 : []),
             ];
-            const nameplateFlag = await checkNameplateConfig(
+
+            await setNameplateConfig(
               combinedData,
-              channelData.assetName
-            );
-            console.log(
               channelData.assetName,
-              "Nameplate check result:",
-              nameplateFlag
+              channelName
             );
-            if (nameplateFlag) {
-              needsNameplateConfirmation = true;
-              nameplateChannels.push(
-                `${channelName} channel(${channelData.assetName})`
-              );
-            }
-          } catch (error) {
-            console.error(
-              `Error checking nameplate for ${channelName}:`,
-              error
+          }
+          // assetName과 paramData 검증
+          if (
+            channelData.use &&
+            isDiagnosisEnabledForChannel &&
+            channelData.assetName &&
+            channelData.assetName !== "" &&
+            channelData.paramData &&
+            Array.isArray(channelData.paramData) &&
+            channelData.paramData.length > 0
+          ) {
+            await setAssetParams(
+              channelData.paramData,
+              channelData.assetName,
+              channelName
             );
-            alert(
-              `An error occurred while checking nameplate configuration for ${channelName}: ${error.message}`
-            );
-            return;
           }
         }
-      }
-
-      // 2. Nameplate 변경이 필요한 경우 사용자 확인
-      if (needsNameplateConfirmation) {
-        const channelList = nameplateChannels.join(", ");
-        const userConfirmed = await askNameplateConfirm(nameplateChannels);
-        if (!userConfirmed) return;
-      }
-
-      for (const channelName in diagnosis_detail.value) {
-        const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
-        // Main/Sub 채널별 diagnosis 사용 여부 확인
-        const isDiagnosisEnabledForChannel =
-          channelName === "main"
-            ? inputDict.value.useFuction.diagnosis_main
-            : inputDict.value.useFuction.diagnosis_sub;
-
-        // Nameplate 설정 저장
-        if (
-          channelData.use &&
-          isDiagnosisEnabledForChannel &&
-          channelData.assetName &&
-          channelData.assetName !== "" &&
-          channelData.tableData &&
-          Array.isArray(channelData.tableData) &&
-          channelData.tableData.length > 0
-        ) {
-          const combinedData = [
-            ...channelData.tableData,
-            ...(channelData.modalData && Array.isArray(channelData.modalData)
-              ? channelData.modalData
-              : []),
+        
+        console.log("devMode.value", devMode.value);
+        if (devMode.value === "device0") {
+          const device0Params = [
+            "Temperature",
+            "Frequency",
+            "Line Voltage",
+            "Phase Voltage",
+            "Current",
+            "Unbalance",
+            "PF",
+            "THD",
+            "TDD",
+            "Power",
           ];
 
-          await setNameplateConfig(
-            combinedData,
-            channelData.assetName,
-            channelName
-          );
-        }
-        // assetName과 paramData 검증
-        if (
-          channelData.use &&
-          isDiagnosisEnabledForChannel &&
-          channelData.assetName &&
-          channelData.assetName !== "" &&
-          channelData.paramData &&
-          Array.isArray(channelData.paramData) &&
-          channelData.paramData.length > 0
-        ) {
-          await setAssetParams(
-            channelData.paramData,
-            channelData.assetName,
-            channelName
-          );
-        }
-      }
-      console.log("devMode.value", devMode.value);
-      if (devMode.value === "device0") {
-        const device0Params = [
-          "Temperature",
-          "Frequency",
-          "Line Voltage",
-          "Phase Voltage",
-          "Current",
-          "Unbalance",
-          "PF",
-          "THD",
-          "TDD",
-          "Power",
-        ];
+          // Main과 Sub 채널 모두에 적용
+          if (!channel_main.value.trendInfo) {
+            channel_main.value.trendInfo = {};
+          }
+          channel_main.value.trendInfo.params = [...device0Params];
 
-        // Main과 Sub 채널 모두에 적용
-        if (!channel_main.value.trendInfo) {
-          channel_main.value.trendInfo = {};
+          if (!channel_sub.value.trendInfo) {
+            channel_sub.value.trendInfo = {};
+          }
+          channel_sub.value.trendInfo.params = [...device0Params];
         }
-        channel_main.value.trendInfo.params = [...device0Params];
-
-        if (!channel_sub.value.trendInfo) {
-          channel_sub.value.trendInfo = {};
-        }
-        channel_sub.value.trendInfo.params = [...device0Params];
+        
+        // 저장 진행
+        await saveAllSettings();
+      } catch (error) {
+        console.error("Save error:", error);
+        alert(`An error occurred while saving: ${error.message}`);
+      } finally {
+        isSaving.value = false; // ✅ 저장 완료 (성공/실패 무관)
       }
-      // 저장 진행
-      await saveAllSettings();
     };
 
     const checkNameplateConfig = async (tableData, assetName) => {
@@ -1374,6 +1412,7 @@ export default {
         );
       }
     };
+    
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
         const nameplateFlag = await checkNameplateConfig(tableData, assetName);
@@ -1447,6 +1486,7 @@ export default {
         );
       }
     };
+    
     // 헬퍼 함수
     const saveChannelData = async (channelData, channelName) => {
       try {
@@ -1522,6 +1562,7 @@ export default {
     provide("checkNameplateflag", checkNameplateflag);
     provide("diagnosis_detail", diagnosis_detail);
     provide("GetSettingData", GetSettingData);
+    
     return {
       sidebarOpen,
       channel,
@@ -1559,6 +1600,7 @@ export default {
       nameplateConfirmMessage,
       handleConfirm,
       isRestartDone,
+      isSaving, // ✅ 추가
     };
   },
 };
