@@ -1096,6 +1096,29 @@ export default {
         );
         return;
       }
+      // 진단 미사용 채널의 Asset 등록 체크
+      for (const channelName in diagnosis_detail.value) {
+        const channelData = diagnosis_detail.value[channelName];
+        
+        // Main/Sub 채널별 diagnosis 사용 여부 확인
+        const isDiagnosisEnabledForChannel =
+          channelName === "main"
+            ? inputDict.value.useFuction.diagnosis_main
+            : inputDict.value.useFuction.diagnosis_sub;
+
+        // 진단이 OFF인데 Asset이 등록되어 있는 경우
+        if (
+          !isDiagnosisEnabledForChannel &&
+          channelData.assetName &&
+          channelData.assetName !== ""
+        ) {
+          alert(
+            `Diagnosis is disabled for ${channelName} channel, but an asset (${channelData.assetName}) is registered. Please remove the asset or enable diagnosis.`
+          );
+          return;
+        }
+      }
+
       // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
       let needsNameplateConfirmation = false;
       let nameplateChannels = [];
