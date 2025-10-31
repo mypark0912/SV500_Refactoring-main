@@ -249,7 +249,9 @@
       "detailTitle": "진단 세부항목 상태",
       "detailTitle_pq": "전력품질 세부항목 상태",
       "detailTitle_event": "이벤트 세부항목 상태",
-      "detailTitle_fault": "전기적 이상 세부항목 상태"
+      "detailTitle_fault": "전기적 이상 세부항목 상태",
+      "detailTitle_trend": "진단 세부항목 트렌드",
+      "detailTitle_trend_pq": "전력품질 세부항목 트렌드"
     },
     "tabContext": {
       "th_title": "항목",

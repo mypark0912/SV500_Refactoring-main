@@ -3,7 +3,7 @@
     <!-- 헤더 섹션 -->
     <div class="chart-header">
       <div class="header-content">
-        <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle_pq')}}</h3>
+               <h3 class="chart-title">{{ chartTitle }}</h3>
       </div>
     </div>
 
@@ -40,7 +40,7 @@ Chart.register(BarController, BarElement, LinearScale, CategoryScale, TimeScale,
 
 export default {
   name: 'ModernBarChart',
-  props: ['data', 'width', 'height'],
+  props: ['data', 'width', 'height','mode'],
   setup(props) {
     const { t, locale } = useI18n()
     const canvas = ref(null)
@@ -48,8 +48,21 @@ export default {
     const isLoading = ref(false)
     let chart = null
     const darkMode = useDark()
+
     const { textColor, gridColor, tooltipBodyColor, tooltipBgColor, tooltipBorderColor } = chartColors
 
+    // 모드에 따른 타이틀 계산
+    const chartTitle = computed(() => {
+    const titleMap = {
+        'PowerQuality': t('diagnosis.tabTitle.detailTitle_pq'),
+        'DiagnosisDetail': t('diagnosis.tabTitle.detailTitle'),
+        // 필요한 다른 모드 추가 가능
+      }
+    const result = titleMap[props.mode] || t('diagnosis.tabTitle.detailTitle_pq')
+    console.log(props.mode,'Chart title:', result)  // 디버깅용
+    
+    return result
+    })
     // 동적 바 굵기 계산
     const dynamicBarThickness = computed(() => {
       const itemCount = props.data?.labels?.length || 1
@@ -305,6 +318,7 @@ export default {
       dynamicBarThickness,
       t,
       locale,
+      chartTitle,  
     }
   }
 }
