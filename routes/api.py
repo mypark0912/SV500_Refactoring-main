@@ -4196,7 +4196,7 @@ def get_load_factor_calculated(channel: str, date: str = None):
 
             # 부하율 계산: (실제 피상전력 / 정격 KVA) × 100
             if apparent_power > 0:
-                load_factor_percent = (apparent_power / ratedKVA) * 100
+                load_factor_percent = ((apparent_power/1000) / ratedKVA) * 100
                 total_load_factor += load_factor_percent
                 valid_hours += 1
             else:
