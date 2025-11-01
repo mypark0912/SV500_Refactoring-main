@@ -177,105 +177,6 @@ source /etc/profile.d/influx.sh
             "message": f"Error: {str(e)}"
         }
 
-# @router.get('/initDB')
-# async def initInflux():
-#     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
-#     data = {
-#           "username": "admin",
-#           "password": "ntek9135",
-#           "org": "ntek",
-#           "bucket": "ntek",
-#           "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
-#         }
-#     try:
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             response = await client.post(f"http://127.0.0.1:8086/api/v2/setup", json=data)
-#             resData = response.json()
-#             cipher = aesState.encrypt(resData.get("auth").get("token"))
-#             influxdata = {
-#                 "token" : cipher,
-#                 "org" : resData.get("org").get("name"),
-#                 "retention":data.get("retentionPeriodSeconds")
-#             }
-#         with open(file_path, "w", encoding="utf-8") as f:
-#             json.dump(influxdata, f, indent=4)
-#
-#         # init_influx()  # ✅ 초기화 수행 (json 생성 + client 전역 등록)
-#         if influx_state.client is None:
-#             return {"result": False}
-#
-#         if influx_state.error:
-#             return {"success": False, "message": influx_state.error}
-#
-#         return {"success": True, "message": "InfluxDB initialized successfully"}
-#     except Exception as e:
-#         logging.error(f"❌ Influxdb Init Error: {e}")
-#         influx_state.client = None
-#         influx_state.error = f"Exception during init: {str(e)}"
-#         return {"success": False, "message": influx_state.error}
-#
-# @router.get("/initInfluxCLI")
-# def init_influxcli():
-#     try:
-#         config = influx_state.getInflux()
-#         token = influx_state.decrypt(config["cipher"])
-#
-#         # 토큰 검증 (보안)
-#         if not token or token == "":
-#             return {
-#                 "status": False,
-#                 "message": "No exist Influxdb Token"
-#             }
-#
-#         # 특수문자 이스케이프 (보안)
-#         token = token.replace('"', '\\"')
-#         org = config['org'].replace('"', '\\"')
-#
-#         script_content = f"""export INFLUX_TOKEN="{token}"
-# export INFLUX_HOST="http://localhost:8086"
-# export INFLUX_ORG="{org}"
-# export INFLUX_BUCKET="ntek"
-# """
-#
-#         # 파일 생성 및 권한 설정을 한 번에
-#         full_command = f"""
-# cat > /etc/profile.d/influx.sh << 'EOF'
-# {script_content}EOF
-# chmod +x /etc/profile.d/influx.sh
-# """
-#
-#         result = subprocess.run(
-#             ['sudo', 'bash', '-c', full_command],
-#             check=True,
-#             capture_output=True,
-#             text=True
-#         )
-#
-#         # 현재 프로세스 환경변수 설정
-#         os.environ.update({
-#             'INFLUX_TOKEN': token,
-#             'INFLUX_HOST': "http://localhost:8086",
-#             'INFLUX_ORG': config['org'],
-#             'INFLUX_BUCKET': "ntek"
-#         })
-#
-#         return {
-#             "status": True,
-#             "message": "InfluxDB CLI Initiated",
-#             "file": "/etc/profile.d/influx.sh"
-#         }
-#
-#     except subprocess.CalledProcessError as e:
-#         return {
-#             "status": False,
-#             "message": "Failed execution command"
-#         }
-#     except Exception as e:
-#         return {
-#             "status": False,
-#             "message": str(e)
-#         }
-
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
     # 기본값 설정
@@ -425,137 +326,6 @@ def check_setupfile(request: Request):
         return {"result": "0", "error": str(e)}
 
 
-# def check_setupfile(request: Request):
-#     file_path = os.path.join(SETTING_FOLDER, 'setup.json')
-#     opmode = ''
-#     if not redis_state.client is None:
-#         redis_state.client.select(0)
-#         if os.path.exists(file_path):
-#             if redis_state.client.hexists("System", "setup"):
-#                 opmode = redis_state.client.hget("System", "mode")
-#                 redisContext = redis_state.client.hget("System", "setup")
-#                 setting = json.loads(redisContext)
-#             else:
-#                 try:
-#                     with open(file_path, "r", encoding="utf-8") as f:
-#                         setting = json.load(f)
-#                         redis_state.client.hset("System", "mode", setting["mode"])
-#                         redis_state.client.hset("System", "setup",json.dumps(setting))
-#                 except Exception as e:
-#                     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-#                     shutil.copy(default_file_path, file_path)
-#                     with open(file_path, "r", encoding="utf-8") as f:
-#                         setting = json.load(f)
-#                         redis_state.client.hset("System", "mode", setting["mode"])
-#                         redis_state.client.hset("System", "setup", json.dumps(setting))
-#                     return {"result": "0"}
-#         else:
-#             default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-#             try:
-#                 shutil.copy(default_file_path, file_path)
-#                 with open(file_path, "r", encoding="utf-8") as f:
-#                     setting = json.load(f)
-#                     redis_state.client.hset("System", "mode", setting["mode"])
-#                     redis_state.client.hset("System", "setup", json.dumps(setting))
-#             except Exception as e:
-#                 return {"result": "0"}
-#     Diag_main = False
-#     Diag_sub = False
-#     Enable_main = False
-#     Enable_sub = False
-#     PQ_main = False
-#     PQ_sub = False
-#     assetType_main = ''
-#     assetName_main = ''
-#     assetType_sub = ''
-#     assetName_sub = ''
-#     assetNickName_main = ''
-#     assetNickName_sub = ''
-#     lang = ''
-#     main_kva = -1
-#     sub_kva = -1
-#     if not "channel" in setting:
-#         return {"result": "0"}
-#     if opmode == '':
-#         opmode = setting.get("mode", "")
-#     lang = setting.get("lang", "")
-#     if 'device' in opmode:
-#         general_data = setting.get("General", {})
-#         use_fuction = general_data.get("useFuction", {})
-#         devInfo = general_data.get("deviceInfo",{})
-#         devLocation = devInfo.get("location","")
-#         Diag_main = bool(use_fuction.get("diagnosis_main", 0))
-#         Diag_sub = bool(use_fuction.get("diagnosis_sub", 0))
-#
-#         main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
-#         if main_channel_data:
-#             Enable_main = bool(main_channel_data.get("Enable", 0))
-#             PQ_main = bool(main_channel_data.get("PowerQuality", 0))
-#             if Diag_main:
-#                 asset_info_main = main_channel_data.get("assetInfo", {})
-#                 assetType_main = asset_info_main.get("type", "")
-#                 assetName_main = asset_info_main.get("name", "")
-#                 assetNickName_main = asset_info_main.get("nickname", "")
-#                 if assetType_main == 'Transformer':
-#                     main_kva = int(main_channel_data.get("n_kva", 0))
-#
-#         sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
-#         if sub_channel_data:
-#             Enable_sub = bool(sub_channel_data.get("Enable", 0))
-#             PQ_sub = bool(sub_channel_data.get("PowerQuality", 0))
-#
-#             if Diag_sub:
-#                 asset_info_sub = sub_channel_data.get("assetInfo", {})
-#                 assetType_sub = asset_info_sub.get("type", "")
-#                 assetName_sub = asset_info_sub.get("name", "")
-#                 assetNickName_sub = asset_info_sub.get("nickname", "")
-#                 if assetType_sub == 'Transformer':
-#                     sub_kva = int(sub_channel_data.get("n_kva", 0))
-#
-#         resultDict = {
-#             "result": "1",
-#             "mode": opmode,
-#             "lang": lang,
-#             "location":devLocation,
-#             "Diag_main": Diag_main,
-#             "Diag_sub": Diag_sub,
-#             "enable_main": Enable_main,
-#             "enable_sub": Enable_sub,
-#             "pq_main": PQ_main,
-#             "pq_sub": PQ_sub,
-#             "assetType_main": assetType_main,
-#             "assetName_main": assetName_main,
-#             "assetType_sub": assetType_sub,
-#             "assetName_sub": assetName_sub,
-#             "assetNickname_main": assetNickName_main,
-#             "assetNickname_sub": assetNickName_sub,
-#             "main_kva": main_kva,
-#             "sub_kva": sub_kva,
-#         }
-#     else:
-#         resultDict = {
-#             "result": "1",
-#             "mode": opmode,
-#             "lang": lang,
-#             "location": '',
-#             "Diag_main": False,
-#             "Diag_sub": False,
-#             "enable_main": False,
-#             "enable_sub": False,
-#             "pq_main": False,
-#             "pq_sub": False,
-#             "assetType_main": '',
-#             "assetName_main": '',
-#             "assetType_sub": '',
-#             "assetName_sub": '',
-#             "assetNickname_main": assetNickName_main,
-#             "assetNickname_sub": assetNickName_sub,
-#             "main_kva": main_kva,
-#             "sub_kva": sub_kva,
-#         }
-#     # request.session["devMode"] = opmode
-#     return resultDict
-
 @router.get('/getSetting')
 def get_setting():
     redis_state.client.execute_command("SELECT", 0)
@@ -613,58 +383,6 @@ def getDatafromSetting(channel):
         else:
             return {"passOK": "1", "data": main_channel}
 
-# @router.get('/SysService/{cmd}/{item}')
-# async def get_SysService(cmd, item, request:Request):
-#     if item == 'System':
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             response = await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name=app")
-#             data = response.json()
-#             if response.status_code in [400, 401, 500]:
-#                 flag = await checkLoginAPI(request)
-#                 if not flag:
-#                     return {"success": False, "error": "Restful API Login Failed"}
-#                 else:
-#                     response =  await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name=app")
-#                     data = response.json()
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             response = await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name=db")
-#             data2 = response.json()
-#             if 'status' in data2 and data2['status'] == 500:
-#                 flag = await checkLoginAPI(request)
-#                 if not flag:
-#                     return {"success": False, "error": "Restful API Login Failed"}
-#                 else:
-#                     response = await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name=db")
-#                     data2 = response.json()
-#         if data and data2:
-#             if cmd == 'restart':
-#                 redis_state.client.hset('Service', 'reboot', 1)
-#             return {"success": True}
-#         else:
-#             return {"success": False}
-#     else:
-#         if item == 'DBMS':
-#             names = 'db'
-#         else:
-#             names = 'app'
-#         try:
-#             async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#                 response = await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name={names}")
-#                 data = response.json()
-#                 if response.status_code in [400, 401, 500]:
-#                     flag = await checkLoginAPI(request)
-#                     if not flag:
-#                         return {"success": False, "error": "Restful API Login Failed"}
-#                     else:
-#                         response = await client.get(f"http://{os_spec.restip}:5000/api/serviceOp?cmd={cmd}&name={names}")
-#                         data = response.json()
-#             if len(data) > 0:
-#                 return {"success": True}
-#             else:
-#                 return {"success": False}
-#         except Exception as e:
-#             logging.error(f"❌ RestfulAPI Service Error: {e}")
-#             return {"success": False}
 
 @router.get('/Reset')
 def reset():
@@ -711,8 +429,85 @@ def reset():
     else:
         return {"success": True, "msg": msg}
 
+async def reset_asset():
+    try:
+        mainAsset = ''
+        subAsset = ''
+        redis_state.client.select(0)
+        if redis_state.client.hexists("System", "setup"):
+            setupflag = True
+            datStr = redis_state.client.hget("System", "setup")
+            setting = json.loads(datStr)
+            mainAsset = ''
+            subAsset = ''
+            if setting["General"]["useFunction"]["diagnosis_main"]:
+                for chInfo in setting["channel"]:
+                    if chInfo["channel"] == 'Main':
+                        mainAsset = chInfo["assetInfo"]["name"]
+                        break
+            if setting["General"]["useFunction"]["diagnosis_sub"]:
+                for chInfo in setting["channel"]:
+                    if chInfo["channel"] == 'Sub':
+                        subAsset = chInfo["assetInfo"]["name"]
+                        break
+            if mainAsset != '':
+                data = await reset_smart(mainAsset, 0)
+                if len(data) > 0:
+                    datas = await  reset_smart(mainAsset, 1)
+                    if len(datas) > 0:
+                        resetmain = 0
+                    else:
+                        resetmain = 1
+                else:
+                    resetmain = 2
+            else:
+                resetmain = -1
+            if subAsset != '':
+                data = await reset_smart(subAsset, 0)
+                if len(data) > 0:
+                    datas = await  reset_smart(subAsset, 1)
+                    if len(datas) > 0:
+                        resetsub = 0
+                    else:
+                        resetsub = 1
+                else:
+                    resetsub = 2
+            else:
+                resetsub = -1
+        else:
+            setupflag = False
+
+        if not setupflag:
+            return {"success": False, "msg": 'setup is not exist'}
+        else:
+            if resetmain > 1 or resetsub > 1:
+                return {"success": False, "msg": "Unregistering asset is failed"}
+            else:
+                return {"success": True, "main":{"status":resetmain, "asset":mainAsset}, "sub":{"status":resetsub, "asset":subAsset}}
+    except Exception as e:
+        print(str(e))
+        return {"success": False, "msg": str(e)}
+
+async def reset_system():
+    res = reset_asset()  # unregister main, sub asset
+    if not res["success"]:
+        return {"success": False, "msg": res["msg"]}
+    else:
+        ret = restartasset()  # smartservice restart
+        if ret["status"] == 1 and ret["success"]:
+            sysService("restart", "SmartSystems")
+            sysService("restart", "SmartAPI")
+    allcmd0 = Command(type=0, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
+    allcmd1 = Command(type=1, cmd=0, item=8)
+    ret0 = await push_command_left(allcmd0)
+    ret1 = await push_command_left(allcmd1)
+    if not ret0["success"]:
+        return {"success": False, "msg": 'Main channel clear is failed'}
+    if not ret1["success"]:
+        return {"success": False, "msg": 'Sub channel clear is failed'}
+
 @router.get('/ResetAll')
-def resetAll():
+def resetAll():   #1. Unregiter asset, 2. Delete asset, 3. Restart SmartSystem, 4. Clear count, 5. Delete setup, 6. Delete user.db 7. setup default
     msg = ''
     if not redis_state.client is None:
         redis_state.client.execute_command("SELECT", 0)
@@ -720,6 +515,9 @@ def resetAll():
             checkflag = redis_state.client.hget("Service","setting")
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
+        ret = reset_system()
+        if not ret["success"]:
+            return {"success": False, "msg": 'System initialization is failed'}
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
         db_path = os.path.join(SETTING_FOLDER, 'user.db')
         backup_file_path = os.path.join(SETTING_FOLDER, 'setup_backup.json')
@@ -760,25 +558,6 @@ def resetAll():
     else:
         return {"success": True, "msg": msg}
 
-# @router.get('/DownloadBackup/{item}')
-# async def get_backup(item):
-#     try:
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             response = await client.get(f"http://{os_spec.restip}:5000/api/getFolder?name={item}")
-#             response.raise_for_status()  # 에러 발생 시 예외 발생
-#             file_path = os.path.join(DOWNLOAD_FOLDER, f'{item}.zip')
-#             with open(file_path, "wb") as f:
-#                 f.write(response.content)
-#         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-#             response = FileResponse(file_path, media_type="application/json", filename="setup.json")
-#             response.headers["Content-Disposition"] = "attachment; filename=setup.json"  # 다운로드 강제
-#             response.headers["X-Message"] = "OK"
-#             return response
-#         else:
-#             return JSONResponse(status_code=404, content={"success": False, "message": "파일이 존재하지 않습니다."},headers={"X-Message": "Fail"})
-#     except Exception as e:
-#         print(str(e))
-#         return JSONResponse(status_code=404, content={"success": False, "message": "Restful API Service Error"},headers={"X-Message": "Fail"})
 
 @router.get('/getDiagnosisSetting')
 async def get_diagnosissetting(request:Request):
@@ -1006,49 +785,7 @@ def load_bearings_from_db():
         import traceback
         traceback.print_exc()
         return {'passOK': '0', 'msg': f'Database error: {str(e)}'}
-# @router.get('/checkBearing')
-# def load_and_merge_bearing_data():
-#     filenames = ["Bearing.csv", "Bearing.json", "Bearings.csv", "Bearings.json"]
-#     merged_list = []
-#     seen_names = set()
-#     nonExistCount = 0
-#     for fname in filenames:
-#         file_path = os.path.join(SETTING_FOLDER, fname)
-#         if not os.path.isfile(file_path):
-#             nonExistCount += 1
-#             continue
 
-#         if fname.endswith(".csv"):
-#             try:
-#                 with open(file_path, newline='', encoding='utf-8') as f:
-#                     reader = csv.DictReader(f)
-#                     for row in reader:
-#                         name = row.get("Name")
-#                         if name and name not in seen_names:
-#                             seen_names.add(name)
-#                             merged_list.append(row)
-#             except Exception as e:
-#                 return {'passOK': '0', 'msg': f"[CSV Error] {fname}: {e}"}
-
-#         elif fname.endswith(".json"):
-#             try:
-#                 with open(file_path, "r", encoding="utf-8") as f:
-#                     data = json.load(f)
-#                     if not isinstance(data, list):
-#                         print(f"[JSON Warning] {fname}는 리스트 형식이 아님, 무시됨")
-#                         continue
-#                     for item in data:
-#                         name = item.get("Name")
-#                         if name and name not in seen_names:
-#                             seen_names.add(name)
-#                             merged_list.append(item)
-#             except Exception as e:
-#                 return {'passOK': '0', 'msg': f"[CSV JSON] {fname}: {e}"}
-
-#     if nonExistCount == len(filenames):
-#         return {'passOK': '0', 'msg': f"No exist files"}
-#     else:
-#         return {'passOK': '1', 'data':merged_list}
 
 @router.post('/uploadBearing')
 def upload_bearing_to_db(file: UploadFile = File(...)):
@@ -1236,6 +973,18 @@ def download_setting():
         return {"passOK": "0", "error": f"An unexpected error occurred: {str(e)}"}
 
 
+async def reset_smart(asset, mode):
+    if mode == 0:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
+            data = response.json()
+    else:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/deleteAsset?name={asset}")
+            data = response.json()
+    return data
+
+
 @router.post('/createAsset')
 async def createAsset(request: Request):
     data = await request.json()
@@ -1304,19 +1053,10 @@ async def modifyAsset(request: Request):
 @router.get('/deleteAsset/{asset}')
 async def deleteAsset(asset):
     try:
-        # response = await  http_state.client.get(f"/deleteAsset?name={asset}")
-        # datas = response.json()
-        async with httpx.AsyncClient(timeout=setting_timeout) as client:
-            response = await client.get(f"http://{os_spec.restip}:5000/api/deleteAsset?name={asset}")
-            datas = response.json()
-        #     if response.status_code in [400, 401, 500]:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.get(
-        #                 f"http://{os_spec.restip}:5000/api/deleteAsset?name={asset}")
-        #             datas = response.json()
+        datas = await reset_smart(asset, 1)
+        # async with httpx.AsyncClient(timeout=setting_timeout) as client:
+        #     response = await client.get(f"http://{os_spec.restip}:5000/api/deleteAsset?name={asset}")
+        #     datas = response.json()
     except Exception as e:
         print(str(e))
         return {"status": "0", "error": "Delete Failed"}
@@ -1331,12 +1071,10 @@ async def deleteAsset(asset):
 
 @router.get('/unregisterAsset/{channel}/{asset}')
 async def unreg_Asset(channel, asset):
-    # finflag = False
-    # response = await  http_state.client.get(f"/unregisterAsset?name={asset}")
-    # data = response.json()
-    async with httpx.AsyncClient(timeout=setting_timeout) as client:
-        response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
-        data = response.json()
+    # async with httpx.AsyncClient(timeout=setting_timeout) as client:
+    #     response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
+    #     data = response.json()
+    data = await reset_smart(asset, 0)
     if len(data) > 0:
         finflag = True
     else:
@@ -1359,9 +1097,6 @@ async def unreg_Asset(channel, asset):
 
 @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
 async def reg_Asset(channel, assetName, assetType):
-    # finflag = False
-    # response = await  http_state.client.get(f"/registerAsset?name={assetName}")
-    # data = response.json()
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
         data = response.json()
@@ -1485,25 +1220,37 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
-@router.get('/checkService/{mode}')
-async def checkService(mode):
+@router.get('/checkSystem/{mode}')
+def checkService(mode):
+    restartsmart = False
+    restartapi = False
     if mode == 1:
-        if not is_service_enabled("smartsystemsrestapiservice"):
+        if is_service_enabled("smartsystemsservice"):
+            if not is_service_active("smartsystemsservice"):
+                sysService("start", "SmartSystems")
+            else:
+                restartsmart = True
+        else:
+            sysService("enable", "SmartSystems")
+            sysService("start", "SmartSystems")
+        if is_service_enabled("smartsystemsrestapiservice"):
             if not is_service_active("smartsystemsrestapiservice"):
                 sysService("start", "SmartAPI")
-            sysService("enable","SmartAPI")
-        if not is_service_enabled("smartsystemsservice"):
-            sysService("enable","smartsystemsservice")
+            else:
+                restartapi = True
+        else:
+            sysService("enable", "SmartAPI")
+            sysService("start", "SmartAPI")
     else:
-        if is_service_enabled("smartsystemsrestapiservice"):
-            if is_service_active("smartsystemsrestapiservice"):
-                sysService("stop", "SmartAPI")
-            sysService("disable", "SmartAPI")
         if is_service_enabled("smartsystemsservice"):
             if is_service_active("smartsystemsservice"):
                 sysService("stop", "SmartSystems")
             sysService("disable", "SmartSystems")
-
+        if is_service_enabled("smartsystemsrestapiservice"):
+            if is_service_active("smartsystemsrestapiservice"):
+                sysService("stop", "SmartAPI")
+            sysService("disable", "SmartAPI")
+    return {"smart": restartsmart, "api": restartapi}
 
 @router.get('/restartasset')  # save setup.json
 async def restartasset():
@@ -1577,51 +1324,6 @@ def restore_setting():
     except Exception as e:
         return JSONResponse(status_code=500, content={"passOK": "0", "error": f"Error occurred while restoring: {str(e)}"})
 
-
-# def findNode(node, superlist): #check node level
-#     exist =False
-#     if node["Assembly"] in superlist:
-#     for i in range(0, len(superlist)):
-#         if superlist[i]["Assembly"] == node["Assembly"]:
-#             exist = True
-#             break
-#     if not exist:
-#         superlist.append(node)
-#     return superlist
-
-# def set_structNameplate(datas:list):
-#     if len(datas) > 0:
-#         superlist = []
-#         superNodes = []
-#         for a in range(0, len(datas)):
-#             pName = f"{datas[a]['Assembly']}_{datas[a]['AssemblyID']}"
-#             if not pName in superNodes:
-#                 superNodes.append(pName)
-#
-#         for i in range(0, len(superNodes)):
-#             superdict = dict()
-#             tmpstrs = superNodes[i].split('_')
-#             superdict["Assembly"] = tmpstrs[0]
-#             superdict["Name"] = superNodes[i]
-#             superdict["Title"] = superNodes[i]
-#             if len(tmpstrs) > 1:
-#                 superdict["AssemblyID"] = tmpstrs[1]
-#             else:
-#                 superdict["AssemblyID"] = tmpstrs[0]
-#             superdict["ParentAssemly"] = superNodes[i]
-#             superdict["Abstract"] = True
-#             superlist.append(superdict)
-#
-#         for i in range(0,len(superlist)):
-#             for j in range(0, len(datas)):
-#                 pName = f"{datas[j]['Assembly']}_{datas[j]['AssemblyID']}"
-#                 if superlist[i]["ParentAssemly"] == pName:
-#                     if "children" in superlist[i]:
-#                         superlist[i]["children"].append(datas[j])
-#                     else:
-#                         superlist[i]["children"] = []
-#                         superlist[i]["children"].append(datas[j])
-#     return superlist
 
 def get_Bearing(filename):
     _, ext = os.path.splitext(filename)
@@ -1821,39 +1523,6 @@ async def test_asset(asset, request:Request):
         print(f"Exception: {type(e).__name__}: {e}")
         return {"success": False, "error": "No Data"}
 
-# @router.get("/healthCheck")
-# async def check_health(request:Request):
-#     async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#         response = await client.get(f"http://{os_spec.restip}:5000/api/health")
-#         data = response.json()
-#         if response.status_code in [400, 401, 500]:
-#             flag = await checkLoginAPI(request)
-#             if not flag:
-#                 return {"success": False, "error": "Restful API Login Failed"}
-#             else:
-#                 response = await client.get(f"http://{os_spec.restip}:5000/api/health")
-#                 data = response.json()
-#     if len(data) > 0:
-#         return {"success":True, "data":data}
-#     else:
-#         return {"success":False, "msg":"No Data"}
-#
-# @router.get("/checkAPI")
-# async def check_health(request:Request):
-#     async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#         response = await client.get(f"http://{os_spec.restip}:5000/api/alive")
-#         data = response.json()
-#         if response.status_code in [400, 401, 500]:
-#             flag = await checkLoginAPI(request)
-#             if not flag:
-#                 return {"success": False, "error": "Restful API Login Failed"}
-#             else:
-#                 response = await client.get(f"http://{os_spec.restip}:5000/api/alive")
-#                 data = response.json()
-#     if len(data) > 0:
-#         return {"success":True, "data":data}
-#     else:
-#         return {"success":False, "msg":"No Data"}
 
 def is_service_enabled(name):
     """서비스 부팅 시 자동 시작 여부 확인 (enabled/disabled)"""
@@ -2122,46 +1791,3 @@ def get_sysMode():
         print(str(e))
         return {"success": False}
 
-
-#@router.post("/command")
-#async def push_command_left(request: Request):
-#    """새로운 command를 Redis 리스트의 왼쪽에 추가"""
-#    try:
-#        # Raw body 먼저 확인
-#        body_bytes = await request.body()
-#        print(f"Raw body: {body_bytes}")
-#
-#        # JSON 파싱 시도
-#        try:
-#            body_json = json.loads(body_bytes)
-#            print(f"Parsed JSON: {body_json}")
-#            print(f"Types: type={type(body_json.get('type'))}, cmd={type(body_json.get('cmd'))}, item={type(body_json.get('item'))}")
-#        except json.JSONDecodeError as e:
-#            print(f"JSON decode error: {e}")
-#            return {"success": False, "message": f"Invalid JSON: {e}"}
-#
-#        # 수동으로 Command 객체 생성
-#        try:
-#            command = Command(
-#                type=body_json.get('type'),
-#                cmd=body_json.get('cmd'),
-#                item=body_json.get('item')
-#            )
-#        except ValidationError as e:
-#            print(f"Validation error: {e.errors()}")
-#            return {"success": False, "message": "Validation failed", "errors": e.errors()}
-#
-#        binary_data = command_to_binary(command)
-#        redis_state.client.select(1)
-#        redis_state.client.lpush('command', binary_data)
-#
-#        return {
-#            "success": True,
-#            "message": "Command pushed to left of list",
-#            "data": command.dict()
-#        }
-#    except Exception as e:
-#        print(f"Unexpected error: {e}")
-#        import traceback
-#        traceback.print_exc()
-#        return {"success": False, "message": str(e)}
