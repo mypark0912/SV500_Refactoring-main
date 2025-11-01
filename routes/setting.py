@@ -440,12 +440,12 @@ async def reset_asset():
             setting = json.loads(datStr)
             mainAsset = ''
             subAsset = ''
-            if setting["General"]["useFunction"]["diagnosis_main"]:
+            if setting["useFunction"]["diagnosis_main"]:
                 for chInfo in setting["channel"]:
                     if chInfo["channel"] == 'Main':
                         mainAsset = chInfo["assetInfo"]["name"]
                         break
-            if setting["General"]["useFunction"]["diagnosis_sub"]:
+            if setting["useFunction"]["diagnosis_sub"]:
                 for chInfo in setting["channel"]:
                     if chInfo["channel"] == 'Sub':
                         subAsset = chInfo["assetInfo"]["name"]
@@ -494,7 +494,7 @@ async def reset_system():
         return {"success": False, "msg": res["msg"]}
     else:
         ret = restartasset()  # smartservice restart
-        if ret["status"] == 1 and ret["success"]:
+        if  ret["success"]:
             sysService("restart", "SmartSystems")
             sysService("restart", "SmartAPI")
     allcmd0 = Command(type=0, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
@@ -505,6 +505,7 @@ async def reset_system():
         return {"success": False, "msg": 'Main channel clear is failed'}
     if not ret1["success"]:
         return {"success": False, "msg": 'Sub channel clear is failed'}
+    return {"success": True}
 
 @router.get('/ResetAll')
 def resetAll():   #1. Unregiter asset, 2. Delete asset, 3. Restart SmartSystem, 4. Clear count, 5. Delete setup, 6. Delete user.db 7. setup default
