@@ -86,6 +86,18 @@ def get_mac_address():
         mac_address = f'{mac_int:012x}'
         return mac_address
 
+def getVersions():
+    versionPath = '/home/root/versionInfo.txt'
+    version_dict = {}
+    if os.path.exists(versionPath):
+        with open(versionPath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and '=' in line:
+                    key, value = line.split('=')
+                    version_dict[key.strip()] = value.strip()
+    return version_dict
+
 def save_post(data: Post, mode: int, idx:int):
     title = data.title
     context = data.context
@@ -117,3 +129,29 @@ def save_post(data: Post, mode: int, idx:int):
     except Exception as e:
         print(f"SAVE_POST:{str(e)} - {DB_PATH}")
         return {"passOK": "0", "msg": str(e)}
+
+
+def get_lastpost():
+    last_record = {}
+    try:
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('''
+                        SELECT * FROM maintenance 
+                        ORDER BY id DESC 
+                        LIMIT 1
+                    ''')
+        last_record = cursor.fetchone()
+        if last_record:
+            flag = True
+        else:
+            flag = False
+        conn.close()
+    except Exception as e:
+        print(str(e))
+        flag = False
+    if flag:
+        return {"result": 1, "data": dict(last_record)}
+    else:
+        return {"result": 0}

@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from .util import save_post, Post, get_mac_address
+from .util import save_post, Post, get_mac_address, getVersions
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 
 router = APIRouter()
@@ -207,83 +207,10 @@ def check_Db():
     else:
         return {"result": 0}
 
-# @router.post('/joinAdmin')
-# def join(data: SignupAdmin):
-#     devType = data.devType
-#     name = data.username
-#     account = data.account
-#     password = data.password
-#     email = data.email
-#     adminPass = data.adminPass
-#     lang = data.lang
-#
-#     if devType < 3:
-#         mode = f"device{devType}"
-#         if devType == 0:
-#             diag = 'No'
-#         else:
-#             diag = 'Yes'
-#     else:
-#         diag = 'No'
-#         mode = "server"
-#     # setting = {"mode": mode, "lang": lang ,"General": {"deviceInfo":{"mac_address":get_mac_address(), "serial_number":get_mac_address()}}, "channel": []}
-#     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-#     # setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
-#     shutil.copy(default_file_path, SETUP_PATH)
-#     with open(SETUP_PATH, "r", encoding="utf-8") as f:
-#         setting = json.load(f)
-#         setting["mode"] = mode
-#         setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
-#         setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
-#     # FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
-#     with open(SETUP_PATH, "w", encoding="utf-8") as f:
-#         json.dump(setting, f, indent=2)
-#
-#     redis_state.client.execute_command("SELECT", 0)
-#     redis_state.client.hset("System", "setup", json.dumps(setting))
-#     redis_state.client.hset("System", "mode",  mode)
-#     redis_state.client.hset("Service", "save", 1)
-#     redis_state.client.hset("Service", "restart", 1)
-#     # print(adminPass)
-#     # filename = os.path.join(SETTING_FOLDER, 'admin_secret.enc')
-#     # with open(filename, 'rb') as f:
-#     #     raw = base64.b64decode(f.read())
-#     # iv = raw[:16]
-#     # encrypted = raw[16:]
-#     # cipher = AES.new(AES_KEY, AES.MODE_CBC, iv)
-#     # decrypted = unpad(cipher.decrypt(encrypted), AES.block_size).decode('utf-8')
-#     # print(decrypted)
-#     # if  decrypted == adminPass:
-#     if aesState.checkAdmin(adminPass):
-#         try:
-#             conn = get_db_connection()
-#             conn.row_factory = sqlite3.Row
-#             cursor = conn.cursor()
-#             hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-#             cursor.execute(
-#                 "INSERT INTO `user` (account,username, password, email, role, api) VALUES (?, ?, ?, ?, ?, ?)",
-#                 (account, name, hashed_password, email, '3', diag )
-#             )
-#             conn.commit()
-#             conn.close()
-#             return {"passOK": "1"}
-#         except Exception as e:
-#             print(str(e))
-#             return {"passOK": "0", "msg" : str(e)}
-#     else:
-#         return {"passOK": "0", "msg" : 'Admin Password is Wrong'}
-#
-def getVersionSave(mode):
-    versionPath = '/home/root/versionInfo.txt'
-    version_dict = {}
-    if os.path.exists(versionPath):
-        with open(versionPath, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and '=' in line:
-                    key, value = line.split('=')
-                    version_dict[key.strip()] = value.strip()
-        if mode == 'device0':
+def getVersionSave(Opmode):
+    version_dict = getVersions()
+    if version_dict:
+        if Opmode == 'device0':
             install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
                            f_version=version_dict['fw'],
                            a_version=version_dict['a35'],
@@ -300,7 +227,7 @@ def getVersionSave(mode):
                            smart_version=version_dict['smartsystem']
                            )
     else:
-        if mode == 'device0':
+        if Opmode == 'device0':
             install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
                            f_version='1.0.0',
                            a_version='1.0.0',

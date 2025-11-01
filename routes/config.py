@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from .util import get_mac_address, Post, save_post, get_db_connection
+from .util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions
 from datetime import datetime
 router = APIRouter()
 
@@ -16,12 +16,6 @@ router = APIRouter()
 base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
 DB_PATH = os.path.join(SETTING_FOLDER, "maintenance.db")
-
-# def get_db_connection():
-#     conn = sqlite3.connect(DB_PATH)
-#     conn.row_factory = sqlite3.Row  # → dict처럼 row 접근 가능
-#     return conn
-#
 
 
 class CaliSet(BaseModel):
@@ -302,114 +296,70 @@ async def set_system_time(request: TimeSetRequest):
 @router.post('/savePost/{mode}/{idx}')
 def save_maintanence(data: Post, mode: int, idx:int):
     return save_post(data,mode, idx)
-    # title = data.title
-    # context = data.context
-    # mtype = data.mtype
-    # utype = data.utype
-    # f_version = data.f_version
-    # a_version = data.a_version
-    # w_version = data.w_version
-    # c_version = data.c_version
-    # smart_version = data.smart_version
-    # today = date.today()
-    # formatted = today.strftime("%Y-%m-%d")
-    # try:
-    #     conn = get_db_connection()
-    #     cursor = conn.cursor()
-    #     if mode == 0:
-    #         cursor.execute(
-    #             "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version,date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    #             (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, formatted)
-    #         )
-    #     else:
-    #         cursor.execute(
-    #             "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, date=? where id=?",
-    #             (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, formatted, idx )
-    #         )
-    #     conn.commit()
-    #     conn.close()
-    #     return {"passOK": "1"}
-    # except Exception as e:
-    #     print(str(e))
-    #     return {"passOK": "0", "msg": str(e)}
 
 @router.get('/getPost')
 def get_post():
-    result = []
+    """maintenance 테이블의 전체 데이터를 조회"""
     try:
-        db_exists = os.path.exists(DB_PATH)
-        conn = get_db_connection()
-        conn.row_factory = sqlite3.Row
+        conn = get_db_connection()  # 이미 테이블 생성 보장됨
         cursor = conn.cursor()
-        flag = False
-        if not db_exists:
-            cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS maintenance (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            title TEXT NOT NULL,
-                            context TEXT NOT NULL,
-                            mtype int NOT NULL,
-                            utype TEXT NOT NULL,
-                            f_version TEXT,
-                            a_version TEXT,
-                            w_version TEXT,
-                            c_version TEXT,
-                            smart_version TEXT,
-                            date TEXT
-                        )
-                    ''')
-            cursor.execute("SELECT * FROM maintenance")
-            rows = cursor.fetchall()
-            if len(rows) > 0:
-                result = [dict(row) for row in rows]
-                flag = True
-            else:
-                flag = False
-        else:
-            cursor.execute("SELECT * FROM maintenance")
-            rows = cursor.fetchall()
-            if len(rows) > 0:
-                result = [dict(row) for row in rows]
-                flag = True
-            else:
-                flag = False
-        conn.commit()
+
+        cursor.execute("SELECT * FROM maintenance")
+        rows = cursor.fetchall()
         conn.close()
+
+        if rows:
+            result = [dict(row) for row in rows]
+            return {"result": 1, "data": result}
+        else:
+            return {"result": 0}
+
     except Exception as e:
-        print(str(e))
-        flag = False
-    if flag:
-        return {"result": 1, "data": result}
-    else:
-        return {"result": 0}
+        print(f"GET_POST ERROR: {e}")
+        return {"result": 0, "msg": str(e)}
+
 
 @router.get('/getLastPost')
-def get_post():
-    last_record = {}
-    try:
-        # db_exists = os.path.exists(DB_PATH)
-        conn = get_db_connection()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute('''
-                        SELECT * FROM maintenance 
-                        ORDER BY id DESC 
-                        LIMIT 1
-                    ''')
-        last_record = cursor.fetchone()
-        if len(last_record) > 0:
-            flag = True
-        else:
-            flag = False
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(str(e))
-        flag = False
-    if flag:
-        return {"result": 1, "data": dict(last_record)}
-    else:
-        return {"result": 0}
+def get_last():
+    ret = get_lastpost()
+    if ret.get("result") == 1:
+        lastpost = ret.get("data", {})
+        version_dict = getVersions()
+        updateList = []
+
+        key_map = {
+            'fw': 'f_version',
+            'a35': 'a_version',
+            'web': 'w_version',
+            'core': 'c_version',
+            'smartsystem': 'smart_version'
+        }
+
+        if version_dict:
+            for src_key, dst_key in key_map.items():
+                last_val = lastpost.get(dst_key)
+                ver_val = version_dict.get(src_key)
+                if ver_val and last_val != ver_val:
+                    lastpost[dst_key] = ver_val
+                    updateList.append(src_key)
+
+            if updateList:
+                result = ",".join(updateList)
+                update = Post(
+                    title='Update SW',
+                    context='Update SW',
+                    mtype=1,
+                    utype=result,
+                    f_version=lastpost.get('f_version'),
+                    a_version=lastpost.get('a_version'),
+                    w_version=lastpost.get('w_version'),
+                    c_version=lastpost.get('c_version'),
+                    smart_version=lastpost.get('smart_version')
+                )
+                return {"result": 1, "data": update.dict(), "update":updateList}
+
+    return ret
+
 
 @router.get('/deletePost/{idx}')
 def delete_post(idx):
