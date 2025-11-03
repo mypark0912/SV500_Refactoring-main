@@ -28,7 +28,7 @@
     
     <div v-if="devLocation != ''" class="min-w-[120px] flex flex-col space-y-2">
       <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
-        설치장소
+        {{ t('report.cardTitle.installation') }}
       </span>
       <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
         {{ devLocation }}
