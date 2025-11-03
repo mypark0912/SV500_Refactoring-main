@@ -482,6 +482,11 @@
           @close-modal="handleCloseModal"
           @restart-validation="restart"
         />
+        <LoadingModal
+          :isOpen="isStartingService"
+          title="Starting Diagnostic Service"
+          :message="serviceLoadingMessage"
+        />
       </main>
       <Footer />
     </div>
@@ -512,6 +517,7 @@ import { useInputDict } from "@/composables/useInputDict";
 import { useI18n } from "vue-i18n"; //
 import SettingsSidebar2 from "../../partials/inners/setting/SettingsSidebar2.vue";
 import OnboardModal from "../../components/OnboardingModal.vue";
+import LoadingModal from "../../components/LoadingModal.vue";
 export default {
   name: "Setting",
   props: ["channel", "mode"],
@@ -530,6 +536,7 @@ export default {
     CommandPanel,
     SettingsSidebar2,
     OnboardModal,
+    LoadingModal,
   },
   setup(props) {
     const { t } = useI18n();
@@ -549,6 +556,8 @@ export default {
     const checkNameplateflag = ref(false);
     const isRestartDone = ref(false);
     const isSaving = ref(false); // ✅ 저장 중 상태 추가
+    const isStartingService = ref(false);
+    const serviceLoadingMessage = ref('');
 
     //const langset = computed(() => authStore.getLang);
     const isAdmin = computed(() => {
@@ -725,9 +734,9 @@ export default {
         }
     };
 
-    const checkSmart = ()=>{
+    const checkSmart = async()=>{
       try{
-        const response = axios.get('/setting/checkSmart');
+        const response = await axios.get('/setting/checkSmart');
         if (response.data.success){
           return true;
         }else{
@@ -738,17 +747,27 @@ export default {
         return false;
       }
     }
-    const manageSmart = ()=>{
-      try{
-        const response = axios.get('/setting/manageSmart/1');
-        if (response.data.success){
+    const manageSmart = async () => {
+      try {
+        isStartingService.value = true; // ⭐ 로딩 모달 표시
+        serviceLoadingMessage.value = 'Starting diagnostic service...';
+        
+        const response = await axios.get('/setting/manageSmart/1');
+        
+        if (response.data.api && response.data.success) {
+          serviceLoadingMessage.value = 'Service ready!';
+          await new Promise(resolve => setTimeout(resolve, 500));
           return true;
-        }else{
+        } else {
+          alert('Failed to start service: ' + (response.data.message || ''));
           return false;
         }
-      }catch(error){
+      } catch(error) {
         console.error(error);
+        alert('Error starting service: ' + error.message);
         return false;
+      } finally {
+        isStartingService.value = false; // ⭐ 로딩 모달 닫기
       }
     };
 
@@ -787,13 +806,46 @@ export default {
     );
 
     // useDiagnosis 상태 변화 감지
+    // watch(
+    //   () => useDiagnosis.value,
+    //   (newVal) => {
+    //     if (useDiagnosis.value) GetDiagnosisSetting();
+    //   },
+    //   { immediate: true }
+    // );
     watch(
-      () => useDiagnosis.value,
-      (newVal) => {
-        if (useDiagnosis.value) GetDiagnosisSetting();
-      },
-      { immediate: true }
-    );
+  () => useDiagnosis.value,
+  async (newVal, oldVal) => {
+    // false → true로 변경될 때만 (진단 기능 켜질 때)
+    if (newVal && !oldVal) {
+      const isRunning = await checkSmart();
+      
+      if (!isRunning) {
+        const confirmed = confirm('Not running diagnostic service. Do you want to run diagnostic service?');
+        
+        if (confirmed) {
+          const started = await manageSmart(); // 여기서 로딩 모달 자동 표시
+          
+          if (!started) {
+            // 서비스 시작 실패 시 진단 다시 끄기
+            inputDict.value.useFuction.diagnosis_main = false;
+            inputDict.value.useFuction.diagnosis_sub = false;
+            console.error('스마트 서비스 시작 실패');
+            return;
+          }
+        } else {
+          // 사용자가 취소 시 진단 다시 끄기
+          inputDict.value.useFuction.diagnosis_main = false;
+          inputDict.value.useFuction.diagnosis_sub = false;
+          return;
+        }
+      }
+      
+      // 서비스 확인 완료 후 설정 가져오기
+      GetDiagnosisSetting();
+    }
+  }
+);
     
     // FTP와 Diagnosis 충돌 감지 및 자동 해제
     watch(
@@ -1638,6 +1690,8 @@ export default {
       handleConfirm,
       isRestartDone,
       isSaving, // ✅ 추가
+      isStartingService,
+      serviceLoadingMessage,
     };
   },
 };
