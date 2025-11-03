@@ -1,5 +1,10 @@
 <template>
-  <div class="flex flex-col col-span-full sm:col-span-12 xl:col-span-12 bg-white shadow rounded-xl px-5 py-4 dark:bg-gray-700 gap-2">
+  <div 
+    class="flex flex-col col-span-full sm:col-span-12 xl:col-span-12 shadow rounded-xl px-5 py-4 gap-2"
+    :class="isPdfMode 
+      ? 'bg-white text-gray-900' 
+      : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'"
+  >
     <div class="flex items-center space-x-1">
         <span class="text-sm font-semibold mr-2">{{ Item.title }}</span>
         <span
@@ -18,18 +23,20 @@
           </div>
         </template>
       </div>
-      <span class="text-sm font-semibold">{{ Item.description }}</span>
+      <span class="text-sm font-semibold"    :class="isPdfMode 
+      ? 'bg-white text-gray-900' 
+      : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'">{{ Item.description }}</span>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   data: Object,
 })
-
+const isPdfMode = inject('isPdfMode', false)
 const { t, locale } = useI18n()
 const stData = ref(props.data);
 const Item = ref({});

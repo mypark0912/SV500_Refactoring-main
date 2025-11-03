@@ -13,30 +13,38 @@
   </template>
   
   <script>
-  import { ref, watch, onMounted, onUnmounted } from 'vue'
+  import { ref, watch, onMounted, onUnmounted, inject } from 'vue'  // ✅ inject 추가
   import { useDark } from '@vueuse/core'
   import { chartColors } from '../ChartjsConfig'
   
   import {
-    Chart, LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip, LogarithmicScale,ScatterController
+    Chart, LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip, LogarithmicScale, ScatterController
   } from 'chart.js'
   import 'chartjs-adapter-moment'
   
   // Import utilities
   import { tailwindConfig, formatValue } from '../../utils/Utils'
   
-  Chart.register(LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip, LogarithmicScale,ScatterController)
+  Chart.register(LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip, LogarithmicScale, ScatterController)
   
   export default {
     name: 'LineChart_ITIC',
     props: ['data', 'width', 'height'],
     setup(props) {
+      // ✅ PDF 모드 inject
+      const isPdfMode = inject('isPdfMode', false)
   
       const canvas = ref(null)
       const legend = ref(null)
       let chart = null
       const darkMode = useDark()
       const { textColor, gridColor, tooltipBodyColor, tooltipBgColor, tooltipBorderColor } = chartColors
+      
+      // ✅ 텍스트 색상 계산 함수
+      const getTextColor = () => {
+        if (isPdfMode) return '#000000'
+        return darkMode.value ? textColor.dark : textColor.light
+      }
       
       onMounted(() => {
         const ctx = canvas.value
@@ -49,25 +57,25 @@
             },
             scales: {
               x: {
-                type: 'logarithmic',        // 🔍 로그 스케일
+                type: 'logarithmic',
                 min: 0.0001,
                 max: 100,
                 ticks: {
-                  color:darkMode.value ? textColor.dark : textColor.light,
+                  color: getTextColor(),  // ✅ 동적 텍스트 색상
                   callback: val => val,
                 },
                 grid: {
-                  color: darkMode.value ? gridColor.dark : gridColor.light,
+                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),  // ✅ 그리드 색상
                 },
               },
               y: {
                 min: 0,
                 max: 500,
                 ticks:{
-                  color:darkMode.value ? textColor.dark : textColor.light,
+                  color: getTextColor(),  // ✅ 동적 텍스트 색상
                 },
                 grid: {
-                  color: darkMode.value ? gridColor.dark : gridColor.light,
+                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),  // ✅ 그리드 색상
                 },
               }
             },
@@ -77,16 +85,17 @@
               },
               tooltip: {
                 callbacks: {
-                  title: () => false, // Disable tooltip title
-                  label: (context) => context.parsed.y, // ✅ 툴팁도 숫자로 출력
+                  title: () => false,
+                  label: (context) => context.parsed.y,
                 },
-                bodyColor: darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light,
-                backgroundColor: darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light,
-                borderColor: darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light,
-                textColor:darkMode.value ? textColor.dark : textColor.light,
+                // ✅ 툴팁 색상
+                bodyColor: isPdfMode ? '#000000' : (darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light),
+                backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : (darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light),
+                borderColor: isPdfMode ? '#e5e5e5' : (darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light),
+                textColor: getTextColor(),
               },
               datalabels: {
-                display: false  // ✅ 표시 비활성화
+                display: false
               },
             },
             interaction: {
@@ -116,9 +125,12 @@
       watch(
         () => darkMode.value,
         () => {
+          if (isPdfMode) return  // ✅ PDF 모드일 때는 다크모드 변경 무시
+          
           if (darkMode.value) {
             chart.options.scales.x.ticks.color = textColor.dark
             chart.options.scales.y.ticks.color = textColor.dark
+            chart.options.scales.x.grid.color = gridColor.dark
             chart.options.scales.y.grid.color = gridColor.dark
             chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.dark
             chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark
@@ -126,6 +138,7 @@
           } else {
             chart.options.scales.x.ticks.color = textColor.light
             chart.options.scales.y.ticks.color = textColor.light
+            chart.options.scales.x.grid.color = gridColor.light
             chart.options.scales.y.grid.color = gridColor.light
             chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.light
             chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.light

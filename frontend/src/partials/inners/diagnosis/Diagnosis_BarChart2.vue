@@ -1,5 +1,8 @@
 <template>
-    <div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 mt-1 p-2">
+    <div 
+      class="col-span-full xl:col-span-12 mt-1 p-2"
+      :class="isPdfMode ? 'bg-white' : 'bg-white dark:bg-gray-800'"
+    >
         <BarChart v-if="mode == 'Status'" :data="chartData" width="450" height="360" />
         <BarChart_PQ v-else-if="mode == 'PowerQuality'" :data="chartData" :mode="mode" width="450" height="360" />
         <BarChart_PQ v-else-if="mode == 'DiagnosisDetail'" :data="chartData" :mode="mode" width="450" height="360" />
@@ -9,7 +12,7 @@
 </template>
 
 <script>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, inject } from 'vue'  // ✅ inject 추가
 import BarChart from '../../../charts/connect/BatteryCharger.vue'
 import BarChart_PQ from '../../../charts/connect/BarChart_PQ_Claude.vue'
 import BarChart_FaultEvent from '../../../charts/connect/BarChart_FaultEvent.vue'
@@ -38,9 +41,12 @@ export default {
     BarChart,
     BarChart_PQ,
     BarChart_FaultEvent,
-    BarChart_Event_Claude  // 👈 추가된 컴포넌트
+    BarChart_Event_Claude
   },
   setup(props) {
+    // ✅ PDF 모드 inject
+    const isPdfMode = inject('isPdfMode', false)
+    
     const channel = ref('');
     channel.value = props.channel;
     const mode = ref(props.mode);
@@ -71,10 +77,7 @@ export default {
              props.data.Values.length > 0
     })
 
-    // ✅ 안전한 watch
     watch(() => props.data, (newData) => {
-      //console.log('Props data changed:', newData) // 디버깅용
-      
       if (isDataValid.value) {
         chartData.value = {
           labels: newData.Names,
@@ -91,7 +94,7 @@ export default {
           ],
           titles: newData.Titles || []
         }
-        console.log('Chart data updated:', chartData.value) // 디버깅용
+        console.log('Chart data updated:', chartData.value)
       }
     }, { immediate: true, deep: true })
 
@@ -99,6 +102,7 @@ export default {
       chartData,
       channel,
       mode,
+      isPdfMode,  // ✅ 반환 목록에 추가
     }    
   }
 }

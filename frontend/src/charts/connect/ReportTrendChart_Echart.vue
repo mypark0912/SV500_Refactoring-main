@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { onMounted, onBeforeUnmount, ref, watch } from "vue";
+import { onMounted, onBeforeUnmount, ref, watch, inject } from "vue";  // ✅ inject 추가
 import * as echarts from "echarts";
 import { useDark } from "@vueuse/core";
 import { chartColors } from "../ChartjsConfig";
@@ -23,17 +23,28 @@ export default {
     title:String,
   },
   setup(props) {
+    // ✅ PDF 모드 inject
+    const isPdfMode = inject('isPdfMode', false)
+    
     const { t, locale } = useI18n();
     const chartRef = ref(null);
     let chartInstance = null;
 
     const darkMode = useDark();
     const { textColor, gridColor } = chartColors;
+    
+    // ✅ 텍스트 색상 계산 (PDF 모드일 때는 항상 검정)
+    const getTextColor = () => {
+      if (isPdfMode) return '#000000'
+      return darkMode.value ? textColor.dark : textColor.light
+    }
+    
     const thresholdColorMap = {
-      warning: "#ffff00", // 노랑
-      repair: "#ff0000", // 빨강
-      inspect: "#ff7f00", // 주황
+      warning: "#ffff00",
+      repair: "#ff0000",
+      inspect: "#ff7f00",
     };
+    
     const getLineColor = (index) => {
       const colors = [
         "#1f77b4",
@@ -50,8 +61,6 @@ export default {
       return colors[index % colors.length];
     };
 
-    //const thresholdColors = ["#ffff00", "#ff7f00", "#ff0000"];
-
     const buildSeriesAndLegends = () => {
       let thresholdCounter = 0;
       const normalSeries = [];
@@ -59,13 +68,10 @@ export default {
       const normalLegendNames = [];
       const thresholdLegendNames = [];
 
-      //console.log(props.chartData);
-
       props.chartData.forEach((dataset, index) => {
         if (dataset.isThreshold) {
           const color =
             thresholdColorMap[dataset.name.toLowerCase()] ??
-            //thresholdColors[thresholdCounter % thresholdColors.length];
           thresholdCounter++;
           thresholdSeries.push({
             name: dataset.name,
@@ -112,17 +118,9 @@ export default {
           data: normalLegendNames,
           bottom: 15,
           textStyle: {
-            color: darkMode.value ? textColor.dark : textColor.light,
+            color: getTextColor(),  // ✅ 동적 텍스트 색상
           },
         },
-        // {
-        //   data: thresholdLegendNames,
-        //   top: 30,
-        //   right: 10,
-        //   textStyle: {
-        //     color: darkMode.value ? textColor.dark : textColor.light,
-        //   },
-        // },
       ];
 
       return { allSeries, legends };
@@ -133,22 +131,13 @@ export default {
         s.data.filter(v => typeof v === "number" && !isNaN(v))
       );
 
-      if (allValues.length === 0) return [0, 1]; // fallback
+      if (allValues.length === 0) return [0, 1];
 
       const min = Math.min(...allValues);
       const max = Math.max(...allValues);
 
       return [Math.floor(Math.min(min, 0)), Math.ceil(max)];
     };
-
-
-    // const getYAxisRange = (data) => {
-    //   let min = Math.min(...data);
-    //   if (min < 0) min = 0;
-    //   const max = Math.max(...data);
-    //   console.log([Math.floor(min), Math.ceil(max)]);
-    //   return [Math.floor(min), Math.ceil(max)];
-    // };
 
     const initChart = () => {
       if (chartRef.value) {
@@ -157,11 +146,6 @@ export default {
         const { allSeries, legends } = buildSeriesAndLegends();
 
         const [minY, maxY] = getYAxisRange(allSeries);
-
-        // const allValues = allSeries.flatMap((s) =>
-        //   s.data.filter((v) => typeof v === "number")
-        // );
-        // const [minY, maxY] = getYAxisRange(allValues);
 
         const isEmpty =
           props.chartData.length === 0 ||
@@ -175,11 +159,16 @@ export default {
             textStyle: {
               fontSize: 16,
               fontWeight: "bold",
-              color: darkMode.value ? textColor.dark : textColor.light,
+              color: getTextColor(),  // ✅ 동적 텍스트 색상
             },
           },
           tooltip: {
             trigger: "axis",
+            // ✅ PDF 모드일 때 툴팁 배경/텍스트 색상
+            backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : undefined,
+            textStyle: {
+              color: isPdfMode ? '#000000' : undefined,
+            },
             formatter: function (params) {
               const rawDate = new Date(params[0].axisValue);
               const yyyy = rawDate.getFullYear();
@@ -191,7 +180,6 @@ export default {
               const formattedTime = `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
               let result = formattedTime + "<br/>";
 
-              // ✅ 값 기준으로 내림차순 정렬 (단, number만 비교)
               const sorted = [...params].sort((a, b) => {
                 const va = typeof a.data === "number" ? a.data : -Infinity;
                 const vb = typeof b.data === "number" ? b.data : -Infinity;
@@ -216,44 +204,19 @@ export default {
             top: 60,
             left: "3%",
             right: "4%",
-            bottom: 30, // 기존보다 여유있게 줘야 slider 표시됨
+            bottom: 30,
             containLabel: true,
           },
-          // dataZoom: [
-          //   {
-          //     type: "inside",
-          //     xAxisIndex: 0,
-          //     filterMode: "filter",
-          //   },
-          //   {
-          //     type: "slider",
-          //     xAxisIndex: 0,
-          //     height: 20, // ✅ 슬라이더 바 자체를 넓게
-          //     bottom: 120, // ✅ 여백도 충분히
-          //     zoomLock: true, // ✅ 줌 잠금
-          //     handleSize: 0, // ✅ 핸들 완전 제거 (줌 못하게)
-          //     showDetail: false, // ✅ 마우스오버 시 값 안 뜨게
-          //     brushSelect: false, // ✅ 클릭/드래그로 범위 선택 못하게
-          //     showDataShadow: false,
-          //     moveOnMouseMove: true, // ✅ 바 본체를 드래그 가능하게
-          //     moveOnMouseWheel: false,
-          //     backgroundColor: "rgba(200,200,255,0.1)",
-          //     fillerColor: "rgba(120, 144, 200, 0.1)", // 선택 영역 색
-          //     borderColor: "transparent",
-          //     handleStyle: {
-          //       color: "#888",
-          //     },
-          //     textStyle: {
-          //       color: darkMode.value ? textColor.dark : textColor.light,
-          //     },
-          //   },
-          // ],
           xAxis: {
             type: "category",
             data: props.chartLabels,
-            axisLine: { lineStyle: { color: "#ccc" } },
+            axisLine: { 
+              lineStyle: { 
+                color: isPdfMode ? '#cccccc' : '#ccc'  // ✅ 축 라인 색상
+              } 
+            },
             axisLabel: {
-              color: darkMode.value ? textColor.dark : textColor.light,
+              color: getTextColor(),  // ✅ 동적 텍스트 색상
               formatter: function (value) {
                 const date = new Date(value);
                 const yyyy = date.getFullYear();
@@ -270,10 +233,18 @@ export default {
             type: "value",
             min: minY,
             max: maxY,
-            axisLine: { lineStyle: { color: "#ccc" } },
-            splitLine: { lineStyle: { color: "#eee" } },
+            axisLine: { 
+              lineStyle: { 
+                color: isPdfMode ? '#cccccc' : '#ccc'  // ✅ 축 라인 색상
+              } 
+            },
+            splitLine: { 
+              lineStyle: { 
+                color: isPdfMode ? '#e5e5e5' : '#eee'  // ✅ 그리드 라인 색상
+              } 
+            },
             axisLabel: {
-              color: darkMode.value ? textColor.dark : textColor.light,
+              color: getTextColor(),  // ✅ 동적 텍스트 색상
             },
           },
           series: allSeries,
@@ -286,7 +257,7 @@ export default {
                   style: {
                     text: t("trend.Linechart.nodata"),
                     fontSize: 20,
-                    fill: "#999",
+                    fill: isPdfMode ? '#000000' : '#999',  // ✅ No Data 텍스트 색상
                   },
                 },
               ]
@@ -329,13 +300,25 @@ export default {
       { deep: true }
     );
 
-    // ✅ 언어(locale) 변경 시 차트 다시 그리기
     watch(locale, () => {
       disposeChart();
       setTimeout(() => {
         initChart();
       }, 0);
     });
+
+    // ✅ PDF 모드나 다크모드 변경 시 차트 다시 그리기 (PDF 모드일 때는 다크모드 변화 무시)
+    watch(
+      () => [darkMode.value, isPdfMode],
+      () => {
+        if (!isPdfMode) {  // PDF 모드가 아닐 때만 다크모드 반응
+          disposeChart();
+          setTimeout(() => {
+            initChart();
+          }, 0);
+        }
+      }
+    );
 
     return {
       chartRef,
