@@ -292,7 +292,8 @@
     "cardTitle": {
       "Channel": "설비정보",
       "PowerQuality": "전력품질",
-
+      "reportdate": "보고서 날짜",
+        "installation": "설치 장소",
               
         "iticCurAnalysis": "ITIC 분석",
         "hourlyEngUsage":"시간당 사용 추이",

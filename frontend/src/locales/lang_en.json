@@ -294,11 +294,12 @@
         "cardTitle": {
         "Channel": "Equipment Information",
         "PowerQuality": "Power Quality",
-
+        "reportdate": "Report Date ",
         "iticCurAnalysis": "ITIC Curve Analysis",
         "hourlyEngUsage":"Hourly Energy Usage",
         "dailyEngUsage":"Daily Energy Usage",
         "monthlyEngUsage":"Monthly Energy Usage",
+        "installation": "installation place",
         
         "Diagnosis": "Equipment",
         "Energy": "Active Energy",

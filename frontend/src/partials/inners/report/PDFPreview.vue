@@ -6,16 +6,22 @@
       
       <!-- Channel Information Section -->
       <section ref="channelInfo" class="mt-6">
-        <div v-if="pdf_hidden" class="inline-flex items-start mb-6 py-3">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-              </svg>
-            </div>
-            <h1 class="text-2xl text-gray-800 font-bold">{{ channelComputed }} Channel Report</h1>
+      <div v-if="pdf_hidden" class="inline-flex items-start justify-between w-full mb-6 py-3">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+            </svg>
           </div>
+          <h1 class="text-2xl text-gray-800 font-bold">{{ channelComputed }} Channel Report</h1>
         </div>
+        
+        <!-- ✅ 날짜 표시 -->
+        <div class="text-right">
+          <p class="text-sm text-gray-500 font-medium">{{ t(`report.cardTitle.reportdate`) }}</p>
+          <p class="text-lg text-gray-800 font-bold">{{ formattedDate }}</p>
+        </div>
+      </div>
 
         <div v-if="channelComputed === 'Main'? setupMenu.MainDiagnosis : setupMenu.SubDiagnosis" class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <!-- Header with gradient -->
@@ -560,6 +566,10 @@ export default {
       else
         return assetInfo.assetType_sub;
     })
+    const formattedDate = computed(() => {
+      return dayjs().format('YYYY-MM-DD')
+    })
+
     const iticDataList = ref([]);
     // useReportData에서 실제 데이터 로드 함수들 가져오기
     const { 
@@ -2350,6 +2360,7 @@ async function processChartElement(pdf, element, name, options, yPosition) {
       t,
       assettypes,
       iticDataList,
+      formattedDate,
     }
   }
 }
