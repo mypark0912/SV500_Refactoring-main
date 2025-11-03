@@ -192,6 +192,8 @@
       "th_value": "현재값",
       "th_min": "최소값",
       "th_max": "최대값",
+      "th_minTime": "최소값 시각",
+      "th_maxTime": "최대값 시각",
       "Phase Voltage": "상 전압",
       "Line Voltage": "선간 전압",
       "Current": "전류",

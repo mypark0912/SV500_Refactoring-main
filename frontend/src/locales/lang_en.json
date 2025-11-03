@@ -193,6 +193,8 @@
             "th_value": "value",
             "th_min": "min",
             "th_max": "max",
+            "th_minTime": "minTime",
+            "th_maxTime": "maxTime",
             "Phase Voltage": "Phase Voltage",
             "Line Voltage": "Line Voltage",
             "Current": "Current",
