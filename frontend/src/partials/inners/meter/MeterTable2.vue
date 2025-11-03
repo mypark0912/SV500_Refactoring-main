@@ -20,10 +20,10 @@
               <div class="font-bold text-center">{{ t('meter.Table.th_max') }}</div>
             </th>
             <th class="p-2">
-              <div class="font-bold text-center">minTime</div>
+              <div class="font-bold text-center">{{ t('meter.Table.th_minTime') }}</div>
             </th>
             <th class="p-2">
-              <div class="font-bold text-center">maxTime</div>
+              <div class="font-bold text-center">{{ t('meter.Table.th_maxTime') }}</div>
             </th>
           </tr>
         </thead>
