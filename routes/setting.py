@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 import os, httpx, csv, psutil, struct
 import ujson as json
-import shutil, subprocess, logging, subprocess
+import shutil, logging, subprocess, asyncio
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
@@ -1307,44 +1307,80 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
+
 @router.get('/checkSmart')
 def check_smart():
     if is_service_active("smartsystemsrestapiservice"):
-        return {"success" : True}
+        return {"success": True}
     else:
-        return {"success" : False}
+        return {"success": False}
+
 
 @router.get('/manageSmart/{mode}')
-def manage_smart(mode):
+async def manage_smart(mode):
     restartsmart = False
     restartapi = False
-    if mode == 1:
-        if is_service_enabled("smartsystemsservice"):
-            if not is_service_active("smartsystemsservice"):
-                sysService("start", "SmartSystems")
-            else:
-                restartsmart = True
-        else:
-            sysService("enable", "SmartSystems")
-            sysService("start", "SmartSystems")
+
+    if int(mode) == 1:
         if is_service_enabled("smartsystemsrestapiservice"):
             if not is_service_active("smartsystemsrestapiservice"):
-                sysService("start", "SmartAPI")
+                ret = sysService("start", "SmartAPI")
+                restartapi = ret["success"]
             else:
                 restartapi = True
         else:
             sysService("enable", "SmartAPI")
-            sysService("start", "SmartAPI")
-    else:
-        if is_service_enabled("smartsystemsservice"):
-            if is_service_active("smartsystemsservice"):
-                sysService("stop", "SmartSystems")
-            sysService("disable", "SmartSystems")
+            ret = sysService("start", "SmartAPI")
+            restartapi = ret["success"]
+
+        if restartapi:
+            max_attempts = 30  # 최대 15초 (30 * 0.5초)
+            for i in range(max_attempts):
+                if await checkSmartAPI_active():
+                    logging.info(f"✅ SmartAPI ready after {i * 0.5:.1f}s")
+                    break
+
+                if i == max_attempts - 1:
+                    logging.warning("⚠️ SmartAPI start timeout")
+                    return {
+                        "api": False,
+                        "smart": restartsmart,
+                        "success": False,  # ⭐ 추가
+                        "message": "Service started but not responding"
+                    }
+
+                await asyncio.sleep(0.5)
+
+    else:  # mode == 0
         if is_service_enabled("smartsystemsrestapiservice"):
             if is_service_active("smartsystemsrestapiservice"):
-                sysService("stop", "SmartAPI")
+                ret = sysService("stop", "SmartAPI")
+                restartapi = ret["success"]
             sysService("disable", "SmartAPI")
-    return {"smart": restartsmart, "api": restartapi}
+
+        if is_service_enabled("smartsystemsservice"):
+            if is_service_active("smartsystemsservice"):
+                ret = sysService("stop", "SmartSystems")
+                restartsmart = ret["success"]
+            sysService("disable", "SmartSystems")
+
+    return {
+        "api": restartapi,
+        "smart": restartsmart,
+        "success": True  # ⭐ 추가 (정상 완료)
+    }
+
+
+async def checkSmartAPI_active():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"http://{os_spec.restip}:5000/api/alive",
+                timeout=1.0
+            )
+            return response.status_code == 200
+    except:
+        return False
 
 @router.get('/restartasset')  # save setup.json
 async def restartasset():
