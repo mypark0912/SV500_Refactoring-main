@@ -429,86 +429,169 @@ def reset():
     else:
         return {"success": True, "msg": msg}
 
-async def reset_asset():
-    try:
-        mainAsset = ''
-        subAsset = ''
-        redis_state.client.select(0)
-        if redis_state.client.hexists("System", "setup"):
-            setupflag = True
-            datStr = redis_state.client.hget("System", "setup")
-            setting = json.loads(datStr)
-            mainAsset = ''
-            subAsset = ''
-            if setting["useFunction"]["diagnosis_main"]:
-                for chInfo in setting["channel"]:
-                    if chInfo["channel"] == 'Main':
-                        mainAsset = chInfo["assetInfo"]["name"]
-                        break
-            if setting["useFunction"]["diagnosis_sub"]:
-                for chInfo in setting["channel"]:
-                    if chInfo["channel"] == 'Sub':
-                        subAsset = chInfo["assetInfo"]["name"]
-                        break
-            if mainAsset != '':
-                data = await reset_smart(mainAsset, 0)
-                if len(data) > 0:
-                    datas = await  reset_smart(mainAsset, 1)
-                    if len(datas) > 0:
-                        resetmain = 0
-                    else:
-                        resetmain = 1
-                else:
-                    resetmain = 2
-            else:
-                resetmain = -1
-            if subAsset != '':
-                data = await reset_smart(subAsset, 0)
-                if len(data) > 0:
-                    datas = await  reset_smart(subAsset, 1)
-                    if len(datas) > 0:
-                        resetsub = 0
-                    else:
-                        resetsub = 1
-                else:
-                    resetsub = 2
-            else:
-                resetsub = -1
-        else:
-            setupflag = False
+# async def reset_asset():
+#     try:
+#         mainAsset = ''
+#         subAsset = ''
+#         redis_state.client.select(0)
+#         if redis_state.client.hexists("System", "setup"):
+#             setupflag = True
+#             datStr = redis_state.client.hget("System", "setup")
+#             setting = json.loads(datStr)
+#             mainAsset = ''
+#             subAsset = ''
+#             if setting["General"]["useFunction"]["diagnosis_main"]:
+#                 for chInfo in setting["channel"]:
+#                     if chInfo["channel"] == 'Main':
+#                         mainAsset = chInfo["assetInfo"]["name"]
+#                         break
+#             if setting["General"]["useFunction"]["diagnosis_sub"]:
+#                 for chInfo in setting["channel"]:
+#                     if chInfo["channel"] == 'Sub':
+#                         subAsset = chInfo["assetInfo"]["name"]
+#                         break
+#             if mainAsset != '':
+#                 data = await reset_smart(mainAsset, 0)
+#                 if len(data) > 0:
+#                     datas = await  reset_smart(mainAsset, 1)
+#                     if len(datas) > 0:
+#                         resetmain = 0
+#                     else:
+#                         resetmain = 1
+#                 else:
+#                     resetmain = 2
+#             else:
+#                 resetmain = -1
+#             if subAsset != '':
+#                 data = await reset_smart(subAsset, 0)
+#                 if len(data) > 0:
+#                     datas = await  reset_smart(subAsset, 1)
+#                     if len(datas) > 0:
+#                         resetsub = 0
+#                     else:
+#                         resetsub = 1
+#                 else:
+#                     resetsub = 2
+#             else:
+#                 resetsub = -1
+#         else:
+#             setupflag = False
+#
+#         if not setupflag:
+#             return {"success": False, "msg": 'setup is not exist'}
+#         else:
+#             if resetmain > 1 or resetsub > 1:
+#                 return {"success": False, "msg": "Unregistering asset is failed"}
+#             else:
+#                 return {"success": True, "main":{"status":resetmain, "asset":mainAsset}, "sub":{"status":resetsub, "asset":subAsset}}
+#     except Exception as e:
+#         print(str(e))
+#         return {"success": False, "msg": str(e)}
 
-        if not setupflag:
-            return {"success": False, "msg": 'setup is not exist'}
-        else:
-            if resetmain > 1 or resetsub > 1:
-                return {"success": False, "msg": "Unregistering asset is failed"}
-            else:
-                return {"success": True, "main":{"status":resetmain, "asset":mainAsset}, "sub":{"status":resetsub, "asset":subAsset}}
-    except Exception as e:
-        print(str(e))
-        return {"success": False, "msg": str(e)}
+async def reset_count():
+    redis_state.client.select(0)
+    if redis_state.client.hexists("System","setup"):
+        setup = json.loads(redis_state.client.hget("System","setup"))
+        mainEnable = 0
+        subEnable = 0
+        for chInfo in setup["channel"]:
+            if chInfo["channel"] == 'Main':
+                mainEnable = chInfo["Enable"]
+                break
+        for chInfo in setup["channel"]:
+            if chInfo["channel"] == 'Sub':
+                subEnable = chInfo["Enable"]
+                break
+        if mainEnable == 1:
+            allcmd0 = Command(type=0, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
+            ret0 = await push_command_left(allcmd0)
+            if not ret0["success"]:
+                return False
+        if subEnable == 1:
+            allcmd1 = Command(type=1, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
+            ret1 = await push_command_left(allcmd1)
+            if not ret1["success"]:
+                return False
 
-async def reset_system():
-    res = reset_asset()  # unregister main, sub asset
-    if not res["success"]:
-        return {"success": False, "msg": res["msg"]}
+        return True
     else:
-        ret = restartasset()  # smartservice restart
-        if  ret["success"]:
-            sysService("restart", "SmartSystems")
-            sysService("restart", "SmartAPI")
-    allcmd0 = Command(type=0, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
-    allcmd1 = Command(type=1, cmd=0, item=8)
-    ret0 = await push_command_left(allcmd0)
-    ret1 = await push_command_left(allcmd1)
-    if not ret0["success"]:
-        return {"success": False, "msg": 'Main channel clear is failed'}
-    if not ret1["success"]:
-        return {"success": False, "msg": 'Sub channel clear is failed'}
-    return {"success": True}
+        return False
+
+def reset_system():
+    ret = sysService("stop", "core")
+    if ret["success"]:
+        start = "1970-01-01T00:00:00Z"
+        stop = datetime.utcnow().isoformat() + "Z"
+        influx_state.client.delete_api.delete(
+            start=start,
+            stop=stop,
+            predicate='',  # 비우면 전체 삭제
+            bucket='ntek',
+            org='ntek'
+        )
+        retflag = True
+    else:
+        return {"success": False, "msg": "Failed stopping core and deleting Influxdb"}
+
+    if service_exists("smartsystemsservice"): # and is_service_active("smartsystemsservice"):
+        ssflag = False
+        if is_service_active("smartsystemsservice"):
+            rets = sysService("stop", "SmartSystems")
+            if rets["success"]:
+                ssflag = True
+
+        ssrestflag = False
+        if is_service_active("smartsystemsrestapiservice"):
+            rets = sysService("stop", "SmartAPI")
+            if rets["success"]:
+                ssrestflag = True
+
+        if ssflag and ssrestflag:
+            start = "1970-01-01T00:00:00Z"
+            stop = datetime.utcnow().isoformat() + "Z"
+            influx_state.client.delete_api.delete(
+                start=start,
+                stop=stop,
+                predicate='',  # 비우면 전체 삭제
+                bucket='ssdb',
+                org='ntek'
+            )
+            influx_state.client.delete_api.delete(
+                start=start,
+                stop=stop,
+                predicate='',  # 비우면 전체 삭제
+                bucket='ssdbnr',
+                org='ntek'
+            )
+            projectPath = "/usr/local/smartsystems/project/"
+            try:
+                if os.path.exists(projectPath.join("Project.json")):
+                    os.remove(projectPath.join("Project.json"))
+                if os.path.exists(projectPath.join("Profile.json")):
+                    os.remove(projectPath.join("Profile.json"))
+                if os.path.exists(projectPath.join("Settings.json")):
+                    os.remove(projectPath.join("Settings.json"))
+                if os.path.exists(projectPath.join("smartsystems.json")):
+                    os.remove(projectPath.join("smartsystems.json"))
+
+                retflag = True
+            except Exception as e:
+                logging.error(str(e))
+                return {"success": False, "msg": "Failed clearing SmartSystem"}
+
+        else:
+            return {"success": False, "msg": "Failed stopping SmartSystem and deleting Influxdb"}
+
+    if retflag :
+        res = reset_count()
+        if not res:
+            return {"success": False, "msg": "Failed clearing system count"}
+        return {"success": True}
+
 
 @router.get('/ResetAll')
-def resetAll():   #1. Unregiter asset, 2. Delete asset, 3. Restart SmartSystem, 4. Clear count, 5. Delete setup, 6. Delete user.db 7. setup default
+def resetAll():
+# 1. stop service core and delete ntek 2. stop service SmartSystem 3. clear service SmartSystem and delete ssdb,ssdbnr 4. Clear count, 5. Delete setup, 6. Delete user.db
     msg = ''
     if not redis_state.client is None:
         redis_state.client.execute_command("SELECT", 0)
@@ -517,7 +600,7 @@ def resetAll():   #1. Unregiter asset, 2. Delete asset, 3. Restart SmartSystem, 
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
         ret = reset_system()
-        if not ret["success"]:
+        if not ret:
             return {"success": False, "msg": 'System initialization is failed'}
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
         db_path = os.path.join(SETTING_FOLDER, 'user.db')
@@ -549,6 +632,9 @@ def resetAll():   #1. Unregiter asset, 2. Delete asset, 3. Restart SmartSystem, 
                 redis_state.client.hdel("System","setup")
             if redis_state.client.hexists("System", "mode"):
                 redis_state.client.hdel("System","mode")
+            sysService("start", "core")
+            sysService("start", "SmartSystems")
+            sysService("start","SmartAPI")
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
@@ -1222,7 +1308,7 @@ async def saveSetting(channel: str, request: Request):
         return {"status": "0", "error": str(e)}
 
 @router.get('/checkSystem/{mode}')
-def checkService(mode):
+def check_system(mode):
     restartsmart = False
     restartapi = False
     if mode == 1:
@@ -1524,6 +1610,19 @@ async def test_asset(asset, request:Request):
         print(f"Exception: {type(e).__name__}: {e}")
         return {"success": False, "error": "No Data"}
 
+def service_exists(name):
+    """서비스 파일이 존재하는지 확인"""
+    try:
+        result = subprocess.run(
+            ['systemctl', 'list-unit-files', name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=2
+        )
+        return name in result.stdout
+    except:
+        return False
 
 def is_service_enabled(name):
     """서비스 부팅 시 자동 시작 여부 확인 (enabled/disabled)"""

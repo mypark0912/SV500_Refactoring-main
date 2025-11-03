@@ -118,6 +118,7 @@ class InfluxGlobalState:
         self._client: Optional[InfluxDBClient] = None
         self._write_api = None
         self._query_api = None
+        self._delete_api = None
         self._write_async_api = None
         self._error: Optional[str] = None
 
@@ -136,6 +137,7 @@ class InfluxGlobalState:
             )
             self._write_api = self._client.write_api()
             self._query_api = self._client.query_api()
+            self._delete_api = self._client.delete_api()
             self._write_async_api = self._client.write_api(write_options=ASYNCHRONOUS)
             self._error = None
 
@@ -161,6 +163,12 @@ class InfluxGlobalState:
         if not self._query_api:
             self._connect()
         return self._query_api
+
+    @property
+    def delete_api(self):
+        if not self._delete_api:
+            self._connect()
+        return self._delete_api
 
     @property
     def write_async_api(self):

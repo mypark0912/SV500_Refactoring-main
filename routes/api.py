@@ -1277,7 +1277,7 @@ async def get_asset_cached(assettype, asset, channel):
     if data and len(data) > 0:
         datalist = []
 
-        if assettype != 'PowerSupply' and assettype != 'MotorFeed':
+        if assettype != 'MotorFeed':
             # Motor 관련 데이터
             for item in data:
                 if item["Name"] in ["Speed", "Torque"]:
@@ -1289,7 +1289,7 @@ async def get_asset_cached(assettype, asset, channel):
                     })
         else:
             # PowerSupply 관련 데이터
-            target_names = ["CurrentSwitchingHarmonics", "VfdCapacitor", "VoltageSwitchingHarmonics"]
+            target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
             for item in data:
                 if item["Name"] in target_names:
                     datalist.append({
