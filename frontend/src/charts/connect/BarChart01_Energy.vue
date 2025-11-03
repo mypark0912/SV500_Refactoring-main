@@ -8,10 +8,10 @@
   </template>
   
   <script>
-  import { ref, watch, onMounted, onUnmounted } from 'vue'
+  import { ref, watch, onMounted, onUnmounted, inject } from 'vue'  // ✅ inject 추가
   import { useDark } from '@vueuse/core'
   import { chartColors } from '../ChartjsConfig'
-  import { useI18n } from 'vue-i18n'  // ✅ 추가
+  import { useI18n } from 'vue-i18n'
   import {
     Chart, BarController, BarElement, LinearScale, TimeScale, Tooltip, Legend,
   } from 'chart.js'
@@ -26,6 +26,9 @@
     name: 'BarChart01',
     props: ['data', 'width', 'height'],
     setup(props) {
+      // ✅ PDF 모드 inject
+      const isPdfMode = inject('isPdfMode', false)
+      
       const { t, locale } = useI18n();
       const canvas = ref(null)
       const legend = ref(null)
@@ -33,17 +36,20 @@
       const darkMode = useDark()
       const { textColor, gridColor, tooltipBodyColor, tooltipBgColor, tooltipBorderColor } = chartColors
 
+      // ✅ 텍스트 색상 계산 함수
+      const getTextColor = () => {
+        if (isPdfMode) return '#000000'
+        return darkMode.value ? textColor.dark : textColor.light
+      }
+
       watch(locale, () => {
         if (!chart) return;
 
-        // Y축 텍스트 다시 지정
         chart.options.scales.x.ticks.callback = (value) => {
           let key = chart.data.labels[value];
           return t(`${key}`);
-          //return t(`report.cardContext.energyInfo.${key}`);
         };
 
-        // htmlLegend 강제 재실행을 위해 update
         chart.update();
       });
       
@@ -66,9 +72,8 @@
                 ticks: {
                   callback: (value, index) => {
                     return props.data.labels[index]; 
-                    //return t(`report.cardContext.energyInfo.${props.data.labels[index]}`);
                   },
-                  color: darkMode.value ? textColor.dark : textColor.light,
+                  color: getTextColor(),  // ✅ 동적 텍스트 색상
                 }
               },
               y: {
@@ -77,11 +82,11 @@
                 },
                 ticks: {
                   maxTicksLimit: 5,
-                  color: darkMode.value ? textColor.dark : textColor.light,
-                  callback: (value) => Number(value), //formatValue(value),                
+                  color: getTextColor(),  // ✅ 동적 텍스트 색상
+                  callback: (value) => Number(value),             
                 },
                 grid: {
-                  color: darkMode.value ? gridColor.dark : gridColor.light,
+                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),  // ✅ 그리드 색상
                 },              
               },
             },
@@ -91,15 +96,16 @@
               },
               tooltip: {
                 callbacks: {
-                  title: () => false, // Disable tooltip title
-                  label: (context) => parseFloat(context.parsed.y).toFixed(2)//formatValue(context.parsed.y),
+                  title: () => false,
+                  label: (context) => parseFloat(context.parsed.y).toFixed(2)
                 },
-                bodyColor: darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light,
-                backgroundColor: darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light,
-                borderColor: darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light,
+                // ✅ 툴팁 색상
+                bodyColor: isPdfMode ? '#000000' : (darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light),
+                backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : (darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light),
+                borderColor: isPdfMode ? '#e5e5e5' : (darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light),
               },
               datalabels: {
-                display: false  // ✅ 표시 비활성화
+                display: false
               },
             },
             interaction: {
@@ -149,22 +155,28 @@
                 labelContainer.style.display = 'flex'
                 labelContainer.style.alignItems = 'center'
                 const value = document.createElement('span')
-                value.classList.add('text-gray-800', 'dark:text-gray-100')
+                // ✅ PDF 모드일 때 텍스트 색상 조정
+                if (isPdfMode) {
+                  value.classList.add('text-gray-800')
+                } else {
+                  value.classList.add('text-gray-800', 'dark:text-gray-100')
+                }
                 value.style.fontSize = tailwindConfig().theme.fontSize['3xl'][0]
                 value.style.lineHeight = tailwindConfig().theme.fontSize['3xl'][1].lineHeight
                 value.style.fontWeight = tailwindConfig().theme.fontWeight.bold
                 value.style.marginRight = tailwindConfig().theme.margin[2]
                 value.style.pointerEvents = 'none'
                 const label = document.createElement('span')
-                label.classList.add('text-gray-500', 'dark:text-gray-200')
+                // ✅ PDF 모드일 때 텍스트 색상 조정
+                if (isPdfMode) {
+                  label.classList.add('text-gray-500')
+                } else {
+                  label.classList.add('text-gray-500', 'dark:text-gray-200')
+                }
                 label.style.fontSize = tailwindConfig().theme.fontSize.sm[0]
                 label.style.lineHeight = tailwindConfig().theme.fontSize.sm[1].lineHeight
                 
-                //const theValue = c.data.datasets[item.datasetIndex].data.reduce((a, b) => a + b, 0)
-                //const valueText = document.createTextNode(formatValue(theValue))
                 const labelText = document.createTextNode(item.text);
-                //const labelText = document.createTextNode( t(`report.cardContext.energyInfo.${item.text}`))
-                //value.appendChild(valueText)
                 label.appendChild(labelText)
                 li.appendChild(button)
                 button.appendChild(box)
@@ -183,6 +195,8 @@
       watch(
         () => darkMode.value,
         () => {
+          if (isPdfMode) return  // ✅ PDF 모드일 때는 다크모드 변경 무시
+          
           if (darkMode.value) {
             chart.options.scales.x.ticks.color = textColor.dark
             chart.options.scales.y.ticks.color = textColor.dark

@@ -1,15 +1,29 @@
 <template>
-  <div class="modern-chart-container">
+  <div 
+    class="modern-chart-container"
+    :class="isPdfMode ? 'bg-white border-gray-200' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'"
+  >
     <!-- 헤더 섹션 -->
-    <div class="chart-header">
+    <div 
+      class="chart-header"
+      :class="isPdfMode ? 'bg-blue-50 border-blue-100' : 'bg-blue-50 dark:bg-gray-900 border-blue-100 dark:border-gray-700'"
+    >
       <div class="header-content">
-               <h3 class="chart-title">{{ chartTitle }}</h3>
+        <h3 
+          class="chart-title"
+          :class="isPdfMode ? 'text-gray-800' : 'text-gray-800 dark:text-gray-100'"
+        >
+          {{ chartTitle }}
+        </h3>
       </div>
     </div>
 
     <!-- 차트 컨테이너 -->
     <div class="chart-wrapper">
-      <div class="chart-background">
+      <div 
+        class="chart-background"
+        :class="isPdfMode ? 'bg-gray-50' : 'bg-gray-50 dark:bg-gray-900'"
+      >
         <canvas ref="canvas" :data="data" :width="width" :height="height"></canvas>
       </div>
       
@@ -23,7 +37,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, inject } from 'vue'  // ✅ inject 추가
 import { useDark } from '@vueuse/core'
 import { chartColors } from '../ChartjsConfig'
 import { useI18n } from 'vue-i18n'
@@ -42,6 +56,9 @@ export default {
   name: 'ModernBarChart',
   props: ['data', 'width', 'height','mode'],
   setup(props) {
+    // ✅ PDF 모드 inject
+    const isPdfMode = inject('isPdfMode', false)
+    
     const { t, locale } = useI18n()
     const canvas = ref(null)
     const legend = ref(null)
@@ -53,26 +70,26 @@ export default {
 
     // 모드에 따른 타이틀 계산
     const chartTitle = computed(() => {
-    const titleMap = {
+      const titleMap = {
         'PowerQuality': t('diagnosis.tabTitle.detailTitle_pq'),
         'DiagnosisDetail': t('diagnosis.tabTitle.detailTitle'),
-        // 필요한 다른 모드 추가 가능
       }
-    const result = titleMap[props.mode] || t('diagnosis.tabTitle.detailTitle_pq')
-    console.log(props.mode,'Chart title:', result)  // 디버깅용
-    
-    return result
+      const result = titleMap[props.mode] || t('diagnosis.tabTitle.detailTitle_pq')
+      console.log(props.mode,'Chart title:', result)
+      
+      return result
     })
+
     // 동적 바 굵기 계산
     const dynamicBarThickness = computed(() => {
       const itemCount = props.data?.labels?.length || 1
       
-      // 항목 개수에 따른 바 굵기 조정
-      if (itemCount <= 5) return 80      // 적은 항목일 때 굵게
-      else if (itemCount <= 10) return 45  // 중간 개수
-      else if (itemCount <= 15) return 35  // 많은 항목
-      else return 30                       // 매우 많은 항목일 때 얇게
+      if (itemCount <= 5) return 80
+      else if (itemCount <= 10) return 45
+      else if (itemCount <= 15) return 35
+      else return 30
     })
+
     const getBarColors = (value) => {
       const colorMap = {
         0: {
@@ -140,7 +157,7 @@ export default {
               bottomRight: 0,
             },
             borderSkipped: false,
-            barThickness: dynamicBarThickness.value, // 동적 바 굵기
+            barThickness: dynamicBarThickness.value,
           }]
         },
         options: {
@@ -155,7 +172,7 @@ export default {
             },
           },
           scales: {
-            y: { // Y축이 값 축
+            y: {
               max: 4,
               border: {
                 display: false,
@@ -200,7 +217,7 @@ export default {
                 },
               },
             },
-            x: { // X축이 라벨 축
+            x: {
               border: {
                 display: false,
               },
@@ -213,13 +230,13 @@ export default {
                   size: 12,
                   weight: '600',
                 },
-                color: darkMode.value ? '#D1D5DB' : '#6B7280',
+                // ✅ PDF 모드일 때는 다크모드 무시
+                color: isPdfMode ? '#6B7280' : (darkMode.value ? '#D1D5DB' : '#6B7280'),
                 maxRotation: 45,
                 minRotation: 0,
                 callback: (value, index) => {
                   const title = props.data.titles?.[index]?.[locale.value]
                   const label = (title && title.trim() !== '') ? title : props.data.labels?.[index]
-                  // 말줄임표 없이 전체 라벨 표시 (긴 경우 회전됨)
                   return label
                 },
               },
@@ -231,10 +248,11 @@ export default {
             },
             tooltip: {
               enabled: true,
-              backgroundColor: darkMode.value ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-              titleColor: darkMode.value ? '#F9FAFB' : '#111827',
-              bodyColor: darkMode.value ? '#E5E7EB' : '#374151',
-              borderColor: darkMode.value ? '#4B5563' : '#E5E7EB',
+              // ✅ PDF 모드일 때는 라이트 테마 강제
+              backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : (darkMode.value ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)'),
+              titleColor: isPdfMode ? '#111827' : (darkMode.value ? '#F9FAFB' : '#111827'),
+              bodyColor: isPdfMode ? '#374151' : (darkMode.value ? '#E5E7EB' : '#374151'),
+              borderColor: isPdfMode ? '#E5E7EB' : (darkMode.value ? '#4B5563' : '#E5E7EB'),
               borderWidth: 1,
               cornerRadius: 12,
               padding: 12,
@@ -292,7 +310,7 @@ export default {
     watch(
       () => darkMode.value,
       () => {
-        if (!chart) return
+        if (!chart || isPdfMode) return  // ✅ PDF 모드일 때는 다크모드 변경 무시
         
         if (darkMode.value) {
           chart.options.scales.x.ticks.color = '#D1D5DB'
@@ -316,6 +334,7 @@ export default {
       legend,
       isLoading,
       dynamicBarThickness,
+      isPdfMode,  // ✅ 반환 목록에 추가
       t,
       locale,
       chartTitle,  
@@ -326,16 +345,14 @@ export default {
 
 <style scoped>
 .modern-chart-container {
- @apply bg-white dark:bg-gray-800;
- @apply rounded-xl border border-gray-200 dark:border-gray-700 mt-2;
+ @apply rounded-xl border mt-2;
  @apply overflow-hidden shadow-lg;
 }
 
 /* 헤더 */
 .chart-header {
  @apply px-5 py-4;
- @apply bg-blue-50 dark:bg-gray-900;
- @apply border-b border-blue-100 dark:border-gray-700;
+ @apply border-b;
 }
 
 .header-content {
@@ -350,7 +367,6 @@ export default {
 
 .chart-title {
  @apply text-lg font-bold;
- @apply text-gray-800 dark:text-gray-100;
 }
 
 /* 차트 래퍼 */
@@ -361,7 +377,6 @@ export default {
 
 .chart-background {
  @apply relative;
- @apply bg-gray-50 dark:bg-gray-900;
  @apply rounded-lg p-2;
 }
 

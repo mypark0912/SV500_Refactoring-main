@@ -193,7 +193,7 @@
               </div>
               <div>
                 <h3 class="text-xl font-bold">
-                 {{ t(`report.cardTitle.PowerQuality`) }} <!--Power Quality - EN 50160 Report-->
+                 EN 50160 <!--{{ t(`report.cardTitle.PowerQuality`) }} Power Quality - EN 50160 Report-->
 
                 </h3>
               </div>
@@ -471,7 +471,7 @@
 
 <script>
 // script 부분은 변경 없음 (동일하게 유지)
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch, provide } from 'vue'
 //import LineChart from '../../../charts/connect/LineChart02.vue'
 import LineChart from '../../../charts/connect/LineChart_ITIC.vue'
 import BarChart2 from '../../../charts/connect/BarChart01_Energy.vue'
@@ -520,7 +520,7 @@ export default {
   },
   emits: ['render-complete'],
   setup(props, context){
-    
+    provide('isPdfMode', true)
     const emit = context.emit;
     const { t, locale } = useI18n();    
     const data = ref(props.data);
