@@ -549,7 +549,7 @@ export default {
     const checkNameplateflag = ref(false);
     const isRestartDone = ref(false);
     const isSaving = ref(false); // ✅ 저장 중 상태 추가
-    
+
     //const langset = computed(() => authStore.getLang);
     const isAdmin = computed(() => {
       if (parseInt(authStore.getUserRole) > 1) return true;
@@ -713,6 +713,43 @@ export default {
 
       inputDict.value.useFuction[`diagnosis_${channelType}`] =
         !inputDict.value.useFuction[`diagnosis_${channelType}`];
+
+        if(inputDict.value.useFuction[`diagnosis_${channelType}`]){
+          if(!checkSmart()){
+            if(confirm('Not running diagnostic service. Do you want to run service?')){
+              manageSmart();
+            }else{
+              return;
+            }
+          }
+        }
+    };
+
+    const checkSmart = ()=>{
+      try{
+        const response = axios.get('/setting/checkSmart');
+        if (response.data.success){
+          return true;
+        }else{
+          return false;
+        }
+      }catch(error){
+        console.error(error);
+        return false;
+      }
+    }
+    const manageSmart = ()=>{
+      try{
+        const response = axios.get('/setting/manageSmart/1');
+        if (response.data.success){
+          return true;
+        }else{
+          return false;
+        }
+      }catch(error){
+        console.error(error);
+        return false;
+      }
     };
 
     // showDiagnosis 변경 시 useDiagnosis도 업데이트

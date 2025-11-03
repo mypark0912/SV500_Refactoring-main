@@ -1307,8 +1307,15 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
-@router.get('/checkSystem/{mode}')
-def check_system(mode):
+@router.get('/checkSmart')
+def check_smart():
+    if is_service_active("smartsystemsrestapiservice"):
+        return {"success" : True}
+    else:
+        return {"success" : False}
+
+@router.get('/manageSmart/{mode}')
+def manage_smart(mode):
     restartsmart = False
     restartapi = False
     if mode == 1:

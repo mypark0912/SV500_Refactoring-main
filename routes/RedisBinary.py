@@ -402,6 +402,7 @@ class ItemType(IntEnum):
     ITEM_REBOOT = 5
     ITEM_RUNHOUR = 6
     ITEM_WAVEFORM = 7
+    ITEM_ALL = 8
 
 # Pydantic 모델
 class Command(BaseModel):
