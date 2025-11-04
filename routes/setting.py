@@ -517,23 +517,55 @@ async def reset_count():
     else:
         return False
 
-def reset_system():
-    ret = sysService("stop", "core")
+async def reset_system():
+    ret = sysService("stop", "Core")
     if ret["success"]:
-        start = "1970-01-01T00:00:00Z"
-        stop = datetime.utcnow().isoformat() + "Z"
-        influx_state.client.delete_api.delete(
-            start=start,
-            stop=stop,
-            predicate='',  # 비우면 전체 삭제
-            bucket='ntek',
-            org='ntek'
-        )
-        retflag = True
-    else:
-        return {"success": False, "msg": "Failed stopping core and deleting Influxdb"}
+        try:
+            start = "1970-01-01T00:00:00Z"
+            stop = datetime.utcnow().isoformat() + "Z"
 
-    if service_exists("smartsystemsservice"): # and is_service_active("smartsystemsservice"):
+            # ntek 버킷의 measurement 목록 조회 후 삭제
+            query = '''
+            import "influxdata/influxdb/schema"
+            schema.measurements(bucket: "ntek")
+            '''
+
+            try:
+                tables = influx_state.query_api.query(query, org='ntek')
+                measurements = []
+                for table in tables:
+                    for record in table.records:
+                        meas_name = record.values.get("_value")
+                        if meas_name:
+                            measurements.append(meas_name)
+
+                # 각 measurement 개별 삭제
+                for measurement in measurements:
+                    try:
+                        influx_state.delete_api.delete(
+                            start=start,
+                            stop=stop,
+                            predicate=f'_measurement="{measurement}"',
+                            bucket='ntek',
+                            org='ntek'
+                        )
+                        logging.info(f"✅ Deleted measurement: {measurement} from ntek")
+                    except Exception as e:
+                        logging.warning(f"⚠️ Failed to delete {measurement}: {e}")
+
+                retflag = True
+            except Exception as e:
+                logging.warning(f"⚠️ No measurements found in ntek or query failed: {e}")
+                retflag = True  # 데이터가 없어도 성공으로 처리
+
+        except Exception as e:
+            logging.error(f"❌ Failed to delete InfluxDB ntek bucket: {e}")
+            return {"success": False, "msg": f"Failed deleting Influxdb: {str(e)}"}
+    else:
+        return {"success": False, "msg": "Failed stopping core service"}
+
+    # SmartSystem 버킷들도 동일하게 measurement 삭제
+    if service_exists("smartsystemsservice"):
         ssflag = False
         if is_service_active("smartsystemsservice"):
             rets = sysService("stop", "SmartSystems")
@@ -547,50 +579,76 @@ def reset_system():
                 ssrestflag = True
 
         if ssflag and ssrestflag:
-            start = "1970-01-01T00:00:00Z"
-            stop = datetime.utcnow().isoformat() + "Z"
-            influx_state.client.delete_api.delete(
-                start=start,
-                stop=stop,
-                predicate='',  # 비우면 전체 삭제
-                bucket='ssdb',
-                org='ntek'
-            )
-            influx_state.client.delete_api.delete(
-                start=start,
-                stop=stop,
-                predicate='',  # 비우면 전체 삭제
-                bucket='ssdbnr',
-                org='ntek'
-            )
-            projectPath = "/usr/local/smartsystems/project/"
             try:
-                if os.path.exists(projectPath.join("Project.json")):
-                    os.remove(projectPath.join("Project.json"))
-                if os.path.exists(projectPath.join("Profile.json")):
-                    os.remove(projectPath.join("Profile.json"))
-                if os.path.exists(projectPath.join("Settings.json")):
-                    os.remove(projectPath.join("Settings.json"))
-                if os.path.exists(projectPath.join("smartsystems.json")):
-                    os.remove(projectPath.join("smartsystems.json"))
+                start = "1970-01-01T00:00:00Z"
+                stop = datetime.utcnow().isoformat() + "Z"
+
+                # ssdb와 ssdbnr 버킷들도 measurement 방식으로 삭제
+                for bucket_name in ['ssdb', 'ssdbnr']:
+                    query = f'''
+                    import "influxdata/influxdb/schema"
+                    schema.measurements(bucket: "{bucket_name}")
+                    '''
+
+                    try:
+                        tables = influx_state.query_api.query(query, org='ntek')
+                        measurements = []
+                        for table in tables:
+                            for record in table.records:
+                                meas_name = record.values.get("_value")
+                                if meas_name:
+                                    measurements.append(meas_name)
+
+                        # 각 measurement 개별 삭제
+                        for measurement in measurements:
+                            try:
+                                influx_state.delete_api.delete(
+                                    start=start,
+                                    stop=stop,
+                                    predicate=f'_measurement="{measurement}"',
+                                    bucket=bucket_name,
+                                    org='ntek'
+                                )
+                                logging.info(f"✅ Deleted measurement: {measurement} from {bucket_name}")
+                            except Exception as e:
+                                logging.warning(f"⚠️ Failed to delete {measurement} from {bucket_name}: {e}")
+
+                    except Exception as e:
+                        logging.warning(f"⚠️ No measurements found in {bucket_name} or query failed: {e}")
+
+            except Exception as e:
+                logging.error(f"❌ Failed to delete InfluxDB ss buckets: {e}")
+                return {"success": False, "msg": f"Failed deleting SmartSystem Influxdb: {str(e)}"}
+
+            # 파일 삭제
+            projectPath = "/usr/local/smartsystems/project/"
+            files_to_delete = ["Project.json", "Profile.json", "Settings.json", "smartsystems.json"]
+
+            try:
+                for filename in files_to_delete:
+                    file_path = os.path.join(projectPath, filename)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        logging.info(f"✅ Deleted: {file_path}")
 
                 retflag = True
             except Exception as e:
-                logging.error(str(e))
-                return {"success": False, "msg": "Failed clearing SmartSystem"}
-
+                logging.error(f"❌ Failed to delete SmartSystem files: {e}")
+                return {"success": False, "msg": f"Failed clearing SmartSystem files: {str(e)}"}
         else:
-            return {"success": False, "msg": "Failed stopping SmartSystem and deleting Influxdb"}
+            return {"success": False, "msg": "Failed stopping SmartSystem services"}
 
-    if retflag :
-        res = reset_count()
+    if retflag:
+        res = await reset_count()
         if not res:
             return {"success": False, "msg": "Failed clearing system count"}
         return {"success": True}
+    else:
+        return {"success": False, "msg": "System reset incomplete"}
 
 
 @router.get('/ResetAll')
-def resetAll():
+async def resetAll():
 # 1. stop service core and delete ntek 2. stop service SmartSystem 3. clear service SmartSystem and delete ssdb,ssdbnr 4. Clear count, 5. Delete setup, 6. Delete user.db
     msg = ''
     if not redis_state.client is None:
@@ -599,9 +657,9 @@ def resetAll():
             checkflag = redis_state.client.hget("Service","setting")
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
-        ret = reset_system()
-        if not ret:
-            return {"success": False, "msg": 'System initialization is failed'}
+        ret = await reset_system()
+        if not ret["success"]:
+            return ret
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
         db_path = os.path.join(SETTING_FOLDER, 'user.db')
         backup_file_path = os.path.join(SETTING_FOLDER, 'setup_backup.json')
@@ -632,7 +690,7 @@ def resetAll():
                 redis_state.client.hdel("System","setup")
             if redis_state.client.hexists("System", "mode"):
                 redis_state.client.hdel("System","mode")
-            sysService("start", "core")
+            sysService("start", "Core")
             sysService("start", "SmartSystems")
             sysService("start","SmartAPI")
         except Exception as e:
