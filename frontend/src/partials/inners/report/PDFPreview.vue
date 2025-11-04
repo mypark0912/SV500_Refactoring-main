@@ -56,6 +56,10 @@
                     <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.location`) }}</span>
                     <span class="text-xl font-bold text-gray-800">{{ devLocation }}</span>
                     </div>
+                    <div class="flex flex-col">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t("config.plansPanel.devInformation.mac") }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{ mac }}</span>
+                    </div>
                 </div>
                 </div>
             </div>
@@ -559,6 +563,7 @@ export default {
     const selectedX = ref(0.02);
     const devLocation = computed(() => setupStore.getDevLocation);
     const channel = ref(props.channel);
+    const mac = ref('');
     const assettypes = computed(()=> {
       const assetInfo = setupStore.getAssetConfig;
       if(channel.value == 'Main')
@@ -1703,7 +1708,9 @@ const overLoadPercentage = computed(() => {
         const chName = channelComputed.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
         if(chName != ''){
             const infos = await loadInfoData(chName);
-            datalist.value = infos;
+            datalist.value = infos.infoData;
+            mac.value = infos.mac;
+            
         }else{
             console.log('There are no registered Asset.');
         }
@@ -2361,6 +2368,7 @@ async function processChartElement(pdf, element, name, options, yPosition) {
       assettypes,
       iticDataList,
       formattedDate,
+      mac
     }
   }
 }

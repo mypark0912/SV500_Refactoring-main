@@ -83,7 +83,8 @@ export function useReportData() {
             if (response.data.success) {
               reportData.infoData = response.data.data;
               reportData.info = true;
-              return reportData.infoData;
+              reportData.mac = response.data.mac;
+              return reportData;
             }else{
               console.log('No Data');
             }

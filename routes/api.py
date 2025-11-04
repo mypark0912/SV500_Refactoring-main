@@ -1369,6 +1369,7 @@ async def get_asset(asset, request: Request):
         redis_state.client.execute_command("SELECT", 0)
         setupJson = redis_state.client.hget("System", "setup")
         setting = json.loads(setupJson)
+        mac = setting["General"]["deviceInfo"]["mac_address"]
         # main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
         transformer_channel = next(
             (ch for ch in setting["channel"] if ch.get("assetInfo", {}).get("name") == asset),
@@ -1394,7 +1395,7 @@ async def get_asset(asset, request: Request):
             elif data[i]["Name"] == "RatedCurrent":
                 datalist.append({"Title": data[i]["Title"], "Name": data[i]["Name"], "Value": data[i]["Value"],
                                  "Unit": data[i]["Unit"]})
-        return {"success": True, "data": datalist}
+        return {"success": True, "data": datalist, "mac": mac}
     else:
         return {"success": False, "error": "No Data"}
 
