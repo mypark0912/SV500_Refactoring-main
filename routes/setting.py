@@ -77,7 +77,7 @@ async def initInflux():
         "password": "ntek9135",
         "org": "ntek",
         "bucket": "ntek",
-        "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
+        "retentionPeriodSeconds": 730 * 24 * 60 * 60  # 90 * 24 * 60 * 60
     }
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
@@ -695,8 +695,9 @@ async def resetAll():
             if redis_state.client.hexists("System", "mode"):
                 redis_state.client.hdel("System","mode")
             sysService("start", "Core")
-            sysService("start", "SmartSystems")
-            sysService("start","SmartAPI")
+            if service_exists("smartsystemsservice"):
+                sysService("start", "SmartSystems")
+                sysService("start","SmartAPI")
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
