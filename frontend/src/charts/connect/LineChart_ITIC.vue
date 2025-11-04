@@ -13,10 +13,10 @@
   </template>
   
   <script>
-  import { ref, watch, onMounted, onUnmounted, inject } from 'vue'  // ✅ inject 추가
+  import { ref, watch, onMounted, onUnmounted, inject } from 'vue'
   import { useDark } from '@vueuse/core'
   import { chartColors } from '../ChartjsConfig'
-  
+  import { useI18n } from "vue-i18n";
   import {
     Chart, LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip, LogarithmicScale, ScatterController
   } from 'chart.js'
@@ -31,16 +31,14 @@
     name: 'LineChart_ITIC',
     props: ['data', 'width', 'height'],
     setup(props) {
-      // ✅ PDF 모드 inject
       const isPdfMode = inject('isPdfMode', false)
-  
+      const { t, locale } = useI18n();
       const canvas = ref(null)
       const legend = ref(null)
       let chart = null
       const darkMode = useDark()
       const { textColor, gridColor, tooltipBodyColor, tooltipBgColor, tooltipBorderColor } = chartColors
       
-      // ✅ 텍스트 색상 계산 함수
       const getTextColor = () => {
         if (isPdfMode) return '#000000'
         return darkMode.value ? textColor.dark : textColor.light
@@ -60,22 +58,40 @@
                 type: 'logarithmic',
                 min: 0.0001,
                 max: 100,
+                title: {
+                  display: true,
+                  text: t("report.cardContext.iticxscale"),
+                  color: getTextColor(),
+                  font: {
+                    size: 12,
+                    weight: 'bold'
+                  }
+                },
                 ticks: {
-                  color: getTextColor(),  // ✅ 동적 텍스트 색상
+                  color: getTextColor(),
                   callback: val => val,
                 },
                 grid: {
-                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),  // ✅ 그리드 색상
+                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),
                 },
               },
               y: {
                 min: 0,
                 max: 500,
+                title: {
+                  display: true,
+                  text: t("report.cardContext.iticyscale"),
+                  color: getTextColor(),
+                  font: {
+                    size: 12,
+                    weight: 'bold'
+                  }
+                },
                 ticks:{
-                  color: getTextColor(),  // ✅ 동적 텍스트 색상
+                  color: getTextColor(),
                 },
                 grid: {
-                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),  // ✅ 그리드 색상
+                  color: isPdfMode ? '#e5e5e5' : (darkMode.value ? gridColor.dark : gridColor.light),
                 },
               }
             },
@@ -88,7 +104,6 @@
                   title: () => false,
                   label: (context) => context.parsed.y,
                 },
-                // ✅ 툴팁 색상
                 bodyColor: isPdfMode ? '#000000' : (darkMode.value ? tooltipBodyColor.dark : tooltipBodyColor.light),
                 backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : (darkMode.value ? tooltipBgColor.dark : tooltipBgColor.light),
                 borderColor: isPdfMode ? '#e5e5e5' : (darkMode.value ? tooltipBorderColor.dark : tooltipBorderColor.light),
@@ -121,13 +136,25 @@
         },
         { deep: true }
       )
-  
+        // ✅ locale 변경 감지하여 차트 업데이트
+      watch(
+        () => locale.value,
+        () => {
+          if (chart) {
+            chart.options.scales.x.title.text = t("report.cardContext.iticxscale")
+            chart.options.scales.y.title.text = t("report.cardContext.iticyscale")
+            chart.update('none')
+          }
+        }
+      )
       watch(
         () => darkMode.value,
         () => {
-          if (isPdfMode) return  // ✅ PDF 모드일 때는 다크모드 변경 무시
+          if (isPdfMode) return
           
           if (darkMode.value) {
+            chart.options.scales.x.title.color = textColor.dark
+            chart.options.scales.y.title.color = textColor.dark
             chart.options.scales.x.ticks.color = textColor.dark
             chart.options.scales.y.ticks.color = textColor.dark
             chart.options.scales.x.grid.color = gridColor.dark
@@ -136,6 +163,8 @@
             chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark
             chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark
           } else {
+            chart.options.scales.x.title.color = textColor.light
+            chart.options.scales.y.title.color = textColor.light
             chart.options.scales.x.ticks.color = textColor.light
             chart.options.scales.y.ticks.color = textColor.light
             chart.options.scales.x.grid.color = gridColor.light
@@ -150,6 +179,7 @@
       return {
         canvas,
         legend,
+        t,
       }
     }
   }
