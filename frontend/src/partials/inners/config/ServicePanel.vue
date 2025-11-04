@@ -99,10 +99,10 @@
             <ServiceCard :item="'InfluxDB'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard :item="'Core'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard :item="'WebServer'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            
+            <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
+            
             <!--ServiceCard :item="'System'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'Backup Download'" :mode="'Download'" @service-done="showMessage"/-->
           </div>

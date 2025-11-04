@@ -1793,7 +1793,8 @@ def check_sysStatus():
             'redis': 'redis',
             'influxdb': 'influxdb',
             'core': 'core',
-            'webserver':'webserver'
+            'webserver':'webserver',
+            'a35':'sv500A35'
         }
         service_status = {}
 
@@ -1828,6 +1829,7 @@ def sysService(cmd, item):
       "SmartAPI":"smartsystemsrestapiservice",
       "Core":"core",
       "WebServer":"webserver",
+      "A35":"sv500A35",
     }
 
     try:
@@ -1874,7 +1876,8 @@ def check_allservice():
             'redis': 'redis',
             'influxdb': 'influxdb',
             'core': 'core',
-            'webserver': 'webserver'
+            'webserver': 'webserver',
+            'a35':'a35'
         }
     else:
         servicedict = {
@@ -1883,7 +1886,8 @@ def check_allservice():
             'redis': 'redis',
             'influxdb': 'influxdb',
             'core': 'core',
-            'webserver': 'webserver'
+            'webserver': 'webserver',
+            'a35':'a35',
         }
 
     service_status = {}

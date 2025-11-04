@@ -229,7 +229,7 @@ export default {
           health.value = Status?.value?.["webserver"];
           break;
         case "A35":
-          health.value = Status?.value?.["A35"];
+          health.value = Status?.value?.["a35"];
           break;
       }
     }, { immediate: true });
