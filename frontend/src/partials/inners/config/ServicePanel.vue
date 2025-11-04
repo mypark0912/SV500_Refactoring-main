@@ -239,13 +239,18 @@
           </div>
         </section>
       </div>
-  
+      <LoadingModal
+          :isOpen="isResetAll"
+          title="Reset System as factory default initialization"
+          :message="serviceLoadingMessage"
+        />
     </div>
   </template>
   
   <script>
   import ServiceCard from './ServiceCard.vue';
     import ServiceStatus from './ServiceStatus.vue';
+    import LoadingModal from "../../../components/LoadingModal.vue";
   import { useRoute } from 'vue-router'
   import { onMounted, ref , watch, provide, computed} from 'vue'
   import { useSetupStore } from '@/store/setup'
@@ -257,15 +262,18 @@
     components:{
         ServiceCard,
         ServiceStatus,
+        LoadingModal,
     },
     setup(){
       const setupStore = useSetupStore();
       const authStore = useAuthStore();
       const message = ref('')
       const health = ref('');
+      const isResetAll = ref(false);
       const sysStatus = ref({});
       const diskStatus = ref([]);
       const modalSelectItem = ref('all');
+      const serviceLoadingMessage = ref('');
       const showMessage = async(text) => {
         message.value = text
         await SysCheck();
@@ -394,9 +402,12 @@
       const confirmed = confirm('All settings and account database will be erased and initialized.\nDo you want to proceed?');
       if (confirmed) {
         try {
+          isResetAll.value = true; // ⭐ 로딩 모달 표시
+          serviceLoadingMessage.value = 'Initializing system...';
           const response = await axios.get("/setting/ResetAll");
           if (response.data.success){
             message.value = "Setup initiated"
+            serviceLoadingMessage.value = 'Initialization is finished!';
             authStore.setInstall(0);
 
             if (authStore.logout) {
@@ -410,6 +421,8 @@
           }
         } catch (error) {
           console.error("데이터 가져오기 실패:", error);
+        }finally{
+          isResetAll.value = false;
         }
       }
     };
@@ -450,6 +463,8 @@
         downloadUrl,
         modalSelectItem,
         InitInfluxCLI,
+        serviceLoadingMessage,
+        isResetAll,
       }
 
     }

@@ -244,6 +244,81 @@ def getVersionSave(Opmode):
                            smart_version='1.0.0')
     save_post(install, 0, 0)
 
+# @router.post('/joinAdmin')
+# def join_admin(data: SignupAdmin):
+#     devType = data.devType
+#     name = data.username
+#     account = data.account
+#     password = data.password
+#     email = data.email
+#     adminPass = data.adminPass
+#     lang = data.lang
+#
+#     if devType < 3:
+#         mode = f"device{devType}"
+#         if devType == 0:
+#             diag = 'No'
+#         else:
+#             diag = 'Yes'
+#     else:
+#         diag = 'No'
+#         mode = "server"
+#
+#     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+#     shutil.copy(default_file_path, SETUP_PATH)
+#     with open(SETUP_PATH, "r", encoding="utf-8") as f:
+#         setting = json.load(f)
+#         setting["mode"] = mode
+#         setting["lang"] = lang
+#         setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
+#         setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
+#
+#     with open(SETUP_PATH, "w", encoding="utf-8") as ef:
+#         json.dump(setting, ef, indent=2)
+#
+#     redis_state.client.execute_command("SELECT", 0)
+#     redis_state.client.hset("System", "setup", json.dumps(setting))
+#     redis_state.client.hset("System", "mode", mode)
+#     redis_state.client.hset("Service", "save", 1)
+#     redis_state.client.hset("Service", "restart", 1)
+#     redis_state.client.select(1)
+#     redis_state.client.flushdb()
+#     if aesState.checkAdmin(adminPass):
+#         try:
+#             conn = get_db_connection()
+#             conn.row_factory = sqlite3.Row
+#             cursor = conn.cursor()
+#             hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+#             cursor.execute(
+#                 "INSERT INTO `user` (account,username, password, email, role, api) VALUES (?, ?, ?, ?, ?, ?)",
+#                 (account, name, hashed_password, email, '3', diag)
+#             )
+#             conn.commit()
+#             conn.close()
+#             client_admin = SignupUser(
+#                 username='client_admin',
+#                 account='client_admin',
+#                 password='1234',
+#                 email='ntek@nteksys.com',
+#                 role='2'
+#             )
+#             client_guest = SignupUser(
+#                 username='client_guest',
+#                 account='client_guest',
+#                 password='1234',
+#                 email='ntek@nteksys.com',
+#                 role='0'
+#             )
+#             join(client_admin)
+#             join(client_guest)
+#             getVersionSave(mode)
+#             return {"passOK": "1"}
+#         except Exception as e:
+#             print(str(e))
+#             return {"passOK": "0", "msg": str(e)}
+#     else:
+#         return {"passOK": "0", "msg": 'Admin Password is Wrong'}
+
 @router.post('/joinAdmin')
 def join_admin(data: SignupAdmin):
     devType = data.devType
@@ -264,25 +339,7 @@ def join_admin(data: SignupAdmin):
         diag = 'No'
         mode = "server"
 
-    default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-    shutil.copy(default_file_path, SETUP_PATH)
-    with open(SETUP_PATH, "r", encoding="utf-8") as f:
-        setting = json.load(f)
-        setting["mode"] = mode
-        setting["lang"] = lang
-        setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
-        setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
-
-    with open(SETUP_PATH, "w", encoding="utf-8") as ef:
-        json.dump(setting, ef, indent=2)
-
-    redis_state.client.execute_command("SELECT", 0)
-    redis_state.client.hset("System", "setup", json.dumps(setting))
-    redis_state.client.hset("System", "mode", mode)
-    redis_state.client.hset("Service", "save", 1)
-    redis_state.client.hset("Service", "restart", 1)
-    redis_state.client.select(1)
-    redis_state.client.flushdb()
+    adminflag = False
     if aesState.checkAdmin(adminPass):
         try:
             conn = get_db_connection()
@@ -312,12 +369,32 @@ def join_admin(data: SignupAdmin):
             join(client_admin)
             join(client_guest)
             getVersionSave(mode)
-            return {"passOK": "1"}
+            adminflag = True
         except Exception as e:
-            print(str(e))
             return {"passOK": "0", "msg": str(e)}
     else:
         return {"passOK": "0", "msg": 'Admin Password is Wrong'}
+    if adminflag:
+        default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+        shutil.copy(default_file_path, SETUP_PATH)
+        with open(SETUP_PATH, "r", encoding="utf-8") as f:
+            setting = json.load(f)
+            setting["mode"] = mode
+            setting["lang"] = lang
+            setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
+            setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
+
+        with open(SETUP_PATH, "w", encoding="utf-8") as ef:
+            json.dump(setting, ef, indent=2)
+
+        redis_state.client.execute_command("SELECT", 0)
+        redis_state.client.hset("System", "setup", json.dumps(setting))
+        redis_state.client.hset("System", "mode", mode)
+        redis_state.client.hset("Service", "save", 1)
+        redis_state.client.hset("Service", "restart", 1)
+        redis_state.client.select(1)
+        redis_state.client.flushdb()
+        return {"passOK": "1"}
 
 @router.get('/checkSession')
 def check_session(request: Request):

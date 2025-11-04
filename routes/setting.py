@@ -517,8 +517,10 @@ async def reset_count():
     else:
         return False
 
+
 async def reset_system():
     ret = sysService("stop", "Core")
+    retflag = True
     if ret["success"]:
         try:
             start = "1970-01-01T00:00:00Z"
@@ -551,92 +553,26 @@ async def reset_system():
                         )
                         logging.info(f"✅ Deleted measurement: {measurement} from ntek")
                     except Exception as e:
+                        retflag = False
                         logging.warning(f"⚠️ Failed to delete {measurement}: {e}")
+                        break
 
-                retflag = True
             except Exception as e:
                 logging.warning(f"⚠️ No measurements found in ntek or query failed: {e}")
                 retflag = True  # 데이터가 없어도 성공으로 처리
 
         except Exception as e:
+            retflag = False
             logging.error(f"❌ Failed to delete InfluxDB ntek bucket: {e}")
             return {"success": False, "msg": f"Failed deleting Influxdb: {str(e)}"}
     else:
+        retflag = False
         return {"success": False, "msg": "Failed stopping core service"}
 
     # SmartSystem 버킷들도 동일하게 measurement 삭제
-    if service_exists("smartsystemsservice"):
-        ssflag = False
-        if is_service_active("smartsystemsservice"):
-            rets = sysService("stop", "SmartSystems")
-            if rets["success"]:
-                ssflag = True
-
-        ssrestflag = False
-        if is_service_active("smartsystemsrestapiservice"):
-            rets = sysService("stop", "SmartAPI")
-            if rets["success"]:
-                ssrestflag = True
-
-        if ssflag and ssrestflag:
-            try:
-                start = "1970-01-01T00:00:00Z"
-                stop = datetime.utcnow().isoformat() + "Z"
-
-                # ssdb와 ssdbnr 버킷들도 measurement 방식으로 삭제
-                for bucket_name in ['ssdb', 'ssdbnr']:
-                    query = f'''
-                    import "influxdata/influxdb/schema"
-                    schema.measurements(bucket: "{bucket_name}")
-                    '''
-
-                    try:
-                        tables = influx_state.query_api.query(query, org='ntek')
-                        measurements = []
-                        for table in tables:
-                            for record in table.records:
-                                meas_name = record.values.get("_value")
-                                if meas_name:
-                                    measurements.append(meas_name)
-
-                        # 각 measurement 개별 삭제
-                        for measurement in measurements:
-                            try:
-                                influx_state.delete_api.delete(
-                                    start=start,
-                                    stop=stop,
-                                    predicate=f'_measurement="{measurement}"',
-                                    bucket=bucket_name,
-                                    org='ntek'
-                                )
-                                logging.info(f"✅ Deleted measurement: {measurement} from {bucket_name}")
-                            except Exception as e:
-                                logging.warning(f"⚠️ Failed to delete {measurement} from {bucket_name}: {e}")
-
-                    except Exception as e:
-                        logging.warning(f"⚠️ No measurements found in {bucket_name} or query failed: {e}")
-
-            except Exception as e:
-                logging.error(f"❌ Failed to delete InfluxDB ss buckets: {e}")
-                return {"success": False, "msg": f"Failed deleting SmartSystem Influxdb: {str(e)}"}
-
-            # 파일 삭제
-            projectPath = "/usr/local/smartsystems/project/"
-            files_to_delete = ["Project.json", "Profile.json", "Settings.json", "smartsystems.json"]
-
-            try:
-                for filename in files_to_delete:
-                    file_path = os.path.join(projectPath, filename)
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                        logging.info(f"✅ Deleted: {file_path}")
-
-                retflag = True
-            except Exception as e:
-                logging.error(f"❌ Failed to delete SmartSystem files: {e}")
-                return {"success": False, "msg": f"Failed clearing SmartSystem files: {str(e)}"}
-        else:
-            return {"success": False, "msg": "Failed stopping SmartSystem services"}
+    if service_exists("smartsystemsservice.service"):
+        result = await reinstall_smartsystem()
+        retflag = result["success"]
 
     if retflag:
         res = await reset_count()
@@ -647,14 +583,85 @@ async def reset_system():
         return {"success": False, "msg": "System reset incomplete"}
 
 
+async def reinstall_smartsystem():
+    """SmartSystem 재설치로 완전 초기화"""
+    try:
+        # 설치 스크립트 경로 (실제 경로에 맞게 수정 필요)
+        install_script = "/home/root/iss/install.sh"  # 예시
+
+        if not os.path.exists(install_script):
+            # 또는 reinstall 명령어가 있다면
+            return {"success": False, "msg": "Reinstall script is not existed"}
+
+        # 스크립트 실행
+        result = subprocess.run(
+            [install_script, "--fresh"],  # 또는 적절한 옵션
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=60
+        )
+
+        if result.returncode == 0:
+            logging.info("✅ SmartSystem install script completed")
+            return {"success": True}
+        else:
+            logging.error(f"❌ Install script failed: {result.stderr}")
+            return {"success": False, "msg": result.stderr}
+
+    except subprocess.TimeoutExpired:
+        logging.error("❌ Install script timeout")
+        return {"success": False, "msg": "Install script timeout"}
+    except Exception as e:
+        logging.error(f"❌ Install script error: {e}")
+        return {"success": False, "msg": str(e)}
+
+
+def delete_channel_data():
+    """
+    ch1, ch2의 waveform과 event 파일 삭제 (간단 버전)
+    """
+    base_path = "/home/root"
+    directories_to_clean = [
+        "ch1/waveform",
+        "ch1/event",
+        "ch2/waveform",
+        "ch2/event"
+    ]
+
+    total_deleted = 0
+
+    try:
+        for dir_path in directories_to_clean:
+            full_path = os.path.join(base_path, dir_path)
+
+            if not os.path.exists(full_path):
+                continue
+
+            for root, dirs, files in os.walk(full_path, topdown=False):
+                for filename in files:
+                    try:
+                        os.remove(os.path.join(root, filename))
+                        total_deleted += 1
+                    except:
+                        pass
+
+        logging.info(f"✅ Deleted {total_deleted} channel data files")
+        return {"success": True, "deleted": total_deleted}
+
+    except Exception as e:
+        logging.error(f"❌ Failed to delete channel data: {e}")
+        return {"success": False, "msg": str(e)}
+
+
 @router.get('/ResetAll')
 async def resetAll():
-# 1. stop service core and delete ntek 2. stop service SmartSystem 3. clear service SmartSystem and delete ssdb,ssdbnr 4. Clear count, 5. Delete setup, 6. Delete user.db
+    # 1. stop service core and delete ntek 2. stop service SmartSystem 3. clear service SmartSystem and delete ssdb,ssdbnr 4. Clear count, 5. Delete setup, 6. Delete user.db
     msg = ''
     if not redis_state.client is None:
         redis_state.client.execute_command("SELECT", 0)
-        if redis_state.client.hexists("Service","setting"):
-            checkflag = redis_state.client.hget("Service","setting")
+        if redis_state.client.hexists("Service", "setting"):
+            checkflag = redis_state.client.hget("Service", "setting")
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
         ret = await reset_system()
@@ -691,13 +698,14 @@ async def resetAll():
                 json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상
 
             if redis_state.client.hexists("System", "setup"):
-                redis_state.client.hdel("System","setup")
+                redis_state.client.hdel("System", "setup")
             if redis_state.client.hexists("System", "mode"):
-                redis_state.client.hdel("System","mode")
+                redis_state.client.hdel("System", "mode")
+            rt = delete_channel_data()
             sysService("start", "Core")
-            if service_exists("smartsystemsservice"):
+            if service_exists("smartsystemsservice.service"):
                 sysService("start", "SmartSystems")
-                sysService("start","SmartAPI")
+                sysService("start", "SmartAPI")
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
