@@ -336,7 +336,7 @@
 				"zcttpye": 1
 			},
 			"demand": {
-				"target": 0,
+				"target": 1,
 				"demand_interval": 15
 			},
 			"ptInfo": {
