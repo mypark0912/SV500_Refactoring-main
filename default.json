@@ -1,6 +1,6 @@
 {
-	"mode": "device2",
-	"lang": "ko",
+	"mode": "device0",
+	"lang": "en",
 	"General": {
 		"useFuction": {
 			"ftp": false,
@@ -9,9 +9,9 @@
 			"diagnosis_sub": false
 		},
 		"deviceInfo": {
-			"mac_address": "08bfb86e4d5f",
-			"serial_number": "08bfb86e4d5f",
-			"name": "Device",
+			"mac_address": "",
+			"serial_number": "",
+			"name": "",
 			"location": ""
 		},
 		"tcpip": {
@@ -77,9 +77,9 @@
 				"pt2": 220
 			},
 			"assetInfo": {
-				"name": "PowerSupply",
-				"type": "PowerSupply",
-				"nickname": "1차측"
+				"name": "",
+				"type": "",
+				"nickname": ""
 			},
 			"eventInfo": {
 				"oc_action": 0,
@@ -347,9 +347,9 @@
 				"pt2": 220
 			},
 			"assetInfo": {
-				"name": "Transformer",
-				"type": "Transformer",
-				"nickname": "소내변압기"
+				"name": "",
+				"type": "",
+				"nickname": ""
 			},
 			"eventInfo": {
 				"oc_action": 0,
