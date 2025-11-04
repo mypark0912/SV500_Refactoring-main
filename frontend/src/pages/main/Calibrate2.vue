@@ -378,7 +378,8 @@ function updateChannelData(response) {
     const refData = channelType === 'main' ? response.mainRef : response.subRef; // refData 가져오기
     
     if (!sourceData) return;
-    
+    const THRESHOLD = refData?.Error || 0;
+   
     // 매핑 테이블에 따라 자동 업데이트
     dataMapping.forEach(({ index, category, dataCount, refKey }) => {
       if (sourceData[index]?.data) {
@@ -400,7 +401,7 @@ function updateChannelData(response) {
               }
               //const refValue = refData[refKey];
               error = (Math.abs(value - refValue) / refValue * 100).toFixed(3); // 백분율로 계산
-              limit = error > limit ? 1 : 0;
+              limit = parseFloat(error) > THRESHOLD ? 1 : 0; //limit = error > limit ? 1 : 0;
             }
             
             channels[channelType][category].view[i] = {
