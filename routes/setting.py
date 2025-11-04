@@ -77,7 +77,7 @@ async def initInflux():
         "password": "ntek9135",
         "org": "ntek",
         "bucket": "ntek",
-        "retentionPeriodSeconds": 0  # 90 * 24 * 60 * 60
+        "retentionPeriodSeconds": 730 * 24 * 60 * 60  # 90 * 24 * 60 * 60
     }
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
