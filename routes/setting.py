@@ -695,8 +695,9 @@ async def resetAll():
             if redis_state.client.hexists("System", "mode"):
                 redis_state.client.hdel("System","mode")
             sysService("start", "Core")
-            sysService("start", "SmartSystems")
-            sysService("start","SmartAPI")
+            if service_exists("smartsystemsservice"):
+                sysService("start", "SmartSystems")
+                sysService("start","SmartAPI")
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
