@@ -47,10 +47,10 @@
       </button-->
       
       <!-- 구분선 (선택사항) -->
-      <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+      <div v-if="devMode != 'device0'" class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
       
       <!-- Download 영역 -->
-      <div class="flex items-center gap-3">
+      <div v-if="devMode != 'device0'" class="flex items-center gap-3">
         <label 
           for="reference"
           class="text-sm text-gray-700 dark:text-gray-300 font-medium"
