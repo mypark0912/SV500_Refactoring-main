@@ -25,6 +25,17 @@
             {{ computedChannel == 'Main' ? AssetInfo.assetType_main : AssetInfo.assetType_sub }}
           </p>
         </div>
+        <div v-if="!isTransformer" class="equipment-status">
+          <span 
+            class="status-badge"
+            :class="isRunning ? 'status-running' : 'status-stopped'"
+          >
+            <span class="status-indicator"></span>
+            <span class="status-text">
+              {{ isRunning ? t('dashboard.singleinfo.running') : t('dashboard.singleinfo.stopped') }}
+            </span>
+          </span>
+        </div>
       </div>
       <!-- 데이터 테이블 -->  
       <div class="data-section">
@@ -57,6 +68,10 @@
     },
     props: {
       channel: String,   // 채널 정보
+      status: {          // 설비 상태 (가동/정지)
+        type: Boolean,
+        default: true    // 기본값: 가동중
+      }
     },
     setup(props) {
       const { t } = useI18n()
@@ -66,6 +81,7 @@
       //const rawdata = ref([]);
       // 반응형 데이터
       const channel = ref(props.channel)
+      const isRunning = ref(props.status)
 
       // 채널 정보 계산
       const computedChannel = computed(() => {
@@ -75,6 +91,13 @@
           return 'Sub'
       })
       const computedType = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetType_main: AssetInfo.value.assetType_sub)
+      
+      // Transformer 타입 체크
+      const isTransformer = computed(() => {
+        return computedType.value === 'Transformer' || 
+               computedType.value === 'PrimaryTransformer'
+      })
+      
       // 설비 이미지 결정
       const motorImageSrc = computed(() => {
         //let assetType = computedChannel.value == 'Main' ? AssetInfo.value.assetType_main : AssetInfo.value.assetType_sub
@@ -105,6 +128,8 @@
       return {
         // 데이터
         computedChannel,
+        isRunning,
+        isTransformer,
         //rawdata,
         // 계산된 속성
         motorImageSrc,
@@ -154,6 +179,7 @@
   .equipment-info {
     @apply flex items-center gap-3 px-5 py-3;
     @apply dark:from-gray-700/50 dark:to-gray-800;
+    @apply justify-between;
   }
   
   .equipment-avatar {
@@ -167,6 +193,7 @@
   
   .equipment-details {
     @apply flex flex-col gap-1;
+    @apply flex-shrink-0;
   }
   
   .equipment-name {
@@ -178,7 +205,48 @@
   .equipment-type {
     @apply text-xs font-medium text-gray-600 dark:text-gray-300;
     @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300;
-    @apply px-2 py-1 rounded-md inline-block;
+    @apply px-2 py-1 rounded-md;
+    @apply inline-block w-auto;
+  }
+
+  /* 상태 배지 */
+  .equipment-status {
+    @apply flex items-center;
+    @apply flex-shrink-0 ml-auto;
+  }
+
+  .status-badge {
+    @apply flex items-center gap-2 px-3 py-1.5;
+    @apply rounded-full font-semibold text-xs;
+    @apply border-2 transition-all duration-300;
+    @apply shadow-sm;
+    @apply whitespace-nowrap;
+  }
+
+  .status-indicator {
+    @apply w-2 h-2 rounded-full;
+    @apply animate-pulse;
+  }
+
+  .status-running {
+    @apply bg-green-50 dark:bg-green-900/30;
+    @apply border-green-500 dark:border-green-600;
+    @apply text-green-700 dark:text-green-300;
+  }
+
+  .status-running .status-indicator {
+    @apply bg-green-500;
+  }
+
+  .status-stopped {
+    @apply bg-gray-50 dark:bg-gray-700/30;
+    @apply border-gray-400 dark:border-gray-500;
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .status-stopped .status-indicator {
+    @apply bg-gray-400;
+    @apply animate-none;
   }
   
   .data-section {
@@ -320,7 +388,11 @@
   /* 반응형 개선 */
   @media (max-width: 768px) {
     .equipment-info {
-      @apply flex-col text-center gap-2;
+      @apply flex-wrap;
+    }
+
+    .equipment-status {
+      @apply w-full justify-end;
     }
     
     .data-grid {
@@ -361,6 +433,14 @@
     
     .status-label {
       @apply text-xs;
+    }
+
+    .status-badge {
+      @apply px-2 py-1 text-[10px];
+    }
+
+    .status-indicator {
+      @apply w-1.5 h-1.5;
     }
   }
   

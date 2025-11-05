@@ -4,6 +4,7 @@
     <div class="chart-header">
       <div class="header-content">
         <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle')}}</h3>
+        <span class="update-time">{{ getUpdateTime() }}</span>
       </div>
     </div>
 
@@ -157,6 +158,24 @@ export default {
       return statusLabels[Math.floor(value)] || t('diagnosis.tabContext.st0')
     }
 
+    // 업데이트 시간 포맷팅 (국제 공통 숫자 형식)
+    const getUpdateTime = () => {
+      // props.data에 updateTime이나 timestamp 필드가 없으면 빈 문자열 반환
+      const time = props.data?.updateTime || props.data?.timestamp
+      if (!time) return '-'
+      
+      const date = time instanceof Date ? time : new Date(time)
+      
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    }
+
     // 툴팁 표시
     const showTooltip = (event, item, index) => {
       const batteryItem = event.currentTarget
@@ -225,6 +244,7 @@ export default {
       tooltip,
       tooltipStyle,
       getStatusText,
+      getUpdateTime,
       showTooltip,
       hideTooltip,
       updateTooltipPosition,
@@ -250,7 +270,7 @@ export default {
 }
 
 .header-content {
- @apply flex items-center gap-3;
+ @apply flex items-center justify-between gap-3;
 }
 
 .header-icon {
@@ -262,6 +282,12 @@ export default {
 .chart-title {
  @apply text-lg font-bold;
  @apply text-gray-800 dark:text-gray-100;
+}
+
+/* 업데이트 시간 스타일 */
+.update-time {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply tabular-nums;
 }
 
 /* 배터리 래퍼 */
@@ -456,6 +482,10 @@ export default {
     grid-template-columns: repeat(3, 1fr) !important;
     @apply gap-4;
   }
+  
+  .update-time {
+    @apply text-[10px];
+  }
 }
 
 @media (max-width: 640px) {
@@ -471,6 +501,10 @@ export default {
   .legend-items {
     @apply gap-2;
   }
+  
+  .update-time {
+    @apply text-[10px];
+  }
 }
 
 @media (max-width: 480px) {
@@ -484,6 +518,10 @@ export default {
   
   .chart-header {
     @apply p-3;
+  }
+  
+  .update-time {
+    @apply text-[9px];
   }
 }
 </style>

@@ -91,7 +91,9 @@
             "title": "Equipment Info",
             "Operatingtime": "Running Hours",
             "EquipmentInformation": "Equipment Information",
-            "OperationStatus":"Operating Status"
+            "OperationStatus":"Operating Status",
+            "running":"Running",
+            "stopped":"Stopped"
         },
         "sitemap": "Dashboard",      
         "meter": {

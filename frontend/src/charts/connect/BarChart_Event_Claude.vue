@@ -5,6 +5,7 @@
     <div class="chart-header">
       <div class="header-content">
         <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle_event')}}</h3>
+        <span class="update-time">{{ getUpdateTime() }}</span>
       </div>
     </div>
     <!-- 차트 컨테이너 -->
@@ -49,6 +50,24 @@ export default {
     let chart = null
     const darkMode = useDark()
     const { textColor, gridColor, tooltipBodyColor, tooltipBgColor, tooltipBorderColor } = chartColors
+
+    // 업데이트 시간 포맷팅 (국제 공통 숫자 형식)
+    const getUpdateTime = () => {
+      // props.data에 updateTime이나 timestamp 필드가 없으면 빈 문자열 반환
+      const time = props.data?.updateTime || props.data?.timestamp
+      if (!time) return '-'
+      
+      const date = time instanceof Date ? time : new Date(time)
+      
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    }
 
     // 동적 바 굵기 계산
     const dynamicBarThickness = computed(() => {
@@ -301,6 +320,7 @@ export default {
       legend,
       isLoading,
       dynamicBarThickness,
+      getUpdateTime,
       t,
       locale,
     }
@@ -323,7 +343,7 @@ export default {
 }
 
 .header-content {
- @apply flex items-center gap-3;
+ @apply flex items-center justify-between gap-3;
 }
 
 .header-icon {
@@ -337,7 +357,11 @@ export default {
  @apply text-gray-800 dark:text-gray-100;
 }
 
-
+/* 업데이트 시간 스타일 */
+.update-time {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply tabular-nums;
+}
 
 /* 차트 래퍼 */
 .chart-wrapper {
@@ -380,6 +404,10 @@ export default {
   .chart-header,
   .chart-wrapper {
     @apply p-4;
+  }
+  
+  .update-time {
+    @apply text-[10px];
   }
 }
 </style>

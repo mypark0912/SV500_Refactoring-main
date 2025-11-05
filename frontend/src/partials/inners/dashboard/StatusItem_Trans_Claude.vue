@@ -5,6 +5,9 @@
       <h3 class="card-title">
         {{ mode === 'pq' ? t('dashboard.diagnosis.pq') : t('dashboard.diagnosis.diagnostic') }}
       </h3>
+      <span class="update-time">
+        {{ getUpdateTime() }}
+      </span>
     </div>
 
     <!-- 상태 인디케이터 섹션 -->
@@ -48,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -59,21 +62,6 @@ const props = defineProps({
 
 const { t } = useI18n()
 const stData = ref(props.data)
-const currentTime = ref(new Date())
-
-// 시간 업데이트
-// let timeInterval = null
-// onMounted(() => {
-//   timeInterval = setInterval(() => {
-//     currentTime.value = new Date()
-//   }, 1000)
-// })
-
-// onUnmounted(() => {
-//   if (timeInterval) {
-//     clearInterval(timeInterval)
-//   }
-// })
 
 // 표시할 상태들 (정지 제외)
 const displayedStatuses = computed(() => {
@@ -116,14 +104,23 @@ const getCurrentStatusText = () => {
   return displayedStatuses.value[statusIndex]?.text || '알 수 없음'
 }
 
-// 현재 시간 포맷팅
-// const getCurrentTime = () => {
-//   return currentTime.value.toLocaleTimeString('ko-KR', {
-//     hour: '2-digit',
-//     minute: '2-digit',
-//     second: '2-digit'
-//   })
-// }
+
+const getUpdateTime = () => {
+  // props.data에 updateTime이나 timestamp 필드가 없으면 빈 문자열 반환
+  const time = stData.value.updateTime || stData.value.timestamp
+  if (!time) return '-'
+  
+  const date = time instanceof Date ? time : new Date(time)
+  
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 </script>
 
 <style scoped>
@@ -158,6 +155,12 @@ const getCurrentStatusText = () => {
 
 .channel-text {
   @apply text-xs font-semibold text-gray-400 dark:text-gray-300 uppercase;
+}
+
+/* 업데이트 시간 스타일 */
+.update-time {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply tabular-nums;
 }
 
 /* 상태 섹션 */
@@ -250,6 +253,10 @@ const getCurrentStatusText = () => {
   
   .status-text {
     @apply text-xs;
+  }
+  
+  .update-time {
+    @apply text-[10px];
   }
 }
 

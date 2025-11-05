@@ -91,7 +91,9 @@
       "title": "설비 현황",
       "Operatingtime": "운전 시간",
       "EquipmentInformation": "설비 정보",
-      "OperationStatus":"운용 현황"
+      "OperationStatus":"운용 현황",
+      "running":"가동중",
+      "stopped":"정지"
     },
     "sitemap": "대시보드",
     "meter": {

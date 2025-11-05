@@ -15,6 +15,12 @@
         >
           {{ chartTitle }}
         </h3>
+        <span 
+          class="update-time"
+          :class="isPdfMode ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'"
+        >
+          {{ getUpdateTime() }}
+        </span>
       </div>
     </div>
 
@@ -79,6 +85,24 @@ export default {
       
       return result
     })
+
+    // 업데이트 시간 포맷팅 (국제 공통 숫자 형식)
+    const getUpdateTime = () => {
+      // props.data에 updateTime이나 timestamp 필드가 없으면 빈 문자열 반환
+      const time = props.data?.updateTime || props.data?.timestamp
+      if (!time) return '-'
+      
+      const date = time instanceof Date ? time : new Date(time)
+      
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    }
 
     // 동적 바 굵기 계산
     const dynamicBarThickness = computed(() => {
@@ -335,6 +359,7 @@ export default {
       isLoading,
       dynamicBarThickness,
       isPdfMode,  // ✅ 반환 목록에 추가
+      getUpdateTime,
       t,
       locale,
       chartTitle,  
@@ -356,7 +381,7 @@ export default {
 }
 
 .header-content {
- @apply flex items-center gap-3;
+ @apply flex items-center justify-between gap-3;
 }
 
 .header-icon {
@@ -367,6 +392,12 @@ export default {
 
 .chart-title {
  @apply text-lg font-bold;
+}
+
+/* 업데이트 시간 스타일 */
+.update-time {
+  @apply text-xs font-medium;
+  @apply tabular-nums;
 }
 
 /* 차트 래퍼 */
@@ -428,6 +459,10 @@ export default {
  
  .header-icon {
    @apply w-9 h-9;
+ }
+ 
+ .update-time {
+   @apply text-[10px];
  }
 }
 </style>
