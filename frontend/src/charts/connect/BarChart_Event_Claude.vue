@@ -5,7 +5,7 @@
     <div class="chart-header">
       <div class="header-content">
         <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle_event')}}</h3>
-        <span class="update-time">{{ getUpdateTime() }}</span>
+        <!-- <span class="update-time">{{ getUpdateTime() }}</span> -->
       </div>
     </div>
     <!-- 차트 컨테이너 -->

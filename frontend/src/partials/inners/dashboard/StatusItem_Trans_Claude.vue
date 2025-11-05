@@ -6,7 +6,7 @@
         {{ mode === 'pq' ? t('dashboard.diagnosis.pq') : t('dashboard.diagnosis.diagnostic') }}
       </h3>
       <span class="update-time">
-        {{ getUpdateTime() }}
+        <!-- {{ getUpdateTime() }} -->
       </span>
     </div>
 

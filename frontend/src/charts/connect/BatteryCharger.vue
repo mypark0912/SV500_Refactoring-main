@@ -4,7 +4,7 @@
     <div class="chart-header">
       <div class="header-content">
         <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle')}}</h3>
-        <span class="update-time">{{ getUpdateTime() }}</span>
+        <!-- <span class="update-time">{{ getUpdateTime() }}</span> -->
       </div>
     </div>
 

@@ -11,6 +11,17 @@
               <h3 class="equipment-name" @click="goToEquipmentDetail">{{ stData.devNickname }}</h3>
               <div class="equipment-type">{{ stData.devType }}</div>
             </div>
+            <div class="equipment-status">
+              <span 
+                class="status-badge"
+                :class="isRunning ? 'status-running' : 'status-stopped'"
+              >
+                <span class="status-indicator"></span>
+                <span class="status-text">
+                  {{ isRunning ? t('dashboard.singleinfo.running') : t('dashboard.singleinfo.stopped') }}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
   
@@ -137,6 +148,10 @@ import transImg from '@/images/trans.png'
       data: Object,
       channel: String,
       transData: Object,
+      status: {
+        type: Boolean,
+        default: true
+      }
     },
     setup(props) {
       const { t } = useI18n();
@@ -144,6 +159,8 @@ import transImg from '@/images/trans.png'
       const route = useRouter();
       
       const channel = ref(props.channel);
+      const isRunning = ref(props.status);
+      
       const computedChannel = computed(() => {
         if (channel.value == 'Main' || channel.value == 'main')
           return 'Main';
@@ -155,6 +172,11 @@ import transImg from '@/images/trans.png'
       const transData = ref(props.transData);
 
       const LoadRate = ref(0);
+      
+      // Transformer 타입 체크
+      const isTransformer = computed(() => {
+        return stData.value.devType?.includes('Transformer') || false;
+      });
   
       const strList = computed(() => {
         return [
@@ -254,6 +276,8 @@ import transImg from '@/images/trans.png'
         statusStr,
         statusClass,
         transData,
+        isRunning,
+        isTransformer,
         t,
         strList,
         LoadFactor,
@@ -286,6 +310,7 @@ import transImg from '@/images/trans.png'
   /* 장비 섹션 */
   .equipment-section {
     @apply flex items-center gap-3 w-full;
+    @apply justify-between;
   }
   
   .equipment-avatar {
@@ -312,6 +337,46 @@ import transImg from '@/images/trans.png'
     @apply text-xs font-semibold text-blue-500 dark:text-blue-400;
     @apply bg-blue-100 dark:bg-blue-700 px-2 py-1 rounded-lg;
     @apply inline-block w-fit mt-1;
+  }
+
+  /* 상태 배지 */
+  .equipment-status {
+    @apply flex items-center;
+    @apply flex-shrink-0;
+  }
+
+  .status-badge {
+    @apply flex items-center gap-1.5 px-2.5 py-1;
+    @apply rounded-full font-semibold text-xs;
+    @apply border-2 transition-all duration-300;
+    @apply shadow-sm;
+    @apply whitespace-nowrap;
+  }
+
+  .status-indicator {
+    @apply w-1.5 h-1.5 rounded-full;
+    @apply animate-pulse;
+  }
+
+  .status-running {
+    @apply bg-green-50 dark:bg-green-900/30;
+    @apply border-green-500 dark:border-green-600;
+    @apply text-green-700 dark:text-green-300;
+  }
+
+  .status-running .status-indicator {
+    @apply bg-green-500;
+  }
+
+  .status-stopped {
+    @apply bg-gray-50 dark:bg-gray-700/30;
+    @apply border-gray-400 dark:border-gray-500;
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .status-stopped .status-indicator {
+    @apply bg-gray-400;
+    @apply animate-none;
   }
   
   /* 두 번째 줄 */
@@ -398,7 +463,11 @@ import transImg from '@/images/trans.png'
     }
     
     .equipment-section {
-      @apply gap-2;
+      @apply gap-2 flex-wrap;
+    }
+
+    .equipment-status {
+      @apply w-full justify-end;
     }
     
     .avatar-image {
@@ -411,6 +480,14 @@ import transImg from '@/images/trans.png'
     
     .equipment-type {
       @apply text-xs px-1.5 py-0.5;
+    }
+
+    .status-badge {
+      @apply px-2 py-0.5 text-[10px] gap-1;
+    }
+
+    .status-indicator {
+      @apply w-1 h-1;
     }
     
     .metrics-section {

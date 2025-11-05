@@ -25,7 +25,7 @@
             {{ computedChannel == 'Main' ? AssetInfo.assetType_main : AssetInfo.assetType_sub }}
           </p>
         </div>
-        <div v-if="!isTransformer" class="equipment-status">
+        <div class="equipment-status">
           <span 
             class="status-badge"
             :class="isRunning ? 'status-running' : 'status-stopped'"
