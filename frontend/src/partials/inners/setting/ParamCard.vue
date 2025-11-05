@@ -96,6 +96,7 @@
                         getBackgroundColorClass(index),
                       ]"
                       :disabled="!isEditParameters"
+                      :maxlength="20"
                     />
                   </template>
                 </div>
@@ -116,6 +117,7 @@
                         ? 'opacity-50 cursor-not-allowed'
                         : 'cursor-pointer'
                     "
+                    
                   />
                 </div>
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">

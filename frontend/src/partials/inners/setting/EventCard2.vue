@@ -82,6 +82,7 @@
                 id="fw-version"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
 
@@ -94,6 +95,7 @@
                 id="fw-version"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
           </div>
@@ -130,6 +132,7 @@
                 v-model="inputDict.eventInfo.oc_level"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
             <div>
@@ -140,6 +143,7 @@
                 v-model="inputDict.eventInfo.oc_holdofftime"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
           </div>
@@ -188,6 +192,7 @@
                 v-model="inputDict.eventInfo.swell_holdofftime"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
           </div>
@@ -224,6 +229,7 @@
                 v-model="inputDict.eventInfo.inter_level"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
             <div>
@@ -234,6 +240,7 @@
                 v-model="inputDict.eventInfo.inter_holdofftime"
                 class="form-input w-full"
                 type="text"
+                :maxlength="20"
               />
             </div>
           </div>

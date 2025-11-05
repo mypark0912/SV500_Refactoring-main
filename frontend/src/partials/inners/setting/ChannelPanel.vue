@@ -196,6 +196,7 @@
                       id="serial-number"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
 
@@ -217,6 +218,7 @@
                       id="mac-address"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
                 </div>
@@ -236,6 +238,7 @@
                       id="fw-version"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
 
@@ -280,6 +283,7 @@
                       id="mac-address"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
 
@@ -424,6 +428,7 @@
                       id="mac-address"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
                 </div>
@@ -443,6 +448,7 @@
                       id="fw-version"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
 
@@ -460,6 +466,7 @@
                       id="fw-version"
                       class="form-input w-full"
                       type="text"
+                      :maxlength="20"
                     />
                   </div>
                 </div>
@@ -623,6 +630,7 @@
                     "
                     class="form-input w-full"
                     type="number"
+                    :maxlength="20"
                   />
                 </div>
                 <div>

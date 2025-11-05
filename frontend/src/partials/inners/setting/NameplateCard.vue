@@ -120,6 +120,7 @@
                     :step="getStepValue(row)"
                     class="text-xs w-full border rounded p-1 text-center cursor-not-allowed readonly-input"
                     disabled
+                    :maxlength="20"
                   />
                 </template>
 
@@ -132,6 +133,7 @@
                     :max="getMaxValue(row)"
                     :step="getStepValue(row)"
                     disabled
+                    :maxlength="20"
                   />
                 </template>
 
@@ -211,6 +213,7 @@
                     class="text-xs w-full border rounded p-1 text-center"
                     :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
+                    :maxlength="20"
                   />
                 </template>
 
@@ -222,6 +225,7 @@
                     class="text-xs w-full border rounded p-1 text-center"
                     :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
                     :disabled="!isEditNameplates"
+                    :maxlength="20"
                   />
                 </template>
 

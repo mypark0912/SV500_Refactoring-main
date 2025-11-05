@@ -54,6 +54,7 @@
             v-model="inputDict.alarm.CompareTimeDelay"
             class="form-input w-[470px]"
             type="number"
+            :maxlength="20"
           />
         </div>
       </div>
@@ -139,6 +140,7 @@
                     v-model.number="inputDict.alarm[n.toString()][2]"
                     class="form-input w-full"
                     type="number"
+                    :maxlength="20"
                   />
                 </td>
                 <td class="border p-2 text-center">
@@ -146,6 +148,7 @@
                     v-model="inputDict.alarm[n.toString()][3]"
                     class="form-input w-full"
                     type="number"
+                    :maxlength="20"
                   />
                 </td>
 

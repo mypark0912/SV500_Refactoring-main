@@ -109,6 +109,7 @@
                 type="text"
                 class="form-input w-full"
                 :disabled="selectedbtn == 2"
+                :maxlength="20"
               />
             </div>
             <div class="flex items-center gap-2" v-if="selectedbtn == 0">
@@ -118,6 +119,7 @@
                 v-model="assetMode.newname"
                 type="text"
                 class="form-input w-full"
+                :maxlength="20"
                 
               />
             </div>
@@ -130,6 +132,7 @@
                 v-model="inputDict.assetInfo.nickname"
                 type="text"
                 class="form-input w-full"
+                :maxlength="20"
               />
             </div>
             <div
@@ -143,6 +146,7 @@
                 v-model="inputDict.n_kva"
                 type="text"
                 class="form-input w-full"
+                :maxlength="20"
               />
             </div>
           </div>

@@ -60,6 +60,7 @@
             :readonly="isReadonlyField(key)"
             :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="text"
+            :maxlength="20"
           />
 
           <!-- Number → Input type number -->
@@ -69,6 +70,7 @@
             :readonly="isReadonlyField(key)"
             :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="number"
+            :maxlength="20"
           />
 
           <!-- Default → Text -->
@@ -78,6 +80,7 @@
             :readonly="isReadonlyField(key)"
             :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
             type="text"
+            :maxlength="20"
           />
         </div>
       </div>
@@ -120,6 +123,7 @@
               :readonly="isReadonlyField(key)"
               :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="text"
+              :maxlength="20"
             />
 
             <!-- Number → Input type number -->
@@ -129,6 +133,7 @@
               :readonly="isReadonlyField(key)"
               :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="number"
+              :maxlength="20"
             />
 
             <!-- Default → Text -->
@@ -138,6 +143,7 @@
               :readonly="isReadonlyField(key)"
               :class="['form-input w-full', { 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed': isReadonlyField(key) }]"
               type="text"
+              :maxlength="20"
             />
           </div>
         </div>
