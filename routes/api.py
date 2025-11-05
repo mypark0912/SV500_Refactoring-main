@@ -1275,12 +1275,12 @@ async def get_asset_cached(assettype, asset, channel):
             return {"success": False, "error": f"API call failed: {str(e)}"}
 
     # 3. 데이터 처리
-    if data and len(data) > 0:
+    if data and len(data["Data"]) > 0:
         datalist = []
 
         if assettype != 'MotorFeed':
             # Motor 관련 데이터
-            for item in data:
+            for item in data["Data"]:
                 if item["Name"] in ["Speed", "Torque"]:
                     datalist.append({
                         "Assembly": item["AssemblyID"],
@@ -1291,7 +1291,7 @@ async def get_asset_cached(assettype, asset, channel):
         else:
             # PowerSupply 관련 데이터
             target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
-            for item in data:
+            for item in data["Data"]:
                 if item["Name"] in target_names:
                     datalist.append({
                         "Assembly": item["AssemblyID"],
