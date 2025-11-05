@@ -1013,7 +1013,7 @@ async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
     # 3. 데이터 처리 및 반환
     if data and len(data) > 0:
         runhours = get_running(channel)["total"]
-
+        updateTimes = data["LastRecordDateTime"]
         # BarGraph가 있는지 확인
         if "BarGraph" not in data or len(data["BarGraph"]) == 0:
             return {"status": -1, "runhours": runhours}
@@ -1034,9 +1034,9 @@ async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
         # 우선순위 체크
         for priority_status in [4, 3, 2, 1]:
             if priority_status in status_list:
-                return {"status": priority_status, "runhours": runhours}
+                return {"status": priority_status, "runhours": runhours, "updateTime": updateTimes}
 
-        return {"status": -2, "runhours": runhours}
+        return {"status": -2, "runhours": runhours, "updateTime": updateTimes}
     else:
         return {"success": False, "error": "No Data"}
 
@@ -1140,6 +1140,7 @@ async def getPQStatus_cached(asset, channel):
         for item in data.get("BarGraph", [])
         if "Status" in item and "Title" in item
     ]
+    updateTimes = data["LastRecordDateTime"]
 
     if not status_items:
         return {"status": -2}
@@ -1161,7 +1162,7 @@ async def getPQStatus_cached(asset, channel):
     else:
         item_label = f"{top_items[0]['Title']} ... +{len(top_items) - 1}"
 
-    return {"status": highest_status, "item": item_label}
+    return {"status": highest_status, "item": item_label, "updateTime": updateTimes}
 
 @router.get("/getPQStatus/{asset}")  # Master Dashboard Status
 @gc_after_large_data(threshold_mb=30)
@@ -2513,6 +2514,22 @@ def getTransRedis(channel):
         print(str(e))
         return {"success": False, "error": f"Redis Read Error: {str(e)}"}
 
+@router.get("/getEquipStatus/{channel}")
+def get_eqStatus(channel):
+    redis_state.client.select(0)
+    if not redis_state.client.hexists("Equipment", "StartingCurrent"):
+        status = False
+        return {"success": False, "status": status}
+
+    stCrDict = json.loads(redis_state.client.hget("Equipment", "StartingCurrent"))
+    redis_state.client.select(1)
+    if channel == 'Main':
+        itot = redis_state.client.hget("meter_main", "Itot")
+        status = float(itot) > (float(stCrDict["main"]) * 3)
+    else:
+        itot = redis_state.client.hget("meter_sub", "Itot")
+        status = float(itot) > (float(stCrDict["sub"]) * 3)
+    return {"success": True, "status": status}
 
 @router.get("/getMeterRedisNew/{channel}/{mode}")
 def getMeterRedis2(channel, mode):
@@ -2532,6 +2549,7 @@ def getMeterRedis2(channel, mode):
         meterdata["tddi total"] = sum([try_float(thd.get(k)) for k in ["TDD_I1", "TDD_I2", "TDD_I3"]])
 
         return {"success": True, "data": meterdata}
+
     except Exception as e:
         print(str(e))
         return {"success": False, "error": f"Redis Read Error: {str(e)}"}

@@ -325,6 +325,18 @@ def check_setupfile(request: Request):
     except Exception as e:
         return {"result": "0", "error": str(e)}
 
+def saveStartCurrent(setting):
+    main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
+    if main_channel_data:
+        main_c = int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
+    else:
+        main_c = 0
+    sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
+    if sub_channel_data:
+        sub_c = int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
+    else:
+        sub_c = 0
+    return {"main": main_c, "sub": sub_c}
 
 @router.get('/getSetting')
 def get_setting():
@@ -1371,7 +1383,9 @@ async def saveSetting(channel: str, request: Request):
                 initialize_alarm_configs(setting["channel"][i]["channel"], setting["channel"][i]["alarm"])
 
         redis_state.client.select(0)
+        saveCurrent = saveStartCurrent(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
+        redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
 
         return {"status": "1", "data": setting}
     except Exception as e:

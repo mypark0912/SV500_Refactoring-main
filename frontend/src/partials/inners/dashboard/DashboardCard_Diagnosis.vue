@@ -59,10 +59,12 @@
        devNickname : '',
        Ig: 0,
        runhour: 0,
+       updateTime:'',
      });
      const pqData = ref({
        devName:'',
-       devStatus: -2
+       devStatus: -2,
+       updateTime:'',
      });
     //  const stData = ref({
     //    devName:'',
@@ -128,6 +130,7 @@
                 stData.value.devType = chType;
                 stData.value.devStatus = response.data.status;
                 stData.value.devNickname = chNick;
+                stData.value.updateTime = response.data.updateTime;
                 // if(assetTypes.value == 'Transformer'){                 
                 //     if (channel.value === 'main') {
                 //       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
@@ -183,6 +186,7 @@
              if (response.data.status >= 0) {
                 pqData.value.devName = response.data.item;
                 pqData.value.devStatus = response.data.status;
+                pqData.value.updateTime = response.data.updateTime;
              }else{
                console.log('No Data');
              }

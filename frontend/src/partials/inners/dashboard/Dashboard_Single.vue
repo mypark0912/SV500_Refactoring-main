@@ -48,7 +48,7 @@
   </template>
   
   <script>
-  import { ref, computed } from 'vue'
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useSetupStore } from '@/store/setup'
   import motorImg from '@/images/motor_m.png'
@@ -60,6 +60,7 @@
   import transImg from '@/images/trans.png'
   import Dash_InnerSingle from '../dashboard/Dash_InnerSingle.vue'
   import Dash_InnerEquipment from '../dashboard/Dash_InnerEquipment.vue'
+  import axios from 'axios'
   export default {
     name: 'SingleChannelTransformerView',
     components:{
@@ -68,10 +69,6 @@
     },
     props: {
       channel: String,   // 채널 정보
-      status: {          // 설비 상태 (가동/정지)
-        type: Boolean,
-        default: true    // 기본값: 가동중
-      }
     },
     setup(props) {
       const { t } = useI18n()
@@ -81,8 +78,8 @@
       //const rawdata = ref([]);
       // 반응형 데이터
       const channel = ref(props.channel)
-      const isRunning = ref(props.status)
-
+      const isRunning = ref(false)
+      let updateInterval = null;
       // 채널 정보 계산
       const computedChannel = computed(() => {
         if (channel.value == 'Main' || channel.value == 'main')
@@ -97,6 +94,28 @@
         return computedType.value === 'Transformer' || 
                computedType.value === 'PrimaryTransformer'
       })
+
+      const getStatus = async() =>{
+        const response = await axios.get(`/api/getEquipStatus/${computedChannel.value}`);
+        if (response.data.success){
+          //console.log(response.data);
+          isRunning.value = response.data.status;
+        }
+      }
+
+      onMounted(async()=>{
+        await getStatus();
+        updateInterval = setInterval(async () => {
+          await getStatus();
+        }, 300000);  // 5분
+      })
+
+      onUnmounted(() => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
+      });
       
       // 설비 이미지 결정
       const motorImageSrc = computed(() => {
