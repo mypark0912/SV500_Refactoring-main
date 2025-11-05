@@ -95,6 +95,7 @@
           v-model="inputDict.sntpInfo.host"
           class="form-input w-full"
           type="text"
+          maxlength="20"
         />
       </div>
 

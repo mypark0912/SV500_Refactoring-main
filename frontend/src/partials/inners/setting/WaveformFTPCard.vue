@@ -57,6 +57,7 @@
               type="checkbox"
               v-model="inputDict.ftpInfo.isManual"
               class="sr-only peer"
+              
             />
             <div
               class="w-11 h-6 bg-gray-300 rounded-full relative transition-all peer-checked:bg-violet-500"
@@ -92,6 +93,7 @@
             v-model="inputDict.ftpInfo.host"
             class="form-input w-full"
             type="text"
+            maxlength="20"
           />
         </div>
         <div>
@@ -100,6 +102,7 @@
             v-model="inputDict.ftpInfo.port"
             class="form-input w-full"
             type="text"
+            maxlength="20"
           />
         </div>
         <div>
@@ -108,6 +111,7 @@
             v-model="inputDict.ftpInfo.id"
             class="form-input w-full"
             type="text"
+            maxlength="20"
           />
         </div>
         <div>
@@ -116,6 +120,7 @@
             v-model="inputDict.ftpInfo.pass"
             class="form-input w-full"
             type="password"
+            maxlength="20"
           />
         </div>
       </div>
@@ -137,6 +142,7 @@
               v-model="inputDict.ftpInfo.upload_main"
               class="form-input w-full"
               type="text"
+              maxlength="20"
             />
           </div>
           <div
@@ -152,6 +158,7 @@
               v-model="inputDict.ftpInfo.upload_sub"
               class="form-input w-full"
               type="text"
+              maxlength="20"
             />
           </div>
         </div>

@@ -168,6 +168,7 @@
                   class="form-input w-full"
                   type="text"
                   placeholder="Enter name"
+                  maxlength="20"
                 />
               </div>
               <div>
@@ -180,6 +181,7 @@
                   class="form-input w-full"
                   type="text"
                   placeholder="Enter location"
+                  maxlength="20"
                 />
               </div>
 
@@ -254,6 +256,7 @@
                   v-model="inputDict.tcpip.ip_address"
                   class="form-input w-full"
                   type="text"
+                  maxlength="20"
                 />
               </div>
 
@@ -266,6 +269,7 @@
                   v-model="inputDict.tcpip.subnet_mask"
                   class="form-input w-full"
                   type="text"
+                  maxlength="20"
                 />
               </div>
 
@@ -278,6 +282,7 @@
                   v-model="inputDict.tcpip.gateway"
                   class="form-input w-full"
                   type="text"
+                  maxlength="20"
                 />
               </div>
 
@@ -290,6 +295,7 @@
                   v-model="inputDict.tcpip.dnsserver"
                   class="form-input w-full"
                   type="text"
+                  maxlength="20"
                 />
               </div>
             </div>
@@ -347,6 +353,7 @@
                   v-model.number="inputDict.modbus.tcp_port"
                   class="form-input w-full"
                   type="number"
+                  maxlength="20"
                 />
               </div>
 
@@ -398,6 +405,7 @@
                   v-model.number="inputDict.modbus.modbus_id"
                   class="form-input w-full"
                   type="number"
+                  maxlength="20"
                 />
               </div>
                 </div>
