@@ -197,7 +197,7 @@ async def complete_influx_setup():
     try:
         redis_state.client.select(0)
         sysMode = redis_state.client.hget("System", "mode")
-        redis_state.client.hset("influx_init", "status", "waiting")
+        redis_state.client.hset("influx_init", "status", "WAITING")
 
         # InfluxDB 재시작 완료 대기
         await asyncio.sleep(3)
@@ -216,7 +216,7 @@ async def complete_influx_setup():
             await asyncio.sleep(1)
 
         if not influx_ready:
-            redis_state.client.hset("influx_init", "status", "failed")
+            redis_state.client.hset("influx_init", "status", "FAIL")
             return
 
         # 버킷 생성
@@ -232,11 +232,11 @@ async def complete_influx_setup():
 
         sysService('restart', 'Core')
 
-        redis_state.client.hset("influx_init", "status", "completed")
+        redis_state.client.hset("influx_init", "status", "COMPLETE")
         logging.info("✅ InfluxDB initialization completed")
 
     except Exception as e:
-        redis_state.client.hset("influx_init", "status", "failed")
+        redis_state.client.hset("influx_init", "status", "FAIL")
         logging.error(f"❌ Background setup error: {e}")
 
 
@@ -280,7 +280,7 @@ async def create_influx_bucket():
 @router.get('/initDB/status')
 async def get_init_status():
     redis_state.client.select(0)
-    status = redis_state.client.hget("influx_init", "status") or "idle"
+    status = redis_state.client.hget("influx_init", "status") or "IDLE"
     return {"status": status}
 
 

@@ -25,12 +25,15 @@
           for="reference"
           class="text-sm text-gray-700 dark:text-gray-300 font-medium"
         >
-          Influx Init Status
+          Influxdb Init Status
         </label>
-        <span v-if="initInfluxStatus == 'idle'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-gray-500/20 text-gray-700 font-semibold">
+        <span v-if="initInfluxStatus == 'IDLE'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-gray-500/20 text-gray-700 font-semibold">
           {{ initInfluxStatus }}
         </span>
-        <span v-else-if="initInfluxStatus == 'completed'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
+        <span v-else-if="initInfluxStatus == 'COMPLETE'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
+          {{ initInfluxStatus }}
+        </span>
+        <span v-else-if="initInfluxStatus == 'FAIL'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-red-500/20 text-red-700 font-semibold">
           {{ initInfluxStatus }}
         </span>
         <span v-else class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-yellow-500/20 text-yellow-700 font-semibold">
