@@ -726,7 +726,7 @@ export default {
         if(inputDict.value.useFuction[`diagnosis_${channelType}`]){
           if(!checkSmart()){
             if(confirm('Not running diagnostic service. Do you want to run service?')){
-              manageSmart();
+              manageSmart(1);
             }else{
               return;
             }
@@ -747,20 +747,25 @@ export default {
         return false;
       }
     }
-    const manageSmart = async () => {
+    const manageSmart = async (mode) => {
       try {
-        isStartingService.value = true; // ⭐ 로딩 모달 표시
-        serviceLoadingMessage.value = 'Starting diagnostic service...';
-        
-        const response = await axios.get('/setting/manageSmart/1');
-        
-        if (response.data.api && response.data.success) {
-          serviceLoadingMessage.value = 'Service ready!';
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if(parseInt(mode) == 1){
+          isStartingService.value = true; // ⭐ 로딩 모달 표시
+          serviceLoadingMessage.value = 'Starting diagnostic service...';
+        }
+        const response = await axios.get(`/setting/manageSmart/${mode}`);
+        if(parseInt(mode) == 1){
+          if (response.data.api && response.data.success) {
+            serviceLoadingMessage.value = 'Service ready!';
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return true;
+          } else {
+            alert('Failed to start service: ' + (response.data.message || ''));
+            return false;
+          }
+        }else{
+          alert('All Services is ready');
           return true;
-        } else {
-          alert('Failed to start service: ' + (response.data.message || ''));
-          return false;
         }
       } catch(error) {
         console.error(error);
@@ -824,7 +829,7 @@ export default {
         const confirmed = confirm('Not running diagnostic service. Do you want to run diagnostic service?');
         
         if (confirmed) {
-          const started = await manageSmart(); // 여기서 로딩 모달 자동 표시
+          const started = await manageSmart(1); // 여기서 로딩 모달 자동 표시
           
           if (!started) {
             // 서비스 시작 실패 시 진단 다시 끄기
@@ -992,6 +997,7 @@ export default {
           alert("❌ Error occurred while restarting: " + e.message);
         }
       }else{
+        await manageSmart(0);
         alert("✅ Service restarted successfully");
         isRestartDone.value = true;
       }

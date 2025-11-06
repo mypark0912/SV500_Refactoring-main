@@ -1804,17 +1804,18 @@ async def manage_smart(mode):
                 ret = sysService("enable", "SmartSystems")
                 restartsmart = ret["success"]
     else:  # mode == 0
-        if is_service_enabled("smartsystemsrestapiservice"):
-            if is_service_active("smartsystemsrestapiservice"):
-                ret = sysService("stop", "SmartAPI")
-                restartapi = ret["success"]
-            sysService("disable", "SmartAPI")
+        if service_exists("smartsystemsservice.service"):
+            if is_service_enabled("smartsystemsrestapiservice"):
+                if is_service_active("smartsystemsrestapiservice"):
+                    ret = sysService("stop", "SmartAPI")
+                    restartapi = ret["success"]
+                sysService("disable", "SmartAPI")
 
-        if is_service_enabled("smartsystemsservice"):
-            if is_service_active("smartsystemsservice"):
-                ret = sysService("stop", "SmartSystems")
-                restartsmart = ret["success"]
-            sysService("disable", "SmartSystems")
+            if is_service_enabled("smartsystemsservice"):
+                if is_service_active("smartsystemsservice"):
+                    ret = sysService("stop", "SmartSystems")
+                    restartsmart = ret["success"]
+                sysService("disable", "SmartSystems")
 
     return {
         "api": restartapi,
