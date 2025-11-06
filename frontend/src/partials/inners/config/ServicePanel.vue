@@ -27,21 +27,17 @@
         >
           Influx Init Status
         </label>
-        <span>{{ initInfluxStatus  }}</span>
+        <span v-if="initInfluxStatus == 'idle'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-gray-500/20 text-gray-700 font-semibold">
+          {{ initInfluxStatus }}
+        </span>
+        <span v-else-if="initInfluxStatus == 'completed'" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
+          {{ initInfluxStatus }}
+        </span>
+        <span v-else class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-yellow-500/20 text-yellow-700 font-semibold">
+          {{ initInfluxStatus }}
+        </span>
         </div>
-      <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-      <button 
-        class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
-        @click="ResetAll"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" stroke-width="1.25" class="mr-2">
-          <path d="M19 14v-2h2l-9 -9l-9 9h2v7a2 2 0 0 0 2 2h2.5"></path>
-          <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 1.75 1.032"></path>
-          <path d="M15.536 17.586a2.123 2.123 0 0 0 -2.929 0a1.951 1.951 0 0 0 0 2.828c.809 .781 2.12 .781 2.929 0c.809 -.781 -.805 .778 0 0l1.46 -1.41l1.46 -1.419"></path>
-          <path d="M15.54 17.582l1.46 1.42l1.46 1.41c.809 .78 -.805 -.779 0 0s2.12 .781 2.929 0a1.951 1.951 0 0 0 0 -2.828a2.123 2.123 0 0 0 -2.929 0"></path>
-        </svg>
-        Factory Default
-      </button>
+
       <!--div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
       <button 
         class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
@@ -65,7 +61,7 @@
           for="reference"
           class="text-sm text-gray-700 dark:text-gray-300 font-medium"
         >
-          Download
+         Backup Download
         </label>
         
         <select v-if="devMode != 'device0'"
@@ -102,6 +98,19 @@
           Download
         </a>
       </div>
+      <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+      <button 
+        class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
+        @click="ResetAll"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" stroke-width="1.25" class="mr-2">
+          <path d="M19 14v-2h2l-9 -9l-9 9h2v7a2 2 0 0 0 2 2h2.5"></path>
+          <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 1.75 1.032"></path>
+          <path d="M15.536 17.586a2.123 2.123 0 0 0 -2.929 0a1.951 1.951 0 0 0 0 2.828c.809 .781 2.12 .781 2.929 0c.809 -.781 -.805 .778 0 0l1.46 -1.41l1.46 -1.419"></path>
+          <path d="M15.54 17.582l1.46 1.42l1.46 1.41c.809 .78 -.805 -.779 0 0s2.12 .781 2.929 0a1.951 1.951 0 0 0 0 -2.828a2.123 2.123 0 0 0 -2.929 0"></path>
+        </svg>
+        Factory Default
+      </button>
     </div>
           </div>
           <div v-if="message"

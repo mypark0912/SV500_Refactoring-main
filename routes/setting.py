@@ -287,7 +287,7 @@ async def get_init_status():
 @router.get("/backup/download/{backup_type}")
 async def download_backup(backup_type: str):
     try:
-        LOG_PATH = '/usr/local/sv500'
+        LOG_PATH = '/usr/local/sv500/logs'
         # 임시 디렉토리 생성
         temp_dir = tempfile.mkdtemp()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

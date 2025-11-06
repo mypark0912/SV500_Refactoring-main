@@ -103,7 +103,7 @@ class AESEncDec:
                 #token = self.decrypt(influxSetting["token"])
                 # print(token)
                 #encoded_ciphertext = self.encrypt(token)
-                resultDict = {"result":True, "cipher": influxSetting["token"], "org":influxSetting["org"]}
+                resultDict = {"result":True, "cipher": influxSetting["token"], "org":influxSetting["org"], "org_id":influxSetting["org_id"]}
             except Exception as e:
                 logging.error(f"❌ {INIT_PATH} Influxdb Setup File Error: {e}")
                 resultDict = {"result":False}
