@@ -137,21 +137,17 @@ import compImg from '@/images/comp_m.png'
 import powerImg from '@/images/power_m.png'
 import defaultImg from '@/images/cleaned_logo.png'
 import transImg from '@/images/trans.png'
-  import { ref, watch, computed, onMounted } from 'vue';
+  import { ref, watch, computed, onMounted,onUnmounted } from 'vue';
   import { useI18n } from 'vue-i18n'
   import { useSetupStore } from '@/store/setup'
   import { useRouter } from 'vue-router'
-  
+  import axios from 'axios'
   export default {
     name: 'CompactStatusCard',
     props: {
       data: Object,
       channel: String,
       transData: Object,
-      status: {
-        type: Boolean,
-        default: true
-      }
     },
     setup(props) {
       const { t } = useI18n();
@@ -159,15 +155,15 @@ import transImg from '@/images/trans.png'
       const route = useRouter();
       
       const channel = ref(props.channel);
-      const isRunning = ref(props.status);
-      
+      const isRunning = ref(false);
+      let updateInterval = null;
       const computedChannel = computed(() => {
         if (channel.value == 'Main' || channel.value == 'main')
           return 'Main';
         else
           return 'Sub';
       })
-      
+
       const stData = ref(props.data);
       const transData = ref(props.transData);
 
@@ -244,7 +240,27 @@ import transImg from '@/images/trans.png'
       })
   
       // 세그먼트 활성화 계산 함수 제거 (불필요)
-  
+      const getStatus = async() =>{
+        const response = await axios.get(`/api/getEquipStatus/${computedChannel.value}`);
+        if (response.data.success){
+          //console.log(response.data);
+          isRunning.value = response.data.status;
+        }
+      }
+      onMounted(async()=>{
+        await getStatus();
+        updateInterval = setInterval(async () => {
+          await getStatus();
+        }, 300000);  // 5분
+      })
+
+      onUnmounted(() => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
+      });
+
       watch(
         () => LoadFactor.value,
         (newVal) => {
