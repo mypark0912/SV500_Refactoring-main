@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
-import os, httpx, csv, psutil, struct
+import os, httpx, csv, psutil, struct, tempfile
 import ujson as json
 import shutil, logging, subprocess, asyncio
 from datetime import datetime
@@ -230,6 +230,8 @@ async def complete_influx_setup():
             sysService('restart', 'SmartSystems')
             sysService('restart', 'SmartAPI')
 
+        sysService('restart', 'Core')
+
         redis_state.client.hset("influx_init", "status", "completed")
         logging.info("✅ InfluxDB initialization completed")
 
@@ -280,6 +282,77 @@ async def get_init_status():
     redis_state.client.select(0)
     status = redis_state.client.hget("influx_init", "status") or "idle"
     return {"status": status}
+
+@router.get("/backup/download")
+async def download_ntek_backup():
+    """
+    ntek 버킷 백업 후 즉시 다운로드 (서버에 저장 안 함)
+
+    Returns:
+        백업 파일 다운로드
+    """
+    try:
+        config = aesState.getInflux()
+        if not config["result"]:
+            return {"success": False, "message": "InfluxDB not initialized"}
+
+        token = aesState.decrypt(config["cipher"])
+        org = config["org"]
+
+        # 임시 디렉토리 생성
+        temp_dir = tempfile.mkdtemp()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"backup_ntek_{timestamp}"
+        backup_path = os.path.join(temp_dir, backup_name)
+
+        try:
+            # 백업 실행
+            backup_command = f"""
+export INFLUX_TOKEN='{token}'
+export INFLUX_HOST='http://localhost:8086'
+export INFLUX_ORG='{org}'
+influx backup {backup_path} --bucket ntek
+tar -czf {backup_path}.tar.gz -C {temp_dir} {backup_name}
+rm -rf {backup_path}
+"""
+
+            result = subprocess.run(
+                ['bash', '-c', backup_command],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+
+            tar_file = f"{backup_path}.tar.gz"
+
+            if not os.path.exists(tar_file):
+                raise Exception("Backup file not created")
+
+            logging.info(f"✅ Backup created for download: {backup_name}.tar.gz")
+
+            # 파일 다운로드 (다운로드 완료 후 임시 파일 자동 삭제)
+            return FileResponse(
+                path=tar_file,
+                filename=f"{backup_name}.tar.gz",
+                media_type='application/gzip',
+                background=lambda: shutil.rmtree(temp_dir)
+            )
+
+        except Exception as e:
+            shutil.rmtree(temp_dir)
+            raise e
+
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout (5 minutes)"}
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"❌ Backup failed: {error_msg}")
+        return {"success": False, "message": f"Backup failed: {error_msg}"}
+    except Exception as e:
+        logging.error(f"❌ Backup error: {e}")
+        return {"success": False, "message": str(e)}
+
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
