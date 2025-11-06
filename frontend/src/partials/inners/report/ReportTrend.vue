@@ -1,7 +1,7 @@
 <template>
   <div 
     class="flex flex-col col-span-full sm:col-span-12 xl:col-span-12 shadow rounded-xl px-5 py-1"
-    :class="isPdfMode ? 'bg-white' : 'bg-white dark:bg-gray-700'"
+    :class="isPdfMode ? 'bg-white' : 'bg-white dark:bg-gray-700 text-white'"
   >
     <LineChart
         :chart-data="option.lineData"
