@@ -246,3 +246,196 @@ export default {
   },
 };
 </script>
+
+<style>
+/* 전역 다크모드 스타일 - select 드롭다운에 강제 적용 */
+.dark select.flatpickr-monthDropdown-months {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border: 1px solid #4b5563 !important;
+  color-scheme: dark;
+}
+
+.dark select.flatpickr-monthDropdown-months option {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+</style>
+
+<style scoped>
+/* 다크모드에서 Flatpickr 스타일 개선 */
+:deep(.dark .flatpickr-calendar) {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+}
+
+:deep(.dark .flatpickr-months) {
+  background: #1f2937 !important;
+}
+
+:deep(.dark .flatpickr-month) {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+/* 월 선택 드롭다운 - select 요소 */
+:deep(.dark .flatpickr-current-month .flatpickr-monthDropdown-months) {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+:deep(.dark .flatpickr-current-month .flatpickr-monthDropdown-months:hover) {
+  background-color: #1f2937 !important;
+}
+
+:deep(.dark .flatpickr-current-month .flatpickr-monthDropdown-months:focus) {
+  background-color: #1f2937 !important;
+  outline: none !important;
+}
+
+/* 드롭다운 옵션들 */
+:deep(.dark .flatpickr-current-month select.flatpickr-monthDropdown-months option) {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  padding: 8px 12px !important;
+}
+
+:deep(.dark .flatpickr-current-month select.flatpickr-monthDropdown-months option:hover) {
+  background-color: #374151 !important;
+  color: #ffffff !important;
+}
+
+:deep(.dark .flatpickr-current-month select.flatpickr-monthDropdown-months option:checked),
+:deep(.dark .flatpickr-current-month select.flatpickr-monthDropdown-months option:focus) {
+  background-color: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+/* Static 월 선택기 스타일 (monthSelectorType: 'static' 사용 시) */
+:deep(.dark .flatpickr-monthSelect-months) {
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month) {
+  background: #374151 !important;
+  color: #f3f4f6 !important;
+  border-radius: 4px !important;
+  margin: 4px !important;
+  padding: 8px !important;
+  cursor: pointer !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month:hover) {
+  background: #4b5563 !important;
+  color: #ffffff !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month.selected) {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+
+/* 년도 입력 */
+:deep(.dark .flatpickr-current-month input.cur-year) {
+  color: #f3f4f6 !important;
+  background: #374151 !important;
+}
+
+:deep(.dark .flatpickr-current-month input.cur-year:hover) {
+  background: #4b5563 !important;
+}
+
+/* 요일 헤더 */
+:deep(.dark .flatpickr-weekdays) {
+  background: #1f2937 !important;
+}
+
+:deep(.dark .flatpickr-weekday) {
+  color: #9ca3af !important;
+}
+
+/* 날짜 영역 */
+:deep(.dark .flatpickr-days) {
+  background: #1f2937 !important;
+}
+
+:deep(.dark .flatpickr-day) {
+  color: #f3f4f6 !important;
+}
+
+:deep(.dark .flatpickr-day:hover) {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+:deep(.dark .flatpickr-day.selected) {
+  background: #8b5cf6 !important;
+  border-color: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+:deep(.dark .flatpickr-day.today) {
+  border-color: #8b5cf6 !important;
+}
+
+:deep(.dark .flatpickr-day.disabled) {
+  color: #6b7280 !important;
+}
+
+/* 월 선택 그리드 뷰 */
+:deep(.dark .flatpickr-monthSelect-months) {
+  background: #1f2937 !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month) {
+  background: #374151 !important;
+  color: #f3f4f6 !important;
+  border-radius: 4px !important;
+  margin: 2px !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month:hover) {
+  background: #4b5563 !important;
+}
+
+:deep(.dark .flatpickr-monthSelect-month.selected) {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+/* 숫자 입력 화살표 */
+:deep(.dark .numInputWrapper:hover) {
+  background: #374151 !important;
+}
+
+:deep(.dark .arrowUp),
+:deep(.dark .arrowDown) {
+  border-bottom-color: #f3f4f6 !important;
+}
+
+:deep(.dark .arrowDown) {
+  border-top-color: #f3f4f6 !important;
+}
+
+/* 이전/다음 달 버튼 */
+:deep(.dark .flatpickr-prev-month),
+:deep(.dark .flatpickr-next-month) {
+  fill: #f3f4f6 !important;
+}
+
+:deep(.dark .flatpickr-prev-month:hover),
+:deep(.dark .flatpickr-next-month:hover) {
+  fill: #ffffff !important;
+}
+
+:deep(.dark .flatpickr-prev-month:hover svg),
+:deep(.dark .flatpickr-next-month:hover svg) {
+  fill: #ffffff !important;
+}
+</style>
