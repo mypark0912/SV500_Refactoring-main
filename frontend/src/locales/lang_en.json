@@ -493,7 +493,8 @@
         },
         "TrendTab": {
             "slot": "Select the parameters below and click the Plot button",
-            "Plot": "Plot"
+            "Plot": "Plot",
+            "loading": "chart Loading..."
         },
         "Linechart": {
             "TrendChart": "Trend Chart",
