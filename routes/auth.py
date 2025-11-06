@@ -5,7 +5,7 @@ import sqlite3, httpx, subprocess
 import ujson as json
 from .util import save_post, Post, get_mac_address, getVersions
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
-
+from .setting import is_service_active, sysService
 router = APIRouter()
 
 LANG_FILES = {
@@ -390,8 +390,16 @@ def join_admin(data: SignupAdmin):
         redis_state.client.execute_command("SELECT", 0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("System", "mode", mode)
-        redis_state.client.hset("Service", "save", 1)
-        redis_state.client.hset("Service", "restart", 1)
+        if is_service_active("sv500A35"):
+            redis_state.client.hset("Service", "save", 1)
+        else:
+            sysService("start","A35")
+
+        if is_service_active("core"):
+            redis_state.client.hset("Service", "restart", 1)
+        else:
+            sysService("start", "Core")
+
         redis_state.client.select(1)
         redis_state.client.flushdb()
         return {"passOK": "1"}
