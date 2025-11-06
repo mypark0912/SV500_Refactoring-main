@@ -4,40 +4,67 @@
     <div class="col-span-4 flex flex-col gap-6 h-auto">
       <!-- ✅ flex-col로 수직 정렬 강제 -->
 
- <div v-show="true" role="alert">
-  <div
-    class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400">
-    <div class="flex w-full justify-between items-start">
-      <div class="flex">
-        <svg class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3" width="16" height="16"
-          viewBox="0 0 16 16">
-          <path
-            d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm1 12H7V7h2v5zM8 6c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" />
-        </svg>
-        <div>
-          <slot />{{ t("trend.TrendTab.slot") }}.
+      <div v-show="true" role="alert">
+        <div
+          class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400">
+          <div class="flex w-full justify-between items-start">
+            <div class="flex">
+              <svg class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3" width="16" height="16"
+                viewBox="0 0 16 16">
+                <path
+                  d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm1 12H7V7h2v5zM8 6c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" />
+              </svg>
+              <div>
+                <slot />{{ t("trend.TrendTab.slot") }}.
+              </div>
+            </div>
+          </div>
+          <div class="text-right mt-1">
+            <a v-if="tap == `Meter`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawMeterChart">
+              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+            </a>
+            <a v-else-if="tap == `Energy`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawEnergyChart">
+              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+            </a>
+            <a v-else 
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawDiagnosisChart">
+              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="text-right mt-1">
-      <a v-if="tap == `Meter`"
-        class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0"
-        @click.prevent="drawMeterChart">{{ t("trend.TrendTab.Plot") }}</a>
-      <a v-else-if="tap == `Energy`"
-        class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0"
-        @click.prevent="drawEnergyChart">{{ t("trend.TrendTab.Plot") }}</a>
-      <a v-else class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0"
-        @click.prevent="drawDiagnosisChart">{{ t("trend.TrendTab.Plot") }}</a>
-    </div>
-  </div>
-</div>
 
       <Trend_treetable v-if="items.length > 0" :channel="channel" :data="items" :expanded="false"
         :checked-ids="checkedIds" :checked-names="checkedNames" @check-change="onCheckChange" />
     </div>
 
     <!-- 오른쪽 박스 (Diagnosis_TreeTable) - 높이 제한 없음 -->
-    <div class="col-span-8">
+    <div class="col-span-8 relative">
+      <!-- ✅ 로딩 오버레이 -->
+      <div v-if="isLoading" 
+        class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-10 rounded-lg">
+        <div class="flex flex-col items-center gap-3">
+          <svg class="animate-spin h-12 w-12 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-lg font-medium text-gray-700 dark:text-gray-300">
+            {{  t("trend.TrendTab.loading") }} 
+          </p>
+        </div>
+      </div>
+
       <LineChart v-if="tap == `Diagnosis`" :chart-data="option.lineData" :chart-labels="option.lineLabels" />
       <LineChart v-if="tap == `Meter`" :chart-data="meterOption.lineData" :chart-labels="meterOption.lineLabels" />
       <LineChart v-if="tap == `PowerQuality`" :chart-data="option.lineData" :chart-labels="option.lineLabels" />
@@ -97,6 +124,7 @@ export default {
     const pqOption = ref({ lineLabels: [], lineData: [] });
     const checkedIds = ref([]);
     const checkedNames = ref([]);
+    const isLoading = ref(false); // ✅ 로딩 상태 추가
 
     // Meter 탭용 트리 데이터 (Energy 제외)
     const trendTreeData = [
@@ -196,7 +224,6 @@ export default {
           { ID: 42, Name: "TDD_I1", Title: "TDD Current L1" },
           { ID: 43, Name: "TDD_I2", Title: "TDD Current L2" },
           { ID: 44, Name: "TDD_I3", Title: "TDD Current L3" },
-          //{ ID: 45, Name: "tdd_i_avg", Title: "TDD Current Average" },
         ],
       },
     ];
@@ -254,8 +281,6 @@ export default {
       "TDD Iavg": ["tdd_i_avg"],
     };
 
- 
-
     const expandEnabledNames = (enabledParams, paramMap) => {
       const paramNames = enabledParams.flatMap(
         (param) => paramMap[param] || []
@@ -263,7 +288,6 @@ export default {
 
       const expanded = new Set(paramNames);
 
-      // 사용할 트리 데이터 결정
       const treeData = tap.value === "Energy" ? energyTreeData : trendTreeData;
 
       treeData.forEach((node) => {
@@ -321,7 +345,6 @@ export default {
           if (response.data.success) {
             const enabledParams = response.data.data.params;
             console.log("enabledParams",enabledParams)
-            // Energy 관련 파라미터 제외
             const filteredParams = enabledParams.filter(param =>
               !["Energy", "Active Energy", "Reactive Energy", "Apparent Energy"].includes(param)
             );
@@ -355,7 +378,6 @@ export default {
             items.value = deepFilterTree(trendTreeData);
           }
         } else if (tap.value === "Energy") {
-          // Energy 탭은 항상 모든 Energy 관련 항목을 표시
           items.value = energyTreeData;
         }
       } catch (error) {
@@ -389,8 +411,6 @@ export default {
         );
       }
       syncParentCheck();
-      //console.log("checkedIds", checkedIds);
-      //console.log("checkedNames", checkedNames);
     }
 
     function syncParentCheck() {
@@ -412,168 +432,108 @@ export default {
       items.value.forEach(traverse);
     }
 
-    // const formatToISOString = (date, soe) => {
-    //   if (typeof date === "string") {
-    //     date = new Date(date);
-    //   }
-    //   if (!(date instanceof Date) || isNaN(date)) {
-    //     throw new Error("Invalid date");
-    //   }
-
-    //   const pad = (num, size = 2) => String(num).padStart(size, "0");
-
-    //   const year = date.getFullYear();
-    //   const month = pad(date.getMonth() + 1); // 월은 0부터 시작
-    //   const day = pad(date.getDate());
-    //   let hours, minutes, seconds, milliseconds;
-
-    //   if (soe === 0) {
-    //     hours = pad(0);
-    //     minutes = pad(0);
-    //     seconds = pad(0);
-    //     milliseconds = pad(1, 7);
-    //   } else if (soe === 1) {
-    //     hours = pad(23);
-    //     minutes = pad(59);
-    //     seconds = pad(59);
-    //     milliseconds = pad(999, 7);
-    //   } else if (soe === 2) {
-    //     hours = pad(0);
-    //     minutes = pad(0);
-    //     seconds = pad(0);
-    //     milliseconds = pad(1, 2);
-    //   } else {
-    //     hours = pad(23);
-    //     minutes = pad(59);
-    //     seconds = pad(59);
-    //     milliseconds = pad(99, 2);
-    //   }
-    //   // 타임존 오프셋 계산
-    //   const timezoneOffset = -date.getTimezoneOffset();
-    //   const offsetSign = timezoneOffset >= 0 ? "+" : "-";
-    //   const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
-    //   const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
-    //   if (soe === 2 || soe === 3) {
-    //     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
-    //   } else {
-    //     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
-    //   }
-    // };
-
     const formatToISOString = (date, soe) => {
-  if (typeof date === "string") {
-    date = new Date(date);
-  }
-  if (!(date instanceof Date) || isNaN(date)) {
-    throw new Error("Invalid date");
-  }
+      if (typeof date === "string") {
+        date = new Date(date);
+      }
+      if (!(date instanceof Date) || isNaN(date)) {
+        throw new Error("Invalid date");
+      }
 
-  const pad = (num, size = 2) => String(num).padStart(size, "0");
+      const pad = (num, size = 2) => String(num).padStart(size, "0");
 
-  const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1);
-  const day = pad(date.getDate());
-  let hours, minutes, seconds, milliseconds;
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1);
+      const day = pad(date.getDate());
+      let hours, minutes, seconds;
 
-  if (soe === 0) {
-    hours = pad(0);
-    minutes = pad(0);
-    seconds = pad(0);
-    //milliseconds = pad(1, 7);
-  } else if (soe === 1) {
-    hours = pad(23);
-    minutes = pad(59);
-    seconds = pad(59);
-    //milliseconds = pad(999, 7);
-  } else if (soe === 2) {
-    hours = pad(0);
-    minutes = pad(0);
-    seconds = pad(0);
-    //milliseconds = pad(1, 2);
-  } else {
-    hours = pad(23);
-    minutes = pad(59);
-    seconds = pad(59);
-    //milliseconds = pad(99, 2);
-  }
-  
-  // 타임존 오프셋 계산
-  const timezoneOffset = -date.getTimezoneOffset();
-  const offsetSign = timezoneOffset >= 0 ? "+" : "-";
-  const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
-  const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
-  
-  // ✅ 모든 경우에 타임존 포함 (Z 제거)
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}` //`${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
-};
+      if (soe === 0) {
+        hours = pad(0);
+        minutes = pad(0);
+        seconds = pad(0);
+      } else if (soe === 1) {
+        hours = pad(23);
+        minutes = pad(59);
+        seconds = pad(59);
+      } else if (soe === 2) {
+        hours = pad(0);
+        minutes = pad(0);
+        seconds = pad(0);
+      } else {
+        hours = pad(23);
+        minutes = pad(59);
+        seconds = pad(59);
+      }
+      
+      const timezoneOffset = -date.getTimezoneOffset();
+      const offsetSign = timezoneOffset >= 0 ? "+" : "-";
+      const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
+      const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
+      
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
+    };
 
     const drawMeterChart = async () => {
-      // checkedNames가 빈 배열이면 API 요청하지 않음
       if (!checkedNames.value || checkedNames.value.length === 0) {       
         meterOption.value = { lineLabels: [], lineData: [] };
         return;
       }
-  // 파라미터 그룹 정의 (Energy 제외)
-  const paramMap = {
-    Temp: ["Temp"],
-    U1: ["U1"],
-    U2: ["U2"],
-    U3: ["U3"],
-    U4: ["U4"],
-    Upp1: ["Upp1"],
-    Upp2: ["Upp2"],
-    Upp3: ["Upp3"],
-    Upp4: ["Upp4"],          
-    I1: ["I1"],
-    I2: ["I2"],
-    I3: ["I3"],
-    P4: ["P4"],
-    Q4: ["Q4"],
-    S4: ["S4"],
-    Freq: ["Freq"],      
-    PF1: ["PF1"],
-    PF2: ["PF2"],
-    PF3: ["PF3"],
-    vunbal: ["Ubal1"],
-    curunbal: ["Ibal1"],
-    THD_U1: ["THD_U1"],
-    THD_U2: ["THD_U2"],
-    THD_U3: ["THD_U3"],
-    THD_Upp1: ["THD_Upp1"],
-    THD_Upp2: ["THD_Upp2"],
-    THD_Upp3: ["THD_Upp3"],
-    THD_I1: ["THD_I1"],
-    THD_I2: ["THD_I2"],
-    THD_I3: ["THD_I3"],
-    TDD_I1: ["TDD_I1"],
-    TDD_I2: ["TDD_I2"],
-    TDD_I3: ["TDD_I3"],
-    Ubal1: ["Ubal1"],
-    Ibal1: ["Ibal1"],
-  };
 
-  // ✅ paramMap에 포함된 실제 파라미터 개수 계산
-  let actualParamCount = 0;
-  checkedNames.value.forEach((param) => {
-    const keys = paramMap[param];
-    if (keys) {
-      actualParamCount += keys.length;
-    }
-  });
+      const paramMap = {
+        Temp: ["Temp"],
+        U1: ["U1"],
+        U2: ["U2"],
+        U3: ["U3"],
+        U4: ["U4"],
+        Upp1: ["Upp1"],
+        Upp2: ["Upp2"],
+        Upp3: ["Upp3"],
+        Upp4: ["Upp4"],          
+        I1: ["I1"],
+        I2: ["I2"],
+        I3: ["I3"],
+        P4: ["P4"],
+        Q4: ["Q4"],
+        S4: ["S4"],
+        Freq: ["Freq"],      
+        PF1: ["PF1"],
+        PF2: ["PF2"],
+        PF3: ["PF3"],
+        vunbal: ["Ubal1"],
+        curunbal: ["Ibal1"],
+        THD_U1: ["THD_U1"],
+        THD_U2: ["THD_U2"],
+        THD_U3: ["THD_U3"],
+        THD_Upp1: ["THD_Upp1"],
+        THD_Upp2: ["THD_Upp2"],
+        THD_Upp3: ["THD_Upp3"],
+        THD_I1: ["THD_I1"],
+        THD_I2: ["THD_I2"],
+        THD_I3: ["THD_I3"],
+        TDD_I1: ["TDD_I1"],
+        TDD_I2: ["TDD_I2"],
+        TDD_I3: ["TDD_I3"],
+        Ubal1: ["Ubal1"],
+        Ibal1: ["Ibal1"],
+      };
 
-  // ✅ 15개 초과 체크
-  if (actualParamCount > 15) {       
-    alert(t("trend.Linechart.parametercount"));
-    return;
-  }
+      let actualParamCount = 0;
+      checkedNames.value.forEach((param) => {
+        const keys = paramMap[param];
+        if (keys) {
+          actualParamCount += keys.length;
+        }
+      });
+
+      if (actualParamCount > 15) {       
+        alert(t("trend.Linechart.parametercount"));
+        return;
+      }
+
+      isLoading.value = true; // ✅ 로딩 시작
+      
       try {
-        //console.log("Selected Parameters:", checkedNames.value);
-
         let url = `/api/getMeterTrend/${channel.value}`;
-        // const StartDate = formatToISOString(props.startdate, 2);
-        // const EndDate = formatToISOString(props.enddate, 3);
-        // url += `?startDate=${StartDate}&endDate=${EndDate}`;
-
         const response = await axios.get(url, {
           params:{
             startDate: formatToISOString(props.startdate, 2),
@@ -581,20 +541,14 @@ export default {
           }
         });
 
-        //console.log("dblenght:", response.data.data.length);
-        //console.log(response.data);
-
         const responseData = response.data.data;
         const datasets = [];
         const labels = [];
         const selectedParams = checkedNames.value;
 
-        // 1. 시간 라벨 (_time)
         labels.push(...responseData.map((row) => row._time));
 
-
         console.log("selectedParams",selectedParams)
-        // 3. 선택된 항목만 datasets 생성
         selectedParams.forEach((param) => {
           const keys = paramMap[param];
           if (!keys) return;
@@ -609,30 +563,27 @@ export default {
           });
         });
 
-        // 4. 차트 옵션에 데이터 적용
         meterOption.value = {
           lineLabels: labels,
           lineData: datasets,
         };
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
+      } finally {
+        isLoading.value = false; // ✅ 로딩 종료
       }
     };
 
     const drawEnergyChart = async () => {
+      if (!checkedNames.value || checkedNames.value.length === 0) {       
+        energyOption.value = { lineLabels: [], lineData: [] };
+        return;
+      }
+
+      isLoading.value = true; // ✅ 로딩 시작
+
       try {
-        // checkedNames가 빈 배열이면 API 요청하지 않음
-        if (!checkedNames.value || checkedNames.value.length === 0) {       
-          energyOption.value = { lineLabels: [], lineData: [] };
-          return;
-        }
-
         let url = `/api/getEnergyTrend/${channel.value}`;
-        // const StartDate = formatToISOString(props.startdate, 2);
-        // const EndDate = formatToISOString(props.enddate, 3);
-        // url += `?startDate=${StartDate}&endDate=${EndDate}`;
-
-        console.log("Energy API 호출:", url);
         const response = await axios.get(url, {
           params:{
             startDate: formatToISOString(props.startdate, 2),
@@ -643,70 +594,61 @@ export default {
         if (response.data.result){
           const responseData = response.data.data;
      
-        if (!Array.isArray(responseData)) {
-          console.error("Energy 응답 데이터가 배열이 아닙니다:", responseData);
-          energyOption.value = { lineLabels: [], lineData: [] };
-          return;
-        }
-
-        // 빈 배열 체크
-        if (responseData.length === 0) {
-          console.warn("Energy 데이터가 비어있습니다");
-          energyOption.value = { lineLabels: [], lineData: [] };
-          return;
-        }
-
-        const datasets = [];
-        const labels = [];
-        const selectedParams = checkedNames.value;
-
-        // 1. 시간 라벨 (_time) - 안전하게 처리
-        try {
-          labels.push(...responseData.map((row) => row._time));
-          //console.log("Energy 시간 라벨 생성됨:", labels.length, "개");
-        } catch (timeError) {
-          console.error("시간 라벨 생성 실패:", timeError);
-          energyOption.value = { lineLabels: [], lineData: [] };
-          return;
-        }
-
-        // 2. Energy 파라미터 그룹 정의
-        const energyParamMap = {
-          kwh_import_consumption: ["kwh_import_consumption"],
-          kvarh_import_consumption: ["kvarh_import_consumption"],
-          kvah_import_consumption: ["kvah_import_consumption"],
-        };
-
-        // 3. 선택된 Energy 항목만 datasets 생성
-        selectedParams.forEach((param) => {
-          const keys = energyParamMap[param];
-          if (!keys) {
-            console.warn("Energy 파라미터 매핑을 찾을 수 없음:", param);
+          if (!Array.isArray(responseData)) {
+            console.error("Energy 응답 데이터가 배열이 아닙니다:", responseData);
+            energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
 
-          keys.forEach((key) => {
-            try {
-              const data = responseData.map((row) => row[key]);
-              datasets.push({
-                name: nameToTitleMap[key] || key,
-                data: data,
-                isThreshold: false,
-              });
-              //console.log(`Energy 데이터셋 생성됨: ${key}, 데이터 개수: ${data.length}`);
-            } catch (dataError) {
-              console.error(`Energy 데이터 생성 실패 (${key}):`, dataError);
+          if (responseData.length === 0) {
+            console.warn("Energy 데이터가 비어있습니다");
+            energyOption.value = { lineLabels: [], lineData: [] };
+            return;
+          }
+
+          const datasets = [];
+          const labels = [];
+          const selectedParams = checkedNames.value;
+
+          try {
+            labels.push(...responseData.map((row) => row._time));
+          } catch (timeError) {
+            console.error("시간 라벨 생성 실패:", timeError);
+            energyOption.value = { lineLabels: [], lineData: [] };
+            return;
+          }
+
+          const energyParamMap = {
+            kwh_import_consumption: ["kwh_import_consumption"],
+            kvarh_import_consumption: ["kvarh_import_consumption"],
+            kvah_import_consumption: ["kvah_import_consumption"],
+          };
+
+          selectedParams.forEach((param) => {
+            const keys = energyParamMap[param];
+            if (!keys) {
+              console.warn("Energy 파라미터 매핑을 찾을 수 없음:", param);
+              return;
             }
+
+            keys.forEach((key) => {
+              try {
+                const data = responseData.map((row) => row[key]);
+                datasets.push({
+                  name: nameToTitleMap[key] || key,
+                  data: data,
+                  isThreshold: false,
+                });
+              } catch (dataError) {
+                console.error(`Energy 데이터 생성 실패 (${key}):`, dataError);
+              }
+            });
           });
-        });
 
-        // 4. 차트 옵션에 데이터 적용
-        energyOption.value = {
-          lineLabels: labels,
-          lineData: datasets,
-        };
-
-        //console.log("Energy 차트 옵션 업데이트 완료:", energyOption.value);
+          energyOption.value = {
+            lineLabels: labels,
+            lineData: datasets,
+          };
         }else{
           console.error("Energy API 응답 실패:", response.data);
           energyOption.value = { lineLabels: [], lineData: [] };
@@ -714,6 +656,8 @@ export default {
       } catch (error) {
         console.error("Energy 데이터 가져오기 실패:", error);
         energyOption.value = { lineLabels: [], lineData: [] };
+      } finally {
+        isLoading.value = false; // ✅ 로딩 종료
       }
     };
 
@@ -721,7 +665,7 @@ export default {
       const findNode = (nodes) => {
         for (const node of nodes) {
           if (node.ID === id) {
-            return node.isParent === true; // 부모라면 true 반환
+            return node.isParent === true;
           }
           if (node.children) {
             const found = findNode(node.children);
@@ -738,13 +682,12 @@ export default {
 
       items.value.forEach((node) => {
         if (node.children && node.children.length > 0) {
-          // 자식 있는 부모
           const childIds = node.children.map((c) => c.ID);
           const allChildrenChecked = childIds.every((cid) =>
             checkedIds.value.includes(cid)
           );
           if (allChildrenChecked) {
-            result.push(...childIds); // 자식만 보냄
+            result.push(...childIds);
           } else {
             node.children.forEach((c) => {
               if (checkedIds.value.includes(c.ID)) {
@@ -753,7 +696,6 @@ export default {
             });
           }
         } else {
-          // 리프 노드 (부모든 아니든)
           if (checkedIds.value.includes(node.ID)) {
             result.push(node.ID);
           }
@@ -765,9 +707,8 @@ export default {
 
     const drawDiagnosisChart = async () => {
       const effectiveIds = getEffectiveParameterIds();
-      // effectiveIds가 빈 배열이면 API 요청하지 않음
+      
       if (!effectiveIds || effectiveIds.length === 0) {
-
         option.value = {
           lineLabels: [],
           lineData: [],
@@ -779,14 +720,17 @@ export default {
         alert(t("trend.Linechart.parametercount"));
         return;
       }
+
+      isLoading.value = true; // ✅ 로딩 시작
+
       const trendDataRequest = {
         ParametersIds: effectiveIds,
         StartDate: formatToISOString(props.startdate, 0),
         EndDate: formatToISOString(props.enddate, 1),
       };
-      //console.log(trendDataRequest);
+
       try {
-        const url = `/api/getTrendData`; // FastAPI 엔드포인트
+        const url = `/api/getTrendData`;
         const response = await axios.post(url, trendDataRequest, {
           headers: { "Content-Type": "application/json" },
         });
@@ -797,7 +741,6 @@ export default {
           let datasets = [];
           let labels = [];
 
-          // 1. 메인 데이터 처리 (Thresholds 제외)
           Object.keys(resData).forEach((key) => {
             if (key !== "Thresholds") {
               const dataPoints = resData[key].data;
@@ -806,17 +749,15 @@ export default {
                   labels = dataPoints.map((point) => point.XAxis);
                 }
                 datasets.push({
-                  name: resData[key].Title, // 예: "Current RMS A"
+                  name: resData[key].Title,
                   data: dataPoints.map((point) => point.YAxis),
-                  isThreshold: false, // 일반 데이터
+                  isThreshold: false,
                 });
               }
             }
           });
 
-          // 2. Thresholds 처리 (Thresholds 배열이 2개일 때)
           if (resData.Thresholds && resData.Thresholds.length > 0 && labels.length > 0) {
-          // Threshold 문자열
             const ThresholdString = [
               "Out of Range(Down side)",
               "Repair",
@@ -828,115 +769,55 @@ export default {
               "Out of Range(Upper side)",
             ];
 
-            // Threshold 데이터가 있는 인덱스 찾기
             if(resData.Thresholds[0].Thresholds != null){
               const thresholdCount = resData.Thresholds[0].Thresholds.length;
             
-            for (let idx = 0; idx < thresholdCount; idx++) {
-              // 해당 인덱스에 유효한 값이 하나라도 있는지 확인
-              const hasValidValue = resData.Thresholds.some(t => {
-                const value = t.Thresholds[idx];
-                return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
-              });
-
-              if (!hasValidValue) continue;
-
-              // Threshold 시간 리스트 생성 (유효한 값만)
-              const timeList = resData.Thresholds
-                .filter(t => {
+              for (let idx = 0; idx < thresholdCount; idx++) {
+                const hasValidValue = resData.Thresholds.some(t => {
                   const value = t.Thresholds[idx];
                   return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
-                })
-                .map(t => ({
-                  time: new Date(t.XAxis),
-                  value: t.Thresholds[idx]
-                }))
-                .sort((a, b) => a.time - b.time);
+                });
 
-              if (timeList.length === 0) continue;
+                if (!hasValidValue) continue;
 
-              // 각 label에 대해 적절한 threshold 값 찾기
-              const thresholdData = labels.map((lbl) => {
-                const labelTime = new Date(lbl);
-                
-                // labelTime에 해당하는 threshold 값 찾기
-                // labelTime보다 작거나 같은 가장 최근 threshold 사용
-                let applicableThreshold = timeList[0].value;
-                
-                for (let i = 0; i < timeList.length; i++) {
-                  if (labelTime >= timeList[i].time) {
-                    applicableThreshold = timeList[i].value;
-                  } else {
-                    break;
+                const timeList = resData.Thresholds
+                  .filter(t => {
+                    const value = t.Thresholds[idx];
+                    return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
+                  })
+                  .map(t => ({
+                    time: new Date(t.XAxis),
+                    value: t.Thresholds[idx]
+                  }))
+                  .sort((a, b) => a.time - b.time);
+
+                if (timeList.length === 0) continue;
+
+                const thresholdData = labels.map((lbl) => {
+                  const labelTime = new Date(lbl);
+                  
+                  let applicableThreshold = timeList[0].value;
+                  
+                  for (let i = 0; i < timeList.length; i++) {
+                    if (labelTime >= timeList[i].time) {
+                      applicableThreshold = timeList[i].value;
+                    } else {
+                      break;
+                    }
                   }
-                }
-                
-                return applicableThreshold;
-              });
+                  
+                  return applicableThreshold;
+                });
 
-              datasets.push({
-                name: ThresholdString[idx],
-                data: thresholdData,
-                isThreshold: true,
-              });
+                datasets.push({
+                  name: ThresholdString[idx],
+                  data: thresholdData,
+                  isThreshold: true,
+                });
+              }
             }
-            }
-            
           }
-          // if (
-          //   resData.Thresholds &&
-          //   resData.Thresholds.length == 2 &&
-          //   labels.length > 0
-          // ) {
-          //   // t1: 첫 번째 Threshold의 XAxis, t2: 두 번째 Threshold의 XAxis
-          //   let timeList = []
-          //   for (let i = 0; i < resData.Thresholds.length; i++) {
-          //     timeList.push(new Date(resData.Thresholds[i].XAxis));
-          //   }
-          //   const t1 = new Date(resData.Thresholds[0].XAxis);
-          //   const t2 = new Date(resData.Thresholds[1].XAxis);
 
-          //   // 첫 번째 Threshold 리스트의 값 (예: 인덱스 4, 5, 6 등)
-          //   resData.Thresholds[0].Thresholds.forEach((value, idx) => {
-          //     if (value !== "NaN" && value !== null && value !== undefined) {
-          //       // 두 번째 Threshold의 값
-          //       const secondValue = resData.Thresholds[1].Thresholds[idx];
-          //       if (
-          //         secondValue === "NaN" ||
-          //         secondValue === null ||
-          //         secondValue === undefined
-          //       ) {
-          //         // 두 번째 값이 유효하지 않으면 스킵
-          //         return;
-          //       }
-          //       // threshold 시리즈 데이터 생성:
-          //       // for each label in labels:
-          //       // - if labelTime < t1: use value (첫 번째 threshold 값)
-          //       // - if labelTime >= t1: use secondValue (두 번째 threshold 값)
-          //       const thresholdData = labels.map((lbl) => {
-          //         const dt = new Date(lbl);
-          //         return dt < t1 ? value : secondValue;
-          //       });
-          //       const ThresholdString = [
-          //         "Out of Range(Down side)",
-          //         "Repair",
-          //         "Inspect",
-          //         "Warning",
-          //         "Warning",
-          //         "Inspect",
-          //         "Repair",
-          //         "Out of Range(Upper side)",
-          //       ];
-          //       datasets.push({
-          //         name: ThresholdString[idx], // 예: "4", "5", "6" 등 (해당 인덱스)
-          //         data: thresholdData,
-          //         isThreshold: true, // threshold series임을 표시 (LineChart 컴포넌트에서 점선 처리)
-          //       });
-          //     }
-          //   });
-          // }
-
-          // 3. 차트 업데이트
           option.value = {
             lineLabels: labels,
             lineData: datasets,
@@ -950,6 +831,8 @@ export default {
         }
       } catch (error) {
         console.error("요청 실패:", error);
+      } finally {
+        isLoading.value = false; // ✅ 로딩 종료
       }
     };
 
@@ -984,6 +867,7 @@ export default {
       items,
       checkedIds,
       checkedNames,
+      isLoading, // ✅ 추가
       onCheckChange,
       drawMeterChart,
       drawEnergyChart,
