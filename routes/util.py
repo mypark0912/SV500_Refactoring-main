@@ -1,5 +1,5 @@
 import logging
-import uuid, psutil, sqlite3, os
+import uuid, psutil, sqlite3, os, subprocess
 from pathlib import Path
 from datetime import date
 from pydantic import BaseModel
@@ -155,3 +155,60 @@ def get_lastpost():
         return {"result": 1, "data": dict(last_record)}
     else:
         return {"result": 0}
+
+def is_service_active(name):
+    try:
+        result = subprocess.run(['systemctl', 'is-active', name],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                                timeout=2)
+        return result.stdout.strip() == "active"
+    except Exception as e:
+        print(f"❌ 서비스 상태 확인 실패: {name} - {e}")
+        return False
+
+def sysService(cmd, item):
+    itemdict = {
+      "Redis":"redis",
+      "InfluxDB":"influxdb",
+      "SmartSystems":"smartsystemsservice",
+      "SmartAPI":"smartsystemsrestapiservice",
+      "Core":"core",
+      "WebServer":"webserver",
+      "A35":"sv500A35",
+    }
+
+    try:
+        # systemctl 명령 실행
+        result = subprocess.run(
+            ['sudo', 'systemctl', cmd, itemdict[item]],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
+
+        return {
+            'success': True,
+            'stdout': result.stdout.strip(),
+            'stderr': result.stderr.strip(),
+            'returncode': result.returncode,
+            'service': itemdict[item],
+            'action': cmd
+        }
+
+    except subprocess.TimeoutExpired:
+        return {
+            'success': False,
+            'error': f'Timeout expired while {cmd}ing {itemdict[item]}',
+            'service': itemdict[item],
+            'action': cmd
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'service': itemdict[item],
+            'action': cmd
+        }

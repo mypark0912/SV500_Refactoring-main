@@ -8,7 +8,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 from routes.auth import checkLoginAPI
-from routes.util import get_mac_address
+from routes.util import get_mac_address, sysService, is_service_active
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
@@ -2133,17 +2133,6 @@ def is_service_enabled(name):
         print(f"❌ 서비스 enabled 상태 확인 실패: {name} - {e}")
         return False
 
-def is_service_active(name):
-    try:
-        result = subprocess.run(['systemctl', 'is-active', name],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True,
-                                timeout=2)
-        return result.stdout.strip() == "active"
-    except Exception as e:
-        print(f"❌ 서비스 상태 확인 실패: {name} - {e}")
-        return False
 
 @router.get("/SysCheck")
 def check_sysStatus():
@@ -2200,50 +2189,8 @@ def check_sysStatus():
         return {"success": True, "data":service_status,  "disk":[disk1, disk2]}
 
 @router.get('/SysService/{cmd}/{item}')
-def sysService(cmd, item):
-    itemdict = {
-      "Redis":"redis",
-      "InfluxDB":"influxdb",
-      "SmartSystems":"smartsystemsservice",
-      "SmartAPI":"smartsystemsrestapiservice",
-      "Core":"core",
-      "WebServer":"webserver",
-      "A35":"sv500A35",
-    }
-
-    try:
-        # systemctl 명령 실행
-        result = subprocess.run(
-            ['sudo', 'systemctl', cmd, itemdict[item]],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=30
-        )
-
-        return {
-            'success': True,
-            'stdout': result.stdout.strip(),
-            'stderr': result.stderr.strip(),
-            'returncode': result.returncode,
-            'service': itemdict[item],
-            'action': cmd
-        }
-
-    except subprocess.TimeoutExpired:
-        return {
-            'success': False,
-            'error': f'Timeout expired while {cmd}ing {itemdict[item]}',
-            'service': itemdict[item],
-            'action': cmd
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'service': itemdict[item],
-            'action': cmd
-        }
+def control_service(cmd, item):
+    return sysService(cmd, item)
 
 @router.get('/ServiceStatus')
 def check_allservice():
