@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, UploadFile, File
+from fastapi import APIRouter, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 import os, httpx, csv, psutil, struct
@@ -70,25 +70,41 @@ async def checkInitDB():
 
 
 @router.get('/initDB')
-async def initInflux():
+async def initInflux(background_tasks: BackgroundTasks):
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     data = {
         "username": "admin",
         "password": "ntek9135",
         "org": "ntek",
-        "bucket": "ntek",
-        "retentionPeriodSeconds": 730 * 24 * 60 * 60  # 90 * 24 * 60 * 60
+        "bucket": "nteks",
+        "retentionPeriodSeconds": 0
     }
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://127.0.0.1:8086/api/v2/setup", json=data)
             resData = response.json()
-            cipher = aesState.encrypt(resData.get("auth").get("token"))
+            if resData.get("code") == "conflict":
+                logging.warning("⚠️ InfluxDB already initialized")
+                return {"success": False, "message": "InfluxDB has already been initialized"}
+
+            auth = resData.get("auth")
+            org = resData.get("org")
+
+            if not auth or not org:
+                logging.error(f"❌ Unexpected response: {resData}")
+                return {"success": False, "message": f"InfluxDB setup failed: {resData}"}
+
+            token = auth.get("token")
+            org_id = org.get("id")
+
+            cipher = aesState.encrypt(token)
             influxdata = {
                 "token": cipher,
-                "org": resData.get("org").get("name"),
+                "org": org.get("name"),
+                "org_id": org_id,
                 "retention": data.get("retentionPeriodSeconds")
             }
+
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
 
@@ -100,19 +116,17 @@ async def initInflux():
             return {"success": False, "message": influx_state.error}
         set_cli = init_influxcli()
         sysService('restart', 'InfluxDB')
-        sysMdoe = redis_state.client.hget("System", "mode")
-        if sysMdoe != 'device0':
-            sysService('restart', 'SmartSystems')
-            sysService('restart', 'SmartAPI')
+        background_tasks.add_task(complete_influx_setup)
+
         if set_cli['status']:
             return {"success": True, "message": "InfluxDB initialized successfully"}
         else:
             return {"success": True, "message": "InfluxDB initialized but check Influx CLI environment variables"}
     except Exception as e:
         logging.error(f"❌ Influxdb Init Error: {e}")
-        influx_state.client = None
-        influx_state.error = f"Exception during init: {str(e)}"
-        return {"success": False, "message": influx_state.error}
+        influx_state._client = None
+        influx_state._error = f"Exception during init: {str(e)}"
+        return {"success": False, "message": str(e)}
 
 
 @router.get("/initInfluxCLI")
@@ -139,7 +153,7 @@ cat > /etc/profile.d/influx.sh << 'EOF'
 export INFLUX_TOKEN={token_escaped}
 export INFLUX_HOST="http://localhost:8086"
 export INFLUX_ORG={org_escaped}
-export INFLUX_BUCKET="ntek"
+export INFLUX_BUCKET="nteks"
 EOF
 chmod +x /etc/profile.d/influx.sh
 source /etc/profile.d/influx.sh
@@ -157,7 +171,7 @@ source /etc/profile.d/influx.sh
             'INFLUX_TOKEN': token,
             'INFLUX_HOST': "http://localhost:8086",
             'INFLUX_ORG': config['org'],
-            'INFLUX_BUCKET': "ntek"
+            'INFLUX_BUCKET': "nteks"
         })
 
         return {
@@ -176,6 +190,96 @@ source /etc/profile.d/influx.sh
             "status": False,
             "message": f"Error: {str(e)}"
         }
+
+
+async def complete_influx_setup():
+    """백그라운드에서 InfluxDB 재시작 대기 후 버킷 생성 및 서비스 재시작"""
+    try:
+        redis_state.client.select(0)
+        sysMode = redis_state.client.hget("System", "mode")
+        redis_state.client.hset("influx_init", "status", "waiting")
+
+        # InfluxDB 재시작 완료 대기
+        await asyncio.sleep(3)
+        influx_ready = False
+
+        for i in range(10):
+            try:
+                async with httpx.AsyncClient(timeout=5) as client:
+                    health = await client.get(f"http://127.0.0.1:8086/health")
+                    if health.status_code == 200:
+                        influx_ready = True
+                        logging.info("✅ InfluxDB is ready")
+                        break
+            except:
+                pass
+            await asyncio.sleep(1)
+
+        if not influx_ready:
+            redis_state.client.hset("influx_init", "status", "failed")
+            return
+
+        # 버킷 생성
+        bucket_result = await create_influx_bucket()
+
+        if not bucket_result["success"]:
+            logging.warning(f"⚠️ Bucket creation failed: {bucket_result['message']}")
+
+        # 다른 서비스 재시작
+        if sysMode != 'device0':
+            sysService('restart', 'SmartSystems')
+            sysService('restart', 'SmartAPI')
+
+        redis_state.client.hset("influx_init", "status", "completed")
+        logging.info("✅ InfluxDB initialization completed")
+
+    except Exception as e:
+        redis_state.client.hset("influx_init", "status", "failed")
+        logging.error(f"❌ Background setup error: {e}")
+
+
+async def create_influx_bucket():
+    try:
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+        bucket_name = "ntek"
+        retention_seconds = 730 * 24 * 60 * 60
+        bucket_data = {
+            "orgID": config['org_id'],
+            "name": bucket_name,
+            "retentionRules": [
+                {
+                    "type": "expire",
+                    "everySeconds": retention_seconds  # 2년
+                }
+            ]
+        }
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.post(
+                f"http://127.0.0.1:8086/api/v2/buckets",
+                headers={"Authorization": f"Token {token}"},
+                json=bucket_data
+            )
+
+            if response.status_code == 201:
+                retention_info = f"{retention_seconds // (24 * 60 * 60)} days" if retention_seconds > 0 else "infinite"
+                logging.info(f"✅ Bucket '{bucket_name}' created (retention: {retention_info})")
+                return {"success": True, "message": f"Bucket '{bucket_name}' created successfully"}
+            else:
+                error_msg = response.json().get("message", response.text)
+                logging.error(f"❌ Bucket '{bucket_name}' creation failed: {error_msg}")
+                return {"success": False, "message": error_msg}
+
+    except Exception as e:
+        logging.error(f"❌ Bucket creation error: {e}")
+        return {"success": False, "message": str(e)}
+
+@router.get('/initDB/status')
+async def get_init_status():
+    redis_state.client.select(0)
+    status = redis_state.client.hget("influx_init", "status") or "idle"
+    return {"status": status}
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
