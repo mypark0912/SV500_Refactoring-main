@@ -223,6 +223,7 @@ async def complete_influx_setup():
         bucket_result = await create_influx_bucket()
 
         if not bucket_result["success"]:
+            redis_state.client.hset("influx_init", "status", "P.FAIL")
             logging.warning(f"⚠️ Bucket creation failed: {bucket_result['message']}")
 
         # 다른 서비스 재시작
