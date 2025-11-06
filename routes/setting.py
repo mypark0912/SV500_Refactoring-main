@@ -283,14 +283,43 @@ async def get_init_status():
     status = redis_state.client.hget("influx_init", "status") or "idle"
     return {"status": status}
 
-@router.get("/backup/download")
-async def download_ntek_backup():
-    """
-    ntek 버킷 백업 후 즉시 다운로드 (서버에 저장 안 함)
 
-    Returns:
-        백업 파일 다운로드
-    """
+@router.get("/backup/download/{backup_type}")
+async def download_backup(backup_type: str):
+    try:
+        LOG_PATH = '/usr/local/sv500'
+        # 임시 디렉토리 생성
+        temp_dir = tempfile.mkdtemp()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        try:
+            if backup_type == "all":
+                # InfluxDB + logs 통합 백업
+                return await _backup_all(temp_dir, timestamp, LOG_PATH)
+
+            elif backup_type == "dbbackup":
+                # InfluxDB만 백업
+                return await _backup_influxdb(temp_dir, timestamp)
+
+            elif backup_type == "log":
+                # logs 폴더만 백업
+                return await _backup_logs(temp_dir, timestamp, LOG_PATH)
+
+            else:
+                shutil.rmtree(temp_dir)
+                return {"success": False, "message": "Invalid backup_type. Use: all, dbbackup, or logs"}
+
+        except Exception as e:
+            shutil.rmtree(temp_dir)
+            raise e
+
+    except Exception as e:
+        logging.error(f"❌ Backup error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+async def _backup_all(temp_dir: str, timestamp: str, log_dir:str):
+    """InfluxDB + logs 통합 백업"""
     try:
         config = aesState.getInflux()
         if not config["result"]:
@@ -299,15 +328,74 @@ async def download_ntek_backup():
         token = aesState.decrypt(config["cipher"])
         org = config["org"]
 
-        # 임시 디렉토리 생성
-        temp_dir = tempfile.mkdtemp()
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"backup_ntek_{timestamp}"
+        backup_name = f"backup_all_{timestamp}"
+        backup_path = os.path.join(temp_dir, backup_name)
+        os.makedirs(backup_path)
+
+        # 1. InfluxDB 백업
+        influx_backup_path = os.path.join(backup_path, "influxdb")
+        backup_command = f"""
+export INFLUX_TOKEN='{token}'
+export INFLUX_HOST='http://localhost:8086'
+export INFLUX_ORG='{org}'
+influx backup {influx_backup_path} --bucket ntek
+"""
+
+        result = subprocess.run(
+            ['bash', '-c', backup_command],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+
+        # 2. logs 폴더 복사
+        if os.path.exists(log_dir):
+            logs_backup_path = os.path.join(backup_path, "logs")
+            shutil.copytree(log_dir, logs_backup_path)
+
+        # 3. 통합 압축
+        tar_file = f"{backup_path}.tar.gz"
+        subprocess.run(
+            ['tar', '-czf', tar_file, '-C', temp_dir, backup_name],
+            check=True,
+            timeout=300
+        )
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        logging.info(f"✅ All backup created: {backup_name}.tar.gz")
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=lambda: shutil.rmtree(temp_dir)
+        )
+
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout"}
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"❌ Backup failed: {error_msg}")
+        return {"success": False, "message": f"Backup failed: {error_msg}"}
+
+
+async def _backup_influxdb(temp_dir: str, timestamp: str):
+    """InfluxDB만 백업"""
+    try:
+        config = aesState.getInflux()
+        if not config["result"]:
+            return {"success": False, "message": "InfluxDB not initialized"}
+
+        token = aesState.decrypt(config["cipher"])
+        org = config["org"]
+
+        backup_name = f"backup_influxdb_{timestamp}"
         backup_path = os.path.join(temp_dir, backup_name)
 
-        try:
-            # 백업 실행
-            backup_command = f"""
+        backup_command = f"""
 export INFLUX_TOKEN='{token}'
 export INFLUX_HOST='http://localhost:8086'
 export INFLUX_ORG='{org}'
@@ -316,43 +404,141 @@ tar -czf {backup_path}.tar.gz -C {temp_dir} {backup_name}
 rm -rf {backup_path}
 """
 
-            result = subprocess.run(
-                ['bash', '-c', backup_command],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
+        result = subprocess.run(
+            ['bash', '-c', backup_command],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
 
-            tar_file = f"{backup_path}.tar.gz"
+        tar_file = f"{backup_path}.tar.gz"
 
-            if not os.path.exists(tar_file):
-                raise Exception("Backup file not created")
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
 
-            logging.info(f"✅ Backup created for download: {backup_name}.tar.gz")
+        logging.info(f"✅ InfluxDB backup created: {backup_name}.tar.gz")
 
-            # 파일 다운로드 (다운로드 완료 후 임시 파일 자동 삭제)
-            return FileResponse(
-                path=tar_file,
-                filename=f"{backup_name}.tar.gz",
-                media_type='application/gzip',
-                background=lambda: shutil.rmtree(temp_dir)
-            )
-
-        except Exception as e:
-            shutil.rmtree(temp_dir)
-            raise e
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=lambda: shutil.rmtree(temp_dir)
+        )
 
     except subprocess.TimeoutExpired:
-        return {"success": False, "message": "Backup timeout (5 minutes)"}
+        return {"success": False, "message": "Backup timeout"}
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr if e.stderr else str(e)
         logging.error(f"❌ Backup failed: {error_msg}")
         return {"success": False, "message": f"Backup failed: {error_msg}"}
-    except Exception as e:
-        logging.error(f"❌ Backup error: {e}")
-        return {"success": False, "message": str(e)}
 
+
+async def _backup_logs(temp_dir: str, timestamp: str, log_dir:str):
+    """logs 폴더만 백업"""
+    try:
+        if not os.path.exists(log_dir):
+            return {"success": False, "message": f"Logs directory not found: {log_dir}"}
+
+        backup_name = f"backup_logs_{timestamp}"
+        tar_file = os.path.join(temp_dir, f"{backup_name}.tar.gz")
+
+        # logs 폴더 압축
+        subprocess.run(
+            ['tar', '-czf', tar_file, '-C', os.path.dirname(log_dir), os.path.basename(log_dir)],
+            check=True,
+            timeout=300
+        )
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        logging.info(f"✅ Logs backup created: {backup_name}.tar.gz")
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=lambda: shutil.rmtree(temp_dir)
+        )
+
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout"}
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"❌ Backup failed: {error_msg}")
+        return {"success": False, "message": f"Backup failed: {error_msg}"}
+
+# @router.get("/backup/download")
+# async def download_ntek_backup():
+#     """
+#     ntek 버킷 백업 후 즉시 다운로드 (서버에 저장 안 함)
+#
+#     Returns:
+#         백업 파일 다운로드
+#     """
+#     try:
+#         config = aesState.getInflux()
+#         if not config["result"]:
+#             return {"success": False, "message": "InfluxDB not initialized"}
+#
+#         token = aesState.decrypt(config["cipher"])
+#         org = config["org"]
+#
+#         # 임시 디렉토리 생성
+#         temp_dir = tempfile.mkdtemp()
+#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#         backup_name = f"backup_ntek_{timestamp}"
+#         backup_path = os.path.join(temp_dir, backup_name)
+#
+#         try:
+#             # 백업 실행
+#             backup_command = f"""
+# export INFLUX_TOKEN='{token}'
+# export INFLUX_HOST='http://localhost:8086'
+# export INFLUX_ORG='{org}'
+# influx backup {backup_path} --bucket ntek
+# tar -czf {backup_path}.tar.gz -C {temp_dir} {backup_name}
+# rm -rf {backup_path}
+# """
+#
+#             result = subprocess.run(
+#                 ['bash', '-c', backup_command],
+#                 check=True,
+#                 capture_output=True,
+#                 text=True,
+#                 timeout=300
+#             )
+#
+#             tar_file = f"{backup_path}.tar.gz"
+#
+#             if not os.path.exists(tar_file):
+#                 raise Exception("Backup file not created")
+#
+#             logging.info(f"✅ Backup created for download: {backup_name}.tar.gz")
+#
+#             # 파일 다운로드 (다운로드 완료 후 임시 파일 자동 삭제)
+#             return FileResponse(
+#                 path=tar_file,
+#                 filename=f"{backup_name}.tar.gz",
+#                 media_type='application/gzip',
+#                 background=lambda: shutil.rmtree(temp_dir)
+#             )
+#
+#         except Exception as e:
+#             shutil.rmtree(temp_dir)
+#             raise e
+#
+#     except subprocess.TimeoutExpired:
+#         return {"success": False, "message": "Backup timeout (5 minutes)"}
+#     except subprocess.CalledProcessError as e:
+#         error_msg = e.stderr if e.stderr else str(e)
+#         logging.error(f"❌ Backup failed: {error_msg}")
+#         return {"success": False, "message": f"Backup failed: {error_msg}"}
+#     except Exception as e:
+#         logging.error(f"❌ Backup error: {e}")
+#         return {"success": False, "message": str(e)}
+#
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""

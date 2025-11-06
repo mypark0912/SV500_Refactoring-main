@@ -20,6 +20,16 @@
             </div-->
             <div class="flex items-center gap-4 mb-4">
       <!-- Factory Default 버튼 -->
+      <div class="flex items-center gap-3">
+        <label 
+          for="reference"
+          class="text-sm text-gray-700 dark:text-gray-300 font-medium"
+        >
+          Influx Init Status
+        </label>
+        <span>{{ initInfluxStatus  }}</span>
+        </div>
+      <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
       <button 
         class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
         @click="ResetAll"
@@ -58,7 +68,7 @@
           Download
         </label>
         
-        <select
+        <select v-if="devMode != 'device0'"
           id="reference"
           class="h-9 w-32 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           v-model="modalSelectItem"
@@ -68,6 +78,15 @@
           <option value="project">Project</option>
           <option value="dbbackup">Dbbackup</option>
           <option value="backup">Backup</option>
+        </select>
+        <select v-else
+          id="reference"
+          class="h-9 w-32 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+          v-model="modalSelectItem"
+        >
+          <option value="all">All</option>
+          <option value="log">Log</option>
+          <option value="dbbackup">Dbbackup</option>
         </select>
         
         
@@ -276,6 +295,7 @@
       const diskStatus = ref([]);
       const modalSelectItem = ref('all');
       const serviceLoadingMessage = ref('');
+      const initInfluxStatus = ref('');
       const showMessage = async(text) => {
         message.value = text
         await SysCheck();
@@ -336,8 +356,19 @@
       }
     };
 
+    const getInfluxStatus = async () => {
+      try {
+        const response = await axios.get("/setting/initDB/status");
+        initInfluxStatus.value = response.data.status;
+      } catch (error) {
+        message.value = "Failed to check Influx Init Status";
+        //console.log(error);
+      }
+    };
+
     onMounted(()=>{
       SysCheck();
+      getInfluxStatus();
     })
 
     provide('sysStatus',sysStatus);
@@ -445,7 +476,11 @@
     const downloadUrl = computed(() => {
       //return `http://127.0.0.1:5000/api/getFolder?name=${modalSelectItem.value}`
       const hostname = window.location.hostname
-      return `http://${hostname}:5000/api/getFolder?name=${modalSelectItem.value}`
+      if (devMode.value != 'device0')
+        return `http://${hostname}:5000/api/getFolder?name=${modalSelectItem.value}`
+      else
+        return `http://${hostname}:4000/setting/backup/download/${modalSelectItem.value}`
+        
     })
 
 
@@ -467,6 +502,7 @@
         InitInfluxCLI,
         serviceLoadingMessage,
         isResetAll,
+        initInfluxStatus,
       }
 
     }
