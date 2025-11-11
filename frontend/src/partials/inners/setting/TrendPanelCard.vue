@@ -81,7 +81,7 @@ const updateNestedField = inject("updateNestedField");
 
 const parameterOptions = ref([
   { label: "None", value: "None" },
-  { label: "Temperature", value: "Temperature" },
+  //{ label: "Temperature", value: "Temperature" },
   { label: "Frequency", value: "Frequency" },
   { label: "Line Voltage", value: "Line Voltage" },
   { label: "Phase Voltage", value: "Phase Voltage" },
