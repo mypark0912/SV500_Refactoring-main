@@ -342,7 +342,7 @@ async def download_backup(backup_type: str, background_tasks: BackgroundTasks):
 
         background_tasks.add_task(shutil.rmtree, temp_dir)
 
-        if backup_type == "all":
+        if backup_type == "all" or backup_type == 'other':
             # InfluxDB + logs 통합 백업
             return await _backup_all(temp_dir, timestamp, LOG_PATH)
 

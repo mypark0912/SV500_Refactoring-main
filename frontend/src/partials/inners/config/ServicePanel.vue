@@ -72,11 +72,12 @@
           class="h-9 w-32 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
           v-model="modalSelectItem"
         >
-          <option value="all">All</option>
-          <option value="log">Log</option>
-          <option value="project">Project</option>
-          <option value="dbbackup">Dbbackup</option>
-          <option value="backup">Backup</option>
+          <option value="all">SmartSystem All</option>
+          <option value="log">SmartSystem Log</option>
+          <option value="project">SmartSystem Project</option>
+          <option value="dbbackup">SmartSystem Dbbackup</option>
+          <option value="backup">SmartSystem Backup</option>
+          <option value="other">Other Backup</option>
         </select>
         <select v-else
           id="reference"
@@ -488,11 +489,14 @@
     const downloadUrl = computed(() => {
       //return `http://127.0.0.1:5000/api/getFolder?name=${modalSelectItem.value}`
       const hostname = window.location.hostname
-      if (devMode.value != 'device0')
-        return `http://${hostname}:5000/api/getFolder?name=${modalSelectItem.value}`
+      if (devMode.value != 'device0'){
+        if(modalSelectItem.value == 'other')
+           return `http://${hostname}:4000/setting/backup/download/${modalSelectItem.value}`
+        else
+          return `http://${hostname}:5000/api/getFolder?name=${modalSelectItem.value}`
+      }
       else
-        return `http://${hostname}:4000/setting/backup/download/${modalSelectItem.value}`
-        
+        return `http://${hostname}:4000/setting/backup/download/${modalSelectItem.value}`        
     })
 
 
