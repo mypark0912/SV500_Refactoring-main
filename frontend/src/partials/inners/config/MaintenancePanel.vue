@@ -498,11 +498,11 @@ export default {
       context.value = item.context;
 
       // 버전 정보 매핑
-      versions.value.fw = item.fw_version || "";
-      versions.value.a35 = item.a35_version || "";
-      versions.value.web = item.web_version || "";
-      versions.value.core = item.core_version || "";
-      versions.value.smartsystem = item.smartsystem_version || "";
+      versions.value.fw = item.f_version || "";
+      versions.value.a35 = item.a_version || "";
+      versions.value.web = item.w_version || "";
+      versions.value.core = item.c_version || "";
+      versions.value.smartsystem = item.smart_version || "";
     };
 
     const save = async () => {
