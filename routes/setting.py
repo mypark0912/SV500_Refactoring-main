@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, UploadFile, File, BackgroundTasks
+from starlette.background import BackgroundTask
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 import os, httpx, csv, psutil, struct, tempfile
@@ -286,7 +287,7 @@ async def get_init_status():
 
 
 @router.get("/backup/download/{backup_type}")
-async def download_backup(backup_type: str, background_tasks: BackgroundTasks):
+async def download_backup(backup_type: str):
     try:
         LOG_PATH = '/usr/local/sv500/logs'
         BACKUP_DIR = '/usr/local/sv500/backup/influxdb'  # ✅
@@ -301,48 +302,9 @@ async def download_backup(backup_type: str, background_tasks: BackgroundTasks):
         temp_dir = tempfile.mkdtemp(dir=BACKUP_DIR)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        background_tasks.add_task(shutil.rmtree, temp_dir)
+        #        background_tasks.add_task(shutil.rmtree, temp_dir)
 
-        if backup_type == "all":
-            # InfluxDB + logs 통합 백업
-            return await _backup_all(temp_dir, timestamp, LOG_PATH)
-
-        elif backup_type == "dbbackup":
-            # InfluxDB만 백업
-            return await _backup_influxdb(temp_dir, timestamp)
-
-        elif backup_type == "log":
-            # logs 폴더만 백업
-            return await _backup_logs(temp_dir, timestamp, LOG_PATH)
-
-        else:
-            shutil.rmtree(temp_dir)
-            return {"success": False, "message": "Invalid backup_type. Use: all, dbbackup, or logs"}
-
-    except Exception as e:
-        logging.error(f"❌ Backup error: {e}")
-        return {"success": False, "message": str(e)}
-
-
-@router.get("/backup/download/{backup_type}")
-async def download_backup(backup_type: str, background_tasks: BackgroundTasks):
-    try:
-        LOG_PATH = '/usr/local/sv500/logs'
-        BACKUP_DIR = '/usr/local/sv500/backup/influxdb'  # ✅
-
-        # 백업 디렉토리가 없으면 생성 시도 (권한 있을 때만 가능)
-        if not os.path.exists(BACKUP_DIR):
-            try:
-                os.makedirs(BACKUP_DIR, exist_ok=True)
-            except PermissionError:
-                return {"success": False, "message": "Backup directory not accessible. Please run installation script."}
-
-        temp_dir = tempfile.mkdtemp(dir=BACKUP_DIR)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        background_tasks.add_task(shutil.rmtree, temp_dir)
-
-        if backup_type == "all" or backup_type == 'other':
+        if backup_type in ["all", "other"]:
             # InfluxDB + logs 통합 백업
             return await _backup_all(temp_dir, timestamp, LOG_PATH)
 
@@ -412,7 +374,10 @@ influx backup {temp_influx_backup} --bucket ntek
             logging.info(f"✅ Logs copied")
 
         # 3. 통합 압축
-        tar_file = f"{backup_path}.tar.gz"
+        #        tar_file = f"{backup_path}.tar.gz"
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
         subprocess.run(
             ['tar', '-czf', tar_file, '-C', temp_dir, backup_name],
             check=True,
@@ -424,10 +389,20 @@ influx backup {temp_influx_backup} --bucket ntek
 
         logging.info(f"✅ All backup created: {backup_name}.tar.gz")
 
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
         return FileResponse(
             path=tar_file,
             filename=f"{backup_name}.tar.gz",
             media_type='application/gzip',
+            background=BackgroundTask(cleanup)
         )
 
     except subprocess.TimeoutExpired:
@@ -437,6 +412,7 @@ influx backup {temp_influx_backup} --bucket ntek
         error_msg = e.stderr if e.stderr else str(e)
         logging.error(f"❌ Backup failed: {error_msg}")
         return {"success": False, "message": f"Backup failed: {error_msg}"}
+
 
 async def _backup_influxdb(temp_dir: str, timestamp: str):
     """InfluxDB만 백업"""
@@ -457,8 +433,6 @@ export INFLUX_TOKEN='{token}'
 export INFLUX_HOST='http://localhost:8086'
 export INFLUX_ORG='{org}'
 influx backup {backup_path} --bucket ntek
-tar -czf {backup_path}.tar.gz -C {temp_dir} {backup_name}
-rm -rf {backup_path}
 """
 
         result = subprocess.run(
@@ -468,20 +442,37 @@ rm -rf {backup_path}
             text=True,
             timeout=300
         )
-        # logging.info(f"📋 Backup stdout: {result.stdout}")
-        # logging.info(f"📋 Backup stderr: {result.stderr}")
 
-        tar_file = f"{backup_path}.tar.gz"
+        # ✅ tar 파일을 부모 디렉토리에 생성
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
+        subprocess.run(
+            ['tar', '-czf', tar_file, '-C', temp_dir, backup_name],
+            check=True,
+            timeout=300
+        )
 
         if not os.path.exists(tar_file):
             raise Exception("Backup file not created")
 
         logging.info(f"✅ InfluxDB backup created: {backup_name}.tar.gz")
 
+        # ✅ 정리 함수
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
         return FileResponse(
             path=tar_file,
             filename=f"{backup_name}.tar.gz",
             media_type='application/gzip',
+            background=BackgroundTask(cleanup)
         )
 
     except subprocess.TimeoutExpired:
@@ -492,14 +483,17 @@ rm -rf {backup_path}
         return {"success": False, "message": f"Backup failed: {error_msg}"}
 
 
-async def _backup_logs(temp_dir: str, timestamp: str, log_dir:str):
+async def _backup_logs(temp_dir: str, timestamp: str, log_dir: str):
     """logs 폴더만 백업"""
     try:
         if not os.path.exists(log_dir):
             return {"success": False, "message": f"Logs directory not found: {log_dir}"}
 
         backup_name = f"backup_logs_{timestamp}"
-        tar_file = os.path.join(temp_dir, f"{backup_name}.tar.gz")
+
+        # ✅ tar 파일을 부모 디렉토리에 생성
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
 
         # logs 폴더 압축
         subprocess.run(
@@ -513,10 +507,21 @@ async def _backup_logs(temp_dir: str, timestamp: str, log_dir:str):
 
         logging.info(f"✅ Logs backup created: {backup_name}.tar.gz")
 
+        # ✅ 정리 함수
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
         return FileResponse(
             path=tar_file,
             filename=f"{backup_name}.tar.gz",
             media_type='application/gzip',
+            background=BackgroundTask(cleanup)
         )
 
     except subprocess.TimeoutExpired:
@@ -525,6 +530,94 @@ async def _backup_logs(temp_dir: str, timestamp: str, log_dir:str):
         error_msg = e.stderr if e.stderr else str(e)
         logging.error(f"❌ Backup failed: {error_msg}")
         return {"success": False, "message": f"Backup failed: {error_msg}"}
+
+# async def _backup_influxdb(temp_dir: str, timestamp: str):
+#     """InfluxDB만 백업"""
+#     try:
+#         config = aesState.getInflux()
+#         if not config["result"]:
+#             return {"success": False, "message": "InfluxDB not initialized"}
+#
+#         token = aesState.decrypt(config["cipher"])
+#         org = config["org"]
+#
+#         backup_name = f"backup_influxdb_{timestamp}"
+#         backup_path = os.path.join(temp_dir, backup_name)
+#
+#         backup_command = f"""
+# set -e
+# export INFLUX_TOKEN='{token}'
+# export INFLUX_HOST='http://localhost:8086'
+# export INFLUX_ORG='{org}'
+# influx backup {backup_path} --bucket ntek
+# tar -czf {backup_path}.tar.gz -C {temp_dir} {backup_name}
+# rm -rf {backup_path}
+# """
+#
+#         result = subprocess.run(
+#             ['bash', '-c', backup_command],
+#             check=True,
+#             capture_output=True,
+#             text=True,
+#             timeout=300
+#         )
+#         # logging.info(f"📋 Backup stdout: {result.stdout}")
+#         # logging.info(f"📋 Backup stderr: {result.stderr}")
+#
+#         tar_file = f"{backup_path}.tar.gz"
+#
+#         if not os.path.exists(tar_file):
+#             raise Exception("Backup file not created")
+#
+#         logging.info(f"✅ InfluxDB backup created: {backup_name}.tar.gz")
+#
+#         return FileResponse(
+#             path=tar_file,
+#             filename=f"{backup_name}.tar.gz",
+#             media_type='application/gzip',
+#         )
+#
+#     except subprocess.TimeoutExpired:
+#         return {"success": False, "message": "Backup timeout"}
+#     except subprocess.CalledProcessError as e:
+#         error_msg = e.stderr if e.stderr else str(e)
+#         logging.error(f"❌ Backup failed: {error_msg}")
+#         return {"success": False, "message": f"Backup failed: {error_msg}"}
+#
+#
+# async def _backup_logs(temp_dir: str, timestamp: str, log_dir:str):
+#     """logs 폴더만 백업"""
+#     try:
+#         if not os.path.exists(log_dir):
+#             return {"success": False, "message": f"Logs directory not found: {log_dir}"}
+#
+#         backup_name = f"backup_logs_{timestamp}"
+#         tar_file = os.path.join(temp_dir, f"{backup_name}.tar.gz")
+#
+#         # logs 폴더 압축
+#         subprocess.run(
+#             ['tar', '-czf', tar_file, '-C', os.path.dirname(log_dir), os.path.basename(log_dir)],
+#             check=True,
+#             timeout=300
+#         )
+#
+#         if not os.path.exists(tar_file):
+#             raise Exception("Backup file not created")
+#
+#         logging.info(f"✅ Logs backup created: {backup_name}.tar.gz")
+#
+#         return FileResponse(
+#             path=tar_file,
+#             filename=f"{backup_name}.tar.gz",
+#             media_type='application/gzip',
+#         )
+#
+#     except subprocess.TimeoutExpired:
+#         return {"success": False, "message": "Backup timeout"}
+#     except subprocess.CalledProcessError as e:
+#         error_msg = e.stderr if e.stderr else str(e)
+#         logging.error(f"❌ Backup failed: {error_msg}")
+#         return {"success": False, "message": f"Backup failed: {error_msg}"}
 
 def parse_settings(setting):
     """설정을 파싱하여 결과 딕셔너리 생성"""
