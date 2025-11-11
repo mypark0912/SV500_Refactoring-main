@@ -1589,15 +1589,24 @@ export default {
           }
         }
 
-        currentStep.value = nextStepId;
+        
 
         // Load data when entering main or sub test steps
         if (nextStepId === 2 && diagnosis_main.value) {
+          isLoadingMain.value = true;
+          mainTestLoaded.value = false;
+          currentStep.value = nextStepId;
           await delay(2000);
           await getCommision("main");
         } else if (nextStepId === 3 && diagnosis_sub.value) {
+          isLoadingSub.value = true;
+          subTestLoaded.value = false;
+          currentStep.value = nextStepId;
           await delay(2000);
           await getCommision("sub");
+        }else {
+          // 로딩이 필요 없는 단계는 바로 전환
+          currentStep.value = nextStepId;
         }
       }
     };
@@ -1610,6 +1619,8 @@ export default {
       }
 
       if (diagnosis_sub.value) {
+        isLoadingSub.value = true;  // ✅ 로딩 상태 먼저 설정
+        subTestLoaded.value = false;
         currentStep.value = 3;
         await getCommision("sub");
       } else {
