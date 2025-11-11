@@ -1,14 +1,19 @@
 <template>
   <div class="grid grid-cols-12 gap-6">
-    <!-- 왼쪽 박스 (Diagnosis_Info + Diagnosis_Barchart) -->
     <div class="col-span-4 flex flex-col gap-6 h-auto">
-      <!-- ✅ flex-col로 수직 정렬 강제 -->
-
       <div v-show="true" role="alert">
         <div
           class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400">
-          <div class="flex w-full justify-between items-start">
-            <div class="flex">
+          <div class="flex flex-col w-full gap-3"><!--div class="flex w-full justify-between items-start"-->
+            <!--div class="flex items-center gap-2">
+              <svg class="shrink-0 fill-current text-blue-500" width="16" height="16" viewBox="0 0 16 16">
+                <path d="M5 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5Z" />
+                <path fill-rule="evenodd" d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4Zm0 2h8v12H4V2Z" clip-rule="evenodd" />
+              </svg>
+              <span class="font-medium">Last Trend Date:</span>
+              <span class="text-gray-700 dark:text-gray-300 font-semibold">2024-11-15 14:30:25</span>
+            </div-->
+            <div class="flex items-start">
               <svg class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3" width="16" height="16"
                 viewBox="0 0 16 16">
                 <path
@@ -49,9 +54,8 @@
         :checked-ids="checkedIds" :checked-names="checkedNames" @check-change="onCheckChange" />
     </div>
 
-    <!-- 오른쪽 박스 (Diagnosis_TreeTable) - 높이 제한 없음 -->
     <div class="col-span-8 relative">
-      <!-- ✅ 로딩 오버레이 -->
+
       <div v-if="isLoading" 
         class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-10 rounded-lg">
         <div class="flex flex-col items-center gap-3">
@@ -73,7 +77,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, onMounted, watch } from "vue";
 import axios from "axios";
