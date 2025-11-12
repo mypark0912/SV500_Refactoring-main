@@ -220,7 +220,7 @@
       //   await fetchRealData();
       // }
       await fetchPQData();
-    }, 300000);  // 5분
+    }, 60000);  // 5분
   }
 }, { immediate: true });
 
@@ -253,10 +253,21 @@
     //     }
     //   }
     // }, { immediate: true }); // <-- 바로 실행 시도
+
+    const fecthImmediate = async()=>{
+      try {
+        const response = await axios.get(`/api/setImdAPI`);
+        if(response.data.success){
+          console.log('진단 API CALL')
+        }
+      }catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      } 
+    }
  
-    // onMounted(async () => {
-    //     await setupStore.checkSetting();   // ✅ setupStore에서 서버 데이터 다시 가져오기
-    //   });
+    onMounted(async () => {
+        await fecthImmediate();   // ✅ setupStore에서 서버 데이터 다시 가져오기
+      });
 
  
      onUnmounted(() => {

@@ -27,7 +27,7 @@
                 {{t(`meter.Table.${group.subTitle}`)   }}
               </td>
               <td class="p-2 text-left">{{ item.subTitle }}</td>
-              <td class="p-2 text-center">{{ item.max }} <span v-if="item.max !== '-'"> {{ item.unit }}</span></td>        
+              <td class="p-2 text-center">{{ (item.max / 1000).toFixed(2) }} <span v-if="item.max !== '-'"> {{ item.unit }}</span></td>        
               <td class="p-2 text-center">{{ item.maxTime.split('.')[0] }} </td>           
             </tr>
           </template>
