@@ -11,6 +11,7 @@ from .redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
 # from .auth import checkLoginAPI
 from .RedisBinary import RedisDataType
 from .DemandMap import DemandDataFormatter
+from .util import is_service_active
 from concurrent.futures import ThreadPoolExecutor
 import asyncio, math
 
@@ -3333,6 +3334,31 @@ def get_energy(channel):
         print(str(e))
         return {"success": False, "error": f"Redis Read Error: {str(e)}"}
 
+
+@router.get('/setImdAPI')
+def setImdAPI():
+    redis_state.client.select(0)
+    redis_state.client.hset("Service","update", 1)
+    return {"success": True}
+
+@router.get('/getSystemStatus')
+def get_service():
+    itemdict = {
+        "Redis": "redis",
+        "InfluxDB": "influxdb",
+        "SmartSystems": "smartsystemsservice",
+        "SmartAPI": "smartsystemsrestapiservice",
+        "Core": "core",
+        "WebServer": "webserver",
+        "A35": "sv500A35",
+    }
+    statusDict = {}
+    status = True
+    for key, value in itemdict:
+        statusDict[key] = is_service_active(value)
+        if not statusDict[key]:
+            status = False
+    return {"status": status, "services":statusDict}
 
 @router.get('/getMeterTrend/{channel}')
 def getMeterTrend(channel, startDate: str = None, endDate: str = None):

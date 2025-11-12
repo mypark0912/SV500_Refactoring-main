@@ -56,6 +56,7 @@
         <!-- Header: Right side -->
         <div class="flex items-center space-x-3">
           <Help align="right" />
+          <Notifications align="right" :status="sysIcon" :data="sysData" />
           <hr class="w-px h-6 bg-gray-200 dark:bg-gray-700/60 border-none" />
           <DropdownLanguage align="right" />
           <ThemeToggle />
@@ -71,11 +72,12 @@
 </template>
 
 <script>
-import { computed} from 'vue'
+import { computed, onMounted} from 'vue'
 import ThemeToggle from '../header/ThemeToggle.vue'
 import Help from '../header/DropdownHelp.vue'
 import UserMenu from '../header/DropdownProfile.vue'
 import DropdownLanguage from '../header/DropdownLanguage.vue'
+import Notifications from '../header/DropdownNotifications.vue'
 import { useSetupStore } from "@/store/setup";
 
 export default {
@@ -89,12 +91,34 @@ export default {
     UserMenu,
     ThemeToggle,
     DropdownLanguage,
+    Notifications,
   },
   setup() {
     const setupStore = useSetupStore();
     //const location  = ref('');
-
+    const sysIcon = ref(false);
+    const sysData = ref(null);
     const location = computed(()=> setupStore.getDevLocation);
+    //let updateInterval = null;
+
+    const getSysStatus = async()=>{
+      try {
+        const response = await axios.get(`/api/getSystemStatus`);
+        sysIcon.value = response.data.status;
+        if (!response.data.status) {
+          sysData.value = response.data.services;
+        } else {
+          // 정상일 때도 services 데이터 전달하려면
+          sysData.value = response.data.services || {};
+        }
+      }catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      } 
+    }
+
+    onMounted(async()=>{
+      await getSysStatus();
+    })
 
     // ✅ langset이 null일 경우 기본 객체 설정
     // const langs = reactive(props.langset || {});
@@ -107,6 +131,8 @@ export default {
 
     return {
       location,
+      sysIcon,
+      sysData,
     }
   }  
 }
