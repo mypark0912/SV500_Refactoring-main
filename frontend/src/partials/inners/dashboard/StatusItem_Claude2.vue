@@ -62,19 +62,19 @@ const stData = ref(props.data)
 const currentTime = ref(new Date())
 
 // 시간 업데이트
-let timeInterval = null
-onMounted(() => {
-  timeInterval = setInterval(() => {
-    currentTime.value = new Date()
-  }, 1000)
-})
+// let timeInterval = null
+// onMounted(() => {
+//   timeInterval = setInterval(() => {
+//     currentTime.value = new Date()
+//   }, 1000)
+// })
 
-onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval)
-    timeInterval = null;
-  }
-})
+// onUnmounted(() => {
+//   if (timeInterval) {
+//     clearInterval(timeInterval)
+//     timeInterval = null;
+//   }
+// })
 
 // 표시할 상태들 (정지 제외)
 const displayedStatuses = computed(() => {
