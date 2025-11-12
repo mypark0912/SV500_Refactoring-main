@@ -1106,9 +1106,21 @@ export default {
         // === 1. General 설정 저장 ===
         let generalSuccess = true;
         try {
+            const generalData = { ...inputDict.value };
+
+            // useFuction 필드들을 숫자로 변환
+            if (generalData.useFuction) {
+              generalData.useFuction.ftp = (generalData.useFuction.ftp === true || generalData.useFuction.ftp === 1) ? 1 : 0;
+              generalData.useFuction.sntp = (generalData.useFuction.sntp === true || generalData.useFuction.sntp === 1) ? 1 : 0;
+              }
+
+            // modbus rtu_use 필드를 숫자로 변환
+            if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
+              generalData.modbus.rtu_use = (generalData.modbus.rtu_use === true || generalData.modbus.rtu_use === 1) ? 1 : 0;
+            }
           const generalResponse = await axios.post(
             "/setting/savefile/General",
-            inputDict.value,
+            generalData,
             {
               headers: { "Content-Type": "application/json;charset=utf-8" },
               withCredentials: true,
@@ -1587,7 +1599,9 @@ export default {
       try {
         const data = { ...channelData };
         data.channel = channelName;
-
+        data.Enable = (data.Enable === true || data.Enable === 1) ? 1 : 0;
+        data.PowerQuality = (data.PowerQuality === true || data.PowerQuality === 1) ? 1 : 0;
+     
         // 데이터 타입 변환
         for (const key in data.ctInfo) {
           if (key == "direction") {
