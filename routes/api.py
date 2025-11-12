@@ -3343,15 +3343,36 @@ def setImdAPI():
 
 @router.get('/getSystemStatus')
 def get_service():
-    itemdict = {
-        "Redis": "redis",
-        "InfluxDB": "influxdb",
-        "SmartSystems": "smartsystemsservice",
-        "SmartAPI": "smartsystemsrestapiservice",
-        "Core": "core",
-        "WebServer": "webserver",
-        "A35": "sv500A35",
-    }
+    redis_state.client.select(0)
+    setupdict = json.loads(redis_state.client.hget("System", "setup"))
+    if setupdict['mode'] == 'device0':
+        itemdict = {
+            "Redis": "redis",
+            "InfluxDB": "influxdb",
+            "Core": "core",
+            "WebServer": "webserver",
+            "A35": "sv500A35",
+        }
+    else:
+        if setupdict['General']['useFuction']['diagnosis_main'] or setupdict['General']['useFuction']['diagnosis_sub']:
+            itemdict = {
+                "Redis": "redis",
+                "InfluxDB": "influxdb",
+                "SmartSystems": "smartsystemsservice",
+                "SmartAPI": "smartsystemsrestapiservice",
+                "Core": "core",
+                "WebServer": "webserver",
+                "A35": "sv500A35",
+            }
+        else:
+            itemdict = {
+                "Redis": "redis",
+                "InfluxDB": "influxdb",
+                "Core": "core",
+                "WebServer": "webserver",
+                "A35": "sv500A35",
+            }
+
     statusDict = {}
     status = True
     for key, value in itemdict.items():

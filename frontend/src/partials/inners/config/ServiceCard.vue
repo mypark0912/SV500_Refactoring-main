@@ -207,7 +207,7 @@ export default {
     }, { immediate: true });
 
     watch([Status, apiHealth], () => {
-      console.log('Status:', Status.value, 'Item:', item.value);
+      //console.log('Status:', Status.value, 'Item:', item.value);
       
       switch(item.value){
         case "Redis":

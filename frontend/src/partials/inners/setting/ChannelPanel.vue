@@ -1544,6 +1544,7 @@ export default {
       try {
         checkNameplateflag.value = await checkNameplateConfig();
         if (checkNameplateflag.value) await setNameplateConfig();
+        //console.log('Channel pannel',checkNameplateflag.value);
         return true;
       } catch (error) {
         console.error("Error occurred while saving:", error);

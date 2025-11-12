@@ -1315,16 +1315,16 @@ export default {
                   ? channelData.modalData
                   : []),
               ];
-              const nameplateFlag = await checkNameplateConfig(
+              checkNameplateflag.value = await checkNameplateConfig(
                 combinedData,
                 channelData.assetName
               );
-              console.log(
-                channelData.assetName,
-                "Nameplate check result:",
-                nameplateFlag
-              );
-              if (nameplateFlag) {
+              // console.log(
+              //   channelData.assetName,
+              //   "Nameplate check result:",
+              //   nameplateFlag
+              // );
+              if (checkNameplateflag.value) {
                 needsNameplateConfirmation = true;
                 nameplateChannels.push(
                   `${channelName} channel(${channelData.assetName})`
@@ -1522,9 +1522,9 @@ export default {
     
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
-        const nameplateFlag = await checkNameplateConfig(tableData, assetName);
+        checkNameplateflag.value = await checkNameplateConfig(tableData, assetName);
 
-        if (nameplateFlag) {
+        if (checkNameplateflag.value) {
           // 사용자에게 확인 팝업 표시
           const userConfirmed = confirm(
             `The changed settings will delete all ${channelName} previous calculations. Would you like to proceed?`
