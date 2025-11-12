@@ -11,7 +11,7 @@
 		"deviceInfo": {
 			"mac_address": "",
 			"serial_number": "",
-			"name": "",
+			"name": "SV-500",
 			"location": ""
 		},
 		"tcpip": {
@@ -112,14 +112,14 @@
 			"trendInfo": {
 				"period": 5,
 				"params": [
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None"
+                    "Frequency",
+                    "Line Voltage",
+                    "Current",
+                    "Power",
+                    "PF",
+                    "Unbalance",
+                    "THD",
+                    "TDD"
 				]
 			},
 			"alarm": {
@@ -382,14 +382,14 @@
 			"trendInfo": {
 				"period": 5,
 				"params": [
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None"
+                    "Frequency",
+                    "Line Voltage",
+                    "Current",
+                    "Power",
+                    "PF",
+                    "Unbalance",
+                    "THD",
+                    "TDD"
 				]
 			},
 			"alarm": {
