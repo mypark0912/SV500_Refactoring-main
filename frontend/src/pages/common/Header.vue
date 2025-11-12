@@ -55,9 +55,9 @@
 
         <!-- Header: Right side -->
         <div class="flex items-center space-x-3">
-          <Help align="right" />
           <Notifications align="right" :status="sysIcon" :data="sysData" />
           <hr class="w-px h-6 bg-gray-200 dark:bg-gray-700/60 border-none" />
+          <Help align="right" />
           <DropdownLanguage align="right" />
           <ThemeToggle />
           <!-- Divider -->
