@@ -112,60 +112,6 @@ export default {
     const phaseDict = ref({});
     const energyData = ref({});
 
-    // const demandData = ref({
-    //   demandData: [
-    //     {
-    //       subTitle: "Active",
-    //       data: [
-    //         { id: 0, subTitle: "Imp.", value: "0.000", unit: "W", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Imp. Max", value: "0.000", unit: "W", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 2, subTitle: "Exp.", value: "0.000", unit: "W", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 3, subTitle: "Exp. Max", value: "0.000", unit: "W", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     },
-    //     {
-    //       subTitle: "Reactive",
-    //       data: [
-    //         { id: 0, subTitle: "Imp.", value: "0.000", unit: "VAR", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Imp. Max", value: "0.000", unit: "VAR", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 2, subTitle: "Exp.", value: "0.000", unit: "VAR", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 3, subTitle: "Exp. Max", value: "0.000", unit: "VAR", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     },
-    //     {
-    //       subTitle: "Apparent",
-    //       data: [
-    //         { id: 0, subTitle: "Imp.", value: "0.000", unit: "VA", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Imp. Max", value: "0.000", unit: "VA", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 2, subTitle: "Exp.", value: "0.000", unit: "VA", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 3, subTitle: "Exp. Max", value: "0.000", unit: "VA", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     }
-    //   ],
-    //   demandIData: [
-    //     {
-    //       subTitle: "L1",
-    //       data: [
-    //         { id: 0, subTitle: "", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Max", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     },
-    //     {
-    //       subTitle: "L2",
-    //       data: [
-    //         { id: 0, subTitle: "", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Max", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     },
-    //     {
-    //       subTitle: "L3",
-    //       data: [
-    //         { id: 0, subTitle: "", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" },
-    //         { id: 1, subTitle: "Max", value: "0.000", unit: "A", min: "0.000", max: "0.000", minTime: "1970-01-01 00:00:00", maxTime: "1970-01-01 00:00:00" }
-    //       ]
-    //     }
-    //   ]
-    // }); // 새로 추가된 demand 데이터
     const setupStore = useSetupStore();
     let updateInterval_ones = null;
     let updateInterval_onem = null;

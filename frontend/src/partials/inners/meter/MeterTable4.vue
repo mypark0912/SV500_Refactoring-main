@@ -11,9 +11,6 @@
               <div class="font-bold text-left">{{ t('meter.Table.th_subtitle') }}</div>
             </th>
             <th class="p-2">
-              <div class="font-bold text-center">{{ t('meter.Table.th_value') }}</div>
-            </th>
-            <th class="p-2">
               <div class="font-bold text-center">{{ t('meter.Table.th_max') }}</div>
             </th>
             <th class="p-2">
@@ -30,7 +27,6 @@
                 {{t(`meter.Table.${group.subTitle}`)   }}
               </td>
               <td class="p-2 text-left">{{ item.subTitle }}</td>
-              <td class="p-2 text-center font-bold">{{ item.value }} {{ item.unit }}</td>
               <td class="p-2 text-center">{{ item.max }} <span v-if="item.max !== '-'"> {{ item.unit }}</span></td>        
               <td class="p-2 text-center">{{ item.maxTime.split('.')[0] }} </td>           
             </tr>
@@ -58,6 +54,7 @@ setup(props){
   watchEffect(() => {
     if (!props.data) return;
     Object.assign(datlist.value, props.data);
+    //console.log('meterTable3', datlist.value);
   });
   
 

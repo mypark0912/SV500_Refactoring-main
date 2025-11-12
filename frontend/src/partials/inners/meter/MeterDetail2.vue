@@ -12,8 +12,9 @@
       </div> 
     </div>
       <div class="p-3 space-y-4">
-        <MeterTable v-if="!mode" :data="data" :channel="channel" />
-        <MeterTable3 v-else  :data="data" :channel="channel"/>
+        <MeterTable v-if="mode === 0" :data="data" :channel="channel" />
+        <MeterTable3 v-else-if="mode === 1"  :data="data" :channel="channel"/>
+        <MeterTable4 v-else :data="data" :channel="channel"/>
       </div>
     </div>
   </template>
@@ -23,12 +24,14 @@
     import MeterTable from './MeterTable2.vue'
     import { useI18n } from 'vue-i18n'
 import MeterTable3 from './MeterTable3.vue';
+import MeterTable4 from './MeterTable4.vue';
     
     export default {
       name: 'MeterDetail',
       components:{
         MeterTable,
         MeterTable3,
+        MeterTable4,
       },
       props: {
         channel:String,
@@ -40,8 +43,16 @@ import MeterTable3 from './MeterTable3.vue';
         const data = ref([]);
         const { t } = useI18n();
 
-        const mode = computed(()=> props.title.includes('Demand')?true:false);
-        
+        const mode = computed(()=> {
+          if (props.title == 'Demand'){
+            return 2;
+          }else if(props.title == 'Demand I'){
+            return 1;
+          }else{
+            return 0;
+          }
+        });
+
         const cTitle = computed(() => {
           if (props.title === 'Meter') return t('meter.cardTitle.title_meter');
           if (props.title === 'Power') return t('meter.cardTitle.title_power');
