@@ -45,7 +45,7 @@
                       class="form-input flex-1 bg-gray-100 dark:bg-gray-700 border-transparent dark:border-transparent focus:bg-white dark:focus:bg-gray-800 placeholder-gray-500"
                       type="text"
                       placeholder=""
-                      :maxlength="20"
+                      :maxlength="100"
                     />
                   </div>
                 </div>
@@ -316,7 +316,7 @@
                       rows="3"
                       class="form-textarea w-full bg-gray-100 dark:bg-gray-700 border-transparent dark:border-transparent focus:bg-white dark:focus:bg-gray-800 placeholder-gray-500"
                       placeholder=""
-                      :maxlength="50"
+                      :maxlength="200"
                     ></textarea>
                   </div>
                 </div>
