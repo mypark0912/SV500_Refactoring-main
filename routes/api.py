@@ -3354,7 +3354,7 @@ def get_service():
     }
     statusDict = {}
     status = True
-    for key, value in itemdict:
+    for key, value in itemdict.items():
         statusDict[key] = is_service_active(value)
         if not statusDict[key]:
             status = False

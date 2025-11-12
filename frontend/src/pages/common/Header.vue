@@ -72,13 +72,14 @@
 </template>
 
 <script>
-import { computed, onMounted} from 'vue'
+import { computed, onMounted, ref, onUnmounted} from 'vue'
 import ThemeToggle from '../header/ThemeToggle.vue'
 import Help from '../header/DropdownHelp.vue'
 import UserMenu from '../header/DropdownProfile.vue'
 import DropdownLanguage from '../header/DropdownLanguage.vue'
 import Notifications from '../header/DropdownNotifications.vue'
 import { useSetupStore } from "@/store/setup";
+import axios from 'axios'
 
 export default {
   name: 'Header',
@@ -99,7 +100,7 @@ export default {
     const sysIcon = ref(false);
     const sysData = ref(null);
     const location = computed(()=> setupStore.getDevLocation);
-    //let updateInterval = null;
+    let updateInterval = null;
 
     const getSysStatus = async()=>{
       try {
@@ -111,15 +112,35 @@ export default {
           // 정상일 때도 services 데이터 전달하려면
           sysData.value = response.data.services || {};
         }
+
       }catch (error) {
         console.log("데이터 가져오기 실패:", error);
       } 
     }
 
-    onMounted(async()=>{
-      await getSysStatus();
+    onMounted(async () => {
+      // 기존 인터벌 정리
+      if (updateInterval) {
+        clearInterval(updateInterval)
+        updateInterval = null
+      }
+      
+      // 초기 데이터 로드
+      await getSysStatus()
+      
+      // ✅ async 함수로 수정
+      updateInterval = setInterval(async () => {
+        await getSysStatus()
+      }, 60 * 60 * 1000)  // 1시간마다
     })
 
+    // ✅ cleanup 추가
+    onUnmounted(() => {
+      if (updateInterval) {
+        clearInterval(updateInterval)
+        updateInterval = null
+      }
+    })
     // ✅ langset이 null일 경우 기본 객체 설정
     // const langs = reactive(props.langset || {});
     // console.log("langs.value",langs.value);
