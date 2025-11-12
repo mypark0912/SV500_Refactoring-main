@@ -415,6 +415,7 @@ export default {
             stData.value.devType = chType;
             stData.value.devStatus = response.data.status;
             stData.value.devNickname = chNick;
+            stData.value.runhour = response.data.runhours;
             if (assetTypes.value == "Transformer") {
               if (channel.value === "main") {
                 transData.value = {
