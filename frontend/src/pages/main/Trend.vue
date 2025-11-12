@@ -167,36 +167,80 @@ export default {
       }         
     });
 
+   // Meter 파라미터 설정 여부 확인
+   const hasMeterConfig = ref(false);
+   
+   const checkMeterConfig = async () => {
+      try {
+        const response = await axios.get(`/api/getTrendParameters/${channel.value}`);
+        if (response.data.success) {
+          const enabledParams = response.data.data.params;
+          // Energy 관련 파라미터와 "None"을 제외한 나머지가 있는지 확인
+          const filteredParams = enabledParams.filter(param =>
+            param !== "None" && !["Energy", "Active Energy", "Reactive Energy", "Apparent Energy"].includes(param)
+          );
+          hasMeterConfig.value = filteredParams.length > 0;
+        } else {
+          hasMeterConfig.value = false;
+        }
+      } catch (error) {
+        console.log("Meter 설정 확인 실패:", error);
+        hasMeterConfig.value = false;
+      }
+   };
+
    const tabs = computed(()=>{
+      const tabList = [];
+      
+      // Meter 탭은 파라미터 설정이 있을 때만 추가
+      if (hasMeterConfig.value) {
+        tabList.push({ name: "Meter", label: "Meter" });
+      }
+      
+      // Energy 탭은 항상 표시
+      tabList.push({ name: "Energy", label: "Energy" });
+      
+      // Diagnosis가 활성화된 경우 추가 탭들
       if(DigEnable.value){
-        return [
-          { name: "Meter", label: "Meter" },
-          { name: "Energy", label: "Energy" },
+        tabList.push(
           { name: "PowerQuality", label: "Power Quality" },
           { name: "Diagnosis", label: "Diagnosis" },
-          { name: "Parameters", label: "Parameters" },
-
-        ];   
-      }else{
-        return [
-          { name: "Meter", label: "Meter" },
-          { name: "Energy", label: "Energy" },
-        ];  
+          { name: "Parameters", label: "Parameters" }
+        );
       }
-   })
+      
+      return tabList;
+   });
 
     const channelComputed = computed(
       () => props.channel || route.params.channel || "Default"
     );
+
+    // ✅ Meter 탭이 숨겨졌을 때 기본 탭을 첫 번째 탭으로 변경
+    watch([hasMeterConfig, tabs], ([hasMeter, currentTabs]) => {
+      if (!hasMeter && activeTab.value === 'Meter' && currentTabs.length > 0) {
+        activeTab.value = currentTabs[0].name;
+      }
+    });
 
     watch(
       () => route.params.channel,
       async (newChannel) => {
         //console.log("Updated Channel:", newChannel);
         channel.value = newChannel;
+        await checkMeterConfig(); // ✅ 채널 변경 시 Meter 설정 확인
       },
       { immediate: true }
     ); // ✅ 컴포넌트가 처음 마운트될 때 실행
+
+    // ✅ 컴포넌트 마운트 시 Meter 설정 확인 및 기본 탭 설정
+    onMounted(async () => {
+      await checkMeterConfig();
+      // Meter 설정이 없으면 첫 번째 탭으로 전환
+      if (!hasMeterConfig.value && tabs.value.length > 0) {
+        activeTab.value = tabs.value[0].name;
+      }
+    });
 
     // const tabs = ref([
     //   { name: "Meter", label: "Meter" },
@@ -208,6 +252,14 @@ export default {
     const changeTab = (tabName) => {
       activeTab.value = tabName;
     };
+    
+    // ✅ Meter 탭이 숨겨졌을 때 기본 탭을 Energy로 변경
+    watch([hasMeterConfig, tabs], ([hasMeter, currentTabs]) => {
+      if (!hasMeter && activeTab.value === 'Meter' && currentTabs.length > 0) {
+        activeTab.value = currentTabs[0].name;
+      }
+    });
+    
     const nowDate = new Date();
     const twoDaysAgo = new Date(nowDate.setDate(nowDate.getDate() - 2));
     const startDate = ref(twoDaysAgo);
