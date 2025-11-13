@@ -1328,7 +1328,6 @@ def load_bearings_from_db():
         traceback.print_exc()
         return {'passOK': '0', 'msg': f'Database error: {str(e)}'}
 
-@router.post('/initBearingDB')
 def init_bearing_db_from_csv():
     """초기 Bearing DB 파일(NTEKBearingDB.csv)을 DB에 업로드"""
     try:
