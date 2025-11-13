@@ -3356,11 +3356,11 @@ def get_energy(channel):
         return {"success": False, "error": f"Redis Read Error: {str(e)}"}
 
 
-@router.get('/setImdAPI')
-def setImdAPI():
-    redis_state.client.select(0)
-    redis_state.client.hset("Service","update", 1)
-    return {"success": True}
+# @router.get('/setImdAPI')
+# def setImdAPI():
+#     redis_state.client.select(0)
+#     redis_state.client.hset("Service","update", 1)
+#     return {"success": True}
 
 @router.get('/getSystemStatus')
 def get_service():

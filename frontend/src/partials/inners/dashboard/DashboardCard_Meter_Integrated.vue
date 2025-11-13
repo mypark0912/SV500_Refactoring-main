@@ -599,20 +599,20 @@ export default {
       { immediate: true }
     );
 
-    const fecthImmediate = async()=>{
-      try {
-        const response = await axios.get(`/api/setImdAPI`);
-        if(response.data.success){
-          console.log('진단 API CALL')
-        }
-      }catch (error) {
-        console.log("데이터 가져오기 실패:", error);
-      } 
-    }
+    // const fecthImmediate = async()=>{
+    //   try {
+    //     const response = await axios.get(`/api/setImdAPI`);
+    //     if(response.data.success){
+    //       console.log('진단 API CALL')
+    //     }
+    //   }catch (error) {
+    //     console.log("데이터 가져오기 실패:", error);
+    //   } 
+    // }
 
     onMounted(async () => {
       await setupStore.checkSetting();
-      await await fecthImmediate();
+      //await await fecthImmediate();
     });
 
     onUnmounted(() => {
