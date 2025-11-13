@@ -1325,28 +1325,49 @@ async def get_asset(assettype, asset, request: Request):
     if len(data) > 0:
         datalist = list()
         for i in range(0, len(data)):
-            if assettype != 'PowerSupply':
-                if data[i]["Name"] == "Speed":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "Torque":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
+            if assettype != 'MotorFeed':
+                # Motor 관련 데이터
+                for item in data["Data"]:
+                    if item["Name"] in ["Speed", "Torque"]:
+                        datalist.append({
+                            "Assembly": item["AssemblyID"],
+                            "Title": item["Title"],
+                            "Value": item["Value"],
+                            "Unit": item["Unit"]
+                        })
             else:
-                if data[i]["Name"] == "CurrentSwitchingHarmonics":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "VfdCapacitor":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
-                if data[i]["Name"] == "VoltageSwitchingHarmonics":
-                    datalist.append(
-                        {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
-                         "Unit": data[i]["Unit"]})
+                # PowerSupply 관련 데이터
+                target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
+                for item in data["Data"]:
+                    if item["Name"] in target_names:
+                        datalist.append({
+                            "Assembly": item["AssemblyID"],
+                            "Title": item["Title"],
+                            "Value": item["Value"],
+                            "Unit": item["Unit"]
+                        })
+            # if assettype != 'PowerSupply':
+            #     if data[i]["Name"] == "Speed":
+            #         datalist.append(
+            #             {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
+            #              "Unit": data[i]["Unit"]})
+            #     if data[i]["Name"] == "Torque":
+            #         datalist.append(
+            #             {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
+            #              "Unit": data[i]["Unit"]})
+            # else:
+            #     if data[i]["Name"] == "CurrentSwitchingHarmonics":
+            #         datalist.append(
+            #             {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
+            #              "Unit": data[i]["Unit"]})
+            #     if data[i]["Name"] == "VfdCapacitor":
+            #         datalist.append(
+            #             {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
+            #              "Unit": data[i]["Unit"]})
+            #     if data[i]["Name"] == "VoltageSwitchingHarmonics":
+            #         datalist.append(
+            #             {"Assembly": data[i]["AssemblyID"], "Title": data[i]["Title"], "Value": data[i]["Value"],
+            #              "Unit": data[i]["Unit"]})
         return {"success": True, "data": datalist}
     else:
         return {"success": False, "error": "No Data"}

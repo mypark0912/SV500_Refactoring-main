@@ -70,7 +70,7 @@ export default {
         //const ch = 'Fan';
         //console.log('locale...............=',locale.value);
         //const response = await axios.get(`/api/getDiagnosisDetail/${chName}`);
-        const response = await axios.get(`/api/getDiagnosisCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getDiagnosisDetail/${chName}`);
         //console.log('Title...........='+response.data.data_status[0]["Titles"][locale.value])
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
@@ -98,7 +98,7 @@ export default {
       try {
         //const ch = 'Fan';
         //const response = await axios.get(`/api/getDiagPQ/${chName}`);
-        const response = await axios.get(`/api/getPQCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getDiagPQ/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){
@@ -124,7 +124,7 @@ export default {
       try {
         //const ch = 'Fan';
         //const response = await axios.get(`/api/getFaults/${chName}`);
-        const response = await axios.get(`/api/getFaultCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getFaults/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){
@@ -151,7 +151,7 @@ export default {
       try {
         //const ch = 'Fan';
         //const response = await axios.get(`/api/getEvents/${chName}`);
-        const response = await axios.get(`/api/getEventsCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getEvents/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){

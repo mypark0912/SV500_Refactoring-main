@@ -399,7 +399,7 @@ export default {
       try {
         //const ch = 'Fan';
         //const response = await axios.get(`/api/getEvents/${chName}`);
-        const response = await axios.get(`/api/getEventsCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getEvents/${chName}`);
         if (response.data.success) {
           const eventList = response.data.data_tree;
           for(let i = 0; i < eventList.length ; i++){
@@ -417,7 +417,7 @@ export default {
       try {
 
         //const response = await axios.get(`/api/getFaults/${chName}`);
-        const response = await axios.get(`/api/getFaultCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getFaults/${chName}`);
         if (response.data.success) {
           const faultList = response.data.data_tree;
           for(let i = 0; i < faultList.length ; i++){

@@ -314,7 +314,7 @@ export default {
       try {
 
         //const response = await axios.get(`/api/getDiagPQ/${chName}`);
-        const response = await axios.get(`/api/getPQCached/${channel.value}/${chName}`);
+        const response = await axios.get(`/api/getDiagPQ/${chName}`);
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){

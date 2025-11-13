@@ -150,7 +150,7 @@ export default {
       if(chType != 'Transformer'){
           try {
           //const ch = 'Fan';
-          const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
+          const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
           if (response.data.success) {
 
             for(let i = 0 ; i < response.data.data.length ; i++)

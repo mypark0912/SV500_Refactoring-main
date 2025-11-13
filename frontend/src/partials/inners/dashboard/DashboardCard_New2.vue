@@ -72,7 +72,7 @@
          if(chName != ''){
 
            try {
-             const response = await axios.get(`/api/getStatuscached/${assetName}/${chName}`);
+             const response = await axios.get(`/api/getStatus/${assetName}/${chName}`);
               //console.log(response.data.status);
              if (response.data.status >= 0) {
                 stData.value.devName = chName;
@@ -109,7 +109,7 @@
          if(chName != ''){
 
            try {
-            const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
+            const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
 
              if (response.data.success) {
                 transData.value = response.data.data;
@@ -132,7 +132,7 @@
          const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
          if(chName != ''){
            try {
-            const response = await axios.get(`/api/getPQStatusCached/${chName}/${channel.value}`);
+            const response = await axios.get(`/api/getPQStatus/${chName}`);
              if (response.data.status >= 0) {
                 pqData.value.devName = response.data.item;
                 pqData.value.devStatus = response.data.status;

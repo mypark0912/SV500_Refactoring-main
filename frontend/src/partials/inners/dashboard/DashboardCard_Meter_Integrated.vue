@@ -409,7 +409,7 @@ export default {
 
       if (chName != "") {
         try {
-          const response = await axios.get(`/api/getStatuscached/${assetName}/${chName}`);
+          const response = await axios.get(`/api/getStatus/${assetName}/${chName}`);
           if (response.data.status >= 0) {
             stData.value.devName = chName;
             stData.value.devType = chType;
@@ -438,7 +438,7 @@ export default {
             }
           }
         } catch (error) {
-          console.log("getStatuscached 데이터 가져오기 실패:", error);
+          console.log("getStatus 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -461,12 +461,12 @@ export default {
 
       if (chName != "") {
         try {
-          const response = await axios.get(`/api/getRealTimeCached/${chType}/${chName}/${channel.value}`);
+          const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
           if (response.data.success) {
             transData.value = response.data.data;
           }
         } catch (error) {
-          console.log("getRealTimeCached 데이터 가져오기 실패:", error);
+          console.log("getRealTime 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -485,13 +485,13 @@ export default {
 
       if (chName != "") {
         try {
-          const response = await axios.get(`/api/getPQStatusCached/${chName}/${channel.value}`);
+          const response = await axios.get(`/api/getPQStatus/${chName}`);
           if (response.data.status >= 0) {
             pqData.value.devName = response.data.item;
             pqData.value.devStatus = response.data.status;
           }
         } catch (error) {
-          console.log("getPQStatusCached 데이터 가져오기 실패:", error);
+          console.log("getPQStatus 데이터 가져오기 실패:", error);
         }
       }
     };
@@ -512,12 +512,12 @@ export default {
         try {
           //const response = await axios.get(`/api/getEvents/${chName}`);
           const chUName = channel.value == "main" ? "Main" : "Sub"
-          const response = await axios.get(`/api/getEventsCached/${chUName}/${chName}`);
+          const response = await axios.get(`/api/getEvents/${chName}`);
           if (response.data.success) {
             eventData.value = response.data.data_status;
           }
         } catch (error) {
-          console.log("getEventsCached 데이터 가져오기 실패:", error);
+          console.log("getEvent 데이터 가져오기 실패:", error);
         }
       }
     };

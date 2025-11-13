@@ -120,7 +120,7 @@
          if(chName != ''){
            const chN = channel.value.toLowerCase() == 'main'? 'Main' : 'Sub';
            try {
-             const response = await axios.get(`/api/getStatuscached/${chName}/${chN}`);
+             const response = await axios.get(`/api/getStatus/${chName}/${chN}`);
               //console.log(response.data.status);
              if (response.data.status >= 0) {
                 // stData.value.devName = chName;
@@ -182,7 +182,7 @@
          const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
          if(chName != ''){
            try {
-             const response = await axios.get(`/api/getPQStatusCached/${chName}/${channel.value}`);
+             const response = await axios.get(`/api/getPQStatus/${chName}`);
              if (response.data.status >= 0) {
                 pqData.value.devName = response.data.item;
                 pqData.value.devStatus = response.data.status;

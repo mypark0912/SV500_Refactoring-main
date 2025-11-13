@@ -1048,7 +1048,7 @@ async def resetAll():
             checkflag = redis_state.client.hget("Service", "setting")
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
-        ret = await reset_system()
+        ret = await reset_system() #stop core, reinstall smartsystem
         if not ret["success"]:
             return ret
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
@@ -1883,6 +1883,19 @@ def restartdevice():
             return {"success": False, "error": "Modbus setting is activated"}
     try:
         redis_state.client.hset("Service", "save", 1)
+        # redis_state.client.hset("Service", "restart", 1)
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": "Redis Error"}
+
+@router.get('/restartCore')
+def restart_core():
+    redis_state.client.select(0)
+    if redis_state.client.hexists("Service", "setting"):
+        checkflag = redis_state.client.hget("Service", "setting")
+        if int(checkflag) == 1:
+            return {"success": False, "error": "Modbus setting is activated"}
+    try:
         redis_state.client.hset("Service", "restart", 1)
         return {"success": True}
     except Exception as e:
