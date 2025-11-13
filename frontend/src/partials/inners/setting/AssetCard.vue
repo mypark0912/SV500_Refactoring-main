@@ -587,6 +587,31 @@ const cancel = () => {
   assetMode.value.type = selectedAsset.value.type;
 };
 
+const resetAssetInfo = () => {
+  inputDict.value.assetInfo.name = "";
+  inputDict.value.assetInfo.type = "";
+  inputDict.value.assetInfo.nickname = "";
+  isAssetExist.value = false;
+  assetMode.value.name = "";
+  assetMode.value.type = "";
+  selectedAsset.value = {
+    id: "",
+    name: "",
+    type: "",
+    connected: false,
+    connectedCh: "",
+  };
+  
+  setupStore.setAssetConfig({
+    channel: channel.value,
+    name: "",
+    type: "",
+    nick: "",
+  });
+  selectedbtn.value = -1;
+  console.log('Asset reset - ', inputDict.value.assetInfo);
+};
+
 const getAssetList = async () => {
   try {
     const response = await axios.get(`/setting/getAssetList`);
@@ -594,7 +619,33 @@ const getAssetList = async () => {
     if (response.data.success) {
       //const groupedAssets = response.data.data;
       checkList.value = response.data.data;
-      console.log('getAssetList',checkList.value);
+      //console.log('getAssetList',checkList.value);
+      if (Object.keys(checkList.value).length === 0){
+        resetAssetInfo();
+      }else{
+        const storedAssetName = inputDict.value.assetInfo.name;
+        const storedAssetType = inputDict.value.assetInfo.type;
+        
+        let isStoredAssetFound = false;
+        
+        if (storedAssetName && storedAssetType) {
+          // checkList에서 해당 타입의 리스트를 찾음
+          const assetListOfType = checkList.value[storedAssetType];
+          
+          if (assetListOfType && Array.isArray(assetListOfType)) {
+            // 해당 타입 리스트에서 이름이 일치하는지 확인
+            isStoredAssetFound = assetListOfType.some(
+              asset => asset.Name === storedAssetName
+            );
+          }
+        }
+        
+        // 스토어에 저장된 asset이 조회 결과에 없으면 초기화
+        if (!isStoredAssetFound && storedAssetName) {
+          console.log('Stored asset not found in list - resetting');
+          resetAssetInfo();
+        }
+      }
     }
   } catch (error) {
     console.log(error);

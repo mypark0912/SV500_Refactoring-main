@@ -1029,7 +1029,7 @@ export default {
     const isLoadingSub = ref(false);
     const stList = ref(["Info", "Pass", "Warning", "Error"]);
     const diagnosis_detail = inject("diagnosis_detail");
-    const checkNameplateflag = inject("checkNameplateflag");
+    //const checkNameplateflag = inject("checkNameplateflag");
     // Validation data
     const validationTimestamp = ref(new Date().toLocaleString());
     const validationResult = ref({
@@ -1532,12 +1532,12 @@ export default {
       }
 
       const steps = [{ id: 1, name: "Settings Check" }];
-      console.log('onboarding Modal',checkNameplateflag.value);
-      if (diagnosis_main.value && checkNameplateflag.value) {
+      // console.log('onboarding Modal',checkNameplateflag.value);
+      if (diagnosis_main.value) {
         steps.push({ id: 2, name: "Main Test" });
       }
 
-      if (diagnosis_sub.value && checkNameplateflag.value) {
+      if (diagnosis_sub.value) {
         steps.push({ id: 3, name: "Sub Test" });
       }
 
@@ -1788,7 +1788,6 @@ export default {
       canProceedFromMain,
       canProceedFromSub,
       canProceedFromSettings,
-      checkNameplateflag,
     };
   },
 };

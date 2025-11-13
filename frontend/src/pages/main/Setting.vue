@@ -965,21 +965,14 @@ export default {
           if (response.data.status === "1") {
             if (response.data.success) {
               const servicflag = await serviceRestart("restart", "SmartSystems");
-              const apiflag = await serviceRestart("restart", "SmartAPI");
-              if (servicflag["result"] && apiflag["result"]) {
+              //const apiflag = await serviceRestart("restart", "SmartAPI");
+              if (servicflag["result"]) {
                 alert("✅ Service restarted successfully");
                 //isModalOpen.value = false;
                 isRestartDone.value = true;
-              } else if (servicflag["result"] && apiflag["result"]) {
-                alert("❌ SmartSystem Restart failed");
               } else {
-                alert(
-                  "❌ Restart failed: " +
-                    (serviceflag["result"]
-                      ? apiflag["msg"]
-                      : serviceflag["msg"]) || "Unknown error"
-                );
-              }
+                alert("❌ SmartSystem Restart failed");
+              } 
             } else {
               //isModalOpen.value = false;
               isRestartDone.value = true;
@@ -1315,7 +1308,7 @@ export default {
                   ? channelData.modalData
                   : []),
               ];
-              checkNameplateflag.value = await checkNameplateConfig(
+              const nameplateFlag = await checkNameplateConfig(
                 combinedData,
                 channelData.assetName
               );
@@ -1324,7 +1317,7 @@ export default {
               //   "Nameplate check result:",
               //   nameplateFlag
               // );
-              if (checkNameplateflag.value) {
+              if (nameplateFlag) {
                 needsNameplateConfirmation = true;
                 nameplateChannels.push(
                   `${channelName} channel(${channelData.assetName})`
@@ -1399,7 +1392,7 @@ export default {
           }
         }
         
-        console.log("devMode.value", devMode.value);
+        //console.log("devMode.value", devMode.value);
         if (devMode.value === "device0") {
           const device0Params = [
             "Temperature",
@@ -1450,7 +1443,7 @@ export default {
 
         const plainTableData = tableData.map((item) => ({ ...item }));
 
-        console.log(`Using asset name: ${assetName}`);
+        //console.log(`Using asset name: ${assetName}`);
 
         const response = await axios.post(
           `/setting/checkAssetConfig/${assetName}`,
@@ -1486,9 +1479,9 @@ export default {
 
         const plainTableData = tableData.map((item) => ({ ...item }));
 
-        console.log(
-          `Setting nameplate config for asset: ${assetName}, channel: ${channelName}`
-        );
+        // console.log(
+        //   `Setting nameplate config for asset: ${assetName}, channel: ${channelName}`
+        // );
 
         const response = await axios.post(
           `/setting/setAssetConfig/${assetName}`,
@@ -1504,9 +1497,9 @@ export default {
               (response.data.error || "unknown error")
           );
         } else {
-          console.log(
-            `✅ Successfully saved ${channelName} channel asset settings`
-          );
+          // console.log(
+          //   `✅ Successfully saved ${channelName} channel asset settings`
+          // );
         }
       } catch (error) {
         console.error(
@@ -1523,7 +1516,7 @@ export default {
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
         checkNameplateflag.value = await checkNameplateConfig(tableData, assetName);
-
+        //console.log('checkTableData - ', checkNameplateflag.value);
         if (checkNameplateflag.value) {
           // 사용자에게 확인 팝업 표시
           const userConfirmed = confirm(
