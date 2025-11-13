@@ -401,6 +401,18 @@ def join_admin(data: SignupAdmin):
 
         redis_state.client.select(1)
         redis_state.client.flushdb()
+        
+        # ✅ Bearing DB 초기화 (회원가입 성공 시)
+        try:
+            from routes.setting import init_bearing_db_from_csv
+            bearing_result = init_bearing_db_from_csv()
+            
+            if not bearing_result['success']:
+                logging.warning(f"⚠️ Bearing DB initialization failed: {bearing_result.get('msg')}")
+            else:
+                logging.info(f"✅ Bearing DB initialized: {bearing_result.get('inserted', 0)} bearings, {bearing_result.get('skipped', 0)} skipped")
+        except Exception as e:
+            logging.warning(f"⚠️ Bearing DB initialization error: {e}")
         return {"passOK": "1"}
 
 @router.get('/checkSession')
