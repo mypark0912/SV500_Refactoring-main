@@ -938,11 +938,11 @@ async def get_trendData(data: Trend, request: Request):
                     datDict["Thresholds"] = result["Thresholds"]
                 else:
                     datDict["Thresholds"] = []
-            return {"success": True, "data": datDict}
+            return {"success": True, "data": datDict, "date":result["LastRecordDateTime"]}
         else:
-            return {"success": False, "error": "No Data"}
+            return {"success": False, "error": "No Data", "date":""}
     else:
-        return {"success": False, "error": "No Data"}
+        return {"success": False, "error": "No Data", "date":""}
 
 
 @router.get("/getDiagnosis/{asset}")  # Report Vue : get Diagnosis
@@ -3440,9 +3440,29 @@ def getMeterTrend(channel, startDate: str = None, endDate: str = None):
         for record in table.records:
             record_data = record.values
             results.append(record_data)
-    print(f"Got {len(results)} records from Influx")
+    # print(f"Got {len(results)} records from Influx")
+    last_date_query = (
+        f'from(bucket: "ntek") '
+        f'|> range(start: -5y) '
+        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+        f'|> last()'  # keep() 없이 사용
+    )
 
-    return {"result": True, "data": results}
+    last_date = None
+    try:
+        last_date_tables = query_api.query(org='ntek', query=last_date_query)
+        for table in last_date_tables:
+            for record in table.records:
+                # last_date = record.get_time()
+                utc_time = record.get_time()  # UTC datetime 객체
+                local_time = utc_time.astimezone()
+                last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+                break
+    except Exception as e:
+        print(f"마지막 날짜 조회 오류: {e}")
+    # last_date = results[-1].get('_time') if results else None
+
+    return {"result": True, "data": results, "date":last_date}
 
 
 @router.get('/getEnergyTrend/{channel}')
@@ -3479,7 +3499,26 @@ def getEnergyTrend(channel, startDate: str = None, endDate: str = None):
             results.append(record_data)
     print(f"Got {len(results)} records from Influx")
 
-    return {"result": True, "data": results}
+    last_date_query = (
+        f'from(bucket: "ntek") '
+        f'|> range(start: -5y) '
+        f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
+        f'|> last()'  # keep() 없이 사용
+    )
+
+    last_date = None
+    try:
+        last_date_tables = query_api.query(org='ntek', query=last_date_query)
+        for table in last_date_tables:
+            for record in table.records:
+                utc_time = record.get_time()  # UTC datetime 객체
+                local_time = utc_time.astimezone()
+                last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+                break
+    except Exception as e:
+        print(f"마지막 날짜 조회 오류: {e}")
+
+    return {"result": True, "data": results, "date":last_date}
 
 
 def fill_missing_hours_safe(hourly_data, start_time, end_time):

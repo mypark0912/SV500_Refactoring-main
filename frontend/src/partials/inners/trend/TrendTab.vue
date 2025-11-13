@@ -5,14 +5,6 @@
         <div
           class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400">
           <div class="flex flex-col w-full gap-3"><!--div class="flex w-full justify-between items-start"-->
-            <!--div class="flex items-center gap-2">
-              <svg class="shrink-0 fill-current text-blue-500" width="16" height="16" viewBox="0 0 16 16">
-                <path d="M5 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5Z" />
-                <path fill-rule="evenodd" d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4Zm0 2h8v12H4V2Z" clip-rule="evenodd" />
-              </svg>
-              <span class="font-medium">Last Trend Date:</span>
-              <span class="text-gray-700 dark:text-gray-300 font-semibold">2024-11-15 14:30:25</span>
-            </div-->
             <div class="flex items-start">
               <svg class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3" width="16" height="16"
                 viewBox="0 0 16 16">
@@ -68,12 +60,11 @@
           </p>
         </div>
       </div>
-
-      <LineChart v-if="tap == `Diagnosis`" :chart-data="option.lineData" :chart-labels="option.lineLabels" />
-      <LineChart v-if="tap == `Meter`" :chart-data="meterOption.lineData" :chart-labels="meterOption.lineLabels" />
-      <LineChart v-if="tap == `PowerQuality`" :chart-data="option.lineData" :chart-labels="option.lineLabels" />
-      <LineChart v-if="tap == `Parameters`" :chart-data="option.lineData" :chart-labels="option.lineLabels" />
-      <LineChart v-if="tap == `Energy`" :chart-data="energyOption.lineData" :chart-labels="energyOption.lineLabels" />
+      <LineChart v-if="tap == `Diagnosis`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate"/>
+      <LineChart v-if="tap == `Meter`" :chart-data="meterOption.lineData" :chart-labels="meterOption.lineLabels" :chartLastDate ="lastDate" />
+      <LineChart v-if="tap == `PowerQuality`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate" />
+      <LineChart v-if="tap == `Parameters`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate"/>
+      <LineChart v-if="tap == `Energy`" :chart-data="energyOption.lineData" :chart-labels="energyOption.lineLabels" :chartLastDate ="lastDate" />
     </div>
   </div>
 </template>
@@ -128,7 +119,7 @@ export default {
     const checkedIds = ref([]);
     const checkedNames = ref([]);
     const isLoading = ref(false); // ✅ 로딩 상태 추가
-
+    const lastDate = ref('');
     // Meter 탭용 트리 데이터 (Energy 제외)
     const trendTreeData = [
       {
@@ -545,6 +536,7 @@ export default {
         });
 
         const responseData = response.data.data;
+        lastDate.value = response.data.date;
         const datasets = [];
         const labels = [];
         const selectedParams = checkedNames.value;
@@ -596,7 +588,7 @@ export default {
 
         if (response.data.result){
           const responseData = response.data.data;
-     
+          lastDate.value = response.data.date;
           if (!Array.isArray(responseData)) {
             console.error("Energy 응답 데이터가 배열이 아닙니다:", responseData);
             energyOption.value = { lineLabels: [], lineData: [] };
@@ -741,6 +733,7 @@ export default {
         if (response.data.success) {
           console.log("서버 응답 데이터:", response.data.data);
           const resData = response.data.data;
+          lastDate.value = response.data.date;
           let datasets = [];
           let labels = [];
 
@@ -876,6 +869,7 @@ export default {
       drawEnergyChart,
       drawDiagnosisChart,
       trendTreeData,
+      lastDate,
     };
   },
 };

@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { onMounted, onBeforeUnmount, ref, watch } from "vue";
+import { onMounted, onBeforeUnmount, ref, watch, computed } from "vue";
 import * as echarts from "echarts";
 import { useDark } from "@vueuse/core";
 import { chartColors } from "../ChartjsConfig";
@@ -20,6 +20,9 @@ export default {
       type: Array,
       required: true,
     },
+    chartLastDate:{
+      type:String,
+    }
   },
   setup(props) {
     const { t, locale } = useI18n();
@@ -33,6 +36,13 @@ export default {
       repair: "#ff0000", // 빨강
       inspect: "#ff7f00", // 주황
     };
+    const titleText = computed(()=>{
+      if (props.chartLastDate != "")
+        return 'LastRecordDateTime : ' + props.chartLastDate
+      else
+        return t("trend.Linechart.TrendChart")
+    });
+
     const getLineColor = (index) => {
       const colors = [
         "#1f77b4",
@@ -168,7 +178,7 @@ export default {
 
         chartInstance.setOption({
           title: {
-            text: t("trend.Linechart.TrendChart"),
+            text: titleText.value,
             left: "center",
             top: 0,
             textStyle: {
@@ -337,6 +347,7 @@ export default {
     return {
       chartRef,
       t,
+      titleText,
     };
   },
 };
