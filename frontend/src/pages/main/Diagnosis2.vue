@@ -26,7 +26,7 @@
   
             <!-- Cards -->
             <div class="grid grid-cols-12 gap-6 overflow-visible">
-                <Diagnosis_Info v-if="rawdata.length > 0" :asset="asset" :key="`${channel}-${asset.assetName_main}-${asset.assetName_sub}-${rawdata.length}`" :channel="channel" :data="rawdata" class="col-span-12 h-auto relative z-10" />
+                <Diagnosis_Info :asset="asset" :key="`${channel}-${asset.assetName_main}-${asset.assetName_sub}-${rawdata.length}`" :channel="channel" :data="rawdata" class="col-span-12 h-auto relative z-10" />
               <div class="md:col-span-12 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 w-full">
                 <!-- Tab Navigation -->
                 <div class="px-4">

@@ -618,7 +618,7 @@ async def get_diagnosis(asset, request: Request):
         response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
         datas = response.json()
 
-    if len(datas) > 0:
+    if datas:
         ret = proc_DiagnosisData_optimized(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
@@ -632,7 +632,7 @@ async def get_diagPQ(asset, request: Request):
         response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
         datas = response.json()
 
-    if len(datas) > 0:
+    if datas:
         ret = proc_DiagnosisData_optimized(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
@@ -693,7 +693,7 @@ async def get_faults(asset, request: Request):
         response = await client.get(f"http://{os_spec.restip}:5000/api/getFaults?name={asset}")
         datas = response.json()
 
-    if len(datas) > 0:
+    if datas:
         ret = proc_eventFaultData(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
@@ -752,7 +752,7 @@ async def get_events(asset, request: Request):
     async with httpx.AsyncClient(timeout=api_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getEvents?name={asset}")
         datas = response.json()
-    if len(datas) > 0:
+    if datas:
         ret = proc_eventFaultData(datas)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
@@ -1322,7 +1322,7 @@ async def get_asset(assettype, asset, request: Request):
     #         else:
     #             response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
     #             data = response.json()
-    if len(data) > 0:
+    if data:
         datalist = list()
         for i in range(0, len(data)):
             if assettype != 'MotorFeed':
