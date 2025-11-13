@@ -2244,6 +2244,24 @@ def is_service_enabled(name):
         return False
 
 
+@router.get("/checkSmartStatus")
+async def check_SmartStatus():
+    try:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/status")
+            data = response.json()
+
+            return {"success": True, "data":data}
+        # data = {
+        #     "State": "Stop",
+        #     "Message": "Smart Systems RestAPI Service is successfully initialized and running",
+        #     "ServiceStartTime": "2025-11-13T03:22:48.2809239+09:00",
+        #     "RunTimeErrors": ["Corrupted smart systems files.","No asset defined in smart system."]
+        # }
+        # return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "msg":str(e)}
+
 @router.get("/SysCheck")
 def check_sysStatus():
     data = {}

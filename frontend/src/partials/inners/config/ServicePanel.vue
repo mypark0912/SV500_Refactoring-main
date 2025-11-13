@@ -134,7 +134,7 @@
             <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            
+            <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
             <!--ServiceCard :item="'System'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'Backup Download'" :mode="'Download'" @service-done="showMessage"/-->
           </div>
@@ -283,6 +283,7 @@
   
   <script>
   import ServiceCard from './ServiceCard.vue';
+  import ServiceDetail from './ServiceDetail.vue';
     import ServiceStatus from './ServiceStatus.vue';
     import LoadingModal from "../../../components/LoadingModal.vue";
   import { useRoute } from 'vue-router'
@@ -297,6 +298,7 @@
         ServiceCard,
         ServiceStatus,
         LoadingModal,
+        ServiceDetail,
     },
     setup(){
       const setupStore = useSetupStore();
@@ -309,6 +311,8 @@
       const modalSelectItem = ref('all');
       const serviceLoadingMessage = ref('');
       const initInfluxStatus = ref('');
+      const checkSmartflag = ref(false);
+      const errorSmart = ref([]);
       const showMessage = async(text) => {
         message.value = text
         await SysCheck();
@@ -360,6 +364,11 @@
         if (response.data.success){
            diskStatus.value = response.data.disk;
            sysStatus.value = response.data.data;
+
+           if(!sysStatus.value["smartsystem"])
+            checkSmart(sysStatus.value)
+          else
+            checkSmartflag.value = false;
         }else{
           message.value = "System Check API is not respond"
         }
@@ -368,6 +377,26 @@
         //console.log(error);
       }
     };
+    const checkSmart = async(data) =>{
+      if(!data["smartsystem"]){
+        try {
+          const response = await axios.get("/setting/checkSmartStatus");
+          if (response.data.success){
+            const stData = response.data.data;
+            if (stData["RunTimeErrors"].length > 0){
+              checkSmartflag.value = true;
+              errorSmart.value = stData["RunTimeErrors"];
+            }
+          }else{
+            console.log(response.data.msg);
+            //message.value = "System Check API is not respond"
+          }
+        } catch (error) {
+          //message.value = "System Check Failed";
+          //console.log(error);
+        }
+      }
+    }
 
     const getInfluxStatus = async () => {
       try {
@@ -519,6 +548,8 @@
         serviceLoadingMessage,
         isResetAll,
         initInfluxStatus,
+        checkSmartflag,
+        errorSmart,
       }
 
     }
