@@ -49,11 +49,11 @@ class DemandDataFormatter:
 
         # 1. Present Demand (현재값) - meters
         meters = {
-            "p_import": parsed_demand["CD_P"][0],
-            "p_export": parsed_demand["CD_P"][1],
-            "q_import": parsed_demand["CD_Q"][0],
-            "q_export": parsed_demand["CD_Q"][1],
-            "s": parsed_demand["CD_S"],
+            "p_import": parsed_demand["DD_P"][0],
+            "p_export": parsed_demand["DD_P"][1],
+            "q_import": parsed_demand["DD_Q"][0],
+            "q_export": parsed_demand["DD_Q"][1],
+            "s": parsed_demand["DD_S"],
             "i_a": parsed_demand["DD_I"][0],  # Dynamic Demand의 전류값 사용
             "i_b": parsed_demand["DD_I"][1],
             "i_c": parsed_demand["DD_I"][2]

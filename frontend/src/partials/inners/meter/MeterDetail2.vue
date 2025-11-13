@@ -13,8 +13,8 @@
     </div>
       <div class="p-3 space-y-4">
         <MeterTable v-if="mode === 0" :data="data" :channel="channel" />
-        <MeterTable3 v-else-if="mode === 1"  :data="data" :channel="channel"/>
-        <MeterTable4 v-else :data="data" :channel="channel"/>
+        <MeterTable3 v-else  :data="data" :channel="channel"/>
+        <!--MeterTable4 v-else :data="data" :channel="channel"/-->
       </div>
     </div>
   </template>
