@@ -8,7 +8,7 @@ import shutil, logging, subprocess, asyncio
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
-from routes.auth import checkLoginAPI
+#from routes.auth import checkLoginAPI
 from routes.util import get_mac_address, sysService, is_service_active
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
@@ -1328,7 +1328,96 @@ def load_bearings_from_db():
         traceback.print_exc()
         return {'passOK': '0', 'msg': f'Database error: {str(e)}'}
 
-
+@router.post('/initBearingDB')
+def init_bearing_db_from_csv():
+    """초기 Bearing DB 파일(NTEKBearingDB.csv)을 DB에 업로드"""
+    try:
+        logging.info("🔄 Starting bearing DB initialization...")
+        
+        # ✅ 1. DB 연결 및 테이블 생성 (먼저!)
+        conn = sqlite3.connect(str(BEARINGDB_PATH))
+        cursor = conn.cursor()
+        
+        logging.info(f"📂 DB Path: {BEARINGDB_PATH}")
+        
+        # ✅ 테이블 생성 (없으면 생성)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bearings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT UNIQUE NOT NULL,
+                BPFO REAL NOT NULL,
+                BPFI REAL NOT NULL,
+                BSF REAL NOT NULL,
+                FTF REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        logging.info("✅ Bearing table created/verified")
+        
+        # ✅ 2. 파일 경로 확인
+        bearing_file = SETTING_FOLDER / "NTEKBearingDB.csv"
+        logging.info(f"📂 CSV Path: {bearing_file}")
+        
+        if not bearing_file.exists():
+            conn.close()
+            logging.warning(f"⚠️ NTEKBearingDB.csv not found at {bearing_file}")
+            return {'success': False, 'msg': 'NTEKBearingDB.csv file not found'}
+        
+        # ✅ 3. 파일에서 데이터 읽기
+        data = get_Bearing(str(bearing_file))
+        
+        if not data or len(data) == 0:
+            conn.close()
+            logging.warning("⚠️ No bearing data in file")
+            return {'success': False, 'msg': 'No bearing data in file'}
+        
+        logging.info(f"📋 Parsed {len(data)} bearings from CSV")
+        
+        # ✅ 4. 데이터 삽입
+        inserted_count = 0
+        skipped_count = 0
+        
+        for bearing in data:
+            try:
+                name = str(bearing.get('Name', ''))
+                bpfo = float(bearing.get('BPFO', 0))
+                bpfi = float(bearing.get('BPFI', 0))
+                bsf = float(bearing.get('BSF', 0))
+                ftf = float(bearing.get('FTF', 0))
+                
+                cursor.execute('''
+                    INSERT INTO bearings (Name, BPFO, BPFI, BSF, FTF)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (name, bpfo, bpfi, bsf, ftf))
+                
+                inserted_count += 1
+                
+            except sqlite3.IntegrityError:
+                skipped_count += 1
+                continue
+            except Exception as e:
+                logging.error(f"Error inserting bearing {bearing.get('Name')}: {e}")
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        logging.info(f"✅ Bearing DB initialized: {inserted_count} inserted, {skipped_count} skipped")
+        
+        return {
+            'success': True,
+            'inserted': inserted_count,
+            'skipped': skipped_count,
+            'msg': f'Successfully initialized bearing database'
+        }
+        
+    except Exception as e:
+        logging.error(f"❌ Bearing DB initialization error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'msg': str(e)}
+      
 @router.post('/uploadBearing')
 def upload_bearing_to_db(file: UploadFile = File(...)):
     """업로드된 Bearing 파일을 DB에 저장"""
