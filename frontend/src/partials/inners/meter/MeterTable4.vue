@@ -11,6 +11,9 @@
               <div class="font-bold text-left">{{ t('meter.Table.th_subtitle') }}</div>
             </th>
             <th class="p-2">
+              <div class="font-bold text-center">{{ t('meter.Table.th_value') }}</div>
+            </th>
+            <th class="p-2">
               <div class="font-bold text-center">{{ t('meter.Table.th_max') }}</div>
             </th>
             <th class="p-2">
@@ -27,6 +30,7 @@
                 {{t(`meter.Table.${group.subTitle}`)   }}
               </td>
               <td class="p-2 text-left">{{ item.subTitle }}</td>
+              <td class="p-2 text-center font-bold">{{ (item.value / 1000).toFixed(2) }} {{ item.unit }}</td>
               <td class="p-2 text-center">{{ (item.max / 1000).toFixed(2) }} <span v-if="item.max !== '-'"> {{ item.unit }}</span></td>        
               <td class="p-2 text-center">{{ item.maxTime.split('.')[0] }} </td>           
             </tr>
