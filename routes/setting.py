@@ -1971,7 +1971,7 @@ def restartdevice():
             return {"success": False, "error": "Modbus setting is activated"}
     try:
         redis_state.client.hset("Service", "save", 1)
-        # redis_state.client.hset("Service", "restart", 1)
+        redis_state.client.hset("Service", "restart", 1)
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": "Redis Error"}

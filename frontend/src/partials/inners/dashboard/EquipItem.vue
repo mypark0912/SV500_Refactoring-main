@@ -54,7 +54,7 @@
             </template>
   
             <!-- VFD -->
-            <template v-else-if="stData.devType=='VFD'">
+            <!--template v-else-if="stData.devType=='VFD'">
               <div class="metric-box temperature">
                 <div class="metric-main">
                   <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
@@ -76,7 +76,7 @@
                 </div>
                 <div class="metric-label">{{ t('dashboard.meter.current') }}</div>
               </div>
-            </template>
+            </template-->
   
             <!-- 기타 장비 -->
             <template v-else>
