@@ -570,14 +570,14 @@ export class SettingValidator {
     
     
     // 주파수 설정 일치 검사
-    if (isMainChannelEnabled && isSubChannelEnabled) {
-      const mainFreq = mainChannelDict?.ptInfo?.linefrequency;
-      const subFreq = subChannelDict?.ptInfo?.linefrequency;
+    // if (isMainChannelEnabled && isSubChannelEnabled) {
+    //   const mainFreq = mainChannelDict?.ptInfo?.linefrequency;
+    //   const subFreq = subChannelDict?.ptInfo?.linefrequency;
       
-      if (mainFreq && subFreq && mainFreq !== subFreq) {
-        this.warnings.push(`Line frequency mismatch: Main Channel (${mainFreq}Hz) vs Sub Channel (${subFreq}Hz)`);
-      }
-    }
+    //   if (mainFreq && subFreq && mainFreq !== subFreq) {
+    //     this.warnings.push(`Line frequency mismatch: Main Channel (${mainFreq}Hz) vs Sub Channel (${subFreq}Hz)`);
+    //   }
+    // }
     
     return this.errors.length === 0;
   }
