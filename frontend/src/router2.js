@@ -118,28 +118,54 @@ router.beforeEach(async (to, from, next) => {
     return; // 여기서 처리 완료
   }
 
-  
+  await authStore.checkInstalled();
   await authStore.checkSession(); // ✅ Vuex dispatch → Pinia action 사용
   const isAuthenticated = authStore.getLogin; // ✅ Vuex getters → Pinia computed 사용
   const opMode = authStore.getOpMode;
+  const isInstalled = authStore.getInstalled;
   // console.log(to.path);
   nextTick();
-  if (to.path === "/signin" && isAuthenticated) {
-    next("/dashboard");  // ✅ 로그인 상태면 대시보드로 이동
-  } 
-  else if (!isAuthenticated && to.path !== "/signin" && to.path !== "/signup") {
-    next("/signin"); // ✅ 비로그인 상태면 로그인 페이지로 이동 (단, 회원가입 페이지는 예외)
-  } 
-  else if (to.path === "/") {
-    //next(isAuthenticated ? "/dashboard" : "/signin");
-    if(opMode !== 'server')
-      next(isAuthenticated ? "/dashboard" : "/signin"); // ✅ "/" 요청 시 로그인 상태에 따라 리디렉트
-    else
-      next(isAuthenticated ? "/master" : "/signin"); // ✅ "/" 요청 시 로그인 상태에 따라 리디렉트
-  } 
-  else {
-    next(); // ✅ 정상적으로 요청 진행
+
+  if (to.path === "/signup" && isInstalled > 0) {
+    next(isAuthenticated ? "/dashboard" : "/signin");
+    return;
   }
+
+  if (to.path === "/signin" && isAuthenticated) {
+    next("/dashboard");
+  }
+  else if (!isAuthenticated && to.path !== "/signin") {
+    if (to.path === "/signup" && isInstalled === 0) {
+      next("/signup");
+    } else {
+      next("/signin");
+    }
+  }
+  else if (to.path === "/") {
+    if (opMode !== 'server')
+      next(isAuthenticated ? "/dashboard" : "/signin");
+    else
+      next(isAuthenticated ? "/master" : "/signin");
+  }
+  else {
+    next();
+  }
+  // if (to.path === "/signin" && isAuthenticated) {
+  //   next("/dashboard");  // ✅ 로그인 상태면 대시보드로 이동
+  // }
+  // else if (!isAuthenticated && to.path !== "/signin" && to.path !== "/signup") {
+  //   next("/signin"); // ✅ 비로그인 상태면 로그인 페이지로 이동 (단, 회원가입 페이지는 예외)
+  // } 
+  // else if (to.path === "/") {
+  //   //next(isAuthenticated ? "/dashboard" : "/signin");
+  //   if(opMode !== 'server')
+  //     next(isAuthenticated ? "/dashboard" : "/signin"); // ✅ "/" 요청 시 로그인 상태에 따라 리디렉트
+  //   else
+  //     next(isAuthenticated ? "/master" : "/signin"); // ✅ "/" 요청 시 로그인 상태에 따라 리디렉트
+  // } 
+  // else {
+  //   next(); // ✅ 정상적으로 요청 진행
+  // }
 });
 
 export default router
