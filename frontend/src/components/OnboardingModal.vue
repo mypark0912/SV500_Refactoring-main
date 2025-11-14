@@ -1208,8 +1208,8 @@ export default {
           channelData.modalData,
           `${channelName} modalData`
         );
-        errors.push(...modalValidation.errors);
-        warnings.push(...modalValidation.warnings);
+        // errors.push(...modalValidation.errors);
+        // warnings.push(...modalValidation.warnings);
       } else {
         console.log(
           `${channelName} modalData 없음 또는 배열이 아님:`,
