@@ -1053,6 +1053,7 @@ async def resetAll():
             return ret
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
         db_path = os.path.join(SETTING_FOLDER, 'user.db')
+        bearing_db_path = os.path.join(SETTING_FOLDER, 'bearing.db')
         mt_path = os.path.join(SETTING_FOLDER, 'maintenance.db')
         backup_file_path = os.path.join(SETTING_FOLDER, 'setup_backup.json')
         try:
@@ -1065,7 +1066,8 @@ async def resetAll():
                 os.remove(db_path)
             else:
                 msg += "No exist user.db"
-
+            if os.path.exists(bearing_db_path):
+                os.remove(bearing_db_path)
             if os.path.exists(mt_path):
                 os.remove(mt_path)
 
