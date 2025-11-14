@@ -362,29 +362,25 @@
                 <div>
                   <label
                     class="block text-sm font-medium mb-2"
-                    for="serial-number"
-                    >Line Frequency</label
+                    for="line-frequency"
+                    >Line Frequency (Hz)</label
                   >
-                  <div class="flex w-full">
-                    <button
-                      v-for="(option, index) in options"
-                      :key="option.value"
-                      :value="option.value"
-                      @click.prevent="setbtnOption(option.value)"
-                      :class="[
-                        'btn border px-4 py-2 transition-colors duration-200 flex-1',
-                        index === 0 ? 'rounded-l-lg' : 'rounded-none',
-                        index === options.length - 1
-                          ? 'rounded-r-lg'
-                          : 'rounded-none',
-                        getInputDict().ptInfo.linefrequency === option.value
-                          ? 'bg-violet-500 text-white border-violet-500'
-                          : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
-                      ]"
-                    >
-                      {{ option.label }}
-                    </button>
-                  </div>
+                  <input
+                    :value="getInputDict().ptInfo.linefrequency"
+                    @input="
+                      updateNestedField(
+                        'ptInfo',
+                        'linefrequency',
+                        Number($event.target.value)
+                      )
+                    "
+                    id="line-frequency"
+                    class="form-input w-full"
+                    type="number"
+                    step="1"
+                    min="0"
+                    :maxlength="20"
+                  />
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -1480,6 +1476,7 @@ export default {
     provide("getMinValue", getMinValue);
     provide("getMaxValue", getMaxValue);
 
+    // options와 setbtnOption은 더 이상 사용되지 않지만 하위 호환성을 위해 유지
     const options = [
       { value: 60, label: "60Hz" },
       { value: 50, label: "50Hz" },
