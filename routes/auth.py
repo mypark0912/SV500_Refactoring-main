@@ -175,10 +175,10 @@ async def checkInstall():
             flag = True
     conn.commit()
     conn.close()
-    # if os.path.exists(CAL_PATH):
-    #     calibated = True
-    # else:
-    #     calibated = False
+    if os.path.exists(CAL_PATH):
+        calibated = True
+    else:
+        calibated = False
 
     if os.path.exists(INIT_PATH):
         installed = True
@@ -187,9 +187,15 @@ async def checkInstall():
     # user.db 없거나 admin 없음 / calibration 없음 / db init 안됨
 
     if flag and installed:
-        return {"result": 2}
+        if calibated:
+            return {"result": 2, "calibration" : True}
+        else:
+            return {"result": 2, "calibration" : False}
     elif flag and not installed:
-        return {"result": 1 }
+        if calibated:
+            return {"result": 1, "calibration" : True}
+        else:
+            return {"result": 1, "calibration" : False}
     else:
         return {"result": 0}
 

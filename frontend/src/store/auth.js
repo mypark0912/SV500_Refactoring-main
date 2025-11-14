@@ -150,8 +150,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await axios.get('/auth/checkInstall')
       //console.log(response.data.result);
       setInstall(response.data.result)
-      // if (response.data.result > 0) 
-      //   setupStore.setCalib(response.data.calibration)
+      if (response.data.result > 0) 
+        setupStore.setCalib(response.data.calibration)
     } catch (err) {
       console.error('checkInstalled Error:', err)
     }
