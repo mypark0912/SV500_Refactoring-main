@@ -174,9 +174,9 @@ export class SettingValidator {
     this.validateNumberRange(ptInfo.vnorminal, 1, 100000, 'Rated Voltage');
     this.validateRatio(ptInfo.pt1, ptInfo.pt2, 'PT Ratio');
     
-    if (![50, 60].includes(Number(ptInfo.linefrequency))) {
-      this.errors.push('Line Frequency: Must be 50Hz or 60Hz');
-    }
+    // if (![50, 60].includes(Number(ptInfo.linefrequency))) {
+    //   this.errors.push('Line Frequency: Must be 50Hz or 60Hz');
+    // }
     
     if (![0, 1].includes(Number(ptInfo.wiringmode))) {
       this.errors.push('Wiring Mode: Must be 0 (3P4W) or 1 (3P3W)');
