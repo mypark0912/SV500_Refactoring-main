@@ -409,14 +409,11 @@ def join_admin(data: SignupAdmin):
             
             if not bearing_result['success']:
                 logging.warning(f"⚠️ Bearing DB initialization failed: {bearing_result.get('msg')}")
-                return {"passOK": "0", "msg":bearing_result.get('msg')}
             else:
                 logging.info(f"✅ Bearing DB initialized: {bearing_result.get('inserted', 0)} bearings, {bearing_result.get('skipped', 0)} skipped")
-                return {"passOK": "1"}
         except Exception as e:
             logging.warning(f"⚠️ Bearing DB initialization error: {e}")
-            return {"passOK": "0", "msg":str(e)}
-
+        return {"passOK": "1"}
 
 @router.get('/checkSession')
 def check_session(request: Request):
