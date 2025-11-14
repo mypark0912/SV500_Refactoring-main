@@ -2467,3 +2467,58 @@ def get_sysMode():
         print(str(e))
         return {"success": False}
 
+@router.get('/updateSmartSystem/{mode}')
+async def update_smartsystem(mode):
+    redis_state.client.select(0)
+    result = redis_state.client.hget("System", "setup")
+    if not result:
+        return {"success": False, "message": "Setup data not found"}
+
+    setting = json.loads(result)
+    main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
+    sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
+
+    if not main_channel_data or not sub_channel_data:
+        return {"success": False, "message": "Channel data not found"}
+
+    if mode == 1:
+        main_channel_data['assetInfo']['name'] = ''
+        main_channel_data['assetInfo']['type'] = ''
+        main_channel_data['assetInfo']['nickname'] = ''
+        sub_channel_data['assetInfo']['name'] = ''
+        sub_channel_data['assetInfo']['type'] = ''
+        sub_channel_data['assetInfo']['nickname'] = ''
+        FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(setting, f, indent=4)
+        redis_state.client.hset("System","setup", json.dumps(setting))
+        try:
+            result = subprocess.run(
+                ['sh', '/home/root/iss/install.sh', '--fresh'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return {"success": True, "message": "Fresh install completed"}
+        except subprocess.CalledProcessError as e:
+            return {"success": False, "message": f"Install failed: {e.stderr}"}  # 6. 에러 메시지 추가
+        except subprocess.TimeoutExpired:
+            return {"success": False, "message": "Install timeout"}
+
+    else:
+        reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
+        reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
+        try:
+            result = subprocess.run(
+                ['sh', '/home/root/iss/install.sh'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return {"success": True, "message": "Install completed"}
+        except subprocess.CalledProcessError as e:
+            return {"success": False, "message": f"Install failed: {e.stderr}"}
+        except subprocess.TimeoutExpired:
+            return {"success": False, "message": "Install timeout"}
+
+

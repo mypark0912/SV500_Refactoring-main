@@ -14,7 +14,7 @@
            <div v-if="DiagEnable" class="mb-4">
            <!--0StatusItem v-if="assetTypes !== 'Transformer'" :channel="channel" :data="stData" :mode="'diagnosis'" />
            <StatusItem2 v-if="assetTypes == 'Transformer' && Object.keys(transData).length > 0" :channel="channel" :data="stData" :transData="transData" /-->
-           <StatusItem2 v-if="Object.keys(transData).length > 0" :channel="channel" :data="stData" :transData="transData" />
+           <StatusItem2 :channel="channel" :data="stData" :transData="transData" />
           </div>
           <div class="grid grid-cols-12 gap-4">
                 <StatusItem v-if="DiagEnable" :channel="channel" :data="stData" :mode="'diagnosis'" />
