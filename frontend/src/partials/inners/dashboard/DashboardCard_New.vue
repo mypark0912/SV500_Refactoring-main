@@ -142,7 +142,7 @@
             const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
 
              if (response.data.success) {
-                transData.value = response.data.data;
+                transData.value["realtime"] = response.data.data;
              }else{
                console.log('No Data');
              }

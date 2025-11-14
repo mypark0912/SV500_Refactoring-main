@@ -1324,29 +1324,28 @@ async def get_asset(assettype, asset, request: Request):
     #             data = response.json()
     if data:
         datalist = list()
-        for i in range(0, len(data)):
-            if assettype != 'MotorFeed' and assettype != 'PSupply':
-                # Motor 관련 데이터
+        if assettype != 'MotorFeed' and assettype != 'PSupply':
+            # Motor 관련 데이터
+            for item in data["Data"]:
+                if item["Name"] in ["Speed", "Torque"]:
+                    datalist.append({
+                        "Assembly": item["AssemblyID"],
+                        "Title": item["Title"],
+                        "Value": item["Value"],
+                        "Unit": item["Unit"]
+                    })
+        else:
+            # PowerSupply 관련 데이터
+            if assettype == 'MotorFeed':
+                target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
                 for item in data["Data"]:
-                    if item["Name"] in ["Speed", "Torque"]:
+                    if item["Name"] in target_names:
                         datalist.append({
                             "Assembly": item["AssemblyID"],
                             "Title": item["Title"],
                             "Value": item["Value"],
                             "Unit": item["Unit"]
                         })
-            else:
-                # PowerSupply 관련 데이터
-                if assettype != 'MotorFeed':
-                    target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
-                    for item in data["Data"]:
-                        if item["Name"] in target_names:
-                            datalist.append({
-                                "Assembly": item["AssemblyID"],
-                                "Title": item["Title"],
-                                "Value": item["Value"],
-                                "Unit": item["Unit"]
-                            })
         return {"success": True, "data": datalist}
     else:
         return {"success": False, "error": "No Data"}

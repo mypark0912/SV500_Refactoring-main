@@ -52,33 +52,6 @@
                 <div class="metric-label">{{ t('dashboard.transDiag.Ig') }}</div>
               </div>
             </template>
-  
-            <!-- VFD -->
-            <!--template v-else-if="stData.devType=='VFD'">
-              <div class="metric-box temperature">
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">℃</span>
-                </div>
-                <div class="metric-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-              </div>
-              <div class="metric-box load">
-                <div class="metric-main">
-                  <span class="metric-value">56.9</span>
-                  <span class="metric-unit">%</span>
-                </div>
-                <div class="metric-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
-              </div>
-              <div class="metric-box current">
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Ig?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">A</span>
-                </div>
-                <div class="metric-label">{{ t('dashboard.meter.current') }}</div>
-              </div>
-            </template-->
-  
-            <!-- 기타 장비 -->
             <template v-else>
               <div v-if="true" class="metric-box hours">
                 <div class="metric-main">
@@ -87,41 +60,43 @@
                 </div>
                 <div class="metric-label">{{ t('dashboard.singleinfo.Operatingtime') }}</div>
               </div>
-              <div class="metric-box hours">
-                <div class="metric-main">
-                  <span class="metric-value">{{stData.Ig}}</span>
-                  <span class="metric-unit">A</span>
+              <template v-if="transData.length > 0">
+                <div class="metric-box hours">
+                  <div class="metric-main">
+                    <span class="metric-value">{{stData.Ig}}</span>
+                    <span class="metric-unit">A</span>
+                  </div>
+                  <div class="metric-label">{{ t('dashboard.transDiag.Ig') }}</div>
                 </div>
-                <div class="metric-label">{{ t('dashboard.transDiag.Ig') }}</div>
-              </div>
-              <div class="metric-box primary">
-                <div class="metric-main">
-                  <span class="metric-value">{{ (parseFloat(transData[0]?.Value) || 0).toFixed(1) }}</span>
-                  <span class="metric-unit">{{ transData[0]?.Unit || '' }}</span>
+                <div class="metric-box primary">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ (parseFloat(transData[0]?.Value) || 0).toFixed(1) }}</span>
+                    <span class="metric-unit">{{ transData[0]?.Unit || '' }}</span>
+                  </div>
+                  <div class="metric-label">{{ transData[0]["Assembly"] }} : {{ transData[0]["Title"] }}</div>
                 </div>
-                <div class="metric-label">{{ transData[0]["Assembly"] }} : {{ transData[0]["Title"] }}</div>
-              </div>
-              <div v-if="transData.length > 2" class="metric-box secondary">
-                <div class="metric-main">
-                  <span class="metric-value">{{ (parseFloat(transData[1]?.Value) || 0).toFixed(1) }}</span>
-                  <span class="metric-unit">{{ transData[1]?.Unit || '' }}</span>
+                <div v-if="transData.length > 2" class="metric-box secondary">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ (parseFloat(transData[1]?.Value) || 0).toFixed(1) }}</span>
+                    <span class="metric-unit">{{ transData[1]?.Unit || '' }}</span>
+                  </div>
+                  <div class="metric-label">{{ transData[1]["Assembly"] }} : {{ transData[1]["Title"] }}</div>
                 </div>
-                <div class="metric-label">{{ transData[1]["Assembly"] }} : {{ transData[1]["Title"] }}</div>
-              </div>
-              <div v-if="transData.length > 2" class="metric-box secondary">
-                <div class="metric-main">
-                  <span class="metric-value">{{ (parseFloat(transData[2]?.Value) || 0).toFixed(1)}}</span>
-                  <span class="metric-unit">{{ transData[2]?.Unit || '' }}</span>
+                <div v-if="transData.length > 2" class="metric-box secondary">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ (parseFloat(transData[2]?.Value) || 0).toFixed(1)}}</span>
+                    <span class="metric-unit">{{ transData[2]?.Unit || '' }}</span>
+                  </div>
+                  <div class="metric-label">{{ transData[2]["Assembly"] }} : {{ transData[2]["Title"] }}</div>
                 </div>
-                <div class="metric-label">{{ transData[2]["Assembly"] }} : {{ transData[2]["Title"] }}</div>
-              </div>
-              <div v-else class="metric-box secondary">
-                <div class="metric-main">
-                  <span class="metric-value">{{ (parseFloat(transData[1]?.Value) || 0).toFixed(1) }}</span>
-                  <span class="metric-unit">{{ transData[1]?.Unit || '' }}</span>
+                <div v-else class="metric-box secondary">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ (parseFloat(transData[1]?.Value) || 0).toFixed(1) }}</span>
+                    <span class="metric-unit">{{ transData[1]?.Unit || '' }}</span>
+                  </div>
+                  <div class="metric-label">{{ transData[1]["Assembly"] }} : {{ transData[1]["Title"] }}</div>
                 </div>
-                <div class="metric-label">{{ transData[1]["Assembly"] }} : {{ transData[1]["Title"] }}</div>
-              </div>
+              </template>
             </template>
           </div>
         </div>
@@ -165,8 +140,13 @@ import transImg from '@/images/trans.png'
       })
 
       const stData = ref(props.data);
-      const transData = ref(props.transData);
-
+      const transData = computed(()=>{
+        if(stData.value.devType.includes('Transformer'))
+          return props.transData;
+        else
+          return props.transData["realtime"];
+      });
+      //console.log('transData - ',transData.value)
       const LoadRate = ref(0);
       
       // Transformer 타입 체크
