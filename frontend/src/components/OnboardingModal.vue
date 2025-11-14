@@ -1192,8 +1192,8 @@ export default {
           channelData.tableData,
           `${channelName} tableData`
         );
-        errors.push(...tableValidation.errors);
-        warnings.push(...tableValidation.warnings);
+        // errors.push(...tableValidation.errors);
+        // warnings.push(...tableValidation.warnings);
       } else {
         console.log(
           `${channelName} tableData 없음 또는 배열이 아님:`,
