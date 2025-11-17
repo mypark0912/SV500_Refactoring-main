@@ -1350,6 +1350,42 @@ async def get_asset(assettype, asset, request: Request):
     else:
         return {"success": False, "error": "No Data"}
 
+@router.get("/getRealTimeSingle/{channel}/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
+@gc_after_large_data(threshold_mb=30)
+async def get_asset(channel,assettype, asset):
+
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
+        data = response.json()
+    if data:
+        datalist = list()
+        if assettype != 'MotorFeed' and assettype != 'PSupply':
+            # Motor 관련 데이터
+            for item in data["Data"]:
+                if item["Name"] in ["Speed", "Torque"]:
+                    datalist.append({
+                        "Assembly": item["AssemblyID"],
+                        "Title": item["Title"],
+                        "Value": item["Value"],
+                        "Unit": item["Unit"]
+                    })
+        else:
+            # PowerSupply 관련 데이터
+            if assettype == 'MotorFeed':
+                target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
+                for item in data["Data"]:
+                    if item["Name"] in target_names:
+                        datalist.append({
+                            "Assembly": item["AssemblyID"],
+                            "Title": item["Title"],
+                            "Value": item["Value"],
+                            "Unit": item["Unit"]
+                        })
+        runhours = get_running(channel)["total"]
+        return {"success": True, "data": datalist,"runhours":runhours}
+    else:
+        return {"success": False, "error": "No Data"}
+
 
 @router.get("/getAsset/{asset}")  # Diagnosis, Report Vue : get Asset info
 async def get_asset(asset, request: Request):
