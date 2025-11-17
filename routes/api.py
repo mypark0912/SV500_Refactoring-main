@@ -146,6 +146,11 @@ class EventSearch(BaseModel):
     StartDate: str
     EndDate: str
 
+class TrendRequest(BaseModel):
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    fields: Optional[List[str]] = None  # 필드 목록
+
 
 parameter_options = [
     "None",
@@ -3416,15 +3421,117 @@ def get_service():
             status = False
     return {"status": status, "services":statusDict}
 
+@router.post('/getMeterTrend/{channel}')
+def getMeterTrendPost(channel: str, request: TrendRequest):
+    """
+    POST 방식으로 필드를 선택하여 트렌드 데이터 조회
+
+    Body 예시:
+    {
+        "startDate": "2025-11-15T00:00:00+09:00",
+        "endDate": "2025-11-17T23:59:59+09:00",
+        "fields": ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "Freq"]
+    }
+    """
+    start_time = datetime.now()
+
+    if influx_state.client is None:
+        return {"result": False, "error": "InfluxDB client not initialized"}
+
+    if influx_state.error:
+        print("error: InfluxDB error state")
+        return {"result": False, "data": []}
+
+    query_api = influx_state.query_api
+    if not query_api:
+        print("error: query_api not available")
+        return {"result": False, "data": []}
+
+    # 날짜 범위 설정
+    if request.startDate and request.endDate:
+        range_filter = f'from(bucket: "ntek") |> range(start: {request.startDate}, stop: {request.endDate})'
+        print(f"📅 날짜 범위: {request.startDate} ~ {request.endDate}")
+    else:
+        range_filter = 'from(bucket: "ntek") |> range(start: -2d)'
+        print(f"📅 기본 범위: -2d")
+
+    # 필드 필터 생성
+    if request.fields and len(request.fields) > 0:
+        # 사용자가 지정한 필드만
+        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in request.fields])
+        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+        print(f"📋 선택된 필드 ({len(request.fields)}개): {request.fields}")
+    else:
+        # 필드 지정 없으면 기본 주요 필드
+        default_fields = ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "PF2", "PF3", "Freq", "THD_U1", "THD_I1"]
+        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in default_fields])
+        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+        print(f"📋 기본 필드 사용 ({len(default_fields)}개)")
+
+    # 쿼리 생성 (pivot 제거 - 더 빠름)
+    query = (
+        f'{range_filter} '
+        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+        f'{field_filter_query}'
+    )
+
+    # 쿼리 실행
+    query_start = datetime.now()
+    print(f"🔍 쿼리 실행 시작...")
+
+    try:
+        tables = query_api.query(org='ntek', query=query)
+        query_duration = (datetime.now() - query_start).total_seconds()
+        print(f"⏱️  쿼리 실행 시간: {query_duration:.3f}초")
+    except Exception as e:
+        print(f"❌ 쿼리 실패: {e}")
+        return {"result": False, "error": str(e)}
+
+    # 데이터 처리 (pivot을 Python에서 수행)
+    process_start = datetime.now()
+    data_dict = {}
+
+    for table in tables:
+        for record in table.records:
+            timestamp = record.get_time()
+            field = record.get_field()
+            value = record.get_value()
+
+            ts_str = timestamp.isoformat()
+            if ts_str not in data_dict:
+                data_dict[ts_str] = {
+                    '_time': timestamp.astimezone().strftime('%Y-%m-%d %H:%M:%S'),
+                    'channel': channel
+                }
+
+            data_dict[ts_str][field] = value
+
+    # 시간순 정렬
+    results = [data_dict[ts] for ts in sorted(data_dict.keys())]
+
+    process_duration = (datetime.now() - process_start).total_seconds()
+    print(f"📊 데이터 처리 시간: {process_duration:.3f}초 (레코드 수: {len(results)})")
+
+    # 마지막 날짜
+    last_date = results[-1]['_time'] if results else None
+
+    # 전체 시간
+    total_duration = (datetime.now() - start_time).total_seconds()
+    print(f"🎯 전체 실행 시간: {total_duration:.3f}초")
+    print(f"=" * 60)
+
+    return {
+        "result": True,
+        "data": results,
+        "date": last_date,
+        "count": len(results),
+        "fields": request.fields if request.fields else "default"
+    }
+
 @router.get('/getMeterTrend/{channel}')
 def getMeterTrend(channel, startDate: str = None, endDate: str = None):
     if influx_state.client is None:
         return {"result": False}
-    # devName = ''
-    # if channel == 'Main':
-    #     devName = 'dev1'
-    # else:
-    #     devName = 'dev2'
 
     if influx_state.error:
         print("error1")
