@@ -691,6 +691,9 @@ def check_setupfile(request: Request):
             if "mode" in setting:
                 redis_state.client.hset("System", "mode", setting["mode"])
 
+        for idx, ch in enumerate(setting["channel"]):
+            setting["channel"][idx]["ctInfo"]["inorminal"] = float(setting["channel"][idx]["ctInfo"]["inorminal"])/1000
+
         # 3. 설정 파싱 및 반환
         return parse_settings(setting)
 
@@ -726,6 +729,10 @@ def get_setting():
         except Exception as e:
             return {"passOK": 0}
 
+    for idx, ch in enumerate(setting["channel"]):
+        setting["channel"][idx]["ctInfo"]["inorminal"] = float(
+            setting["channel"][idx]["ctInfo"]["inorminal"]) / 1000
+
     setup_dict = {
         "mode": setting.get("mode", ""),
         "General": setting.get("General", {}),
@@ -757,6 +764,10 @@ def getDatafromSetting(channel):
                     setting = json.load(f)
         except Exception as e:
             return {"passOK": "0"}
+
+    for idx, ch in enumerate(setting["channel"]):
+        setting["channel"][idx]["ctInfo"]["inorminal"] = float(
+            setting["channel"][idx]["ctInfo"]["inorminal"]) / 1000
 
     if channel in setting:
         return {"passOK": "1", "data": setting[channel]}
@@ -1825,7 +1836,7 @@ async def saveSetting(channel: str, request: Request):
                 if ch.get("channel", "").lower() == channel.lower():
                     setting["channel"][idx] = data
                     updated = True
-                    ctSetup[channel.lower()] = float(data["ctInfo"]["inorminal"])*1000
+                    setting["channel"][idx]["ctInfo"]["inorminal"] = int(float(data["ctInfo"]["inorminal"])*1000)
                     break
             if not updated:
                 setting["channel"].append(data)
@@ -1839,6 +1850,9 @@ async def saveSetting(channel: str, request: Request):
         else:
             setting["General"]["deviceInfo"]["serial_number"] = deviceMac
 
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(setting, f, indent=4)
+
         if len(setting["channel"]) > 0:
             for i in range(0,len(setting["channel"])):
                 initialize_alarm_configs(setting["channel"][i]["channel"], setting["channel"][i]["alarm"])
@@ -1847,12 +1861,6 @@ async def saveSetting(channel: str, request: Request):
         saveCurrent = saveStartCurrent(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            for idx, ch in enumerate(setting["channel"]):
-                if ch.get("channel", "").lower() == channel.lower():
-                    setting["channel"][idx]["ctInfo"]["inorminal"] = ctSetup[channel.lower()]
-                    break
-            json.dump(setting, f, indent=4)
 
         return {"status": "1", "data": setting}
     except Exception as e:
