@@ -143,6 +143,7 @@
 
              if (response.data.success) {
                 transData.value["realtime"] = response.data.data;
+                //console.log(response.data.data);
              }else{
                console.log('No Data');
              }

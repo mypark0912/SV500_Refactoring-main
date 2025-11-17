@@ -97,7 +97,7 @@
         if(chName != ''){
           isLoading.value = true
           try {
-            const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
+            const response = await axios.get(`/api/getRealTimeSingle/${computedChannel.value}/${chType}/${chName}`);
   
             if (response.data.success) {
               transData.value = response.data.data || [];

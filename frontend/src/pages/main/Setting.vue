@@ -1472,7 +1472,7 @@ export default {
 
         const plainTableData = tableData.map((item) => ({ ...item }));
 
-        //console.log(`Using asset name: ${assetName}`);
+        //console.log(plainTableData);
 
         const response = await axios.post(
           `/setting/checkAssetConfig/${assetName}`,
