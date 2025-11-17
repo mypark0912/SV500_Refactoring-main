@@ -167,7 +167,11 @@ export default {
             // ✅ PDF 모드일 때 툴팁 배경/텍스트 색상
             backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : undefined,
             textStyle: {
-              color: isPdfMode ? '#000000' : undefined,
+              color: isPdfMode 
+                ? '#000000' 
+                : darkMode.value 
+                  ? undefined  // 다크모드: 기본값 (흰색)
+                  : '#000000', // 라이트모드: 검정색
             },
             formatter: function (params) {
               const rawDate = new Date(params[0].axisValue);
