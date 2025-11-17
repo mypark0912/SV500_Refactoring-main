@@ -1784,6 +1784,7 @@ def initialize_alarm_configs(channel, alams):
 async def saveSetting(channel: str, request: Request):
     deviceMac = get_mac_address()
     ser=''
+    ctSetup = {}
     if os_spec.os != 'Windows':
         mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
         if os.path.exists(mac_file_path):
@@ -1824,6 +1825,7 @@ async def saveSetting(channel: str, request: Request):
                 if ch.get("channel", "").lower() == channel.lower():
                     setting["channel"][idx] = data
                     updated = True
+                    ctSetup[channel.lower()] = float(data["ctInfo"]["inorminal"])*1000
                     break
             if not updated:
                 setting["channel"].append(data)
@@ -1837,9 +1839,6 @@ async def saveSetting(channel: str, request: Request):
         else:
             setting["General"]["deviceInfo"]["serial_number"] = deviceMac
 
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(setting, f, indent=4)
-
         if len(setting["channel"]) > 0:
             for i in range(0,len(setting["channel"])):
                 initialize_alarm_configs(setting["channel"][i]["channel"], setting["channel"][i]["alarm"])
@@ -1848,6 +1847,12 @@ async def saveSetting(channel: str, request: Request):
         saveCurrent = saveStartCurrent(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            for idx, ch in enumerate(setting["channel"]):
+                if ch.get("channel", "").lower() == channel.lower():
+                    setting["channel"][idx]["ctInfo"]["inorminal"] = ctSetup[channel.lower()]
+                    break
+            json.dump(setting, f, indent=4)
 
         return {"status": "1", "data": setting}
     except Exception as e:
