@@ -218,7 +218,21 @@
                 </template>
 
                 <template v-else>
-                  <input
+                  <select v-if="row.Name == 'DriveType'"
+                    v-model.number="row.Value"
+                    class="text-xs w-full border rounded p-1 text-center"
+                    :class="!isEditNameplates ? 'disabled-input cursor-not-allowed' : 'enabled-input focus:ring-violet-500 focus:border-violet-500'"
+                    :disabled="!isEditNameplates"
+                  >
+                  <option
+                      v-for="(label, i) in row.DataInfo"
+                      :key="i"
+                      :value="i"
+                    >
+                      {{ label }}
+                    </option>
+                  </select>
+                  <input v-else
                     type="number"
                     v-model.number="row.Value"
                     :step="getStepValue(row)"
@@ -481,7 +495,7 @@ const mapping = {
   "Connection Type": "ptInfo.wiringmode",
   "Rated Frequency": "ptInfo.linefrequency",
 };
-
+//console.log(tableData.value);
 // Notification state
 const notification = ref({
   show: false,
@@ -545,6 +559,10 @@ const closeAdvancedModal = () => {
   showAdvancedModal.value = false;
   isEditMode.value = false; // Modal 닫을 때 Edit 모드 해제
 };
+
+// const procDriveType = (value)=>{
+//   return value == "0"? 0:1; 
+// }
 
 watchEffect(() => {
   if (!inputDict.value || !Array.isArray(tableData.value)) return;
