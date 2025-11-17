@@ -26,7 +26,7 @@
                     'API User Management',
                     'Account',
                     'User',
-                    'maintenance'
+                    'maintenance',
                   ].includes(formattedChannel)
                 "
               >
@@ -358,7 +358,11 @@
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  {{ isSaving ? (t("config.saving") || "Saving...") : t("config.save") }}
+                  {{
+                    isSaving
+                      ? t("config.saving") || "Saving..."
+                      : t("config.save")
+                  }}
                 </button>
 
                 <!-- Apply Button -->
@@ -557,14 +561,14 @@ export default {
     const isRestartDone = ref(false);
     const isSaving = ref(false); // ✅ 저장 중 상태 추가
     const isStartingService = ref(false);
-    const serviceLoadingMessage = ref('');
+    const serviceLoadingMessage = ref("");
 
     //const langset = computed(() => authStore.getLang);
     const isAdmin = computed(() => {
       if (parseInt(authStore.getUserRole) > 1) return true;
       else return false;
     });
-    
+
     function askNameplateConfirm(channels) {
       const channelList = channels.join(", ");
       nameplateConfirmMessage.value =
@@ -577,7 +581,7 @@ export default {
         resolveNameplateConfirm = resolve;
       });
     }
-    
+
     function handleConfirm(ok) {
       showNameplateConfirm.value = false;
       if (resolveNameplateConfirm) {
@@ -585,7 +589,7 @@ export default {
         resolveNameplateConfirm = null;
       }
     }
-    
+
     const {
       setupDict,
       inputDict,
@@ -645,7 +649,7 @@ export default {
         inputDict.value.useFuction?.diagnosis_sub
       );
     });
-    
+
     watch(
       () => channel_sub.value?.Enable,
       (newEnable, oldEnable) => {
@@ -711,7 +715,7 @@ export default {
     // Diagnosis 토글 함수
     const toggleDiagnosis = (channelType) => {
       if (isSaving.value) return; // 저장 중이면 실행 안 함
-      
+
       // Sub 채널의 경우 채널이 Enable되어 있는지 확인
       if (channelType === "sub" && !channel_sub.value?.Enable) {
         alert(
@@ -723,53 +727,57 @@ export default {
       inputDict.value.useFuction[`diagnosis_${channelType}`] =
         !inputDict.value.useFuction[`diagnosis_${channelType}`];
 
-        if(inputDict.value.useFuction[`diagnosis_${channelType}`]){
-          if(!checkSmart()){
-            if(confirm('Not running diagnostic service. Do you want to run service?')){
-              manageSmart(1);
-            }else{
-              return;
-            }
+      if (inputDict.value.useFuction[`diagnosis_${channelType}`]) {
+        if (!checkSmart()) {
+          if (
+            confirm(
+              "Not running diagnostic service. Do you want to run service?"
+            )
+          ) {
+            manageSmart(1);
+          } else {
+            return;
           }
         }
+      }
     };
 
-    const checkSmart = async()=>{
-      try{
-        const response = await axios.get('/setting/checkSmart');
-        if (response.data.success){
+    const checkSmart = async () => {
+      try {
+        const response = await axios.get("/setting/checkSmart");
+        if (response.data.success) {
           return true;
-        }else{
+        } else {
           return false;
         }
-      }catch(error){
+      } catch (error) {
         console.error(error);
         return false;
       }
-    }
+    };
     const manageSmart = async (mode) => {
       try {
-        if(parseInt(mode) == 1){
+        if (parseInt(mode) == 1) {
           isStartingService.value = true; // ⭐ 로딩 모달 표시
-          serviceLoadingMessage.value = 'Starting diagnostic service...';
+          serviceLoadingMessage.value = "Starting diagnostic service...";
         }
         const response = await axios.get(`/setting/manageSmart/${mode}`);
-        if(parseInt(mode) == 1){
+        if (parseInt(mode) == 1) {
           if (response.data.api && response.data.success) {
-            serviceLoadingMessage.value = 'Service ready!';
-            await new Promise(resolve => setTimeout(resolve, 500));
+            serviceLoadingMessage.value = "Service ready!";
+            await new Promise((resolve) => setTimeout(resolve, 500));
             return true;
           } else {
-            alert('Failed to start service: ' + (response.data.message || ''));
+            alert("Failed to start service: " + (response.data.message || ""));
             return false;
           }
-        }else{
-          alert('All Services is ready');
+        } else {
+          alert("All Services is ready");
           return true;
         }
-      } catch(error) {
+      } catch (error) {
         console.error(error);
-        alert('Error starting service: ' + error.message);
+        alert("Error starting service: " + error.message);
         return false;
       } finally {
         isStartingService.value = false; // ⭐ 로딩 모달 닫기
@@ -819,39 +827,41 @@ export default {
     //   { immediate: true }
     // );
     watch(
-  () => useDiagnosis.value,
-  async (newVal, oldVal) => {
-    // false → true로 변경될 때만 (진단 기능 켜질 때)
-    if (newVal && !oldVal) {
-      const isRunning = await checkSmart();
-      
-      if (!isRunning) {
-        const confirmed = confirm('Not running diagnostic service. Do you want to run diagnostic service?');
-        
-        if (confirmed) {
-          const started = await manageSmart(1); // 여기서 로딩 모달 자동 표시
-          
-          if (!started) {
-            // 서비스 시작 실패 시 진단 다시 끄기
-            inputDict.value.useFuction.diagnosis_main = false;
-            inputDict.value.useFuction.diagnosis_sub = false;
-            console.error('스마트 서비스 시작 실패');
-            return;
+      () => useDiagnosis.value,
+      async (newVal, oldVal) => {
+        // false → true로 변경될 때만 (진단 기능 켜질 때)
+        if (newVal && !oldVal) {
+          const isRunning = await checkSmart();
+
+          if (!isRunning) {
+            const confirmed = confirm(
+              "Not running diagnostic service. Do you want to run diagnostic service?"
+            );
+
+            if (confirmed) {
+              const started = await manageSmart(1); // 여기서 로딩 모달 자동 표시
+
+              if (!started) {
+                // 서비스 시작 실패 시 진단 다시 끄기
+                inputDict.value.useFuction.diagnosis_main = false;
+                inputDict.value.useFuction.diagnosis_sub = false;
+                console.error("스마트 서비스 시작 실패");
+                return;
+              }
+            } else {
+              // 사용자가 취소 시 진단 다시 끄기
+              inputDict.value.useFuction.diagnosis_main = false;
+              inputDict.value.useFuction.diagnosis_sub = false;
+              return;
+            }
           }
-        } else {
-          // 사용자가 취소 시 진단 다시 끄기
-          inputDict.value.useFuction.diagnosis_main = false;
-          inputDict.value.useFuction.diagnosis_sub = false;
-          return;
+
+          // 서비스 확인 완료 후 설정 가져오기
+          GetDiagnosisSetting();
         }
       }
-      
-      // 서비스 확인 완료 후 설정 가져오기
-      GetDiagnosisSetting();
-    }
-  }
-);
-    
+    );
+
     // FTP와 Diagnosis 충돌 감지 및 자동 해제
     watch(
       () => [
@@ -897,7 +907,7 @@ export default {
         message.value = "업로드 실패: " + error.response.data.error;
       }
     };
-    
+
     const download = async () => {
       try {
         const response = await axios.get("/setting/download", {
@@ -952,19 +962,25 @@ export default {
     };
 
     const restart = async () => {
-      if( devMode.value == 'device0'){
+      if (devMode.value == "device0") {
         alert("✅ System restarted successfully");
         isRestartDone.value = true;
         return;
       }
-      if(inputDict.value.useFuction.diagnosis_main || inputDict.value.useFuction.diagnosis_sub){
+      if (
+        inputDict.value.useFuction.diagnosis_main ||
+        inputDict.value.useFuction.diagnosis_sub
+      ) {
         try {
           const response = await axios.get(`/setting/restartasset`);
           //console.log("Restart Response:", response);
 
           if (response.data.status === "1") {
             if (response.data.success) {
-              const servicflag = await serviceRestart("restart", "SmartSystems");
+              const servicflag = await serviceRestart(
+                "restart",
+                "SmartSystems"
+              );
               //const apiflag = await serviceRestart("restart", "SmartAPI");
               if (servicflag["result"]) {
                 alert("✅ Service restarted successfully");
@@ -972,14 +988,14 @@ export default {
                 isRestartDone.value = true;
               } else {
                 alert("❌ SmartSystem Restart failed");
-              } 
+              }
             } else {
               //isModalOpen.value = false;
               isRestartDone.value = true;
 
               alert("✅ System restarted successfully");
             }
-          }else {
+          } else {
             //isModalOpen.value = false;
             //isRestartDone.value = true;
 
@@ -989,7 +1005,7 @@ export default {
           console.error("Error occurred:", e);
           alert("❌ Error occurred while restarting: " + e.message);
         }
-      }else{
+      } else {
         await manageSmart(0);
         alert("✅ Service restarted successfully");
         isRestartDone.value = true;
@@ -1036,7 +1052,7 @@ export default {
         errorMessage.value = "데이터를 불러오는 중 오류가 발생했습니다.";
       }
     };
-    
+
     // Diagnosisfile 데이터 불러오기
     const GetDiagnosisSetting = async () => {
       try {
@@ -1052,7 +1068,7 @@ export default {
         errorMessage.value = "데이터를 불러오는 중 오류가 발생했습니다.";
       }
     };
-    
+
     const GetSettingData = async () => {
       try {
         const response = await axios.get(`/setting/getSetting`);
@@ -1099,18 +1115,30 @@ export default {
         // === 1. General 설정 저장 ===
         let generalSuccess = true;
         try {
-            const generalData = { ...inputDict.value };
+          const generalData = { ...inputDict.value };
 
-            // useFuction 필드들을 숫자로 변환
-            if (generalData.useFuction) {
-              generalData.useFuction.ftp = (generalData.useFuction.ftp === true || generalData.useFuction.ftp === 1) ? 1 : 0;
-              generalData.useFuction.sntp = (generalData.useFuction.sntp === true || generalData.useFuction.sntp === 1) ? 1 : 0;
-              }
+          // useFuction 필드들을 숫자로 변환
+          if (generalData.useFuction) {
+            generalData.useFuction.ftp =
+              generalData.useFuction.ftp === true ||
+              generalData.useFuction.ftp === 1
+                ? 1
+                : 0;
+            generalData.useFuction.sntp =
+              generalData.useFuction.sntp === true ||
+              generalData.useFuction.sntp === 1
+                ? 1
+                : 0;
+          }
 
-            // modbus rtu_use 필드를 숫자로 변환
-            if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
-              generalData.modbus.rtu_use = (generalData.modbus.rtu_use === true || generalData.modbus.rtu_use === 1) ? 1 : 0;
-            }
+          // modbus rtu_use 필드를 숫자로 변환
+          if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
+            generalData.modbus.rtu_use =
+              generalData.modbus.rtu_use === true ||
+              generalData.modbus.rtu_use === 1
+                ? 1
+                : 0;
+          }
           const generalResponse = await axios.post(
             "/setting/savefile/General",
             generalData,
@@ -1258,7 +1286,7 @@ export default {
         // 진단 미사용 채널의 Asset 등록 체크
         for (const channelName in diagnosis_detail.value) {
           const channelData = diagnosis_detail.value[channelName];
-          
+
           // Main/Sub 채널별 diagnosis 사용 여부 확인
           const isDiagnosisEnabledForChannel =
             channelName === "main"
@@ -1304,7 +1332,8 @@ export default {
             try {
               const combinedData = [
                 ...channelData.tableData,
-                ...(channelData.modalData && Array.isArray(channelData.modalData)
+                ...(channelData.modalData &&
+                Array.isArray(channelData.modalData)
                   ? channelData.modalData
                   : []),
               ];
@@ -1391,7 +1420,7 @@ export default {
             );
           }
         }
-        
+
         //console.log("devMode.value", devMode.value);
         if (devMode.value === "device0") {
           const device0Params = [
@@ -1418,7 +1447,7 @@ export default {
           }
           channel_sub.value.trendInfo.params = [...device0Params];
         }
-        
+
         // 저장 진행
         await saveAllSettings();
       } catch (error) {
@@ -1512,10 +1541,13 @@ export default {
         );
       }
     };
-    
+
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
-        checkNameplateflag.value = await checkNameplateConfig(tableData, assetName);
+        checkNameplateflag.value = await checkNameplateConfig(
+          tableData,
+          assetName
+        );
         //console.log('checkTableData - ', checkNameplateflag.value);
         if (checkNameplateflag.value) {
           // 사용자에게 확인 팝업 표시
@@ -1586,21 +1618,25 @@ export default {
         );
       }
     };
-    
+
     // 헬퍼 함수
     const saveChannelData = async (channelData, channelName) => {
       try {
         const data = { ...channelData };
         data.channel = channelName;
-        data.Enable = (data.Enable === true || data.Enable === 1) ? 1 : 0;
-        data.PowerQuality = (data.PowerQuality === true || data.PowerQuality === 1) ? 1 : 0;
-     
+        data.Enable = data.Enable === true || data.Enable === 1 ? 1 : 0;
+        data.PowerQuality =
+          data.PowerQuality === true || data.PowerQuality === 1 ? 1 : 0;
+
         // 데이터 타입 변환
         for (const key in data.ctInfo) {
           if (key == "direction") {
             for (let i = 0; i < data.ctInfo.direction.length; i++) {
               data.ctInfo[key][i] = parseInt(data.ctInfo.direction[i]);
             }
+          } else if (key === "inorminal" ) {
+            // inorminal과 startingcurrent는 소수점 유지
+            data.ctInfo[key] = parseFloat(data.ctInfo[key]);
           } else {
             if (Object.prototype.hasOwnProperty.call(data.ctInfo, key)) {
               const value = data.ctInfo[key];
@@ -1664,7 +1700,7 @@ export default {
     provide("checkNameplateflag", checkNameplateflag);
     provide("diagnosis_detail", diagnosis_detail);
     provide("GetSettingData", GetSettingData);
-    
+
     return {
       sidebarOpen,
       channel,
