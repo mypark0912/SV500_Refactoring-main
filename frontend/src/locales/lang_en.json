@@ -660,7 +660,14 @@
             "import":"Import",
             "export":"Export",
             "restore":"Restore",
-            "reset":"Reset"
+            "reset":"Reset",
+            "warnmessage1":"confirm the system reinstallation",
+            "warnmessage2":"Reinstalling the smart system will delete all existing data.",         
+            "warnmessage3"  :"Please download a backup before proceeding.",
+            "warnmessage4":"Are you sure you want to continue?",
+            "confirm":"Proceed with reinstallation",
+            "cancel":"Cancel"  
+
 
         },
         "save":"Save Changes",
