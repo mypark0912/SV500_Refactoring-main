@@ -480,7 +480,7 @@
         </ModalBasic>
         <OnboardModal
           :modalOpen="isModalOpen"
-          :OpMode="mode"
+          :OpMode="devMode"
           :restartDone="isRestartDone"
           :preventBackdropClose="true"
           @close-modal="handleCloseModal"
