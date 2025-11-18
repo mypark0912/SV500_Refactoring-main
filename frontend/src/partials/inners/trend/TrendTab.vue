@@ -3,68 +3,140 @@
     <div class="col-span-4 flex flex-col gap-6 h-auto">
       <div v-show="true" role="alert">
         <div
-          class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400">
-          <div class="flex flex-col w-full gap-3"><!--div class="flex w-full justify-between items-start"-->
+          class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400"
+        >
+          <div class="flex flex-col w-full gap-3">
+            <!--div class="flex w-full justify-between items-start"-->
             <div class="flex items-start">
-              <svg class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3" width="16" height="16"
-                viewBox="0 0 16 16">
+              <svg
+                class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+              >
                 <path
-                  d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm1 12H7V7h2v5zM8 6c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" />
+                  d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm1 12H7V7h2v5zM8 6c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z"
+                />
               </svg>
-              <div>
-                <slot />{{ t("trend.TrendTab.slot") }}.
-              </div>
+              <div><slot />{{ t("trend.TrendTab.slot") }}.</div>
             </div>
           </div>
           <div class="text-right mt-1">
-            <a v-if="tap == `Meter`"
-              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+            <a
+              v-if="tap == `Meter`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
-              @click.prevent="drawMeterChart">
-              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+              @click.prevent="drawMeterChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
             </a>
-            <a v-else-if="tap == `Energy`"
-              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+            <a
+              v-else-if="tap == `Energy`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
-              @click.prevent="drawEnergyChart">
-              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+              @click.prevent="drawEnergyChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
             </a>
-            <a v-else 
-              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" 
+            <a
+              v-else
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
-              @click.prevent="drawDiagnosisChart">
-              {{ isLoading ? t("trend.TrendTab.loading") : t("trend.TrendTab.Plot") }}
+              @click.prevent="drawDiagnosisChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
             </a>
           </div>
         </div>
       </div>
 
-      <Trend_treetable v-if="items.length > 0" :channel="channel" :data="items" :expanded="false"
-        :checked-ids="checkedIds" :checked-names="checkedNames" @check-change="onCheckChange" />
+      <Trend_treetable
+        v-if="items.length > 0"
+        :channel="channel"
+        :data="items"
+        :expanded="false"
+        :checked-ids="checkedIds"
+        :checked-names="checkedNames"
+        @check-change="onCheckChange"
+      />
     </div>
 
     <div class="col-span-8 relative">
-
-      <div v-if="isLoading" 
-        class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-10 rounded-lg">
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-10 rounded-lg"
+      >
         <div class="flex flex-col items-center gap-3">
-          <svg class="animate-spin h-12 w-12 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            class="animate-spin h-12 w-12 text-violet-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
           <p class="text-lg font-medium text-gray-700 dark:text-gray-300">
-            {{  t("trend.TrendTab.loading") }} 
+            {{ t("trend.TrendTab.loading") }}
           </p>
         </div>
       </div>
-      <LineChart v-if="tap == `Diagnosis`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate"/>
-      <LineChart v-if="tap == `Meter`" :chart-data="meterOption.lineData" :chart-labels="meterOption.lineLabels" :chartLastDate ="lastDate" />
-      <LineChart v-if="tap == `PowerQuality`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate" />
-      <LineChart v-if="tap == `Parameters`" :chart-data="option.lineData" :chart-labels="option.lineLabels" :chartLastDate ="lastDate"/>
-      <LineChart v-if="tap == `Energy`" :chart-data="energyOption.lineData" :chart-labels="energyOption.lineLabels" :chartLastDate ="lastDate" />
+      <LineChart
+        v-if="tap == `Diagnosis`"
+        :chart-data="option.lineData"
+        :chart-labels="option.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `Meter`"
+        :chart-data="meterOption.lineData"
+        :chart-labels="meterOption.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `PowerQuality`"
+        :chart-data="option.lineData"
+        :chart-labels="option.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `Parameters`"
+        :chart-data="option.lineData"
+        :chart-labels="option.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `Energy`"
+        :chart-data="energyOption.lineData"
+        :chart-labels="energyOption.lineLabels"
+        :chartLastDate="lastDate"
+      />
     </div>
   </div>
 </template>
@@ -119,7 +191,7 @@ export default {
     const checkedIds = ref([]);
     const checkedNames = ref([]);
     const isLoading = ref(false); // ✅ 로딩 상태 추가
-    const lastDate = ref('');
+    const lastDate = ref("");
     // Meter 탭용 트리 데이터 (Energy 제외)
     const trendTreeData = [
       {
@@ -130,7 +202,10 @@ export default {
       },
       { ID: 2, Name: "Freq", Title: "Frequency", isParent: true },
       {
-        ID: 3, Name: "PF", Title: "Power Factor", isParent: true,
+        ID: 3,
+        Name: "PF",
+        Title: "Power Factor",
+        isParent: true,
         children: [
           { ID: 4, Name: "PF1", Title: "Power Factor L1" },
           { ID: 5, Name: "PF2", Title: "Power Factor L2" },
@@ -231,7 +306,11 @@ export default {
         isParent: true,
         children: [
           { ID: 28, Name: "kwh_import_consumption", Title: "Active Energy" },
-          { ID: 29, Name: "kvarh_import_consumption", Title: "Reactive Energy" },
+          {
+            ID: 29,
+            Name: "kvarh_import_consumption",
+            Title: "Reactive Energy",
+          },
           { ID: 30, Name: "kvah_import_consumption", Title: "Apparent Energy" },
         ],
       },
@@ -249,7 +328,7 @@ export default {
       Current: ["current"],
       "Current L1": ["I1"],
       "Current L2": ["I2"],
-      "Current L3": ["I3"], 
+      "Current L3": ["I3"],
       Power: ["Power"],
       "Active Power": ["P4"],
       "Reactive Power": ["Q4"],
@@ -298,9 +377,9 @@ export default {
     const fetchData = async () => {
       try {
         if (tap.value == "Diagnosis") {
-          if(props.asset != ""){
+          if (props.asset != "") {
             const response = await axios.get(
-            `/api/getTrendParameters/${props.asset}/Diagnostic`
+              `/api/getTrendParameters/${props.asset}/Diagnostic`
             );
             if (response.data.success) {
               items.value = response.data.superlist;
@@ -308,11 +387,10 @@ export default {
               console.log("No Data");
             }
           }
-
         } else if (tap.value == "PowerQuality") {
-          if(props.asset != ""){
+          if (props.asset != "") {
             const response = await axios.get(
-            `/api/getTrendParameters/${props.asset}/PowerQuality`
+              `/api/getTrendParameters/${props.asset}/PowerQuality`
             );
             if (response.data.success) {
               items.value = response.data.superlist;
@@ -320,9 +398,8 @@ export default {
               console.log("No Data");
             }
           }
-        }
-        else if (tap.value == "Parameters") {
-          if(props.asset != ""){
+        } else if (tap.value == "Parameters") {
+          if (props.asset != "") {
             const response = await axios.get(
               `/api/getTrendParameters/${props.asset}/parameter`
             );
@@ -338,12 +415,21 @@ export default {
           );
           if (response.data.success) {
             const enabledParams = response.data.data.params;
-            console.log("enabledParams",enabledParams)
-            const filteredParams = enabledParams.filter(param =>
-              !["Energy", "Active Energy", "Reactive Energy", "Apparent Energy"].includes(param)
+            console.log("enabledParams", enabledParams);
+            const filteredParams = enabledParams.filter(
+              (param) =>
+                ![
+                  "Energy",
+                  "Active Energy",
+                  "Reactive Energy",
+                  "Apparent Energy",
+                ].includes(param)
             );
 
-            const enabledNames = expandEnabledNames(filteredParams, meterParamMap);
+            const enabledNames = expandEnabledNames(
+              filteredParams,
+              meterParamMap
+            );
 
             const deepFilterTree = (nodes) => {
               return nodes
@@ -458,17 +544,17 @@ export default {
         minutes = pad(59);
         seconds = pad(59);
       }
-      
+
       const timezoneOffset = -date.getTimezoneOffset();
       const offsetSign = timezoneOffset >= 0 ? "+" : "-";
       const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
       const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
-      
+
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
 
     const drawMeterChart = async () => {
-      if (!checkedNames.value || checkedNames.value.length === 0) {       
+      if (!checkedNames.value || checkedNames.value.length === 0) {
         meterOption.value = { lineLabels: [], lineData: [] };
         return;
       }
@@ -482,14 +568,14 @@ export default {
         Upp1: ["Upp1"],
         Upp2: ["Upp2"],
         Upp3: ["Upp3"],
-        Upp4: ["Upp4"],          
+        Upp4: ["Upp4"],
         I1: ["I1"],
         I2: ["I2"],
         I3: ["I3"],
         P4: ["P4"],
         Q4: ["Q4"],
         S4: ["S4"],
-        Freq: ["Freq"],      
+        Freq: ["Freq"],
         PF1: ["PF1"],
         PF2: ["PF2"],
         PF3: ["PF3"],
@@ -511,28 +597,33 @@ export default {
         Ibal1: ["Ibal1"],
       };
 
+      // 선택된 필드들을 하나의 배열로 수집
+      let selectedFields = [];
       let actualParamCount = 0;
+
       checkedNames.value.forEach((param) => {
         const keys = paramMap[param];
         if (keys) {
           actualParamCount += keys.length;
+          selectedFields = selectedFields.concat(keys); // 필드 수집
         }
       });
 
-      if (actualParamCount > 15) {       
-        alert(t("trend.Linechart.parametercount"));
+      if (actualParamCount > 6) {
+        alert(t("trend.Linechart.metercount"));
         return;
       }
 
       isLoading.value = true; // ✅ 로딩 시작
-      
+
       try {
-        let url = `/api/getMeterTrend/${channel.value}`;
-        const response = await axios.get(url, {
-          params:{
-            startDate: formatToISOString(props.startdate, 2),
-            endDate : formatToISOString(props.enddate, 3)
-          }
+        const url = `/api/getMeterTrend/${channel.value}`;
+
+        // POST 요청으로 변경하고 body에 파라미터 전송
+        const response = await axios.post(url, {
+          startDate: formatToISOString(props.startdate, 2),
+          endDate: formatToISOString(props.enddate, 3),
+          fields: selectedFields, // 선택된 필드 배열 전송
         });
 
         const responseData = response.data.data;
@@ -543,7 +634,9 @@ export default {
 
         labels.push(...responseData.map((row) => row._time));
 
-        console.log("selectedParams",selectedParams)
+        // console.log("selectedParams", selectedParams);
+        // console.log("selectedFields sent to API:", selectedFields);
+
         selectedParams.forEach((param) => {
           const keys = paramMap[param];
           if (!keys) return;
@@ -562,15 +655,22 @@ export default {
           lineLabels: labels,
           lineData: datasets,
         };
+
+        // console.log(
+        //   `📊 받은 데이터 수: ${responseData.length}, 필드 수: ${selectedFields.length}`
+        // );
       } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
+        console.error("데이터 가져오기 실패:", error);
+        // 에러 메시지 표시 (optional)
+        if (error.response?.data?.error) {
+          alert(`Error: ${error.response.data.error}`);
+        }
       } finally {
         isLoading.value = false; // ✅ 로딩 종료
       }
     };
-
     const drawEnergyChart = async () => {
-      if (!checkedNames.value || checkedNames.value.length === 0) {       
+      if (!checkedNames.value || checkedNames.value.length === 0) {
         energyOption.value = { lineLabels: [], lineData: [] };
         return;
       }
@@ -580,17 +680,20 @@ export default {
       try {
         let url = `/api/getEnergyTrend/${channel.value}`;
         const response = await axios.get(url, {
-          params:{
+          params: {
             startDate: formatToISOString(props.startdate, 2),
-            endDate : formatToISOString(props.enddate, 3)
-          }
+            endDate: formatToISOString(props.enddate, 3),
+          },
         });
 
-        if (response.data.result){
+        if (response.data.result) {
           const responseData = response.data.data;
           lastDate.value = response.data.date;
           if (!Array.isArray(responseData)) {
-            console.error("Energy 응답 데이터가 배열이 아닙니다:", responseData);
+            console.error(
+              "Energy 응답 데이터가 배열이 아닙니다:",
+              responseData
+            );
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
@@ -644,7 +747,7 @@ export default {
             lineLabels: labels,
             lineData: datasets,
           };
-        }else{
+        } else {
           console.error("Energy API 응답 실패:", response.data);
           energyOption.value = { lineLabels: [], lineData: [] };
         }
@@ -702,7 +805,7 @@ export default {
 
     const drawDiagnosisChart = async () => {
       const effectiveIds = getEffectiveParameterIds();
-      
+
       if (!effectiveIds || effectiveIds.length === 0) {
         option.value = {
           lineLabels: [],
@@ -711,7 +814,7 @@ export default {
         return;
       }
 
-      if(effectiveIds.length > 15){
+      if (effectiveIds.length > 15) {
         alert(t("trend.Linechart.parametercount"));
         return;
       }
@@ -753,7 +856,11 @@ export default {
             }
           });
 
-          if (resData.Thresholds && resData.Thresholds.length > 0 && labels.length > 0) {
+          if (
+            resData.Thresholds &&
+            resData.Thresholds.length > 0 &&
+            labels.length > 0
+          ) {
             const ThresholdString = [
               "Out of Range(Down side)",
               "Repair",
@@ -765,25 +872,34 @@ export default {
               "Out of Range(Upper side)",
             ];
 
-            if(resData.Thresholds[0].Thresholds != null){
+            if (resData.Thresholds[0].Thresholds != null) {
               const thresholdCount = resData.Thresholds[0].Thresholds.length;
-            
+
               for (let idx = 0; idx < thresholdCount; idx++) {
-                const hasValidValue = resData.Thresholds.some(t => {
+                const hasValidValue = resData.Thresholds.some((t) => {
                   const value = t.Thresholds[idx];
-                  return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
+                  return (
+                    value !== "NaN" &&
+                    value !== null &&
+                    value !== undefined &&
+                    typeof value === "number"
+                  );
                 });
 
                 if (!hasValidValue) continue;
 
-                const timeList = resData.Thresholds
-                  .filter(t => {
-                    const value = t.Thresholds[idx];
-                    return value !== "NaN" && value !== null && value !== undefined && typeof value === 'number';
-                  })
-                  .map(t => ({
+                const timeList = resData.Thresholds.filter((t) => {
+                  const value = t.Thresholds[idx];
+                  return (
+                    value !== "NaN" &&
+                    value !== null &&
+                    value !== undefined &&
+                    typeof value === "number"
+                  );
+                })
+                  .map((t) => ({
                     time: new Date(t.XAxis),
-                    value: t.Thresholds[idx]
+                    value: t.Thresholds[idx],
                   }))
                   .sort((a, b) => a.time - b.time);
 
@@ -791,9 +907,9 @@ export default {
 
                 const thresholdData = labels.map((lbl) => {
                   const labelTime = new Date(lbl);
-                  
+
                   let applicableThreshold = timeList[0].value;
-                  
+
                   for (let i = 0; i < timeList.length; i++) {
                     if (labelTime >= timeList[i].time) {
                       applicableThreshold = timeList[i].value;
@@ -801,7 +917,7 @@ export default {
                       break;
                     }
                   }
-                  
+
                   return applicableThreshold;
                 });
 
