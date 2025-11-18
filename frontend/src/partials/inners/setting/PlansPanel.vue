@@ -630,6 +630,18 @@
                     <option :value="1">Sequence Components</option>
                   </select>
                 </div>
+                <div v-if="devMode === 'device2'">
+                  <label class="block text-sm font-medium mb-1.5" for="model"
+                    >DO Alarm Setup</label
+                  >
+                  <select
+                    v-model.number="inputDict.useFuction.useDO"
+                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option :value="1">Enable</option>
+                    <option :value="0">Disable</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

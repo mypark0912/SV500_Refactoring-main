@@ -709,6 +709,7 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
+            <DOAlarmCard v-if="General_inputDict.useFuction.useDO === 1" />
           </div>
         </div>
       </section>
@@ -894,6 +895,7 @@ import NameplateCard from "./NameplateCard.vue";
 import EventCard2 from "./EventCard2.vue";
 import EventCard1 from "./EventCard1.vue";
 import AlarmCard from "./AlarmCard.vue";
+import DOAlarmCard from "./DOAlarmCard.vue";
 import LineChart from "../../../charts/connect/LineChart01_Echart2.vue";
 import { useInputDict } from "@/composables/useInputDict";
 import { settingValidator } from "@/utils/validation.js";
@@ -912,6 +914,7 @@ export default {
     ParamCard,
     AlarmCard,
     LineChart,
+    DOAlarmCard,
   },
   setup(props) {
     const { t } = useI18n();
@@ -1020,7 +1023,7 @@ export default {
         ? inputDict_main.value
         : inputDict_sub.value;
     };
-
+    //console.log('Use DO', General_inputDict.value.useFuction.useDO);
     const isRestartButtonEnabled = computed(() => {
       const currentDict = getInputDict();
       const isChannelEnabled = currentDict.Enable === 1;

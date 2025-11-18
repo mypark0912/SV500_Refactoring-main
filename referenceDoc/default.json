@@ -1,35 +1,38 @@
 {
-	"mode": "device2",
-	"lang": "ko",
+	"mode": "device0",
+	"lang": "en",
 	"General": {
 		"useFuction": {
-			"ftp": false,
-			"sntp": false,
+			"ftp": 0,
+			"sntp": 0,
 			"diagnosis_main": false,
 			"diagnosis_sub": false
 		},
 		"deviceInfo": {
-			"mac_address": "08bfb86e4d5f",
-			"serial_number": "08bfb86e4d5f",
-			"name": "",
+			"mac_address": "",
+			"serial_number": "",
+			"name": "SV-500",
 			"location": ""
 		},
 		"tcpip": {
 			"ip_address": "192.168.2.10",
 			"subnet_mask": "255.255.255.0",
-			"gateway": "192.168.2.1",
+			"gateway": "0.0.0.0",
 			"dnsserver": "8.8.8.8"
 		},
 		"modbus": {
 			"isserial": false,
-			"tcp_port": "502",
-			"modbus_id": "1",
-			"baud_rate": "4",
-			"parity": "0"
+			"tcp_port": 502,
+			"modbus_id": 1,
+			"baud_rate": 0,
+			"parity": 0,
+			"data_bits": 7,
+			"stop_bits": 1,
+			"rtu_use": 0
 		},
-		"demand_interval": "2",
-		"pf_sign":0,
-		"va_type":0,
+		"pf_sign": 0,
+		"va_type": 0,
+		"unbalance": 0,
 		"ftpInfo": {
 			"isManual": false,
 			"host": "192.168.100.100",
@@ -60,10 +63,11 @@
 				"ct1": 100,
 				"ct2": 1,
 				"zctscale": 1000,
-				"zcttpye": 1
+				"zcttpye": 2
 			},
 			"demand": {
-				"target": ""
+				"target": 1,
+				"demand_interval": 15
 			},
 			"ptInfo": {
 				"wiringmode": 1,
@@ -73,9 +77,9 @@
 				"pt2": 220
 			},
 			"assetInfo": {
-				"name": "PowerSupply",
-				"type": "PowerSupply",
-				"nickname": "1차측"
+				"name": "",
+				"type": "",
+				"nickname": ""
 			},
 			"eventInfo": {
 				"oc_action": 0,
@@ -101,21 +105,21 @@
 			},
 			"sampling": {
 				"rate": 8000,
-				"duration": 5,
+				"duration": 10,
 				"period": 5
 			},
 			"n_kva": 0,
 			"trendInfo": {
 				"period": 5,
 				"params": [
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None"
+                    "Frequency",
+                    "Line Voltage",
+                    "Current",
+                    "Power",
+                    "PF",
+                    "Unbalance",
+                    "THD",
+                    "TDD"
 				]
 			},
 			"alarm": {
@@ -332,7 +336,8 @@
 				"zcttpye": 1
 			},
 			"demand": {
-				"target": ""
+				"target": 1,
+				"demand_interval": 15
 			},
 			"ptInfo": {
 				"wiringmode": 1,
@@ -342,9 +347,9 @@
 				"pt2": 220
 			},
 			"assetInfo": {
-				"name": "Transformer",
-				"type": "Transformer",
-				"nickname": "소내변압기"
+				"name": "",
+				"type": "",
+				"nickname": ""
 			},
 			"eventInfo": {
 				"oc_action": 0,
@@ -370,21 +375,21 @@
 			},
 			"sampling": {
 				"rate": 8000,
-				"duration": 5,
+				"duration": 10,
 				"period": 5
 			},
 			"n_kva": "3000",
 			"trendInfo": {
 				"period": 5,
 				"params": [
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None",
-					"None"
+                    "Frequency",
+                    "Line Voltage",
+                    "Current",
+                    "Power",
+                    "PF",
+                    "Unbalance",
+                    "THD",
+                    "TDD"
 				]
 			},
 			"alarm": {

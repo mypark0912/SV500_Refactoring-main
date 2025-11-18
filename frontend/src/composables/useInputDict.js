@@ -10,10 +10,11 @@ export function useInputDict() {
   });
   const inputDict = ref({
     useFuction: {
-      ftp: false,
-      sntp: false,
+      ftp: 0,
+      sntp: 0,
       diagnosis_main: false,
       diagnosis_sub: false,
+      useDO:0,
     },
     deviceInfo: {
       name: "",
