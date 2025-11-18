@@ -165,7 +165,9 @@ export default {
           tooltip: {
             trigger: "axis",
             // ✅ PDF 모드일 때 툴팁 배경/텍스트 색상
-            backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : undefined,
+            backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : darkMode.value 
+                  ? '#000000'  // 다크모드: 기본값 (흰색)
+                  : 'rgba(255, 255, 255, 0.95)', // 라이트모드: 흰색,
             textStyle: {
               color: isPdfMode 
                 ? '#000000' 
