@@ -4,7 +4,7 @@
     
     <DashboardCard04 
       v-if="channelState.MainDiagnosis" 
-      :channel="'sub'" 
+      :channel="assetChannel" 
     />
 
 
@@ -28,9 +28,10 @@
 </template>
 
 <script>
+import { computed } from 'vue';
 import DashboardCard_Meter_Integrated from '../../partials/inners/dashboard/DashboardCard_Meter_Integrated.vue'
 import DashboardCard04 from '../../partials/inners/dashboard/DashboardCard_New2.vue'
-
+import { useSetupStore } from '@/store/setup'; // Pinia Store 
 export default {
   name: 'DualChannelLayout',
   components: {
@@ -49,6 +50,22 @@ export default {
     channelState: {
       type: Object,
       required: true
+    }
+  },
+  setup(props){
+    const setupStore = useSetupStore();
+    //const langset = computed(() => authStore.getLang);
+    const asset = computed(() => setupStore.getAssetConfig);
+    const assetChannel = computed(()=>{
+      if(asset.value.assetType_main == 'Transformer')
+        return 'main';
+      else
+        return 'sub';
+    })
+
+    return {
+      asset,
+      assetChannel,
     }
   }
 }

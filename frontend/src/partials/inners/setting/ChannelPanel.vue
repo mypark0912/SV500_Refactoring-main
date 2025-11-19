@@ -709,7 +709,8 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <DOAlarmCard v-if="General_inputDict.useFuction.useDO === 1" />
+            <DOAlarmCard v-if="!isMotorTyped" :channel="channel" />
+            <AISetting v-if="General_inputDict.useFuction.useAI === 1 && !isMotorTyped" />
           </div>
         </div>
       </section>
@@ -896,6 +897,7 @@ import EventCard2 from "./EventCard2.vue";
 import EventCard1 from "./EventCard1.vue";
 import AlarmCard from "./AlarmCard.vue";
 import DOAlarmCard from "./DOAlarmCard.vue";
+import AISetting from "./AISetting.vue";
 import LineChart from "../../../charts/connect/LineChart01_Echart2.vue";
 import { useInputDict } from "@/composables/useInputDict";
 import { settingValidator } from "@/utils/validation.js";
@@ -915,6 +917,7 @@ export default {
     AlarmCard,
     LineChart,
     DOAlarmCard,
+    AISetting,
   },
   setup(props) {
     const { t } = useI18n();
@@ -1023,7 +1026,14 @@ export default {
         ? inputDict_main.value
         : inputDict_sub.value;
     };
-    //console.log('Use DO', General_inputDict.value.useFuction.useDO);
+    console.log('Use DO',  getInputDict().assetInfo.type);
+    const isMotorTyped = computed(()=>{
+      const currentDict = getInputDict();
+      if(currentDict.assetInfo.type ==='Transformer' || currentDict.assetInfo.type ==='PrimaryTransformer'|| currentDict.assetInfo.type ==='PSupply')
+        return false;
+      else
+        return true;
+    })
     const isRestartButtonEnabled = computed(() => {
       const currentDict = getInputDict();
       const isChannelEnabled = currentDict.Enable === 1;
@@ -1733,6 +1743,7 @@ export default {
       diagnosis_detail,
       selectedbtn,
       handleSelectedbtnUpdate,
+      isMotorTyped,
     };
   },
 };

@@ -631,7 +631,7 @@ const getAssetList = async () => {
         if (storedAssetName && storedAssetType) {
           // checkList에서 해당 타입의 리스트를 찾음
           const assetListOfType = checkList.value[storedAssetType];
-          
+          //console.log('checkList',checkList.value);
           if (assetListOfType && Array.isArray(assetListOfType)) {
             // 해당 타입 리스트에서 이름이 일치하는지 확인
             isStoredAssetFound = assetListOfType.some(
@@ -892,7 +892,7 @@ const createAsset = async () => {
       assetName: assetMode.value.name, //tempAssetName.value,
       assetNickname: assetMode.value.nickname,
     };
-
+    console.log(payload);
     const response = await axios.post("/setting/createAsset", payload, {
       headers: { "Content-Type": "application/json" },
     });

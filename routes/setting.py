@@ -2069,32 +2069,61 @@ async def get_assetconfig(asset, request:Request):
     else:
         return {"success": False, "error": "No Data"}
 
+
 @router.post("/checkAssetConfig/{asset}")
-async def check_assetconfig(asset:str, request:Request):
+async def check_assetconfig(asset: str, request: Request):
     data = await request.json()
     if not data:
         return {"status": "0", "error": "No data provided"}
-    try:
-        # response = await  http_state.client.post(f"/checkNameplate?name={asset}", json=data)
-        # result = response.json()
-        async with httpx.AsyncClient(timeout=setting_timeout) as client:
-            response = await client.post(f"http://{os_spec.restip}:5000/api/checkNameplate?name={asset}", json=data)
-            result = response.json()
-        #     if 'status' in result and result['status'] == 500:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.post(f"http://{os_spec.restip}:5000/api/setNameplate?name={asset}", json=data)
-        #             result = response.json()
-    except Exception as e:
-        print("Error:", e)
-        return {"status": "0", "error": str(e)}
 
-    if len(result) > 0:
-        return {"success":True, "result":result['resetRequired']}
-    else:
-        return {"success": False, "error": "No Data"}
+    try:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.post(
+                f"http://{os_spec.restip}:5000/api/checkNameplate?name={asset}",
+                json=data
+            )
+            result = response.json()
+
+        # ✅ 응답 체크
+        if 'resetRequired' in result:
+            return {"success": True, "result": result['resetRequired']}
+        else:
+            return {"success": False, "error": "resetRequired field not found in response"}
+
+    except Exception as e:
+        logging.info(str(e))
+        return {"success": False, "error": str(e)}
+
+# @router.post("/checkAssetConfig/{asset}")
+# async def check_assetconfig(asset:str, request:Request):
+#     data = await request.json()
+#     if not data:
+#         return {"status": "0", "error": "No data provided"}
+#     try:
+#         # response = await  http_state.client.post(f"/checkNameplate?name={asset}", json=data)
+#         # result = response.json()
+#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
+#             response = await client.post(f"http://{os_spec.restip}:5000/api/checkNameplate?name={asset}", json=data)
+#             result = response.json()
+#         #     if 'status' in result and result['status'] == 500:
+#         #         flag = await checkLoginAPI(request)
+#         #         if not flag:
+#         #             return {"success": False, "error": "Restful API Login Failed"}
+#         #         else:
+#         #             response = await client.post(f"http://{os_spec.restip}:5000/api/setNameplate?name={asset}", json=data)
+#         #             result = response.json()
+#     except Exception as e:
+#         print("Error:", e)
+#         return {"status": "0", "error": str(e)}
+#
+#     if 'resetRequired' in result:
+#         return {"success":True, "result":result['resetRequired']}
+#     else:
+#         return {"success": False, "error": "No Data"}
+    # if len(result) > 0:
+    #     return {"success":True, "result":result['resetRequired']}
+    # else:
+    #     return {"success": False, "error": "No Data"}
 
 @router.post("/setAssetConfig/{asset}")
 async def set_assetconfig(asset:str, request:Request):

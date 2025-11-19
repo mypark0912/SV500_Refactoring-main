@@ -1,5 +1,5 @@
 // composables/useInputDict.js
-import { ref, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 
 export function useInputDict() {
   const setupDict = ref({
@@ -15,6 +15,7 @@ export function useInputDict() {
       diagnosis_main: false,
       diagnosis_sub: false,
       useDO:0,
+      useAI:0,
     },
     deviceInfo: {
       name: "",
@@ -58,7 +59,18 @@ export function useInputDict() {
       host: "",
       // period: "",
       timezone: "",
+    }
+  });
+
+  const status_Info = reactive({
+    "Main":{
+      "diagnosis":[],
+      "pq":[]
     },
+    "Sub":{
+      "diagnosis":[],
+      "pq":[]
+    }
   });
 
   const diagnosis_detail = ref({
@@ -355,5 +367,6 @@ export function useInputDict() {
     selectedTrendSetup,
     changeDiagnosis,
     diagnosis_detail,
+    status_Info,
   };
 }

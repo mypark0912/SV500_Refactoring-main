@@ -601,6 +601,7 @@ export default {
       currentDiagnosis,
       changeDiagnosis,
       diagnosis_detail,
+      status_Info,
     } = useInputDict();
 
     const devMode = computed(() => authStore.getOpMode);
@@ -1078,8 +1079,11 @@ export default {
           Object.assign(inputDict.value, setupDict.value["General"]);
           Object.assign(channel_main.value, setupDict.value["main"]);
           Object.assign(channel_sub.value, setupDict.value["sub"]);
+          if ('status_Info' in setupDict.value) {
+            Object.assign(status_Info, setupDict.value["status_Info"]);
+          }
           setupStore.setsetupFromFile(true);
-          //console.log(setupDict.value);
+          //console.log(status_Info);
         }
       } catch (error) {
         console.error("데이터 가져오기 실패:", error);
@@ -1238,6 +1242,14 @@ export default {
         const subResult = await saveChannelData(channel_sub.value, "Sub");
         if (!subResult.success) {
           errorMessages.push(`Sub Channel: ${subResult.error}`);
+        }
+        console.log(devMode.value)
+        console.log(status_Info);
+        if(devMode.value == 'device2'){
+          const statusResult = await saveStatusData(status_Info);
+            if (!statusResult.success) {
+              errorMessages.push(`Status Info: ${statusResult.error}`);
+            }
         }
 
         // === 5. 결과 알림 ===
@@ -1656,7 +1668,7 @@ export default {
             data.eventInfo[key] = parseInt(value);
           }
         }
-
+        //console.log('save channel', data);
         const response = await axios.post(
           `/setting/savefile/${channelName}`,
           data,
@@ -1683,6 +1695,25 @@ export default {
       }
     };
 
+    const saveStatusData = async (statusData) => {
+        const sendData = {...statusData}
+        const response = await axios.post(
+          `/setting/savefile/status`,
+          sendData,
+          {
+            headers: { "Content-Type": "application/json;charset=utf-8" },
+            withCredentials: true,
+          }
+        );
+        if (response.data && response.data["status"] === "1") {
+          return { success: true };
+        } else {
+          const errorMsg =
+            response.data?.error || `${channelName} StatusSetting save failed`;
+          return { success: false, error: errorMsg };
+        }
+    };
+
     onMounted(() => {
       GetSettingData();
     });
@@ -1700,6 +1731,7 @@ export default {
     provide("checkNameplateflag", checkNameplateflag);
     provide("diagnosis_detail", diagnosis_detail);
     provide("GetSettingData", GetSettingData);
+    provide("status_Info", status_Info);
 
     return {
       sidebarOpen,

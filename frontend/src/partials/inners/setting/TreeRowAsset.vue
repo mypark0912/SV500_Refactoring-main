@@ -128,6 +128,7 @@ function emitCheckChange(payload) {
     if (props.item.isExpanded) {
       expanded.value = true;
     }
+    //console.log(props.item);
   });
   
   </script>
