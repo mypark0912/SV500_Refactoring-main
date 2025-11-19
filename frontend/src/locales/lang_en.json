@@ -650,6 +650,7 @@
             "title_1":"Main Channel Clear Command",
             "title_2":"Sub Channel Clear Command",
             "title_3":"Settings",
+            "title_4":"Backup / Software Update",
             "demand":"Demand",
             "minmax":"MaxMin",
             "energy":"Energy",
