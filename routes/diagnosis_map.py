@@ -2,263 +2,107 @@ from enum import IntEnum
 from typing import Dict, List
 
 
-class EquipmentType(IntEnum):
-    NONE = 0
-    COMPRESSOR = 1
-    FAN = 2
-    PUMP = 3
-    MOTOR = 4
-    POWER_SUPPLY = 5
-    TRANSFORMER = 6
-    MOTORFEED = 7
-    PRIMARYTRANSFORMER = 8
+class DiagnosisStatus(IntEnum):
+    """진단 상태 우선순위 (높을수록 심각)"""
+    OK = 0
+    INFORMATION = 1
+    WARNING = 2
+    INSPECT = 3
+    REPAIR = 4
 
 
-class AlarmCategory(IntEnum):
-    DIAGNOSIS = 0
-    PQ = 1
-    FAULTS = 2
-    EVENTS = 3
-
-
-# Component to field name mapping
-DIAGNOSIS_COMPONENTS = {
-    EquipmentType.COMPRESSOR: [
-        "Turbulence_CMP",
-        "MechanicalUnbalance_MDE",
-        "SoftFoot_MDE",
-        "TorqueRipple_MOT",
-        "Load_MFD",
-        "CableConnection_MFD",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL",
-        "Rotor_ROT",
-        "Stator_STA",
-        "Bearing_MIB",
-        "DCLink_MFD"
-    ],
-    EquipmentType.FAN: [
-        "Turbulence_FAN",
-        "MechanicalUnbalance_MDE",
-        "SoftFoot_MDE",
-        "TorqueRipple_MOT",
-        "Load_MFD",
-        "CableConnection_MFD",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL",
-        "Rotor_ROT",
-        "Stator_STA",
-        "Bearing_MIB",
-        "DCLink_MFD"
-    ],
-    EquipmentType.PUMP: [
-        "Cavitation_PMP",
-        "MechanicalUnbalance_MDE",
-        "SoftFoot_MDE",
-        "TorqueRipple_MOT",
-        "Load_MFD",
-        "CableConnection_MFD",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL",
-        "Rotor_ROT",
-        "Stator_STA",
-        "Bearing_MIB",
-        "DCLink_MFD"
-    ],
-    EquipmentType.MOTOR: [
-        "TorqueRipple_MOT",
-        "MechanicalUnbalance_MOT",
-        "SoftFoot_MOT",
-        "Load_MFD",
-        "CableConnection_MFD",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL",
-        "Rotor_ROT",
-        "Stator_STA",
-        "Bearing_MIB",
-        "DCLink_MFD"
-    ],
-    EquipmentType.MOTORFEED: [
-        "Load_MFD",
-        "CableConnection_MFD",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL",
-        "DCLink_MFD"
-    ],
-    EquipmentType.POWER_SUPPLY: [
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL"
-    ],
-    EquipmentType.TRANSFORMER: [
-        "Core_TRA",
-        "Load_TRA",
-        "GroundFaultD_TRA",
-        "Capacitor_PTR",
-        "TapChanger_PTR",
-        "Bushings_PTR",
-        "Stress_PTR",
-        "LoadUnbalance_PTR",
-        "CableConnection_PTR",
-        "Winding_PTR",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL"
-    ],
-    EquipmentType.PRIMARYTRANSFORMER: [
-        "Capacitor_PTR",
-        "TapChanger_PTR",
-        "Bushings_PTR",
-        "Stress_PTR",
-        "LoadUnbalance_PTR",
-        "CableConnection_PTR",
-        "Winding_PTR",
-        "NoiseVibration_PWS",
-        "Heat_PWS",
-        "IncomingVoltage_VOL"
-    ]
-}
-
-PQ_COMPONENTS = [
-    "VoltagePhaseAngle",
-    "CurrentRMS",
-    "CrestFactor",
-    "Unbalance",
-    "Harmonics",
-    "ZeroSequence",
-    "NegativeSequence",
-    "CurrentPhaseAngle",
-    "PhaseAngle",
-    "PowerFactor",
-    "TotalDemandDistortion",
-    "Power",
-    "VoltageRMS",
-    "DC",
-    "Events"
-]
-
-FAULTS_COMPONENTS = [
-    "PhaseOrder",
-    "NoLoad",
-    "OverCurrent",
-    "CF",
-    "NoPower",
-    "OverVoltage",
-    "UnderVoltage",
-    "LowFrequency",
-    "VF"
-]
-
-EVENTS_COMPONENTS = [
-    "TransientCurrentEvent",
-    "OverCurrentEvent",
-    "UnderCurrentEvent",
-    "SagEvent",
-    "SwellEvent",
-    "InterruptionEvent",
-    "TransientVoltageEvent"
-]
-
-
-class AlarmConfig:
-    """알람 설정을 관리하는 클래스"""
+class AlarmStatusMatcher:
+    """status_info와 API 응답을 매칭하여 최종 진단 상태를 결정"""
 
     def __init__(self):
-        self.diagnosis_alarms: Dict[str, int] = {}
-        self.pq_alarms: Dict[str, int] = {}
-        self.faults_alarms: Dict[str, int] = {}
-        self.events_alarms: Dict[str, int] = {}
+        pass
 
-    def set_diagnosis_alarm(self, component: str, level: int):
-        """진단 알람 설정 (level: -1=disabled, 0=OK, 1=Warning, 2=Alarm, 3=Danger)"""
-        self.diagnosis_alarms[component] = level
+    def _normalize_name(self, name: str) -> str:
+        """이름 정규화 (공백 제거, 소문자)"""
+        return name.replace(" ", "").lower()
 
-    def set_pq_alarm(self, component: str, level: int):
-        """PQ 알람 설정"""
-        self.pq_alarms[component] = level
+    def parse_status_info(self, status_info: Dict) -> Dict[str, int]:
 
-    def set_faults_alarm(self, component: str, level: int):
-        """Faults 알람 설정"""
-        self.faults_alarms[component] = level
+        config = {}
 
-    def set_events_alarm(self, component: str, level: int):
-        """Events 알람 설정"""
-        self.events_alarms[component] = level
+        # Diagnosis 파싱
+        if "diagnosis" in status_info:
+            for item in status_info["diagnosis"]:
+                name = self._normalize_name(item["name"])
+                config[name] = item["level"]
 
-    def get_enabled_diagnosis_components(self, equipment_type: EquipmentType) -> List[str]:
-        """활성화된 진단 컴포넌트 리스트 반환"""
-        components = DIAGNOSIS_COMPONENTS.get(equipment_type, [])
-        return [c for c in components if self.diagnosis_alarms.get(c, -1) >= 0]
+        # PQ 파싱
+        if "pq" in status_info:
+            for item in status_info["pq"]:
+                name = self._normalize_name(item["name"])
+                config[name] = item["level"]
 
-    def get_alarm_level(self, category: AlarmCategory, component: str) -> int:
-        """특정 컴포넌트의 알람 레벨 반환"""
-        if category == AlarmCategory.DIAGNOSIS:
-            return self.diagnosis_alarms.get(component, -1)
-        elif category == AlarmCategory.PQ:
-            return self.pq_alarms.get(component, -1)
-        elif category == AlarmCategory.FAULTS:
-            return self.faults_alarms.get(component, -1)
-        elif category == AlarmCategory.EVENTS:
-            return self.events_alarms.get(component, -1)
-        return -1
+        return config
 
-    def from_dict(self, data: Dict):
-        """프론트엔드에서 받은 데이터로 설정"""
-        if "Diagnosis" in data:
-            for component, level in data["Diagnosis"].items():
-                self.diagnosis_alarms[component] = level
-        if "PQ" in data:
-            for component, level in data["PQ"].items():
-                self.pq_alarms[component] = level
-        if "Faults" in data:
-            for component, level in data["Faults"].items():
-                self.faults_alarms[component] = level
-        if "Events" in data:
-            for component, level in data["Events"].items():
-                self.events_alarms[component] = level
+    def parse_api_response(self, bar_graph: List[Dict]) -> Dict[str, int]:
+        result = {}
+        for item in bar_graph:
+            name = item.get("Name")
+            status = item.get("Status", 0)
+            if name:
+                normalized_name = self._normalize_name(name)
+                result[normalized_name] = status
+        return result
 
-    def to_dict(self) -> Dict:
-        """딕셔너리로 변환"""
+    def calculate_final_status(
+            self,
+            status_config: Dict[str, int],
+            api_response: Dict[str, int]
+    ) -> tuple[int, List[Dict]]:
+        matched_statuses = []
+        max_status = DiagnosisStatus.OK
+
+        for name, configured_level in status_config.items():
+            actual_status = api_response.get(name)
+
+            # API 응답에 해당 Name이 있고, 레벨 이상이면
+            if actual_status is not None and actual_status >= configured_level:
+                matched_statuses.append({
+                    "name": name,
+                    "configured_level": configured_level,
+                    "actual_status": actual_status,
+                    "triggered": True
+                })
+
+                if actual_status > max_status:
+                    max_status = actual_status
+
+        return max_status, matched_statuses
+
+    def get_status_name(self, status: int) -> str:
+        """상태 코드를 문자열로 변환"""
+        status_map = {
+            0: "NoData",
+            1: "OK",
+            2: "Warning",
+            3: "Inspect",
+            4: "Repair"
+        }
+        return status_map.get(status, "Unknown")
+
+    def diagnose(
+            self,
+            status_info: Dict,
+            bar_graph: List[Dict]
+    ) -> Dict:
+        # 설정 파싱
+        config = self.parse_status_info(status_info)
+
+        # API 응답 파싱
+        response = self.parse_api_response(bar_graph)
+
+        # 최종 상태 계산
+        final_status, matched = self.calculate_final_status(config, response)
+
         return {
-            "Diagnosis": self.diagnosis_alarms,
-            "PQ": self.pq_alarms,
-            "Faults": self.faults_alarms,
-            "Events": self.events_alarms
+            "final_status": final_status,
+            "status_name": self.get_status_name(final_status),
+            "matched_parameters": matched,
+            "total_configured": len(config),
+            "total_matched": len(matched)
         }
-
-
-# 사용 예시
-def example_usage():
-    # 프론트엔드에서 받은 데이터
-    frontend_data = {
-        "Diagnosis": {
-            "Turbulence_CMP": 2,  # Alarm level
-            "Load_MFD": 1,  # Warning level
-            "Rotor_ROT": -1  # Disabled
-        },
-        "PQ": {
-            "VoltageRMS": 2,
-            "CurrentRMS": 1
-        }
-    }
-
-    # AlarmConfig 생성 및 설정
-    # config = AlarmConfig()
-    # config.from_dict(frontend_data)
-    #
-    # # 특정 장비 타입의 활성화된 컴포넌트 확인
-    # enabled = config.get_enabled_diagnosis_components(EquipmentType.COMPRESSOR)
-    # print(f"Enabled components: {enabled}")
-    #
-    # # 특정 컴포넌트의 알람 레벨 확인
-    # level = config.get_alarm_level(AlarmCategory.DIAGNOSIS, "Turbulence_CMP")
-    # print(f"Turbulence_CMP alarm level: {level}")
-    #
-    # # 딕셔너리로 변환
-    # result = config.to_dict()
-    # print(result)

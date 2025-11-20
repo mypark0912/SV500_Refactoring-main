@@ -1763,6 +1763,37 @@ async def reg_Asset(channel, assetName, assetType):
     else:
         return {"success":False}
 
+
+def save_alarm_configs_to_redis(setting_dict: dict):
+    dash_alarms_data = {}
+
+    # 각 채널 순회
+    for channel_config in setting_dict.get("channel", []):
+        channel_name = channel_config.get("channel")
+        asset_info = channel_config.get("assetInfo", {})
+        status_info = channel_config.get("status_Info", {})
+        use_do = channel_config.get("useDO", 0)  # 채널별 useDO
+
+        if not channel_name:
+            continue
+
+        # useDO가 0이면 해당 채널은 저장하지 않음 (기존 로직 사용)
+        if use_do == 0:
+            continue
+
+        # 채널별 DashAlarms 데이터
+        dash_alarms_data[channel_name] = {
+            "assetType": asset_info.get("type", ""),
+            "assetName": asset_info.get("name", ""),
+            "assetNickName": asset_info.get("nickname", ""),
+            "diagnosis": status_info.get("diagnosis", []),
+            "pq": status_info.get("pq", [])
+        }
+
+    return dash_alarms_data
+
+
+
 def initialize_alarm_configs(channel, alams):
     rediskey = f"alarm_status:{channel}"
     alarmdict = {}
@@ -1860,9 +1891,13 @@ async def saveSetting(channel: str, request: Request):
 
         redis_state.client.select(0)
         saveCurrent = saveStartCurrent(setting)
+        dash_alarms_data = save_alarm_configs_to_redis(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
-
+        if dash_alarms_data:
+            redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
+        else:
+            redis_state.client.hdel("Equipment", "DashAlarms")
         return {"status": "1", "data": setting}
     except Exception as e:
         print("Error:", e)

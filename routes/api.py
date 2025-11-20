@@ -12,6 +12,7 @@ from .redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
 from .RedisBinary import RedisDataType
 from .DemandMap import DemandDataFormatter
 from .util import is_service_active
+from. diagnosis_map import AlarmStatusMatcher
 from concurrent.futures import ThreadPoolExecutor
 import asyncio, math
 
@@ -972,108 +973,149 @@ async def get_diagnosis(asset, request: Request):
         return {"success": False, "error": "No Data"}
 
 
-@router.get("/getStatuscached/{asset}/{channel}")
-@gc_after_large_data(threshold_mb=30)
-async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
-    """
-    진단 데이터 조회 - Redis 우선, 없으면 API 호출
-    """
-    redis_state.client.select(1)
-    if channel == 'main' or channel == 'Main':
-        chName = 'Main'
-    else:
-        chName = 'Sub'
-    cache_key = f"SmartAPI:{chName}"
-    cache_field = "Diagnosis"
-    data = None  # datas -> data로 통일
-
-    # 1. Redis에서 조회
-    try:
-        # redis_state.client.select(1)
-        cached_data = redis_state.client.hget(cache_key, cache_field)
-        if cached_data:
-            data = json.loads(cached_data)  # ✅ 조회한 데이터 사용
-            print(f"[Redis HIT] Data found for {chName}")
-    except Exception as e:
-        print(f"[Redis Error] {e}")
-
-    # 2. Redis에 없으면 API 호출
-    if data is None:  # ✅ datas -> data
-        try:
-            print(f"[API CALL] Fetching data for {asset}")
-            async with httpx.AsyncClient(timeout=api_timeout) as client:
-                response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
-                data = response.json()
-
-            #API에서 가져온 데이터 Redis에 저장
-            # if data:  # ✅ datas -> data
-            #     try:
-            #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))  # ✅ data 저장
-            #         print(f"[Redis SAVE] Data saved for {chName}")
-            #     except Exception as e:
-            #         print(f"[Redis Save Error] {e}")
-
-        except Exception as e:
-            return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
-
-    # 3. 데이터 처리 및 반환
-    if data and len(data) > 0:
-        runhours = get_running(channel)["total"]
-        updateTimes = data["LastRecordDateTime"]
-        # BarGraph가 있는지 확인
-        if "BarGraph" not in data or len(data["BarGraph"]) == 0:
-            return {"status": -1, "runhours": runhours}
-
-        # Status 추출
-        status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
-
-        # 상태 판단
-        if not status_list:
-            return {"status": 0, "runhours": runhours}
-
-        if all(status == 1 for status in status_list):
-            return {"status": 1, "runhours": runhours}
-
-        if all(status == 0 for status in status_list):
-            return {"status": 0, "runhours": runhours}
-
-        # 우선순위 체크
-        for priority_status in [4, 3, 2, 1]:
-            if priority_status in status_list:
-                return {"status": priority_status, "runhours": runhours, "updateTime": updateTimes}
-
-        return {"status": -2, "runhours": runhours, "updateTime": updateTimes}
-    else:
-        return {"success": False, "error": "No Data"}
+# @router.get("/getStatuscached/{asset}/{channel}")
+# @gc_after_large_data(threshold_mb=30)
+# async def getStatus_cached(asset, channel):  # 파라미터 순서 수정
+#     """
+#     진단 데이터 조회 - Redis 우선, 없으면 API 호출
+#     """
+#     redis_state.client.select(1)
+#     if channel == 'main' or channel == 'Main':
+#         chName = 'Main'
+#     else:
+#         chName = 'Sub'
+#     cache_key = f"SmartAPI:{chName}"
+#     cache_field = "Diagnosis"
+#     data = None  # datas -> data로 통일
+#
+#     # 1. Redis에서 조회
+#     try:
+#         # redis_state.client.select(1)
+#         cached_data = redis_state.client.hget(cache_key, cache_field)
+#         if cached_data:
+#             data = json.loads(cached_data)  # ✅ 조회한 데이터 사용
+#             print(f"[Redis HIT] Data found for {chName}")
+#     except Exception as e:
+#         print(f"[Redis Error] {e}")
+#
+#     # 2. Redis에 없으면 API 호출
+#     if data is None:  # ✅ datas -> data
+#         try:
+#             print(f"[API CALL] Fetching data for {asset}")
+#             async with httpx.AsyncClient(timeout=api_timeout) as client:
+#                 response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
+#                 data = response.json()
+#
+#             #API에서 가져온 데이터 Redis에 저장
+#             # if data:  # ✅ datas -> data
+#             #     try:
+#             #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))  # ✅ data 저장
+#             #         print(f"[Redis SAVE] Data saved for {chName}")
+#             #     except Exception as e:
+#             #         print(f"[Redis Save Error] {e}")
+#
+#         except Exception as e:
+#             return {"success": False, "error": f"Failed to fetch data: {str(e)}"}
+#
+#     # 3. 데이터 처리 및 반환
+#     if data and len(data) > 0:
+#         runhours = get_running(channel)["total"]
+#         updateTimes = data["LastRecordDateTime"]
+#         # BarGraph가 있는지 확인
+#         if "BarGraph" not in data or len(data["BarGraph"]) == 0:
+#             return {"status": -1, "runhours": runhours}
+#
+#         # Status 추출
+#         status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
+#
+#         # 상태 판단
+#         if not status_list:
+#             return {"status": 0, "runhours": runhours}
+#
+#         if all(status == 1 for status in status_list):
+#             return {"status": 1, "runhours": runhours}
+#
+#         if all(status == 0 for status in status_list):
+#             return {"status": 0, "runhours": runhours}
+#
+#         # 우선순위 체크
+#         for priority_status in [4, 3, 2, 1]:
+#             if priority_status in status_list:
+#                 return {"status": priority_status, "runhours": runhours, "updateTime": updateTimes}
+#
+#         return {"status": -2, "runhours": runhours, "updateTime": updateTimes}
+#     else:
+#         return {"success": False, "error": "No Data"}
+#
 
 @router.get("/getStatus/{asset}/{channel}")  # Master Dashboard Status
 @gc_after_large_data(threshold_mb=30)
 async def getStatus(asset, channel):
     try:
-        # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
-        # data = response.json()
+        # 1. API에서 진단 데이터 가져오기
         async with httpx.AsyncClient(timeout=api_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
-            data = response.json()  # JSON 데이터 파싱
-        #     if response.status_code in [400, 401, 500]:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
-        #             data = response.json()  # JSON 데이터 파싱
+            data = response.json()
+
+        # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_data = redis_state.client.hget("Equipment", "DashAlarms")
+
+        # 설정이 없으면 기존 로직 사용
+        if not redis_data:
+            return await getStatus_legacy(data, channel)
+
+        dash_alarms = json.loads(redis_data)
+        channel_config = dash_alarms.get(channel)
+
+        # 해당 채널 설정이 없으면 기존 로직 사용
+        if not channel_config:
+            return await getStatus_legacy(data, channel)
+
+        if not channel_config.get("diagnosis"):
+            return await getStatus_legacy(data, channel)
+
     except Exception as e:
         print(str(e))
-        return {"status": -1}
-    runhours = get_running(channel)["total"]
-    # success가 True인지 확인
-    if len(data) == 0:
+        runhours = get_running(channel)["total"]
         return {"status": -1, "runhours": runhours}
 
-    # "data" 항목이 존재하는지 확인
-    status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
+    runhours = get_running(channel)["total"]
 
-    # print(status_list)
+    # 데이터 검증
+    if not data or not isinstance(data, dict):
+        return {"status": -1, "runhours": runhours}
+
+    bar_graph = data.get("BarGraph", [])
+    if not bar_graph:
+        return {"status": 0, "runhours": runhours}
+
+    # 3. AlarmStatusMatcher로 진단 계산
+    try:
+        alarm_matcher = AlarmStatusMatcher()
+        status_info = {
+            "diagnosis": channel_config.get("diagnosis", []),
+            "pq": channel_config.get("pq", [])
+        }
+
+        result = alarm_matcher.diagnose(status_info, bar_graph)
+        final_status = result["final_status"]
+
+        return {"status": final_status, "runhours": runhours}
+
+    except Exception as e:
+        print(f"AlarmStatusMatcher error: {str(e)}")
+        # 에러 시 기존 로직으로 fallback
+        return await getStatus_legacy(data, channel)
+
+
+async def getStatus_legacy(data, channel):
+    """기존 로직 (fallback용)"""
+    runhours = get_running(channel)["total"]
+
+    if not data or not isinstance(data, dict):
+        return {"status": -1, "runhours": runhours}
+
+    status_list = [item["Status"] for item in data.get("BarGraph", []) if "Status" in item]
 
     # 모든 값이 1이면 "OK"
     if all(status == 1 for status in status_list):
@@ -1095,102 +1137,207 @@ async def getStatus(asset, channel):
     else:
         return {"status": -2, "runhours": runhours}
 
+# @router.get("/getStatus/{asset}/{channel}")  # Master Dashboard Status
+# @gc_after_large_data(threshold_mb=30)
+# async def getStatus(asset, channel):
+#     try:
+#         # response = await  http_state.client.get(f"/getDiagnostic?name={asset}")
+#         # data = response.json()
+#         async with httpx.AsyncClient(timeout=api_timeout) as client:
+#             response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
+#             data = response.json()  # JSON 데이터 파싱
+#         #     if response.status_code in [400, 401, 500]:
+#         #         flag = await checkLoginAPI(request)
+#         #         if not flag:
+#         #             return {"success": False, "error": "Restful API Login Failed"}
+#         #         else:
+#         #             response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
+#         #             data = response.json()  # JSON 데이터 파싱
+#     except Exception as e:
+#         print(str(e))
+#         return {"status": -1}
+#     runhours = get_running(channel)["total"]
+#     # success가 True인지 확인
+#     if len(data) == 0:
+#         return {"status": -1, "runhours": runhours}
+#
+#     # "data" 항목이 존재하는지 확인
+#     status_list = [item["Status"] for item in data["BarGraph"] if "Status" in item]
+#
+#     # print(status_list)
+#
+#     # 모든 값이 1이면 "OK"
+#     if all(status == 1 for status in status_list):
+#         return {"status": 1, "runhours": runhours}
+#
+#     # 모든 값이 0이면 "No Data"
+#     if all(status == 0 for status in status_list):
+#         return {"status": 0, "runhours": runhours}
+#
+#     # 우선순위: Repair(4) > Inspect(3) > Warning(2)
+#     if 4 in status_list:
+#         return {"status": 4, "runhours": runhours}
+#     elif 3 in status_list:
+#         return {"status": 3, "runhours": runhours}
+#     elif 2 in status_list:
+#         return {"status": 2, "runhours": runhours}
+#     elif 1 in status_list:
+#         return {"status": 1, "runhours": runhours}
+#     else:
+#         return {"status": -2, "runhours": runhours}
 
-@router.get("/getPQStatusCached/{asset}/{channel}")
+
+# @router.get("/getPQStatusCached/{asset}/{channel}")
+# @gc_after_large_data(threshold_mb=30)
+# async def getPQStatus_cached(asset, channel):
+#     redis_state.client.select(1)
+#     if channel == 'main' or channel == 'Main':
+#         chName = 'Main'
+#     else:
+#         chName = 'Sub'
+#     cache_key = f"SmartAPI:{chName}"
+#     cache_field = "PQ"
+#     data = None
+#
+#     # 1. Redis에서 조회
+#     try:
+#         # redis_state.client.select(1)
+#         cached_data = redis_state.client.hget(cache_key, cache_field)
+#         if cached_data:
+#             data = json.loads(cached_data)
+#             print(f"[Redis HIT] PQ data found for {chName}")
+#     except Exception as e:
+#         print(f"[Redis Error] {e}")
+#
+#     # 2. Redis에 없으면 API 호출
+#     if data is None:
+#         try:
+#             print(f"[API CALL] Fetching PQ data for {asset}")
+#             async with httpx.AsyncClient(timeout=api_timeout) as client:
+#                 response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
+#                 data = response.json()
+#
+#             # ✅ Redis에 저장 (빠진 부분 추가!)
+#             # if data:
+#             #     try:
+#             #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
+#             #         print(f"[Redis SAVE] PQ data saved for {channel}")
+#             #     except Exception as e:
+#             #         print(f"[Redis Save Error] {e}")
+#
+#         except Exception as e:
+#             return {"status": -1}
+#
+#     # 3. 데이터 처리 (기존 로직 그대로)
+#     if not data or len(data) == 0:
+#         return {"status": -1}
+#
+#     status_items = [
+#         {"Title": item["Title"], "Status": item["Status"]}
+#         for item in data.get("BarGraph", [])
+#         if "Status" in item and "Title" in item
+#     ]
+#     updateTimes = data["LastRecordDateTime"]
+#
+#     if not status_items:
+#         return {"status": -2}
+#
+#     if all(item["Status"] == 0 for item in status_items):
+#         return {"status": 0, "item": "All"}
+#
+#     if all(item["Status"] == 1 for item in status_items):
+#         return {"status": 1, "item": "All"}
+#
+#     sorted_items = sorted(status_items, key=lambda x: x["Status"], reverse=True)
+#     highest_status = sorted_items[0]["Status"]
+#     top_items = [item for item in sorted_items if item["Status"] == highest_status]
+#
+#     if len(top_items) == 1:
+#         item_label = top_items[0]["Title"]
+#     elif len(top_items) == 2:
+#         item_label = f"{top_items[0]['Title']}, {top_items[1]['Title']}"
+#     else:
+#         item_label = f"{top_items[0]['Title']} ... +{len(top_items) - 1}"
+#
+#     return {"status": highest_status, "item": item_label, "updateTime": updateTimes}
+
+
+@router.get("/getPQStatus/{asset}/{channel}")  # Master Dashboard PQ Status
 @gc_after_large_data(threshold_mb=30)
-async def getPQStatus_cached(asset, channel):
-    redis_state.client.select(1)
-    if channel == 'main' or channel == 'Main':
-        chName = 'Main'
-    else:
-        chName = 'Sub'
-    cache_key = f"SmartAPI:{chName}"
-    cache_field = "PQ"
-    data = None
-
-    # 1. Redis에서 조회
+async def getPQStatus(asset, channel, request: Request):
     try:
-        # redis_state.client.select(1)
-        cached_data = redis_state.client.hget(cache_key, cache_field)
-        if cached_data:
-            data = json.loads(cached_data)
-            print(f"[Redis HIT] PQ data found for {chName}")
-    except Exception as e:
-        print(f"[Redis Error] {e}")
-
-    # 2. Redis에 없으면 API 호출
-    if data is None:
-        try:
-            print(f"[API CALL] Fetching PQ data for {asset}")
-            async with httpx.AsyncClient(timeout=api_timeout) as client:
-                response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
-                data = response.json()
-
-            # ✅ Redis에 저장 (빠진 부분 추가!)
-            # if data:
-            #     try:
-            #         redis_state.client.hset(cache_key, cache_field, json.dumps(data, ensure_ascii=False))
-            #         print(f"[Redis SAVE] PQ data saved for {channel}")
-            #     except Exception as e:
-            #         print(f"[Redis Save Error] {e}")
-
-        except Exception as e:
-            return {"status": -1}
-
-    # 3. 데이터 처리 (기존 로직 그대로)
-    if not data or len(data) == 0:
-        return {"status": -1}
-
-    status_items = [
-        {"Title": item["Title"], "Status": item["Status"]}
-        for item in data.get("BarGraph", [])
-        if "Status" in item and "Title" in item
-    ]
-    updateTimes = data["LastRecordDateTime"]
-
-    if not status_items:
-        return {"status": -2}
-
-    if all(item["Status"] == 0 for item in status_items):
-        return {"status": 0, "item": "All"}
-
-    if all(item["Status"] == 1 for item in status_items):
-        return {"status": 1, "item": "All"}
-
-    sorted_items = sorted(status_items, key=lambda x: x["Status"], reverse=True)
-    highest_status = sorted_items[0]["Status"]
-    top_items = [item for item in sorted_items if item["Status"] == highest_status]
-
-    if len(top_items) == 1:
-        item_label = top_items[0]["Title"]
-    elif len(top_items) == 2:
-        item_label = f"{top_items[0]['Title']}, {top_items[1]['Title']}"
-    else:
-        item_label = f"{top_items[0]['Title']} ... +{len(top_items) - 1}"
-
-    return {"status": highest_status, "item": item_label, "updateTime": updateTimes}
-
-@router.get("/getPQStatus/{asset}")  # Master Dashboard Status
-@gc_after_large_data(threshold_mb=30)
-async def getPQStatus(asset, request: Request):
-    try:
-        # response = await  http_state.client.get(f"/getPQ?name={asset}")
-        # data = response.json()
+        # 1. API에서 PQ 데이터 가져오기
         async with httpx.AsyncClient(timeout=api_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
-            data = response.json()  # JSON 데이터 파싱
-        #     if response.status_code in [400, 401, 500]:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
-        #             data = response.json()  # JSON 데이터 파싱
+            data = response.json()
+
+        # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_data = redis_state.client.hget("Equipment", "DashAlarms")
+
+        # 설정이 없으면 기존 로직 사용
+        if not redis_data:
+            return await getPQStatus_legacy(data)
+
+        dash_alarms = json.loads(redis_data)
+        channel_config = dash_alarms.get(channel)
+
+        # 해당 채널 설정이 없으면 기존 로직 사용
+        if not channel_config:
+            return await getPQStatus_legacy(data)
+
+        if not channel_config.get("pq"):
+            return await getPQStatus_legacy(data, channel)
+
     except Exception as e:
         return {"status": -1}
 
-    # success가 True인지 확인
-    if len(data) == 0:
+    # 데이터 검증
+    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
+        return {"status": -1}
+
+    bar_graph = data.get("BarGraph", [])
+    if not bar_graph:
+        return {"status": -2}
+
+    # 3. AlarmStatusMatcher로 PQ 계산
+    try:
+        matcher = AlarmStatusMatcher()
+        status_info = {
+            "diagnosis": [],  # PQ만 계산
+            "pq": channel_config.get("pq", [])
+        }
+
+        result = matcher.diagnose(status_info, bar_graph)
+        final_status = result["final_status"]
+        matched_params = result["matched_parameters"]
+
+        # 매칭된 항목이 없으면
+        if not matched_params:
+            return {"status": 1, "item": "All"}
+
+        # 매칭된 항목들 중 가장 높은 status들만
+        max_status = max(p["actual_status"] for p in matched_params)
+        top_items = [p for p in matched_params if p["actual_status"] == max_status]
+
+        # item 리턴 포맷 구성
+        if len(top_items) == 1:
+            item_label = top_items[0]["name"]
+        elif len(top_items) == 2:
+            item_label = f"{top_items[0]['name']}, {top_items[1]['name']}"
+        else:
+            item_label = f"{top_items[0]['name']} ... +{len(top_items) - 1}"
+
+        return {"status": final_status, "item": item_label}
+
+    except Exception as e:
+        print(f"AlarmStatusMatcher error: {str(e)}")
+        # 에러 시 기존 로직으로 fallback
+        return await getPQStatus_legacy(data)
+
+
+async def getPQStatus_legacy(data):
+    """기존 로직 (fallback용)"""
+    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
         return {"status": -1}
 
     status_items = [
@@ -1226,6 +1373,62 @@ async def getPQStatus(asset, request: Request):
 
     return {"status": highest_status, "item": item_label}
 
+# @router.get("/getPQStatus/{asset}")  # Master Dashboard Status
+# @gc_after_large_data(threshold_mb=30)
+# async def getPQStatus(asset, request: Request):
+#     try:
+#         # response = await  http_state.client.get(f"/getPQ?name={asset}")
+#         # data = response.json()
+#         async with httpx.AsyncClient(timeout=api_timeout) as client:
+#             response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
+#             data = response.json()  # JSON 데이터 파싱
+#         #     if response.status_code in [400, 401, 500]:
+#         #         flag = await checkLoginAPI(request)
+#         #         if not flag:
+#         #             return {"success": False, "error": "Restful API Login Failed"}
+#         #         else:
+#         #             response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
+#         #             data = response.json()  # JSON 데이터 파싱
+#     except Exception as e:
+#         return {"status": -1}
+#
+#     # success가 True인지 확인
+#     if len(data) == 0:
+#         return {"status": -1}
+#
+#     status_items = [
+#         {"Title": item["Title"], "Status": item["Status"]}
+#         for item in data.get("BarGraph", [])
+#         if "Status" in item and "Title" in item
+#     ]
+#
+#     if not status_items:
+#         return {"status": -2}
+#
+#     # 모든 값이 0이면 "No Data"
+#     if all(item["Status"] == 0 for item in status_items):
+#         return {"status": 0, "item": "All"}
+#
+#     if all(item["Status"] == 1 for item in status_items):
+#         return {"status": 1, "item": "All"}
+#
+#     # 상태가 높은 순으로 정렬 (내림차순)
+#     sorted_items = sorted(status_items, key=lambda x: x["Status"], reverse=True)
+#     highest_status = sorted_items[0]["Status"]
+#
+#     # 가장 높은 status를 가진 항목들 필터링
+#     top_items = [item for item in sorted_items if item["Status"] == highest_status]
+#
+#     # item 리턴 포맷 구성
+#     if len(top_items) == 1:
+#         item_label = top_items[0]["Title"]
+#     elif len(top_items) == 2:
+#         item_label = f"{top_items[0]['Title']}, {top_items[1]['Title']}"
+#     else:
+#         item_label = f"{top_items[0]['Title']} ... +{len(top_items) - 1}"
+#
+#     return {"status": highest_status, "item": item_label}
+#
 
 def get_running(channel):
     if channel == 'Main':
