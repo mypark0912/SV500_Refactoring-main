@@ -184,7 +184,7 @@
               <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.transformerCapacity') }}</label>
               <input
                 v-model="inputDict.n_kva"
-                type="text"
+                type="number"
                 class="form-input flex-1"
                 :maxlength="20"
               />

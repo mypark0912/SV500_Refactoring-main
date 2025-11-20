@@ -1253,6 +1253,10 @@ export default {
         // }
 
         // === 5. 결과 알림 ===
+        // channel_main.value나 channel_sub.value에 
+        // JSON으로 변환할 수 없는 값이 있을 수 있음
+        // console.log(JSON.stringify(channel_main.value)); // 에러 확인
+        // console.log(JSON.stringify(channel_sub.value));
         if (
           generalSuccess &&
           diagnosisSuccess &&

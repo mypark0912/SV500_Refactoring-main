@@ -1128,7 +1128,7 @@ async def get_diagnosissetting(request:Request):
     #         else:
     #             response = await client.get(f"http://{os_spec.restip}:5000/api/getSettings")
     #             data = response.json()
-    if len(data) > 0:
+    if data:
         # print(data)
         return {"success": True, "data": data}
     else:
@@ -1148,7 +1148,7 @@ async def get_diagnosisprofile(request:Request):
     #         else:
     #             response = await client.get(f"http://{os_spec.restip}:5000/api/getProfile")
     #             data = response.json()
-    if len(data) > 0:
+    if data:
         return {"success": True, "data": data}
     else:
         return {"success": False, "error": "No Data"}
@@ -1156,6 +1156,7 @@ async def get_diagnosisprofile(request:Request):
 @router.post('/setDiagnosisSetting')
 async def set_diagnosissetting(request: Request):
     data = await request.json()
+    status = 0
     if not data:
         return {"status": "0", "error": "No data provided"}
     try:
@@ -1164,6 +1165,7 @@ async def set_diagnosissetting(request: Request):
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setSettings", json=data)
             data = response.json()
+            status = data["Status"]
         #     if response.status_code in [400, 401, 500]:
         #         flag = await checkLoginAPI(request)
         #         if not flag:
@@ -1175,8 +1177,8 @@ async def set_diagnosissetting(request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
-    if len(data) > 0:
-        return {"status": "1", "success": True }
+    if data:
+        return {"status": "1", "success": True , "result": status}
     else:
         return {"status": "1", "success": False, "error": "Save Failed"}
 
