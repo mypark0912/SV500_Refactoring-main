@@ -130,6 +130,7 @@
             "equipment": "Equipment",
             "diagnostic": "Equipment Status",
             "event":"Event Status",
+            "fault":"Fault Status",
             "pq": "Power Quality Status",
             "name": "Name",
             "type": "Type",

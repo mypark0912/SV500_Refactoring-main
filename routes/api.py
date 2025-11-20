@@ -1375,6 +1375,200 @@ async def getPQStatus_legacy(data):
 
     return {"status": highest_status, "item": item_label}
 
+@router.get("/getEventStatus/{asset}/{channel}")
+@gc_after_large_data(threshold_mb=30)
+async def get_eventstatus(asset, channel):
+    try:
+        # 1. API에서 PQ 데이터 가져오기
+        async with httpx.AsyncClient(timeout=api_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/getEvents?name={asset}")
+            data = response.json()
+
+        # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_state.client.select(0)
+        redis_data = redis_state.client.hget("Equipment", "DashAlarms")
+
+        # 설정이 없으면 기존 로직 사용
+        if not redis_data:
+            return await getEventFault_legacy(data)
+
+        dash_alarms = json.loads(redis_data)
+        channel_config = dash_alarms.get(channel)
+
+        # 해당 채널 설정이 없으면 기존 로직 사용
+        if not channel_config:
+            return await getEventFault_legacy(data)
+
+        if not channel_config.get("event"):
+            return await getEventFault_legacy(data)
+
+    except Exception as e:
+        return {"status": -1}
+
+    # 데이터 검증
+    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
+        return {"status": -1}
+
+    bar_graph = data.get("BarGraph", [])
+    if not bar_graph:
+        return {"status": -2}
+
+    # 3. AlarmStatusMatcher로 PQ 계산
+    try:
+        matcher = AlarmStatusMatcher()
+        status_info = {
+            "diagnosis": [],  # PQ만 계산
+            "pq": [],
+            "event": channel_config.get("event", []),
+            "fault": []
+        }
+
+        result = matcher.diagnose(status_info, bar_graph)
+        final_status = result["final_status"]
+        matched_params = result["matched_parameters"]
+
+        # 매칭된 항목이 없으면
+        if not matched_params:
+            return {"status": 1, "item": "All"}
+
+        # 매칭된 항목들 중 가장 높은 status들만
+        max_status = max(p["actual_status"] for p in matched_params)
+        top_items = [p for p in matched_params if p["actual_status"] == max_status]
+
+        # item 리턴 포맷 구성
+        if len(top_items) == 1:
+            item_label = top_items[0]["name"]
+        elif len(top_items) == 2:
+            item_label = f"{top_items[0]['name']}, {top_items[1]['name']}"
+        else:
+            item_label = f"{top_items[0]['name']} ... +{len(top_items) - 1}"
+
+        return {"status": final_status, "item": item_label}
+
+    except Exception as e:
+        print(f"AlarmStatusMatcher error: {str(e)}")
+        # 에러 시 기존 로직으로 fallback
+        return await getEventFault_legacy(data)
+
+
+@router.get("/getFaultStatus/{asset}/{channel}")
+@gc_after_large_data(threshold_mb=30)
+async def get_faultstatus(asset, channel):
+    try:
+        # 1. API에서 PQ 데이터 가져오기
+        async with httpx.AsyncClient(timeout=api_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/getFaults?name={asset}")
+            data = response.json()
+
+        # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_state.client.select(0)
+        redis_data = redis_state.client.hget("Equipment", "DashAlarms")
+
+        # 설정이 없으면 기존 로직 사용
+        if not redis_data:
+            # print(f"{channel} - Not Redis : getEventFault_legacy")
+            return await getEventFault_legacy(data)
+
+        dash_alarms = json.loads(redis_data)
+        channel_config = dash_alarms.get(channel)
+
+        # 해당 채널 설정이 없으면 기존 로직 사용
+        if not channel_config:
+            # print(f"{channel} - Not Channel : getEventFault_legacy")
+            return await getEventFault_legacy(data)
+
+        if not channel_config.get("fault"):
+            # print(f"{channel} - Not Setup : getEventFault_legacy")
+            return await getEventFault_legacy(data)
+
+    except Exception as e:
+        print(str(e))
+        return {"status": -1}
+
+    # 데이터 검증
+    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
+        return {"status": -1}
+
+    bar_graph = data.get("BarGraph", [])
+    if not bar_graph:
+        return {"status": -2}
+
+    # 3. AlarmStatusMatcher로 PQ 계산
+    try:
+        matcher = AlarmStatusMatcher()
+        status_info = {
+            "diagnosis": [],  # PQ만 계산
+            "pq": [],
+            "event": [],
+            "fault": channel_config.get("fault", [])
+        }
+
+        result = matcher.diagnose(status_info, bar_graph)
+        final_status = result["final_status"]
+        matched_params = result["matched_parameters"]
+
+        # 매칭된 항목이 없으면
+        if not matched_params:
+            return {"status": 1, "item": "All"}
+
+        # 매칭된 항목들 중 가장 높은 status들만
+        max_status = max(p["actual_status"] for p in matched_params)
+        top_items = [p for p in matched_params if p["actual_status"] == max_status]
+
+        # item 리턴 포맷 구성
+        if len(top_items) == 1:
+            item_label = top_items[0]["name"]
+        elif len(top_items) == 2:
+            item_label = f"{top_items[0]['name']}, {top_items[1]['name']}"
+        else:
+            item_label = f"{top_items[0]['name']} ... +{len(top_items) - 1}"
+
+        return {"status": final_status, "item": item_label}
+
+    except Exception as e:
+        print(f"AlarmStatusMatcher error: {str(e)}")
+        # 에러 시 기존 로직으로 fallback
+        return await getPQStatus_legacy(data)
+
+async def getEventFault_legacy(data):
+    """기존 로직 (fallback용)"""
+    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
+        return {"status": -1}
+
+    status_items = [
+        {"Title": item["Title"], "Status": item["Status"]}
+        for item in data.get("BarGraph", [])
+        if "Status" in item and "Title" in item
+    ]
+
+    if not status_items:
+        return {"status": -2}
+
+    # 모든 값이 0이면 "No Data"
+    if all(item["Status"] == 0 for item in status_items):
+        return {"status": 0, "item": "All"}
+
+    if all(item["Status"] == 1 for item in status_items):
+        return {"status": 1, "item": "All"}
+
+    # 상태가 높은 순으로 정렬 (내림차순)
+    sorted_items = sorted(status_items, key=lambda x: x["Status"], reverse=True)
+    highest_status = sorted_items[0]["Status"]
+
+    # 가장 높은 status를 가진 항목들 필터링
+    top_items = [item for item in sorted_items if item["Status"] == highest_status]
+
+    # item 리턴 포맷 구성
+    if len(top_items) == 1:
+        item_label = top_items[0]["Title"]
+    elif len(top_items) == 2:
+        item_label = f"{top_items[0]['Title']}, {top_items[1]['Title']}"
+    else:
+        item_label = f"{top_items[0]['Title']} ... +{len(top_items) - 1}"
+
+
+    return {"status": highest_status, "item": item_label}
+
 # @router.get("/getPQStatus/{asset}")  # Master Dashboard Status
 # @gc_after_large_data(threshold_mb=30)
 # async def getPQStatus(asset, request: Request):

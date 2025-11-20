@@ -3,7 +3,7 @@
       <!-- 헤더 섹션 -->
       <div class="card-header">
         <h3 class="card-title">
-          {{ mode === 'pq' ? t('dashboard.diagnosis.pq') : t('dashboard.diagnosis.diagnostic') }}
+          {{ comTitles }}
         </h3>
       </div>
   
@@ -60,7 +60,18 @@
   const { t } = useI18n()
   const stData = ref(props.data)
   const currentTime = ref(new Date())
-  
+  const comTitles = computed(()=>{
+    switch(props.mode){
+      case 'diagnosis':
+        return t('dashboard.diagnosis.diagnostic');
+      case 'pq':
+        return t('dashboard.diagnosis.pq');
+      case 'event':
+        return t('dashboard.diagnosis.event');
+      case 'fault':
+        return t('dashboard.diagnosis.fault');
+    }
+  })
   // 시간 업데이트
   let timeInterval = null
   onMounted(() => {
