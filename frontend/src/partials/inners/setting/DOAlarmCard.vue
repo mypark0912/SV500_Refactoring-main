@@ -124,19 +124,118 @@
 </template>
 
 <script setup>
-import { ref, computed, inject, watch } from "vue";
-
+import { ref, computed, inject, watch, onMounted,nextTick   } from "vue";
+const isDataLoaded = ref(false);
 const props = defineProps({
   channel: { type: String, default: '' }
+});
+const loadSavedData = () => {
+  // 실제 데이터 구조 확인
+  // console.log('=== Data Structure Debug ===');
+  // console.log('channel.value:', channel.value);
+  // console.log('mainData.value:', JSON.stringify(mainData.value));
+  // console.log('subData.value:', JSON.stringify(subData.value));
+  
+  const statusInfo = stDict.value;
+  
+  // Proxy 객체를 실제 값으로 변환
+  const actualStatusInfo = JSON.parse(JSON.stringify(statusInfo));
+  //console.log('Actual statusInfo:', actualStatusInfo);
+  
+  if (!statusInfo || (!actualStatusInfo.diagnosis?.length && !actualStatusInfo.pq?.length)) {
+    //console.log('No saved data to load');
+    return;
+  }
+
+  // 모든 항목 초기화
+  diagnosticData.value.forEach(item => {
+    item.enabled = false;
+    item.level = 2;
+  });
+  
+  pqData.value.forEach(item => {
+    item.enabled = false;
+    item.level = 2;
+  });
+
+  // Diagnostic 데이터 로드 (Proxy 해제)
+  const diagnosisArray = JSON.parse(JSON.stringify(statusInfo.diagnosis || []));
+  if (diagnosisArray.length > 0) {
+    //console.log('Loading diagnosis data:', diagnosisArray);
+    
+    diagnosisArray.forEach(savedItem => {
+      const item = diagnosticData.value.find(d => d.name === savedItem.name);
+      if (item) {
+        item.enabled = true;
+        item.level = savedItem.level;
+        //console.log(`Enabled ${savedItem.name} with level ${savedItem.level}`);
+      }
+    });
+  }
+
+  // PQ 데이터 로드 (Proxy 해제)
+  const pqArray = JSON.parse(JSON.stringify(statusInfo.pq || []));
+  if (pqArray.length > 0) {
+    //console.log('Loading pq data:', pqArray);
+    
+    pqArray.forEach(savedItem => {
+      const item = pqData.value.find(p => p.name === savedItem.name);
+      if (item) {
+        item.enabled = true;
+        item.level = savedItem.level;
+        //console.log(`Enabled ${savedItem.name} with level ${savedItem.level}`);
+      }
+    });
+  }
+  
+  // console.log('Final diagnosticData:', diagnosticData.value.filter(d => d.enabled));
+  // console.log('Final pqData:', pqData.value.filter(p => p.enabled));
+};
+
+
+onMounted(async () => {
+  console.log('=== Component Mounted ===');
+  
+  // 데이터가 준비될 때까지 대기
+  let retries = 0;
+  const maxRetries = 10;
+  
+  while (retries < maxRetries) {
+    const data = channel.value === 'Main' ? mainData.value : subData.value;
+    
+    if (data && data.status_Info) {
+      //console.log('Data is ready, loading saved data...');
+      await nextTick();
+      loadSavedData();
+      isDataLoaded.value = true; // 로드 완료 표시
+      break;
+    }
+    
+    //console.log(`Waiting for data... (attempt ${retries + 1})`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
+  }
+  
+  if (retries === maxRetries) {
+    console.error('Failed to load data after maximum retries');
+    isDataLoaded.value = true; // 실패해도 플래그 설정
+  }
 });
 
 const activeTab = ref('diagnostic');
 const mainData = inject('channel_main');
 const subData = inject('channel_sub');
 const channel = ref(props.channel);
-const stDict = computed(()=>{
-  return channel.value == 'Main'? mainData.value.status_Info : subData.value.status_Info;
-})
+const stDict = computed(() => {
+  if (channel.value === 'Main' && mainData.value) {
+    // mainData가 이미 Main 채널의 데이터라면
+    return mainData.value.status_Info;
+  } else if (channel.value === 'Sub' && subData.value) {
+    // subData가 이미 Sub 채널의 데이터라면
+    return subData.value.status_Info;
+  }
+  return { diagnosis: [], pq: [] }; // 기본값
+});
 
 const tabs = [
   { id: 'diagnostic', label: 'Diagnostic' },
@@ -144,8 +243,8 @@ const tabs = [
 ];
 
 const diagnosticData = ref([
-  { name: 'Capacitor', enabled: true, level: 2, color: 'bg-red-500' },
-  { name: 'Tap Changer', enabled: true, level: 2, color: 'bg-red-500' },
+  { name: 'Capacitor', enabled: false, level: 2, color: 'bg-red-500' },
+  { name: 'Tap Changer', enabled: false, level: 2, color: 'bg-red-500' },
   { name: 'Bushings', enabled: false, level: 2, color: 'bg-red-500' },
   { name: 'Stress', enabled: false, level: 2, color: 'bg-red-500' },
   { name: 'Load Unbalance', enabled: false, level: 2, color: 'bg-red-500' },
@@ -187,37 +286,50 @@ const currentTabData = computed(() => {
 });
 
 const updateInputDict = () => {
-  console.log('1. stDict:', stDict);
-  // channel prop에 따라 Main 또는 Sub에 저장
-  const targetChannel = props.channel || 'Main'; // 기본값 Main
+  // computed property의 value에 접근
+  const statusInfo = stDict.value;
   
-  if (!stDict) {
-    console.error('status_Info is not injected!');
+  //console.log('1. stDict value:', statusInfo);
+  
+  if (!statusInfo) {
+    console.error('status_Info is not available!');
     return;
   }
 
-  // Diagnostic 데이터 저장
-  stDict["diagnosis"] = diagnosticData.value
+  // statusInfo 객체에 직접 할당
+  statusInfo["diagnosis"] = diagnosticData.value
     .filter(item => item.enabled)
     .map(item => ({
       name: item.name,
       level: item.level
     }));
 
-  // PQ 데이터 저장
-  stDict["pq"] = pqData.value
+  statusInfo["pq"] = pqData.value
     .filter(item => item.enabled)
     .map(item => ({
       name: item.name,
       level: item.level
     }));
+    
+  //console.log('2. Updated statusInfo:', statusInfo);
 };
 
-watch(diagnosticData, () => { updateInputDict(); }, { deep: true });
-watch(pqData, () => { updateInputDict(); }, { deep: true });
+// 데이터가 로드된 후에만 watch 실행
+watch(diagnosticData, () => { 
+  if (isDataLoaded.value) {
+    updateInputDict(); 
+  }
+}, { deep: true });
+
+watch(pqData, () => { 
+  if (isDataLoaded.value) {
+    updateInputDict(); 
+  }
+}, { deep: true });
+
 watch(() => props.channel, () => { updateInputDict(); }); // channel 변경 시에도 업데이트
 
-updateInputDict();
+//updateInputDict();
 </script>
 
 <style scoped>
