@@ -13,6 +13,25 @@ export class SettingValidator {
 
   // IP 주소 형식 검증
   validateIPAddress(ip, fieldName) {
+  // SNTP Host인 경우 도메인 형식도 허용
+  if (fieldName === 'SNTP Host') {
+    // 빈 문자열은 허용 (SNTP 미사용 케이스)
+    if (ip === '') {
+      return true;
+    }
+    
+    // IP 주소 형식 체크
+    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    
+    // 도메인 형식 체크 (예: time.google.com, pool.ntp.org)
+    const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+    
+    if (!ipRegex.test(ip) && !domainRegex.test(ip)) {
+      this.errors.push(`${fieldName}: Invalid format. Must be IP address or domain name (${ip})`);
+      return false;
+    }
+    return true;
+  }
     const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     if (!ipRegex.test(ip)) {
       this.errors.push(`${fieldName}: Invalid IP address format (${ip})`);

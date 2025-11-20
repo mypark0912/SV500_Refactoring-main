@@ -1640,7 +1640,14 @@ export default {
         data.Enable = data.Enable === true || data.Enable === 1 ? 1 : 0;
         data.PowerQuality =
           data.PowerQuality === true || data.PowerQuality === 1 ? 1 : 0;
+        if (data.hasOwnProperty('useDO')) {
+          data.useDO = (data.useDO === true || data.useDO === 1) ? 1 : 0;
+        }
 
+        // 🔥 useAI도 있다면 0 또는 1로 변환
+        if (data.hasOwnProperty('useAI')) {
+          data.useAI = (data.useAI === true || data.useAI === 1) ? 1 : 0;
+        }
       // 🔥 useDO가 false이면 status_Info 초기화
         const isUseDOEnabled = data.useDO === 1 || data.useDO === true;
         if (!isUseDOEnabled && data.status_Info) {
