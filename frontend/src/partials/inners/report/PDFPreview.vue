@@ -2364,6 +2364,61 @@ const generatePDF = async() => {
   }
 };
 
+// border 제거 및 복원 헬퍼 함수 (모든 border 완전 제거)
+function removeBorders(element) {
+  const borderStyles = new Map();
+  const allElements = element.querySelectorAll('*');
+  
+  // 모든 요소의 border 스타일 저장 및 완전 제거
+  [element, ...allElements].forEach(el => {
+    const style = window.getComputedStyle(el);
+    const borderTop = style.borderTopWidth;
+    const borderRight = style.borderRightWidth;
+    const borderBottom = style.borderBottomWidth;
+    const borderLeft = style.borderLeftWidth;
+    
+    // border가 있는 경우 모두 제거
+    if (borderTop !== '0px' || borderRight !== '0px' || borderBottom !== '0px' || borderLeft !== '0px') {
+      borderStyles.set(el, {
+        borderTop: el.style.borderTop,
+        borderRight: el.style.borderRight,
+        borderBottom: el.style.borderBottom,
+        borderLeft: el.style.borderLeft,
+        border: el.style.border,
+        borderWidth: el.style.borderWidth,
+        borderStyle: el.style.borderStyle,
+        borderColor: el.style.borderColor
+      });
+      
+      // 모든 border 관련 스타일 완전 제거
+      el.style.border = '0';
+      el.style.borderTop = '0';
+      el.style.borderRight = '0';
+      el.style.borderBottom = '0';
+      el.style.borderLeft = '0';
+      el.style.borderWidth = '0';
+      el.style.borderStyle = 'none';
+      el.style.borderColor = 'transparent';
+    }
+  });
+  
+  return borderStyles;
+}
+
+function restoreBorders(borderStyles) {
+  borderStyles.forEach((styles, el) => {
+    // 저장된 모든 border 스타일 복원
+    if (styles.border !== undefined) el.style.border = styles.border;
+    if (styles.borderTop !== undefined) el.style.borderTop = styles.borderTop;
+    if (styles.borderRight !== undefined) el.style.borderRight = styles.borderRight;
+    if (styles.borderBottom !== undefined) el.style.borderBottom = styles.borderBottom;
+    if (styles.borderLeft !== undefined) el.style.borderLeft = styles.borderLeft;
+    if (styles.borderWidth !== undefined) el.style.borderWidth = styles.borderWidth;
+    if (styles.borderStyle !== undefined) el.style.borderStyle = styles.borderStyle;
+    if (styles.borderColor !== undefined) el.style.borderColor = styles.borderColor;
+  });
+}
+
 // processSection 함수 수정 - 정확한 여백 계산 및 페이지 번호 공간 확보
 async function processSection(pdf, element, name, options, addPage = false) {
   if (!element) return;
@@ -2378,7 +2433,13 @@ async function processSection(pdf, element, name, options, addPage = false) {
   element.scrollIntoView({ behavior: 'instant' });
   await new Promise(resolve => setTimeout(resolve, 200));
   
+  // border 제거
+  const borderStyles = removeBorders(element);
+  
   const canvas = await html2canvas(element, options);
+  
+  // border 복원
+  restoreBorders(borderStyles);
   const imgData = canvas.toDataURL("image/jpeg", 0.85);
   
   // A4 세로: 210mm x 297mm
@@ -2434,7 +2495,13 @@ async function processChartElement(pdf, element, name, options, yPosition) {
   await nextTick();
   await new Promise(resolve => setTimeout(resolve, 100));
   
+  // border 제거 (모든 border 완전 제거)
+  const borderStyles = removeBorders(element);
+  
   const canvas = await html2canvas(element, options);
+  
+  // border 복원
+  restoreBorders(borderStyles);
   const imgData = canvas.toDataURL("image/jpeg", 0.85);
   
   // A4 세로: 210mm x 297mm
