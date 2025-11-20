@@ -131,7 +131,12 @@ const props = defineProps({
 });
 
 const activeTab = ref('diagnostic');
-const stDict = inject('status_Info');
+const mainData = inject('channel_main');
+const subData = inject('channel_sub');
+const channel = ref(props.channel);
+const stDict = computed(()=>{
+  return channel.value == 'Main'? mainData.value.status_Info : subData.value.status_Info;
+})
 
 const tabs = [
   { id: 'diagnostic', label: 'Diagnostic' },

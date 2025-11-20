@@ -62,16 +62,16 @@ export function useInputDict() {
     }
   });
 
-  const status_Info = reactive({
-    "Main":{
-      "diagnosis":[],
-      "pq":[]
-    },
-    "Sub":{
-      "diagnosis":[],
-      "pq":[]
-    }
-  });
+  // const status_Info = reactive({
+  //   "Main":{
+  //     "diagnosis":[],
+  //     "pq":[]
+  //   },
+  //   "Sub":{
+  //     "diagnosis":[],
+  //     "pq":[]
+  //   }
+  // });
 
   const diagnosis_detail = ref({
     main:{
@@ -155,6 +155,10 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    status_Info:{
+      "diagnosis":[],
+      "pq":[]
+    }
   });
 
   const channel_sub = ref({
@@ -222,6 +226,10 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    status_Info:{
+      "diagnosis":[],
+      "pq":[]
+    }
   });
 
   const useDiagnosis = computed(() => {
@@ -367,6 +375,6 @@ export function useInputDict() {
     selectedTrendSetup,
     changeDiagnosis,
     diagnosis_detail,
-    status_Info,
+    //status_Info,
   };
 }

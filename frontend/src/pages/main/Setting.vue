@@ -601,7 +601,7 @@ export default {
       currentDiagnosis,
       changeDiagnosis,
       diagnosis_detail,
-      status_Info,
+      // status_Info,
     } = useInputDict();
 
     const devMode = computed(() => authStore.getOpMode);
@@ -1079,9 +1079,9 @@ export default {
           Object.assign(inputDict.value, setupDict.value["General"]);
           Object.assign(channel_main.value, setupDict.value["main"]);
           Object.assign(channel_sub.value, setupDict.value["sub"]);
-          if ('status_Info' in setupDict.value) {
-            Object.assign(status_Info, setupDict.value["status_Info"]);
-          }
+          // if ('status_Info' in setupDict.value) {
+          //   Object.assign(status_Info, setupDict.value["status_Info"]);
+          // }
           setupStore.setsetupFromFile(true);
           //console.log(status_Info);
         }
@@ -1243,14 +1243,14 @@ export default {
         if (!subResult.success) {
           errorMessages.push(`Sub Channel: ${subResult.error}`);
         }
-        console.log(devMode.value)
-        console.log(status_Info);
-        if(devMode.value == 'device2'){
-          const statusResult = await saveStatusData(status_Info);
-            if (!statusResult.success) {
-              errorMessages.push(`Status Info: ${statusResult.error}`);
-            }
-        }
+        // console.log(devMode.value)
+        // console.log(status_Info);
+        // if(devMode.value == 'device2'){
+        //   const statusResult = await saveStatusData(status_Info);
+        //     if (!statusResult.success) {
+        //       errorMessages.push(`Status Info: ${statusResult.error}`);
+        //     }
+        // }
 
         // === 5. 결과 알림 ===
         if (

@@ -1826,8 +1826,8 @@ async def saveSetting(channel: str, request: Request):
         # 채널 파라미터가 "general"이면 "General" 부분 업데이트
         if channel.lower() == "general":        
             setting["General"] = data
-        elif channel.lower() == "status":
-            setting["status_Info"] = data
+        # elif channel.lower() == "status":
+        #     setting["status_Info"] = data
         else:
             # 그 외의 경우, "channel" 배열 내에서 해당 채널 업데이트 (없으면 추가)
             if "channel" not in setting or not isinstance(setting["channel"], list):
