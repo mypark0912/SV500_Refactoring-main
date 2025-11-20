@@ -2054,7 +2054,7 @@ const generatePDF = async() => {
   await new Promise(resolve => setTimeout(resolve, 100));
   
   const pdf = new jsPDF({
-    orientation: "p",
+    orientation: "l",
     unit: "mm",
     format: "a4",
     compress: true
@@ -2072,6 +2072,22 @@ const generatePDF = async() => {
     foreignObjectRendering: false,
     windowWidth: document.documentElement.scrollWidth,
     windowHeight: document.documentElement.scrollHeight
+  };
+
+  // 페이지 번호 추가 함수
+  const addPageNumber = (pageNum) => {
+    const totalPages = pdf.internal.getNumberOfPages();
+    pdf.setPage(pageNum);
+    const pageSize = pdf.internal.pageSize;
+    const pageWidth = pageSize.getWidth();
+    pdf.setFontSize(10);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(
+      `Page ${pageNum} of ${totalPages}`,
+      pageWidth / 2,
+      pageSize.getHeight() - 10,
+      { align: 'center' }
+    );
   };
 
   let pageCount = 0;
@@ -2106,15 +2122,41 @@ const generatePDF = async() => {
       });
       
       // 각 트렌드 차트를 개별적으로 처리
-      let chartY = 60; // 헤더 아래 시작 위치
+      // 상단 여백 10mm + 헤더 높이 50mm + 여백 10mm = 70mm
+      let chartY = 70; // 헤더 아래 시작 위치
+      const chartSpacing = 5; // 차트 간 간격
+      const pageHeight = 210;
+      const marginTop = 10;
+      const marginBottom = 20; // 페이지 번호 공간
       
       for (let i = 0; i < trendCharts.length; i++) {
-        if (i % 2 === 0 && i > 0) {
-          pdf.addPage();
-          chartY = 10;
+        // 차트의 실제 높이를 미리 계산
+        const tempCanvas = await html2canvas(trendCharts[i], { ...canvasOptions, logging: false });
+        const tempImgWidth = 277; // 사용 가능 너비
+        let tempImgHeight = (tempCanvas.height * tempImgWidth) / tempCanvas.width;
+        
+        // 작은 차트를 더 크게 표시하기 위한 최소 높이 설정
+        const minChartHeight = 60; // 최소 차트 높이 60mm
+        const maxChartHeight = 80; // 차트 최대 높이 80mm
+        
+        // 작은 차트는 최소 높이로 확대
+        if (tempImgHeight < minChartHeight) {
+          tempImgHeight = minChartHeight;
         }
+        
+        const estimatedChartHeight = Math.min(tempImgHeight, maxChartHeight);
+        tempCanvas.remove();
+        
+        // 차트가 페이지 하단을 넘으면 새 페이지
+        if (chartY + estimatedChartHeight > pageHeight - marginBottom) {
+          pdf.addPage();
+          chartY = marginTop; // 새 페이지 상단 여백
+        }
+        
         await processChartElement(pdf, trendCharts[i], `Diagnosis Trend ${i + 1}`, canvasOptions, chartY);
-        chartY += 140;
+        
+        // 다음 차트 위치 계산 (실제 차트 높이 + 간격)
+        chartY += estimatedChartHeight + chartSpacing;
       }
       pageCount++;
     }
@@ -2145,15 +2187,41 @@ const generatePDF = async() => {
       });
       
       // 각 트렌드 차트를 개별적으로 처리
-      let chartY = 60; // 헤더 아래 시작 위치
+      // 상단 여백 10mm + 헤더 높이 50mm + 여백 10mm = 70mm
+      let chartY = 70; // 헤더 아래 시작 위치
+      const chartSpacing = 5; // 차트 간 간격
+      const pageHeight = 210;
+      const marginTop = 10;
+      const marginBottom = 20; // 페이지 번호 공간
       
       for (let i = 0; i < trendCharts.length; i++) {
-        if (i % 2 === 0 && i > 0) {
-          pdf.addPage();
-          chartY = 10;
+        // 차트의 실제 높이를 미리 계산
+        const tempCanvas = await html2canvas(trendCharts[i], { ...canvasOptions, logging: false });
+        const tempImgWidth = 277; // 사용 가능 너비
+        let tempImgHeight = (tempCanvas.height * tempImgWidth) / tempCanvas.width;
+        
+        // 작은 차트를 더 크게 표시하기 위한 최소 높이 설정
+        const minChartHeight = 60; // 최소 차트 높이 60mm
+        const maxChartHeight = 80; // 차트 최대 높이 80mm
+        
+        // 작은 차트는 최소 높이로 확대
+        if (tempImgHeight < minChartHeight) {
+          tempImgHeight = minChartHeight;
         }
+        
+        const estimatedChartHeight = Math.min(tempImgHeight, maxChartHeight);
+        tempCanvas.remove();
+        
+        // 차트가 페이지 하단을 넘으면 새 페이지
+        if (chartY + estimatedChartHeight > pageHeight - marginBottom) {
+          pdf.addPage();
+          chartY = marginTop; // 새 페이지 상단 여백
+        }
+        
         await processChartElement(pdf, trendCharts[i], `PQ Trend ${i + 1}`, canvasOptions, chartY);
-        chartY += 140;
+        
+        // 다음 차트 위치 계산 (실제 차트 높이 + 간격)
+        chartY += estimatedChartHeight + chartSpacing;
       }
       pageCount++;
     }
@@ -2213,6 +2281,25 @@ const generatePDF = async() => {
       pageCount++;
     }
 
+    // 모든 페이지의 페이지 번호를 최종 업데이트 (총 페이지 수 반영)
+    // 페이지 번호는 하단 중앙에 정확히 배치 (하단 여백 10mm)
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      const pageSize = pdf.internal.pageSize;
+      const pageWidth = pageSize.getWidth();
+      const pageHeight = pageSize.getHeight();
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      // 하단 여백 10mm 위치에 페이지 번호 배치
+      pdf.text(
+        `Page ${i} of ${totalPages}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+
     // PDF 저장
     const pdfBlob = pdf.output('blob');
     const fileSize = (pdfBlob.size / 1024 / 1024).toFixed(2);
@@ -2231,7 +2318,7 @@ const generatePDF = async() => {
   }
 };
 
-// processSection 함수 수정 - 헤더만 캡처할 때 높이 제한
+// processSection 함수 수정 - 정확한 여백 계산 및 페이지 번호 공간 확보
 async function processSection(pdf, element, name, options, addPage = false) {
   if (!element) return;
   
@@ -2248,27 +2335,51 @@ async function processSection(pdf, element, name, options, addPage = false) {
   const canvas = await html2canvas(element, options);
   const imgData = canvas.toDataURL("image/jpeg", 0.85);
   
-  const imgWidth = 190;
+  // A4 가로: 297mm x 210mm
+  // 좌우 여백: 각 10mm → 사용 가능 너비: 277mm
+  // 상단 여백: 10mm, 하단 여백: 20mm (페이지 번호 공간 포함) → 사용 가능 높이: 180mm
+  const pageWidth = 297;
+  const pageHeight = 210;
+  const marginLeft = 10;
+  const marginRight = 10;
+  const marginTop = 10;
+  const marginBottom = 20; // 페이지 번호 공간 포함
+  const availableWidth = pageWidth - marginLeft - marginRight; // 277mm
+  const availableHeight = pageHeight - marginTop - marginBottom; // 180mm
+  
+  // 이미지 너비를 정확히 사용 가능 너비로 설정 (항상 277mm 고정)
+  const imgWidth = availableWidth; // 277mm (좌우 여백 유지)
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
   
   // 헤더만 캡처하는 경우 높이 제한
-  let maxHeight = 270;
+  let maxHeight = availableHeight; // 180mm
   if (name.includes('Header')) {
     maxHeight = 50; // 헤더는 작게
   }
   
+  // 너비는 항상 277mm로 고정하여 좌우 여백 유지
+  // 높이만 조정하여 페이지 내에 맞춤
+  let finalWidth = imgWidth; // 항상 277mm 고정
+  let finalHeight = imgHeight;
+  
   if (imgHeight > maxHeight) {
-    const ratio = maxHeight / imgHeight;
-    pdf.addImage(imgData, "JPEG", 10, 10, imgWidth * ratio, maxHeight);
-  } else {
-    pdf.addImage(imgData, "JPEG", 10, 10, imgWidth, imgHeight);
+    // 높이가 제한될 때는 높이만 조정하고 너비는 유지
+    // 이미지의 일부가 잘릴 수 있지만 좌우 여백은 정확히 유지
+    finalHeight = maxHeight;
   }
+  
+  // 정확한 위치 계산 (좌측 여백 10mm, 상단 여백 10mm)
+  const xPosition = marginLeft; // 10mm (좌측 여백)
+  const yPosition = marginTop; // 10mm (상단 여백)
+  
+  // 이미지가 정확히 좌우 여백 10mm씩 유지되도록 배치
+  pdf.addImage(imgData, "JPEG", xPosition, yPosition, finalWidth, finalHeight);
   
   canvas.remove();
   await new Promise(resolve => setTimeout(resolve, 50));
 }
 
-// processChartElement 함수는 그대로
+// processChartElement 함수 - 정확한 여백 계산 및 페이지 번호 공간 확보, 작은 차트 크기 조정
 async function processChartElement(pdf, element, name, options, yPosition) {
   if (!element) return;
   
@@ -2280,11 +2391,59 @@ async function processChartElement(pdf, element, name, options, yPosition) {
   const canvas = await html2canvas(element, options);
   const imgData = canvas.toDataURL("image/jpeg", 0.85);
   
-  const imgWidth = 190;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  const maxHeight = 130;
+  // A4 가로: 297mm x 210mm
+  // 좌우 여백: 각 10mm → 사용 가능 너비: 277mm
+  // 상단 여백: 10mm, 하단 여백: 20mm (페이지 번호 공간 포함)
+  const pageWidth = 297;
+  const pageHeight = 210;
+  const marginLeft = 10;
+  const marginRight = 10;
+  const marginTop = 10;
+  const marginBottom = 20; // 페이지 번호 공간 포함
+  const availableWidth = pageWidth - marginLeft - marginRight; // 277mm
+  const availableHeight = pageHeight - marginTop - marginBottom; // 180mm (사용 가능 높이)
   
-  pdf.addImage(imgData, "JPEG", 10, yPosition, imgWidth, Math.min(imgHeight, maxHeight));
+  // 원본 이미지 비율 계산
+  const originalAspectRatio = canvas.width / canvas.height;
+  
+  // 이미지 너비를 정확히 사용 가능 너비로 설정 (항상 277mm 고정)
+  const imgWidth = availableWidth; // 277mm (좌우 여백 유지)
+  let imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+  // 차트의 최대 높이 계산 (yPosition부터 페이지 하단까지의 공간)
+  const maxChartHeight = pageHeight - yPosition - marginBottom;
+  
+  // 작은 차트를 더 크게 표시하기 위한 최소 높이 설정
+  const minChartHeight = 60; // 최소 차트 높이 60mm
+  
+  // 너비는 항상 277mm로 고정하여 좌우 여백 유지
+  // 높이 조정: 작은 차트는 최소 높이를 보장하고, 큰 차트는 공간에 맞춤
+  let finalWidth = imgWidth; // 항상 277mm 고정
+  let finalHeight = imgHeight;
+  
+  // 차트가 작으면 최소 높이로 확대
+  if (imgHeight < minChartHeight && maxChartHeight >= minChartHeight) {
+    // 작은 차트를 최소 높이로 확대 (너비는 유지)
+    finalHeight = Math.min(minChartHeight, maxChartHeight);
+  } else if (imgHeight > maxChartHeight) {
+    // 높이가 제한될 때는 높이만 조정하고 너비는 유지
+    finalHeight = maxChartHeight;
+  } else {
+    // 정상 크기 차트는 원본 비율 유지
+    finalHeight = imgHeight;
+  }
+  
+  // yPosition이 상단 여백보다 작으면 상단 여백으로 조정
+  const adjustedYPosition = Math.max(yPosition, marginTop);
+  
+  // 최종 높이가 페이지 하단을 넘지 않도록 확인
+  const finalYPosition = Math.min(adjustedYPosition, pageHeight - marginBottom - finalHeight);
+  
+  // 정확한 위치 계산 (좌측 여백 10mm)
+  const xPosition = marginLeft; // 10mm (좌측 여백)
+  
+  // 이미지가 정확히 좌우 여백 10mm씩 유지되도록 배치
+  pdf.addImage(imgData, "JPEG", xPosition, finalYPosition, finalWidth, finalHeight);
   
   canvas.remove();
   await new Promise(resolve => setTimeout(resolve, 50));
