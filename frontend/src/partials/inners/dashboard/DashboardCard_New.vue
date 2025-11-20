@@ -159,11 +159,12 @@
             console.log(asset.value);
             return;
           }
+          const channelName = channel.value.toLowerCase() == 'main'? 'Main':'Sub'
          const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
          const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
          if(chName != ''){
            try {
-            const response = await axios.get(`/api/getPQStatus/${chName}`);
+            const response = await axios.get(`/api/getPQStatus/${chName}/${channelName}`);
              if (response.data.status >= 0) {
                 pqData.value.devName = response.data.item;
                 pqData.value.devStatus = response.data.status;

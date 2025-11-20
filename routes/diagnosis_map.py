@@ -55,12 +55,11 @@ class AlarmStatusMatcher:
             api_response: Dict[str, int]
     ) -> tuple[int, List[Dict]]:
         matched_statuses = []
-        max_status = DiagnosisStatus.OK
+        max_status = 0
 
         for name, configured_level in status_config.items():
             actual_status = api_response.get(name)
 
-            # API 응답에 해당 Name이 있고, 레벨 이상이면
             if actual_status is not None and actual_status >= configured_level:
                 matched_statuses.append({
                     "name": name,
@@ -71,6 +70,10 @@ class AlarmStatusMatcher:
 
                 if actual_status > max_status:
                     max_status = actual_status
+
+        # 매칭된 게 없으면 OK(1)
+        if not matched_statuses:
+            return 1, matched_statuses
 
         return max_status, matched_statuses
 
@@ -95,6 +98,16 @@ class AlarmStatusMatcher:
 
         # API 응답 파싱
         response = self.parse_api_response(bar_graph)
+
+        # API 응답이 모두 0이면 NoData
+        if response and all(status == 0 for status in response.values()):
+            return {
+                "final_status": 0,
+                "status_name": self.get_status_name(0),
+                "matched_parameters": [],
+                "total_configured": len(config),
+                "total_matched": 0
+            }
 
         # 최종 상태 계산
         final_status, matched = self.calculate_final_status(config, response)

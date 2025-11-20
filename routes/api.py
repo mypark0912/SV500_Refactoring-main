@@ -1058,6 +1058,7 @@ async def getStatus(asset, channel):
             data = response.json()
 
         # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 설정이 없으면 기존 로직 사용
@@ -1272,6 +1273,7 @@ async def getPQStatus(asset, channel, request: Request):
             data = response.json()
 
         # 2. Redis에서 DashAlarms 설정 가져오기
+        redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 설정이 없으면 기존 로직 사용
