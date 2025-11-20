@@ -1635,6 +1635,7 @@ export default {
     const saveChannelData = async (channelData, channelName) => {
       try {
         const data = { ...channelData };
+        console.log('saveChannelData - ', data);
         data.channel = channelName;
         data.Enable = data.Enable === true || data.Enable === 1 ? 1 : 0;
         data.PowerQuality =
