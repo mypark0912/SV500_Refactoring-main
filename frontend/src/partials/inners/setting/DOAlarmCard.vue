@@ -122,9 +122,16 @@
                           : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500'
                       "
                     >
+                    <template v-if="activeTab === 'diagnostic'">
                       <option :value="2">Warning</option>
                       <option :value="3">Inspect</option>
                       <option :value="4">Repair</option>
+                    </template>
+                    <template v-else>
+                      <option :value="2">Low</option>
+                      <option :value="3">Medium</option>
+                      <option :value="4">High</option>
+                    </template>
                     </select>
                   </div>
                 </div>
