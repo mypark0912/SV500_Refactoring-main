@@ -638,7 +638,7 @@
                 "AssetName":"Asset Name",
                 "AssetType":"Asset Type",
                 "EquipmentName":"Equipment Name",
-                "transformerCapacity":"Transformer Capacity",
+                "transformerCapacity":"Capacity",
                 "EditConfiguration":"Edit Configuration",
                 "CreateAsset":"Create"
 

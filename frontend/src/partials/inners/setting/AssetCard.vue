@@ -9,30 +9,53 @@
     <div
       class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
     >
-      <header class="flex items-center mb-2">
-        <div class="w-6 h-6 rounded-full shrink-0 bg-orange-500 mr-3">
-          <svg
-            class="w-6 h-6 fill-current text-white"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 15.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5zM19.5 12a7.5 7.5 0 0 1-1 3.7l2.1 2.1-1.8 1.8-2.1-2.1a7.5 7.5 0 0 1-3.7 1V21h-2.5v-2.5a7.5 7.5 0 0 1-3.7-1l-2.1 2.1-1.8-1.8 2.1-2.1a7.5 7.5 0 0 1-1-3.7H3v-2.5h2.5a7.5 7.5 0 0 1 1-3.7L4.4 4.4l1.8-1.8 2.1 2.1a7.5 7.5 0 0 1 3.7-1V3h2.5v2.5a7.5 7.5 0 0 1 3.7 1l2.1-2.1 1.8 1.8-2.1 2.1a7.5 7.5 0 0 1 1 3.7H21V12h-1.5z"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+      <header class="flex items-center justify-between mb-2">
+        <div class="flex items-center">
+          <div class="w-6 h-6 rounded-full shrink-0 bg-orange-500 mr-3">
+            <svg
+              class="w-6 h-6 fill-current text-white"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 15.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5zM19.5 12a7.5 7.5 0 0 1-1 3.7l2.1 2.1-1.8 1.8-2.1-2.1a7.5 7.5 0 0 1-3.7 1V21h-2.5v-2.5a7.5 7.5 0 0 1-3.7-1l-2.1 2.1-1.8-1.8 2.1-2.1a7.5 7.5 0 0 1-1-3.7H3v-2.5h2.5a7.5 7.5 0 0 1 1-3.7L4.4 4.4l1.8-1.8 2.1 2.1a7.5 7.5 0 0 1 3.7-1V3h2.5v2.5a7.5 7.5 0 0 1 3.7 1l2.1-2.1 1.8 1.8-2.1 2.1a7.5 7.5 0 0 1 1 3.7H21V12h-1.5z"
+                stroke="currentColor"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
+           {{ t('config.channelPanel.Diagnosis.title') }}  : {{ selectedAsset.name }}
+          </h3>
         </div>
-        <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-         {{ t('config.channelPanel.Diagnosis.title') }}  : {{ selectedAsset.name }}
-        </h3>
+        
+        <!-- Edit Configuration in Header -->
+        <div v-if="selectedbtn == 2" class="flex items-center gap-4">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</span>
+          <label class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="isEditNameplates"
+              class="form-checkbox text-violet-500"
+            />
+            <span class="text-sm">Nameplates</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="isEditParameters"
+              class="form-checkbox text-violet-500"
+            />
+            <span class="text-sm">Threshold</span>
+          </label>
+        </div>
       </header>
     </div>
     <div class="px-4 py-3">
-      <div class="grid grid-cols-[4fr_2fr_5fr_2fr] gap-6 items-start">
+      <div class="grid grid-cols-[4fr_2fr_6fr] gap-6 items-start">
         <!-- 1. Tree 테이블 -->
         <div class="border rounded shadow-sm">
           <table class="w-full">
@@ -74,78 +97,79 @@
           >
             {{ t('config.channelPanel.Diagnosis.registerAsset') }}
           </button>
-          <!-- <button
-            v-if="selectedbtn != 2"
-            @click="showCheckDelete = true"
-            class="bg-red-500 text-white px-4 py-2 rounded"
-          >
-            Delete Asset
-          </button> -->
         </div>
 
         <!-- 3. 상세 설정 영역 -->
         <div class="space-y-4">
-          <!-- 1행: Asset Type + Asset Name 수평 정렬 -->
+          <!-- 1행: Asset Type + Drive Type -->
           <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center gap-2">
-              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetType') }}</label>
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.AssetType') }}</label>
               <select
                 v-model="assetMode.type"
-                class="form-select w-full bg-gray-100"
+                class="form-select flex-1 bg-gray-100"
                 :disabled="selectedbtn != 1"
-                
               >
-                <option v-for="item in asseTypeList" :key="item" :value="item">
+                <option v-for="item in assetTypeList" :key="item" :value="item">
                   {{ item }}
                 </option>
               </select>
             </div>
 
+            <div v-if="canSelectDriveType" class="flex items-center gap-2">
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">Drive Type</label>
+              <select
+                v-model="driveType"
+                class="form-select flex-1 bg-gray-100"
+                :disabled="selectedbtn != 1"
+              >
+                <option value="DOL">DOL</option>
+                <option value="VFD">VFD</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2행: Asset Name + Equipment Name -->
+          <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center gap-2" v-if="selectedbtn >= 1">
-              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
               <input
-                
                 v-model="assetMode.name"
                 type="text"
-                class="form-input w-full"
+                class="form-input flex-1"
                 :disabled="selectedbtn == 2"
                 :maxlength="20"
               />
             </div>
             <div class="flex items-center gap-2" v-if="selectedbtn == 0">
-              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.AssetName') }}</label>
               <input
-                
                 v-model="assetMode.newname"
                 type="text"
-                class="form-input w-full"
+                class="form-input flex-1"
                 :maxlength="20"
-                
               />
             </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-           
+
             <div v-if="showEquip && selectedbtn >= 2" class="flex items-center gap-2">
-              <label class="w-24 text-sm font-medium">{{ t('config.channelPanel.Diagnosis.EquipmentName') }}</label>
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.EquipmentName') }}</label>
               <input
                 v-model="inputDict.assetInfo.nickname"
                 type="text"
-                class="form-input w-full"
+                class="form-input flex-1"
                 :maxlength="20"
               />
             </div>
-            <div
-              v-if="assetMode.type == 'Transformer' && selectedbtn == 2"
-              class="flex items-center gap-2"
-            >
-              <label class="w-48 text-sm font-medium"
-                >{{ t('config.channelPanel.Diagnosis.transformerCapacity') }}</label
-              >
+          </div>
+
+          <!-- 3행: Transformer Capacity (변압기일 때만) -->
+          <div v-if="assetMode.type == 'Transformer' && selectedbtn == 2" class="grid grid-cols-2 gap-4">
+            <div class="flex items-center gap-2">
+              <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">{{ t('config.channelPanel.Diagnosis.transformerCapacity') }}</label>
               <input
                 v-model="inputDict.n_kva"
                 type="text"
-                class="form-input w-full"
+                class="form-input flex-1"
                 :maxlength="20"
               />
             </div>
@@ -181,64 +205,7 @@
             >
               {{ t('config.channelPanel.Diagnosis.CreateAsset') }}
             </button>
-            <button
-              v-if="selectedbtn >= 1 && false"
-              @click="cancel"
-              class="bg-gray-500 text-white px-3 py-2 rounded"
-            >
-              Cancel
-            </button>
           </div>
-        </div>
-
-        <!--div v-if="selectedbtn > 0" class="space-y-4">
-                    <div class="flex items-center gap-2">
-                      <label class="w-24 text-sm font-medium">Asset Type</label>
-                      <select v-model="assetMode.type" class="form-select w-full bg-gray-100" :disabled="selectedbtn == 2">
-                        <option value="Transformer">Transformer</option>
-                        <option value="PowerSupply">PowerSupply</option>
-                        <option value="Motor">Motor</option>
-                        <option value="Pump">Pump</option>
-                        <option value="Fan">Fan</option>
-                        <option value="Compressor">Compressor</option>
-                      </select>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                      <label class="w-24 text-sm font-medium">Asset Name</label>
-                      <input v-model="assetMode.name" type="text" class="form-input w-full" />
-                    </div>
-                    <div v-if="assetMode.type == 'Transformer'" class="flex items-center gap-2">
-                      <label class="w-24 text-sm font-medium">Transformer Capacity</label>
-                      <input v-model="inputDict.n_kva" type="text" class="form-input w-full" />
-                    </div>
-
-                    <div class="flex gap-2">
-                      <button v-if="selectedbtn == 2" @click="updateAsset" class="bg-gray-500 text-white px-3 py-2 rounded">Change</button>
-                      <button v-if="selectedbtn == 1" @click="createAsset" class="bg-gray-500 text-white px-3 py-2 rounded">Create</button>
-                      <button v-if="selectedbtn >= 1" @click="cancel" class="bg-gray-500 text-white px-3 py-2 rounded">Cancel</button>
-                    </div>
-                  </div-->
-
-        <!-- 4. Edit Configuration 영역 -->
-        <div v-if="selectedbtn == 2" class="space-y-3">
-          <label class="text-sm font-medium block">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</label>
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="isEditNameplates"
-              class="form-checkbox text-violet-500"
-            />
-            <span>Nameplates</span>
-          </label>
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="isEditParameters"
-              class="form-checkbox text-violet-500"
-            />
-            <span>Threshold</span>
-          </label>
         </div>
       </div>
     </div>
@@ -249,13 +216,11 @@
     title="Confirm to delete asset"
   >
     <div class="w-[600px] max-w-full px-6">
-      <!-- 헤더 -->
       <div class="text-sm">
         Do you want to delete this asset? All associated data will be
         permanently removed.
       </div>
 
-      <!-- Footer -->
       <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
         <div class="flex justify-end space-x-2">
           <button
@@ -295,7 +260,26 @@ const assetList = ref([]);
 const checkList = ref([]);
 const selectedbtn = ref(0);
 const showCheckDelete = ref(false);
-const asseTypeList = ref([]);
+const assetTypeList = ref([
+            "PSupply",
+            "PrimaryTransformer",
+            "Transformer",
+            "MotorFeed",
+            "Motor",
+            "Pump",
+            "Fan",
+            "Compressor"
+        ]);
+const assetDriveType = inject('assetDriveType', ref('DOL'));
+const driveType = ref('DOL');  // 'DOL' 또는 'VFD'
+
+const vfdSupportedTypes = [
+    "MotorFeed",
+    "Motor", 
+    "Pump",
+    "Fan",
+    "Compressor"
+];
 const assetMode = ref({ name: "", type: "Motor", newname:"" });
 const diagnosis_detail = inject("diagnosis_detail");
 const emit = defineEmits(['update-selectedbtn']);
@@ -321,6 +305,29 @@ const selectedAsset = ref({
 });
 //console.log('savefile',savefile);
 const existAsset = computed(() => setupStore.getAssetConfig);
+
+const canSelectDriveType = computed(() => {
+    return vfdSupportedTypes.includes(assetMode.value.type);
+});
+
+// 실제 전송할 AssetType
+const finalAssetType = computed(() => {
+    if (driveType.value === 'VFD' && canSelectDriveType.value) {
+        return `${assetMode.value.type}-VFD`;
+    }
+    return assetMode.value.type;
+});
+
+// AssetType 변경 시 DriveType 초기화
+watch(() => assetMode.value.type, (newType) => {
+    if (!vfdSupportedTypes.includes(newType)) {
+        driveType.value = 'DOL';
+    }
+});
+
+watch(assetDriveType, (newValue) => {
+  driveType.value = newValue;
+});
 
 const m_kva = computed(() => setupStore.getMkva);
 const s_kva = computed(() => setupStore.getSkva);
@@ -652,14 +659,32 @@ const getAssetList = async () => {
   }
 };
 
+// const getAssetTypes = async () => {
+//   try {
+//     const response = await axios.get(`/setting/getAssetTypes`);
+
+//     if (response.data.success) {
+//       //const assetTypeList = response.data.data;
+//        asseTypeList.value = response.data.data;
+//       // console.log(asseTypeList.value);
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
 const getAssetTypes = async () => {
   try {
-    const response = await axios.get(`/setting/getAssetTypes`);
-
+    const response = await axios.get('/setting/getAssetTypes');
     if (response.data.success) {
-      //const groupedAssets = response.data.data;
-      asseTypeList.value = response.data.data;
-      console.log(asseTypeList.value);
+      const rawTypes = response.data.data;
+      
+      // VFD 제거하고 중복 제거
+      const uniqueTypes = [...new Set(
+        rawTypes.map(type => type.replace('-VFD', ''))
+      )];
+      
+      assetTypeList.value = uniqueTypes;
     }
   } catch (error) {
     console.log(error);
@@ -887,8 +912,14 @@ const createAsset = async () => {
       alert("❌ Asset name already exists. Please choose a different name.");
       return; // 중복이면 함수 종료
     }
+    let sendType;
+    if(driveType.value == 'VFD')
+      sendType = assetMode.value.type +"-" + driveType.value;
+    else
+      sendType = assetMode.value.type;
+    console.log(sendType);
     const payload = {
-      assetType: assetMode.value.type, //inputDict.value.assetInfo.type,
+      assetType: sendType, //inputDict.value.assetInfo.type,
       assetName: assetMode.value.name, //tempAssetName.value,
       assetNickname: assetMode.value.nickname,
     };

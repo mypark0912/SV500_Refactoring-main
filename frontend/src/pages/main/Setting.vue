@@ -1731,7 +1731,7 @@ export default {
     provide("checkNameplateflag", checkNameplateflag);
     provide("diagnosis_detail", diagnosis_detail);
     provide("GetSettingData", GetSettingData);
-    provide("status_Info", status_Info);
+    //provide("status_Info", status_Info);
 
     return {
       sidebarOpen,

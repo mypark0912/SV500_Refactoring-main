@@ -1017,6 +1017,9 @@ export default {
     const stList = ref(["Info", "Pass", "Warning", "Error"]);
 
     const { parameterOptions, selectedTrendSetup } = useInputDict();
+    const assetDriveType = ref('DOL');
+
+    provide('assetDriveType', assetDriveType);
 
     provide("selectedTrendSetup", selectedTrendSetup);
 
@@ -1312,6 +1315,11 @@ export default {
         const response = await axios.get(`/setting/getAssetConfig/${asset}`);
         if (response.data.success === true) {
           const allData = response.data.data;
+          const driveTypeParam = allData.find(p => p.Name === 'DriveType');
+          if (driveTypeParam) {
+            const index = parseInt(driveTypeParam.Value || "0");
+            assetDriveType.value = driveTypeParam.DataInfo?.[index] || 'DOL';
+          }
           if (Array.isArray(allData)) {
          
             const filteredTableData = allData.filter((item) => item.Type === 0);
@@ -1744,6 +1752,7 @@ export default {
       selectedbtn,
       handleSelectedbtnUpdate,
       isMotorTyped,
+      assetDriveType,
     };
   },
 };

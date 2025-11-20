@@ -197,7 +197,7 @@ const updateInputDict = () => {
   }
 
   // Diagnostic 데이터 저장
-  stDict[targetChannel].diagnosis = diagnosticData.value
+  stDict["diagnosis"] = diagnosticData.value
     .filter(item => item.enabled)
     .map(item => ({
       name: item.name,
@@ -205,7 +205,7 @@ const updateInputDict = () => {
     }));
 
   // PQ 데이터 저장
-  stDict[targetChannel].pq = pqData.value
+  stDict["pq"] = pqData.value
     .filter(item => item.enabled)
     .map(item => ({
       name: item.name,
