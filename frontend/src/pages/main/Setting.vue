@@ -1652,8 +1652,9 @@ export default {
         const isUseDOEnabled = data.useDO === 1 || data.useDO === true;
         if (!isUseDOEnabled && data.status_Info) {
           data.status_Info.diagnosis = [];
-          data.status_Info.pq = [];
-          
+          data.status_Info.pq = [];    
+          data.status_Info.faults = [];
+          data.status_Info.events = [];
         }
         // 데이터 타입 변환
         for (const key in data.ctInfo) {
