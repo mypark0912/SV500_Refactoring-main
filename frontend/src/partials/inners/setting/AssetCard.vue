@@ -771,6 +771,8 @@ const unregisterAsset = async () => {
     if (inputDict.value.status_Info) {
       inputDict.value.status_Info.diagnosis = [];
       inputDict.value.status_Info.pq = [];
+      inputDict.value.status_Info.faults = [];
+      inputDict.value.status_Info.events = [];
     }
 
     inputDict.value.assetInfo.name = "";

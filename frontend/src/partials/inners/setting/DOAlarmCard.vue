@@ -156,7 +156,7 @@ const stDict = computed(() => {
   } else if (channel.value === 'Sub' && subData.value) {
     return subData.value.status_Info;
   }
-  return { diagnosis: [], pq: [] };
+  return { diagnosis: [], pq: [], faults: [], events: [] };
 });
 
 const AssetType = computed(() => {
@@ -170,19 +170,27 @@ const AssetType = computed(() => {
 
 const tabs = [
   { id: 'diagnostic', label: 'Diagnostic' },
-  { id: 'pq', label: 'PQ' }
+  { id: 'pq', label: 'PQ' },
+  { id: 'faults', label: 'Faults' },
+  { id: 'events', label: 'Events' }
 ];
 
 // 초기값은 빈 배열로 설정
 const diagnosticData = ref([]);
 const pqData = ref([]);
+const faultsData = ref([]);
+const eventsData = ref([]);
 
 const currentTabData = computed(() => {
   switch (activeTab.value) {
     case 'diagnostic':
       return diagnosticData.value;
-    case 'pq':
-      return pqData.value;
+      case 'pq':
+        return pqData.value;
+      case 'faults':
+        return faultsData.value;
+      case 'events':
+        return eventsData.value;
     default:
       return diagnosticData.value;
   }
@@ -194,6 +202,8 @@ const fetchData = async () => {
   if (!AssetType.value || AssetType.value === '') {
     diagnosticData.value = [];
     pqData.value = [];
+    faultsData.value = [];  
+    eventsData.value = []; 
     console.log('No AssetType - skipping data fetch');
     return false;
   }
@@ -205,6 +215,8 @@ const fetchData = async () => {
     // AssetType에 따라 diagnosis 항목 가져오기
     const diagnosisItems = data.Diagnosis[AssetType.value] || [];
     const pqItems = data.PQ || [];
+    const faultsItems = data.Faults || [];
+    const eventsItems = data.Events || [];
     
     // diagnosticData 구성 - Title을 name으로 매핑
     diagnosticData.value = diagnosisItems.map(item => ({
@@ -223,6 +235,22 @@ const fetchData = async () => {
       level: 2,
       color: item.Title.includes('Voltage') ? 'bg-blue-500' : 'bg-green-500'
     }));
+    // faultsData 구성
+    faultsData.value = faultsItems.map(item => ({ 
+      name: item.Title,
+      component: item.Component,
+      enabled: false,
+      level: 2,
+      color: 'bg-yellow-500'
+    }));
+    // eventsData 구성
+    eventsData.value = eventsItems.map(item => ({ 
+      name: item.Title,
+      component: item.Component,
+      enabled: false,
+      level: 2,
+      color: 'bg-purple-500'
+    }));
     
     console.log(`${AssetType.value} 진단 항목 로드:`, diagnosticData.value);
     console.log("PQ 항목 로드:", pqData.value);
@@ -232,6 +260,8 @@ const fetchData = async () => {
     console.error("데이터 가져오기 실패:", error);
     diagnosticData.value = [];
     pqData.value = [];
+    faultsData.value = [];  
+    eventsData.value = []; 
     return false;
   }
 };
@@ -250,7 +280,11 @@ const loadSavedData = () => {
   const statusInfo = stDict.value;
   const actualStatusInfo = JSON.parse(JSON.stringify(statusInfo));
   
-  if (!statusInfo || (!actualStatusInfo.diagnosis?.length && !actualStatusInfo.pq?.length)) {
+  if (!statusInfo || 
+      (!actualStatusInfo.diagnosis?.length && 
+       !actualStatusInfo.pq?.length &&
+       !actualStatusInfo.faults?.length &&
+       !actualStatusInfo.events?.length)) {
     return;
   }
 
@@ -261,6 +295,15 @@ const loadSavedData = () => {
   });
   
   pqData.value.forEach(item => {
+    item.enabled = false;
+    item.level = 2;
+  });
+
+  faultsData.value.forEach(item => {
+    item.enabled = false;
+    item.level = 2;
+  });
+  eventsData.value.forEach(item => {
     item.enabled = false;
     item.level = 2;
   });
@@ -288,7 +331,29 @@ const loadSavedData = () => {
       }
     });
   }
+  const faultsArray = JSON.parse(JSON.stringify(statusInfo.faults || []));
+  if (faultsArray.length > 0) {
+    faultsArray.forEach(savedItem => {
+      const item = faultsData.value.find(f => f.name === savedItem.name);
+      if (item) {
+        item.enabled = true;
+        item.level = savedItem.level;
+      }
+    });
+  }
+  const eventsArray = JSON.parse(JSON.stringify(statusInfo.events || []));
+  if (eventsArray.length > 0) {
+    eventsArray.forEach(savedItem => {
+      const item = eventsData.value.find(e => e.name === savedItem.name);
+      if (item) {
+        item.enabled = true;
+        item.level = savedItem.level;
+      }
+    });
+  }
 };
+
+
 
 const updateInputDict = () => {
   const statusInfo = stDict.value;
@@ -306,6 +371,18 @@ const updateInputDict = () => {
     }));
 
   statusInfo["pq"] = pqData.value
+    .filter(item => item.enabled)
+    .map(item => ({
+      name: item.name,
+      level: item.level
+    }));
+  statusInfo["faults"] = faultsData.value
+    .filter(item => item.enabled)
+    .map(item => ({
+      name: item.name,
+      level: item.level
+    }));
+  statusInfo["events"] = eventsData.value
     .filter(item => item.enabled)
     .map(item => ({
       name: item.name,
@@ -331,6 +408,17 @@ watch(diagnosticData, () => {
 }, { deep: true });
 
 watch(pqData, () => { 
+  if (isDataLoaded.value) {
+    updateInputDict(); 
+  }
+}, { deep: true });
+watch(faultsData, () => { 
+  if (isDataLoaded.value) {
+    updateInputDict(); 
+  }
+}, { deep: true });
+
+watch(eventsData, () => { 
   if (isDataLoaded.value) {
     updateInputDict(); 
   }
