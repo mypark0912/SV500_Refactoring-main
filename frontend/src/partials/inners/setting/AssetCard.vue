@@ -34,14 +34,30 @@
         
         <!-- Edit Configuration in Header -->
         <div v-if="selectedbtn == 2" class="flex items-center gap-4">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</span>
+          <label class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="inputDict.useDO"
+              class="form-checkbox text-violet-500"
+            />
+            <span class="text-sm">Use DO Alarm</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="inputDict.useAI"
+              class="form-checkbox text-violet-500"
+            />
+            <span class="text-sm">Use AI Setup</span>
+          </label>
+          <!--span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</span-->
           <label class="flex items-center space-x-2">
             <input
               type="checkbox"
               v-model="isEditNameplates"
               class="form-checkbox text-violet-500"
             />
-            <span class="text-sm">Nameplates</span>
+            <span class="text-sm">Edit Nameplates</span>
           </label>
           <label class="flex items-center space-x-2">
             <input
@@ -49,7 +65,7 @@
               v-model="isEditParameters"
               class="form-checkbox text-violet-500"
             />
-            <span class="text-sm">Threshold</span>
+            <span class="text-sm">Edit Threshold</span>
           </label>
         </div>
       </header>

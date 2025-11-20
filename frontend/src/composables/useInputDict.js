@@ -14,8 +14,6 @@ export function useInputDict() {
       sntp: 0,
       diagnosis_main: false,
       diagnosis_sub: false,
-      useDO:0,
-      useAI:0,
     },
     deviceInfo: {
       name: "",
@@ -155,6 +153,8 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    useDO:0,
+    useAI:0,
     status_Info:{
       "diagnosis":[],
       "pq":[]
@@ -226,6 +226,8 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    useDO:0,
+    useAI:0,
     status_Info:{
       "diagnosis":[],
       "pq":[]
