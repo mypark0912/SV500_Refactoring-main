@@ -1641,6 +1641,13 @@ export default {
         data.PowerQuality =
           data.PowerQuality === true || data.PowerQuality === 1 ? 1 : 0;
 
+      // 🔥 useDO가 false이면 status_Info 초기화
+        const isUseDOEnabled = data.useDO === 1 || data.useDO === true;
+        if (!isUseDOEnabled && data.status_Info) {
+          data.status_Info.diagnosis = [];
+          data.status_Info.pq = [];
+          
+        }
         // 데이터 타입 변환
         for (const key in data.ctInfo) {
           if (key == "direction") {

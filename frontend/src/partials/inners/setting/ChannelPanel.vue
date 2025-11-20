@@ -709,8 +709,8 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <DOAlarmCard v-if="!isMotorTyped" :channel="channel" />
-            <AISetting v-if="General_inputDict.useFuction.useAI === 1 && !isMotorTyped" />
+            <DOAlarmCard :channel="channel" />
+            <AISetting :channel="channel"/>
           </div>
         </div>
       </section>

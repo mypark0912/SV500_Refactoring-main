@@ -766,6 +766,13 @@ const unregisterAsset = async () => {
     console.log(error);
   }
   if (flag) {
+
+    // 🔥 status_Info 초기화 추가
+    if (inputDict.value.status_Info) {
+      inputDict.value.status_Info.diagnosis = [];
+      inputDict.value.status_Info.pq = [];
+    }
+
     inputDict.value.assetInfo.name = "";
     inputDict.value.assetInfo.type = "";
     //inputDict.value.assetInfo.nickname = "";

@@ -630,7 +630,7 @@
                     <option :value="1">Sequence Components</option>
                   </select>
                 </div>
-                <div v-if="devMode === 'device2'">
+                <!-- <div v-if="devMode === 'device2'">
                   <label class="block text-sm font-medium mb-1.5" for="model"
                     >DO Alarm Setup</label
                   >
@@ -641,7 +641,7 @@
                     <option :value="1">Enable</option>
                     <option :value="0">Disable</option>
                   </select>
-                </div>
+                </div> -->
                 <!--div v-if="devMode === 'device2'">
                   <label class="block text-sm font-medium mb-1.5" for="model"
                     >AI Setup</label
