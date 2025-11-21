@@ -517,6 +517,10 @@ export default {
         c_version: versions.value.core,
         smart_version: versions.value.smartsystem,
       };
+      if(title.value.trim() === "") {
+        alert("❌ Title is required!");
+        return;
+      }
       console.log(data);
       try {
         const response = await axios.post(
