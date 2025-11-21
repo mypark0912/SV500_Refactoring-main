@@ -1098,6 +1098,8 @@ async def resetAll():
                 redis_state.client.hdel("System", "setup")
             if redis_state.client.hexists("System", "mode"):
                 redis_state.client.hdel("System", "mode")
+            if redis_state.client.exists("Equipment"):
+                redis_state.client.delete("Equipment")
             rt = delete_channel_data()
             sysService("start", "Core")
             if service_exists("smartsystemsservice.service"):
@@ -1774,13 +1776,13 @@ def save_alarm_configs_to_redis(setting_dict: dict):
         channel_name = channel_config.get("channel")
         asset_info = channel_config.get("assetInfo", {})
         status_info = channel_config.get("status_Info", {})
-        use_do = channel_config.get("useDO", 0)  # 채널별 useDO
-
+        # use_do = channel_config.get("useDO", 0)  # 채널별 useDO
+        confStatus = channel_config.get("confStatus", 0)  # 채널별 useDO
         if not channel_name:
             continue
 
         # useDO가 0이면 해당 채널은 저장하지 않음 (기존 로직 사용)
-        if use_do == 0:
+        if confStatus == 0:
             continue
 
         # 채널별 DashAlarms 데이터

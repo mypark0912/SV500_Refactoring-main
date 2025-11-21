@@ -102,6 +102,7 @@
 
            try {
              const response = await axios.get(`/api/getStatus/${chName}/${channel.value}`);
+             //console.log('DashboardCard_New', response.data.status);
               //console.log(response.data.status);
              if (response.data.status >= 0) {
                 stData.value.devName = chName;

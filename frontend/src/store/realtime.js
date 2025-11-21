@@ -102,20 +102,21 @@ export const useRealtimeStore = defineStore('realtime', () => {
     error.value = null
     
     try {
-      if (opMode === 'device2') {
-        await fetchChannelData('Main', opMode, channelState)
+      if (channelState?.SubEnable) {
+        //console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
+        await Promise.all([
+          fetchChannelData('Main', opMode, channelState),
+          fetchChannelData('Sub', opMode, channelState)
+        ])
       } else {
-        if (channelState?.SubEnable) {
-          //console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
-          await Promise.all([
-            fetchChannelData('Main', opMode, channelState),
-            fetchChannelData('Sub', opMode, channelState)
-          ])
-        } else {
-          await fetchChannelData('Main', opMode, channelState)
-          isSubDataLoaded.value = true
-        }
+        await fetchChannelData('Main', opMode, channelState)
+        isSubDataLoaded.value = true
       }
+      // if (opMode === 'device2') {
+      //   await fetchChannelData('Main', opMode, channelState)
+      // } else {
+        
+      // }
     } catch (err) {
       console.error('초기 데이터 로딩 실패:', err)
       error.value = err

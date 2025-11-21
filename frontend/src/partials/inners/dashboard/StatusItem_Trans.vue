@@ -58,7 +58,8 @@
   })
   
   const { t } = useI18n()
-  const stData = ref(props.data)
+  const stData = computed(() => props.data)
+
   const currentTime = ref(new Date())
   const comTitles = computed(()=>{
     switch(props.mode){
