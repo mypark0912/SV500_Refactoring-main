@@ -73,18 +73,19 @@
     }
   })
   // 시간 업데이트
-  let timeInterval = null
+  //let timeInterval = null
   onMounted(() => {
-    timeInterval = setInterval(() => {
-      currentTime.value = new Date()
-    }, 1000)
+    //console.log('StatusItem', props.channel, stData.value);
+    // timeInterval = setInterval(() => {
+    //   currentTime.value = new Date()
+    // }, 1000)
   })
   
   onUnmounted(() => {
-    if (timeInterval) {
-      clearInterval(timeInterval);
-      timeInterval = null;
-    }
+    // if (timeInterval) {
+    //   clearInterval(timeInterval);
+    //   timeInterval = null;
+    // }
   })
   
   // 표시할 상태들 (정지 제외)

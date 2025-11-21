@@ -1,6 +1,5 @@
 <template>
   <div
-    v-if="isUseDOEnabled && AssetType && AssetType !== ''"
     class="relative col-span-full xl:col-span-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
   >
     <div
@@ -273,15 +272,15 @@ const fetchData = async () => {
   }
 };
 // useDO 상태 확인을 위한 computed property 추가
-const isUseDOEnabled = computed(() => {
+// const isUseDOEnabled = computed(() => {
 
-  const currentChannelData = channel.value === 'Main' ? mainData.value : subData.value;
-  const channelUseDO = currentChannelData?.useDO === 1 || 
-                       currentChannelData?.useDO === true;
+//   const currentChannelData = channel.value === 'Main' ? mainData.value : subData.value;
+//   const channelUseDO = currentChannelData?.useDO === 1 || 
+//                        currentChannelData?.useDO === true;
   
-  // 채널 레벨에서 useDO가 활성화되어 있으면 카드 표시
-  return channelUseDO;
-});
+//   // 채널 레벨에서 useDO가 활성화되어 있으면 카드 표시
+//   return channelUseDO;
+// });
 
 const loadSavedData = () => {
   const statusInfo = stDict.value;

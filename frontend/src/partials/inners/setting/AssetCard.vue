@@ -37,6 +37,14 @@
           <label class="flex items-center space-x-2">
             <input
               type="checkbox"
+              v-model="inputDict.confStatus"
+              class="form-checkbox text-violet-500"
+            />
+            <span class="text-sm">Configure status</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input
+              type="checkbox"
               v-model="inputDict.useDO"
               class="form-checkbox text-violet-500"
             />

@@ -709,7 +709,7 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <DOAlarmCard :channel="channel" />
+            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" />
             <AISetting :channel="channel"/>
           </div>
         </div>
@@ -1029,13 +1029,17 @@ export default {
         ? inputDict_main.value
         : inputDict_sub.value;
     };
-    console.log('Use DO',  getInputDict().assetInfo.type);
-    const isMotorTyped = computed(()=>{
+    //console.log('Use DO',  getInputDict().assetInfo.type);
+    const isConfigureStatus = computed(()=>{
       const currentDict = getInputDict();
-      if(currentDict.assetInfo.type ==='Transformer' || currentDict.assetInfo.type ==='PrimaryTransformer'|| currentDict.assetInfo.type ==='PSupply')
-        return false;
+      if (currentDict.assetInfo.type != '' && currentDict.assetInfo.name != '')
+        return currentDict.confStatus == 0 ? false : true;
       else
-        return true;
+        return false;
+      // if(currentDict.assetInfo.type ==='Transformer' || currentDict.assetInfo.type ==='PrimaryTransformer'|| currentDict.assetInfo.type ==='PSupply')
+      //   return false;
+      // else
+      //   return true;
     })
     const isRestartButtonEnabled = computed(() => {
       const currentDict = getInputDict();
@@ -1751,7 +1755,7 @@ export default {
       diagnosis_detail,
       selectedbtn,
       handleSelectedbtnUpdate,
-      isMotorTyped,
+      isConfigureStatus,
       assetDriveType,
     };
   },

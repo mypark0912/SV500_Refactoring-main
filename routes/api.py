@@ -1288,7 +1288,7 @@ async def getPQStatus(asset, channel, request: Request):
             return await getPQStatus_legacy(data)
 
         if not channel_config.get("pq"):
-            return await getPQStatus_legacy(data, channel)
+            return await getPQStatus_legacy(data)
 
     except Exception as e:
         return {"status": -1}

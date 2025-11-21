@@ -487,9 +487,11 @@ export default {
       if (chName != "") {
         try {
           const response = await axios.get(`/api/getPQStatus/${chName}/${channelName}`);
+          //console.log(channelName, response.data);
           if (response.data.status >= 0) {
             pqData.value.devName = response.data.item;
             pqData.value.devStatus = response.data.status;
+            //console.log('DashMeterInteg',channelName, pqData.value);
           }
         } catch (error) {
           console.log("getPQStatus 데이터 가져오기 실패:", error);
@@ -562,7 +564,7 @@ export default {
         if (newVal) {
           if (channel.value == "main") assetTypes.value = newVal.assetType_main;
           else assetTypes.value = newVal.assetType_sub;
-
+          //console.log('watch -', channel.value, assetTypes.value)
           fetchData();
           if (assetTypes.value != "Transformer") {
             fetchRealData();

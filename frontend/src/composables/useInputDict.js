@@ -153,6 +153,7 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    confStatus:0,
     useDO:0,
     useAI:0,
     status_Info:{
@@ -226,6 +227,7 @@ export function useInputDict() {
         Array.from({ length: 32 }, (_, i) => [i + 1, [0, 0, 0, 0]])
       ),
     },
+    confStatus:0,
     useDO:0,
     useAI:0,
     status_Info:{

@@ -1647,6 +1647,9 @@ export default {
         if (data.hasOwnProperty('useDO')) {
           data.useDO = (data.useDO === true || data.useDO === 1) ? 1 : 0;
         }
+        if (data.hasOwnProperty('confStatus')) {
+          data.confStatus = (data.confStatus === true || data.confStatus === 1) ? 1 : 0;
+        }
 
         // 🔥 useAI도 있다면 0 또는 1로 변환
         if (data.hasOwnProperty('useAI')) {
