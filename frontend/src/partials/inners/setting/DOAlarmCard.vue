@@ -35,7 +35,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Diagnostic Status Setting
+          Status Setting
         </h3>
       </header>
     </div>
@@ -66,7 +66,7 @@
         </div>
 
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700/60"
         >
   <div class="mt-6 pt-2">
     <div class="flex flex-col">
@@ -91,10 +91,10 @@
         >
           <!-- Parameter Name -->
           <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center min-w-0">
-            <span 
+            <!--span 
               class="inline-block w-3 h-3 rounded-full mr-2 flex-shrink-0"
               :class="item.color"
-            ></span>
+            ></span-->
             <span class="truncate">{{ item.name }}</span>
           </div>
           
@@ -112,7 +112,7 @@
             <select
               v-model="item.level"
               :disabled="!item.enabled"
-              class="w-full px-3 py-1.5 text-xs border rounded-md transition-all"
+              class="w-24 px-3 py-1.5 text-xs border rounded-md transition-all"
               :class="
                 !item.enabled
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600 cursor-not-allowed'
