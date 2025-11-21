@@ -33,49 +33,58 @@
         </div>
         
         <!-- Edit Configuration in Header -->
-        <div v-if="selectedbtn == 2" class="flex items-center gap-4">
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="inputDict.confStatus"
-              class="form-checkbox text-violet-500"
-            />
-            <span class="text-sm">Configure status</span>
-          </label>
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="inputDict.useDO"
-              class="form-checkbox text-violet-500"
-            />
-            <span class="text-sm">Use DO Alarm</span>
-          </label>
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="inputDict.useAI"
-              class="form-checkbox text-violet-500"
-            />
-            <span class="text-sm">Use AI Setup</span>
-          </label>
-          <!--span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('config.channelPanel.Diagnosis.EditConfiguration') }}</span-->
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="isEditNameplates"
-              class="form-checkbox text-violet-500"
-            />
-            <span class="text-sm">Edit Nameplates</span>
-          </label>
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="isEditParameters"
-              class="form-checkbox text-violet-500"
-            />
-            <span class="text-sm">Edit Threshold</span>
-          </label>
-        </div>
+<div v-if="selectedbtn == 2" class="flex items-center gap-4">
+  <label class="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="inputDict.confStatus"
+      :true-value="1"
+      :false-value="0"
+      class="form-checkbox text-violet-500"
+    />
+    <span class="text-sm">Configure status</span>
+  </label>
+  <label class="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="inputDict.useDO"
+      :true-value="1"
+      :false-value="0"
+      class="form-checkbox text-violet-500"
+    />
+    <span class="text-sm">Use DO Alarm</span>
+  </label>
+  <label class="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="inputDict.useAI"
+      :true-value="1"
+      :false-value="0"
+      class="form-checkbox text-violet-500"
+    />
+    <span class="text-sm">Use AI Setup</span>
+  </label>
+  <label class="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="isEditNameplates"
+      :true-value="1"
+      :false-value="0"
+      class="form-checkbox text-violet-500"
+    />
+    <span class="text-sm">Edit Nameplates</span>
+  </label>
+  <label class="flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="isEditParameters"
+      :true-value="1"
+      :false-value="0"
+      class="form-checkbox text-violet-500"
+    />
+    <span class="text-sm">Edit Threshold</span>
+  </label>
+</div>
       </header>
     </div>
     <div class="px-4 py-3">
