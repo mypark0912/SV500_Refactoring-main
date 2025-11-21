@@ -1167,7 +1167,6 @@ async def set_diagnosissetting(request: Request):
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setSettings", json=data)
             data = response.json()
-            status = data["Status"]
         #     if response.status_code in [400, 401, 500]:
         #         flag = await checkLoginAPI(request)
         #         if not flag:
@@ -1177,12 +1176,15 @@ async def set_diagnosissetting(request: Request):
         #             data = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": str(e)}
+        return {"status": "0", "error": [str(e)]}
 
     if data:
-        return {"status": "1", "success": True , "result": status}
+        if data["Status"] == 0:
+            return {"status": "1", "success": True }
+        else:
+            return {"status": "1", "success": False, "error": data["Messages"]}
     else:
-        return {"status": "1", "success": False, "error": "Save Failed"}
+        return {"status": "1", "success": False, "error": ["No Response in setSettings API"]}
 
 @router.post('/setDiagnosisProfile')
 async def set_diagnosisprofile(request: Request):
@@ -1204,12 +1206,12 @@ async def set_diagnosisprofile(request: Request):
         #             data = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": str(e)}
+        return {"status": "0", "error": [str(e)]}
 
     if len(data) > 0:
         return {"status": "1","success": True }
     else:
-        return {"status": "1", "success": False, "error": "Save Failed"}
+        return {"status": "1", "success": False, "error": ["Save Failed"]}
 
 @router.get("/getAssetTypes")  # Diagnosis, Report Vue : get Asset info
 async def get_assetTypes(request: Request):
@@ -2185,12 +2187,15 @@ async def set_assetconfig(asset:str, request:Request):
         #             result = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": str(e)}
+        return {"status": "0", "error": [str(e)]}
 
-    if len(result) > 0:
-        return {"success": True}
+    if result:
+        if result["Status"] == 0:
+            return {"success": True}
+        else:
+            return {"success": False, "error": result["Messages"]}
     else:
-        return {"success": False, "error": "No Data"}
+        return {"success": False, "error": ["No Response in setNameplate API"]}
 
 @router.get("/getAssetParams/{asset}")  #Setting Vue : get Asset info
 async def get_assetParams(asset, request:Request):
@@ -2231,12 +2236,15 @@ async def set_assetParams(asset:str, request:Request):
         #             result = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": str(e)}
+        return {"success": False, "error": [str(e)]}
 
-    if len(result) > 0:
-        return {"success": True}
+    if result:
+        if result["Status"] == 1:
+            return {"success": True}
+        else:
+            return {"success": False, "error": result["Messages"]}
     else:
-        return {"success": False, "error": "No Data"}
+        return {"success": False, "error": ["No Response in setParameters API"]}
 
 @router.get("/test/{asset}")
 async def test_asset(asset):
