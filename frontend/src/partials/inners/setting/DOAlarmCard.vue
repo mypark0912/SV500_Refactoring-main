@@ -68,75 +68,73 @@
         <div
           class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60"
         >
-          <div class="mt-6 pt-2">
-            <div class="flex flex-col">
-              <!-- 헤더 -->
-              <div
-                class="grid grid-cols-[1fr_100px_120px] gap-4 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4 border-b pb-2"
-              >
-                <div class="text-left">Parameter</div>
-                <div class="text-center">Enable</div>
-                <div class="text-center">Select Level</div>
-              </div>
+  <div class="mt-6 pt-2">
+    <div class="flex flex-col">
+      <!-- 헤더 - 고정 너비 설정 -->
+      <div class="grid grid-cols-[minmax(180px,1fr)_80px_120px] gap-4 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4 border-b pb-2">
+        <div class="text-left">Parameter</div>
+        <div class="text-center">Enable</div>
+        <div class="text-center">Select Level</div>
+      </div>
 
-              <!-- 데이터가 없을 때 -->
-              <div v-if="currentTabData.length === 0" class="text-center py-8 text-gray-400">
-                <p class="text-sm">No items available for this asset type</p>
-              </div>
+      <!-- 데이터가 없을 때 -->
+      <div v-if="currentTabData.length === 0" class="text-center py-8 text-gray-400">
+        <p class="text-sm">No items available for this asset type</p>
+      </div>
 
-              <!-- 스크롤 가능한 데이터 목록 -->
-              <div v-else class="overflow-y-auto max-h-[400px] space-y-2 pr-2">
-                <div
-                  v-for="(item, idx) in currentTabData"
-                  :key="idx"
-                  class="grid grid-cols-[1fr_100px_120px] gap-4 items-center border-b border-gray-200 dark:border-gray-700/60 py-3 text-sm px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <!-- Parameter Name -->
-                  <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center">
-                    <span 
-                      class="inline-block w-3 h-3 rounded-full mr-2 flex-shrink-0"
-                      :class="item.color"
-                    ></span>
-                    {{ item.name }}
-                  </div>
-                  
-                  <!-- Enable Checkbox -->
-                  <div class="flex justify-center">
-                    <input
-                      type="checkbox"
-                      v-model="item.enabled"
-                      class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
-                    />
-                  </div>
-                  
-                  <!-- Select Level Combobox -->
-                  <div class="flex justify-center">
-                    <select
-                      v-model="item.level"
-                      :disabled="!item.enabled"
-                      class="w-full px-3 py-1.5 text-xs border rounded-md transition-all"
-                      :class="
-                        !item.enabled
-                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600 cursor-not-allowed'
-                          : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500'
-                      "
-                    >
-                    <template v-if="activeTab === 'diagnostic'">
-                      <option :value="2">Warning</option>
-                      <option :value="3">Inspect</option>
-                      <option :value="4">Repair</option>
-                    </template>
-                    <template v-else>
-                      <option :value="2">Low</option>
-                      <option :value="3">Medium</option>
-                      <option :value="4">High</option>
-                    </template>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <!-- 스크롤 가능한 데이터 목록 - 동일한 그리드 설정 -->
+      <div v-else class="overflow-y-auto max-h-[400px] space-y-2 pr-2">
+        <div
+          v-for="(item, idx) in currentTabData"
+          :key="idx"
+          class="grid grid-cols-[minmax(180px,1fr)_80px_120px] gap-4 items-center border-b border-gray-200 dark:border-gray-700/60 py-3 text-sm px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+        >
+          <!-- Parameter Name -->
+          <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center min-w-0">
+            <span 
+              class="inline-block w-3 h-3 rounded-full mr-2 flex-shrink-0"
+              :class="item.color"
+            ></span>
+            <span class="truncate">{{ item.name }}</span>
           </div>
+          
+          <!-- Enable Checkbox - 고정 너비 -->
+          <div class="flex justify-center w-[80px]">
+            <input
+              type="checkbox"
+              v-model="item.enabled"
+              class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
+            />
+          </div>
+          
+          <!-- Select Level Combobox - 고정 너비 -->
+          <div class="flex justify-center w-[120px]">
+            <select
+              v-model="item.level"
+              :disabled="!item.enabled"
+              class="w-full px-3 py-1.5 text-xs border rounded-md transition-all"
+              :class="
+                !item.enabled
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500'
+              "
+            >
+              <template v-if="activeTab === 'diagnostic'">
+                <option :value="2">Warning</option>
+                <option :value="3">Inspect</option>
+                <option :value="4">Repair</option>
+              </template>
+              <template v-else>
+                <option :value="2">Low</option>
+                <option :value="3">Medium</option>
+                <option :value="4">High</option>
+              </template>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
         </div>
       </template>
     </div>
