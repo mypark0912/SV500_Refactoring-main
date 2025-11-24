@@ -1160,7 +1160,7 @@ async def set_diagnosissetting(request: Request):
     data = await request.json()
     status = 0
     if not data:
-        return {"success": False, "error": ["No data provided"]}
+        return {"status": "1", "success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setSettings", json=data)
         # data = response.json()
@@ -1176,7 +1176,7 @@ async def set_diagnosissetting(request: Request):
         #             data = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": [str(e)]}
+        return {"status": "0", "success": False, "error": [str(e)]}
 
     if data:
         if data["Status"] == 0:
@@ -1184,13 +1184,13 @@ async def set_diagnosissetting(request: Request):
         else:
             return {"status": "1", "success": False, "error": data["Messages"]}
     else:
-        return {"status": "1", "success": False, "error": ["No Response in setSettings API"]}
+        return {"status": "1", "success": False, "error": ["Save failed in setSettings API"]}
 
 @router.post('/setDiagnosisProfile')
 async def set_diagnosisprofile(request: Request):
     data = await request.json()
     if not data:
-        return {"success": False, "error": ["No data provided"]}
+        return {"status": "1", "success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setProfile", json=data)
         # data = response.json()
@@ -1206,12 +1206,12 @@ async def set_diagnosisprofile(request: Request):
         #             data = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"status": "0", "error": [str(e)]}
+        return {"status": "0", "success": False, "error": [str(e)]}
 
-    if len(data) > 0:
+    if data:
         return {"status": "1","success": True }
     else:
-        return {"status": "1", "success": False, "error": ["Save Failed"]}
+        return {"status": "1", "success": False, "error": ["Save Failed in setProfile API"]}
 
 @router.get("/getAssetTypes")  # Diagnosis, Report Vue : get Asset info
 async def get_assetTypes(request: Request):
@@ -2171,7 +2171,7 @@ async def check_assetconfig(asset: str, request: Request):
 async def set_assetconfig(asset:str, request:Request):
     data = await request.json()
     if not data:
-        return {"success": False, "error": ["No data provided"]}
+        return {"status":"1", "success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setNameplate?name={asset}", json=data)
         # result = response.json()
@@ -2191,11 +2191,11 @@ async def set_assetconfig(asset:str, request:Request):
 
     if result:
         if result["Status"] == 0:
-            return {"success": True}
+            return {"status":"1","success": True}
         else:
-            return {"success": False, "error": result["Messages"]}
+            return {"status":"1","success": False, "error": result["Messages"]}
     else:
-        return {"success": False, "error": ["No Response in setNameplate API"]}
+        return {"status":"1","success": False, "error": ["Save failed in setNameplate API"]}
 
 @router.get("/getAssetParams/{asset}")  #Setting Vue : get Asset info
 async def get_assetParams(asset, request:Request):
@@ -2220,7 +2220,7 @@ async def get_assetParams(asset, request:Request):
 async def set_assetParams(asset:str, request:Request):
     data = await request.json()
     if not data:
-        return {"success": False, "error": ["No data provided"]}
+        return {"status":"1","success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setParameters?name={asset}", json=data)
         # result = response.json()
@@ -2236,15 +2236,15 @@ async def set_assetParams(asset:str, request:Request):
         #             result = response.json()
     except Exception as e:
         print("Error:", e)
-        return {"success": False, "error": [str(e)]}
+        return {"status":"0", "success": False, "error": [str(e)]}
 
     if result:
         if result["Status"] == 1:
-            return {"success": True}
+            return {"status":"1", "success": True}
         else:
-            return {"success": False, "error": result["Messages"]}
+            return {"status":"1", "success": False, "error": result["Messages"]}
     else:
-        return {"success": False, "error": ["No Response in setParameters API"]}
+        return {"status":"1", "success": False, "error": ["Save failed in setParameters API"]}
 
 @router.get("/test/{asset}")
 async def test_asset(asset):
