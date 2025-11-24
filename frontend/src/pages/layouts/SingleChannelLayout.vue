@@ -13,10 +13,12 @@
       :channel="computedChannel"  
     />
     
-    <!--Dashboard_TransInfo_final v-if="computedType === 'Transformer' && channelState.MainDiagnosis"
+    <Dashboard_TransInfo_final v-if="computedType === 'Transformer' && channelState.MainDiagnosis"
       :channel="channel" 
-      :data="mainData" 
-    /-->
+    />
+    <Dashboard_TransInfo_final v-else-if="computedType === 'Transformer' && channelState.Diagnosis"
+      :channel="channel" 
+    />
     
     <Dashboard_Single v-if="computedType !== 'Transformer' && channelState.MainDiagnosis"
       :channel="computedChannel" 
@@ -32,10 +34,10 @@
       :channel="computedChannel" 
     />
     
-    <DashboardCard_Diagnosis v-if="channelState.MainDiagnosis"
+    <DashboardCard_Diagnosis v-if="channelState.MainEnable && channelState.MainDiagnosis"
       :channel="computedChannel" 
     />
-    <DashboardCard_Diagnosis v-else-if="channelState.SubDiagnosis"
+    <DashboardCard_Diagnosis v-else-if="channelState.SubEnable && channelState.SubDiagnosis"
       :channel="computedChannel" 
     />
   </div>
@@ -77,11 +79,13 @@ export default {
     const AssetInfo = computed(() => setupStore.getAssetConfig)
 
     const computedChannel = computed(() => {
+      console.log(props.channel);
       if (props.channel == 'Main' || props.channel == 'main')
         return 'Main'
       else
         return 'Sub'
     })
+    console.log(computedChannel.value);
     const computedType = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetType_main: AssetInfo.value.assetType_sub)
     //const mainData = inject('meterDictMain');
     //const subData = inject('meterDictSub');

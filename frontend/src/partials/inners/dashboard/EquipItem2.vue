@@ -251,7 +251,7 @@ import transImg from '@/images/trans.png'
       () => LoadFactor.value,
       (newVal) => {
         if (newVal > 0 && transData.value?.Stotal) {
-          LoadRate.value = ((transData.value.Stotal / newVal) * 100).toFixed(1);
+          LoadRate.value = (((transData.value.Stotal/1000) / newVal) * 100).toFixed(1);
         }
       },
       { immediate: true }

@@ -1171,7 +1171,7 @@ async def get_dashStatus(asset, channel):
         if not redis_data:
             print(f"{channel} - Not Redis : get_state_legacy")
             legacy = await get_state_legacy(data, channel)
-            return {"data": legacy, "eventTree": eventTree, "runhours": runhours}
+            return {"status": 0,"data": legacy, "eventTree": eventTree, "runhours": runhours}
 
         dash_alarms = json.loads(redis_data)
         channel_config = dash_alarms.get(channel)
@@ -1180,7 +1180,7 @@ async def get_dashStatus(asset, channel):
         if not channel_config:
             print(f"{channel} - Not Channel : get_state_legacy")
             legacy = await get_state_legacy(data, channel)
-            return {"data": legacy, "eventTree": eventTree, "runhours": runhours}
+            return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
 
     except Exception as e:
         print(str(e))
@@ -1230,13 +1230,13 @@ async def get_dashStatus(asset, channel):
             retDict[state_list[i]] = {"status": final_status, "item": item_label}
 
 
-        return {"data": retDict, "eventTree": eventTree, "runhours": runhours}
+        return {"status": 0,"data": retDict, "eventTree": eventTree, "runhours": runhours}
 
     except Exception as e:
         print(f"AlarmStatusMatcher error: {str(e)}")
         # 에러 시 기존 로직으로 fallback
         legacy = await get_state_legacy(data, channel)
-        return {"data": legacy, "eventTree": eventTree, "runhours": runhours}
+        return {"status": 0,"data": legacy, "eventTree": eventTree, "runhours": runhours}
 
 def get_running(channel):
     if channel == 'Main':

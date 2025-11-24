@@ -35,7 +35,7 @@
           <!-- 온도 카드 -->
           <div class="status-card temperature-card">
             <div class="status-value">
-              <span class="value-number">{{ transData.Temp }}</span>
+              <span class="value-number">{{ displayData.Temp }}</span>
               <span class="value-unit">℃</span>
             </div>
             <div class="status-label">{{ t('dashboard.transDiag.Temperature') }}</div>
@@ -53,7 +53,7 @@
           <!-- 역률 카드 -->
           <div class="status-card power-card">
             <div class="status-value">
-              <span class="value-number">{{ transData.PF }}</span>
+              <span class="value-number">{{ displayData.PF }}</span>
               <span class="value-unit">%</span>
             </div>
             <div class="status-label">{{ t('dashboard.transDiag.PowerFactor') }}</div>
@@ -62,7 +62,7 @@
           <!-- 전류 카드 -->
           <div class="status-card current-card">
             <div class="status-value">
-              <span class="value-number">{{ transData.Ig }}</span>
+              <span class="value-number">{{ displayData.Ig }}</span>
               <span class="value-unit">A</span>
             </div>
             <div class="status-label">{{ t('dashboard.transDiag.Ig') }}</div>
@@ -89,32 +89,78 @@
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import sampleImg from '@/images/transformer_m.png'
 import { useSetupStore } from '@/store/setup'
+import { useRealtimeStore } from '@/store/realtime'
 import axios from 'axios'
 
 export default {
   name: 'DashboardCard_TransInfo',
   props: {
     channel: String,
-    data: Object,
   },
   setup(props) {
     const { t } = useI18n()
     const setupStore = useSetupStore()
-    
+    const realtimeStore = useRealtimeStore()
+
     // 반응형 데이터
-    const channel = ref(props.channel)
-    const transData = ref({})
-    const LoadRate = ref(0)
+    //const LoadRate = ref(0)
     const LoadFactor = ref(-1)
     const rawdata = ref([])
 
     // 계산된 속성
     const AssetInfo = computed(() => setupStore.getAssetConfig)
     const motorImageSrc = computed(() => sampleImg)
+
+    // Store에서 실시간 데이터 가져오기
+    const channelName = computed(() => 
+      props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
+    )
+
+    const realtimeData = computed(() => 
+      realtimeStore.getChannelData(channelName.value) || {}
+    )
+
+    // 화면 표시용 데이터 (설비 타입에 따라 매핑)
+    const displayData = computed(() => {
+      const data = realtimeData.value
+      if (!data || Object.keys(data).length === 0) {
+        return { Temp: '-', Ig: '-', Stotal: 0, PF: '-' }
+      }
+
+      const chType = props.channel?.toLowerCase() === 'main'
+        ? AssetInfo.value?.assetType_main
+        : AssetInfo.value?.assetType_sub
+
+      if (chType === 'Transformer') {
+        return {
+          Temp: data.Temp ?? '-',
+          Ig: data.Ig ?? '-',
+          Stotal: data.S4 ?? 0,
+          PF: data.PF4 ?? '-',
+        }
+      }
+
+      // 다른 설비 타입 처리
+      return {
+        Temp: data.Temp ?? '-',
+        Ig: data.Ig ?? '-',
+        Stotal: data.Stotal ?? 0,
+        PF: data.PF ?? '-',
+      }
+    })
+
+    // 부하율 계산
+    const LoadRate = computed(() => {
+      console.log('Stotal', displayData.value.Stotal);
+      if (LoadFactor.value > 0 && displayData.value.Stotal > 0) {
+        return (((displayData.value.Stotal/1000) / LoadFactor.value) * 100).toFixed(2)
+      }
+      return 0
+    })
 
     // 상태 클래스 함수들
     const getLoadRateClass = (rate) => {
@@ -142,99 +188,66 @@ export default {
       return 'status-normal'
     }
 
-    const fetchRealData = async (chType, chName) => {
-      transData.value = {};
-      try {
-        const response = await axios.get(`/api/getRealTime/${chType}/${chName}`);
-
-          if (response.data.success) {
-
-            transData.value = response.data.data;
-          }else{
-            console.log('No Data');
-          }
-        }catch (error) {
-          console.log("데이터 가져오기 실패:", error);
-        } 
-     };
-
-    // API 호출
+    // 설비 정보 가져오기 (한 번만 호출)
     const fetchAsset = async () => {
       if (!AssetInfo.value) {
         await setupStore.checkSetting()
       }
 
-      const chName = channel.value.toLowerCase() === 'main' 
-        ? AssetInfo.value.assetName_main 
-        : AssetInfo.value.assetName_sub
+      const chName = props.channel?.toLowerCase() === 'main'
+        ? AssetInfo.value?.assetName_main
+        : AssetInfo.value?.assetName_sub
 
-      if (chName === '') {
-        alert('등록된 설비가 없습니다.')
+      if (!chName || chName === '') {
+        console.log('등록된 설비가 없습니다.')
         return
       }
 
-      const chType = channel.value.toLowerCase() === 'main' 
-        ? AssetInfo.value.assetType_main 
-        : AssetInfo.value.assetType_sub
-
       try {
         const response = await axios.get(`/api/getAsset/${chName}`)
-        
+
         if (response.data.success) {
           rawdata.value = response.data.data
-          
+
           // RatedKVA 찾기
-          const ratedKVAItem = rawdata.value.find(item => item.Name === "RatedKVA")
+          const ratedKVAItem = rawdata.value.find(item => item.Name === 'RatedKVA')
           if (ratedKVAItem) {
             LoadFactor.value = parseFloat(ratedKVAItem.Value)
-          }
-          
-          // 부하율 계산
-          if (LoadFactor.value > 0 && transData.value?.Stotal) {
-            LoadRate.value = ((transData.value.Stotal / LoadFactor.value) * 100).toFixed(2)
           }
         } else {
           console.log('No Data')
         }
       } catch (error) {
-        console.log("데이터 가져오기 실패:", error)
+        console.log('데이터 가져오기 실패:', error)
       }
-      if(chType != 'Transformer'){
-        fetchRealData(chType, chName);
-      }
-    };
+    }
 
-    // props.data 감시
-    watch(
-      () => props.data,
-      (newData) => {
-        if (newData && Object.keys(newData).length > 0) {
-          const chType = channel.value.toLowerCase() === 'main' ? AssetInfo.value.assetType_main : AssetInfo.value.assetType_sub;
+    // 부하율 자동 업데이트 (실시간 데이터 변경 시)
+    // watch(
+    //   () => displayData.value.Stotal,
+    //   (newStotal) => {
+    //     if (LoadFactor.value > 0 && newStotal > 0) {
+    //       console.log('Stotal:', newStotal);
+    //       LoadRate.value = ((newStotal / LoadFactor.value) * 100).toFixed(2)
+    //     }
+    //   },
+    //   { immediate: true }
+    // )
 
-          if(chType == 'Transformer'){
-            transData.value = {
-              Temp: newData.Temp,
-              Ig: newData.Ig,
-              Stotal: newData.S4,
-              PF: newData.PF4,
-            }
-          }
-          fetchAsset();
-        }
-      },
-      { immediate: true }
-    )
+    // 마운트 시 설비 정보 로드
+    onMounted(() => {
+      fetchAsset()
+    })
 
     return {
       // 데이터
       motorImageSrc,
-      channel,
       AssetInfo,
-      transData,
+      displayData,
       LoadRate,
       LoadFactor,
       rawdata,
-      
+
       // 함수
       t,
       getLoadRateClass,

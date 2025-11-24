@@ -203,11 +203,15 @@
             console.log(asset.value);
             return;
           }
-         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
-         const chNick = channel.value == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
-         const channelName = channel.value == 'main'? 'Main' : 'Sub';
+        const channelName = (channel.value == 'main' || channel.value == 'Main') ? 'Main' : 'Sub';
+         const chName = channelName == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
+         const chType = channelName == 'Main'? asset.value.assetType_main : asset.value.assetType_sub;
+         const chNick = channelName == 'Main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
+         
          try {
+          // console.log(channel.value);
+          // console.log(asset.value);
+          // console.log(`CALL : /api/getDashSatatus/${chName}/${channelName}`)
              const response = await axios.get(`/api/getDashSatatus/${chName}/${channelName}`);
              //console.log('DashboardCard_New', response.data.status);
               //console.log(response.data.status);
