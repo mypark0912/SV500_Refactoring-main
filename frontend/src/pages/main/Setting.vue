@@ -1168,7 +1168,7 @@ export default {
           console.error("General 저장 실패:", err);
         }
 
-        // === 2. Diagnosis 설정 저장 ===
+// === 2. Diagnosis 설정 저장 ===
         let diagnosisSuccess = true;
         if (useDiagnosis.value) {
           try {
@@ -1185,13 +1185,19 @@ export default {
                 }
               );
 
-              if (
-                !diagnosisResponse.data ||
-                diagnosisResponse.data["success"] !== true
-              ) {
+              const { status, success, error } = diagnosisResponse.data || {};
+
+              // status가 0이면 무조건 실패
+              if (status === "0" || status === 0) {
                 diagnosisSuccess = false;
-                const errors = diagnosisResponse.data?.error || ["Diagnosis settings save failed"];
-                const errorList = Array.isArray(errors) ? errors : [errors];
+                const errorList = Array.isArray(error) ? error : [error || "API request failed"];
+                errorMessages.push(`Check Smart API Service: \n`);
+                errorMessages.push(...errorList.map(err => `Diagnosis settings: ${err}`));
+              }
+              // status가 1이면서 success가 false면 실패
+              else if ((status === "1" || status === 1) && !success) {
+                diagnosisSuccess = false;
+                const errorList = Array.isArray(error) ? error : [error || "Diagnosis settings save failed"];
                 errorMessages.push(...errorList.map(err => `Diagnosis settings: ${err}`));
               }
             }
@@ -1209,21 +1215,27 @@ export default {
                 }
               );
 
-              if (
-                !advancedResponse.data ||
-                advancedResponse.data["success"] !== true
-              ) {
+              const { status, success, error } = advancedResponse.data || {};
+
+              // status가 0이면 무조건 실패
+              if (status === "0" || status === 0) {
                 diagnosisSuccess = false;
-                const errors = advancedResponse.data?.error || ["Advanced diagnosis settings save failed"];
-                const errorList = Array.isArray(errors) ? errors : [errors];
+                const errorList = Array.isArray(error) ? error : [error || "API request failed"];
+                errorMessages.push(`Check Smart API Service: \n`);
+                errorMessages.push(...errorList.map(err => `Advanced diagnosis settings: ${err}`));
+              }
+              // status가 1이면서 success가 false면 실패
+              else if ((status === "1" || status === 1) && !success) {
+                diagnosisSuccess = false;
+                const errorList = Array.isArray(error) ? error : [error || "Advanced diagnosis settings save failed"];
                 errorMessages.push(...errorList.map(err => `Advanced diagnosis settings: ${err}`));
               }
             }
-          } catch (err)  {
+          } catch (err) {
             diagnosisSuccess = false;
             const errors = err.response?.data?.error || [err.message || "Diagnosis settings save error"];
             const errorList = Array.isArray(errors) ? errors : [errors];
-            errorMessages.push(...errorList.map(err => `Diagnosis settings: ${err}`));
+            errorMessages.push(...errorList.map(e => `Diagnosis settings: ${e}`));
             console.error("Diagnosis 저장 실패:", err);
           }
         }
@@ -1261,6 +1273,7 @@ export default {
         ) {
           alert("✅ All settings have been saved successfully!");
         } else {
+          //console.log("generalSucces:", generalSuccess,'diagnosisSuccess', diagnosisSuccess,'mainResult.success', mainResult.success, subResult.success);
           let errorMsg = "❌ Some settings failed to save:\n";
           errorMessages.forEach((msg) => {
             errorMsg += `- ${msg}\n`;
@@ -1506,7 +1519,7 @@ export default {
       }
     };
 
-    const setNameplateConfig = async (tableData, assetName, channelName) => {
+const setNameplateConfig = async (tableData, assetName, channelName) => {
       try {
         if (!Array.isArray(tableData) || tableData.length === 0) {
           console.error("Invalid or empty tableData:", tableData);
@@ -1520,10 +1533,6 @@ export default {
 
         const plainTableData = tableData.map((item) => ({ ...item }));
 
-        // console.log(
-        //   `Setting nameplate config for asset: ${assetName}, channel: ${channelName}`
-        // );
-
         const response = await axios.post(
           `/setting/setAssetConfig/${assetName}`,
           plainTableData,
@@ -1532,25 +1541,46 @@ export default {
           }
         );
 
-        if (!response.data?.success) {
-          console.error(
-            `❌ Failed to save ${channelName} channel asset settings: ` +
-              (response.data.error || "unknown error")
+        const { status, success, error } = response.data || {};
+
+        // status가 0이면 무조건 실패
+        if (status === "0" || status === 0) {
+          const errorMessages = Array.isArray(error)
+            ? error.join('\n')
+            : error || "API request failed";
+          diagnosisSuccess = false;
+          errorMessages.push(
+            `❌ Failed to save ${channelName} channel asset settings:\n
+            Check Smart API Service: \n
+            ${errorMessages}`
           );
-        } else {
-          // console.log(
-          //   `✅ Successfully saved ${channelName} channel asset settings`
-          // );
+          return;
+        }
+
+        // status가 1이면서 success가 false면 실패
+        if ((status === "1" || status === 1) && !success) {
+          const errorMessages = Array.isArray(error)
+            ? error.join('\n')
+            : error || "unknown error";
+          diagnosisSuccess = false;
+          errorMessages.push(
+            `❌ Failed to save ${channelName} channel asset settings:\n${errorMessages}`
+          );
+          return;
+        }
+
+        // status가 1이면서 success가 true면 성공
+        if ((status === "1" || status === 1) && success) {
+          console.log(
+            `✅ Successfully saved ${channelName} channel asset settings`
+          );
         }
       } catch (error) {
-        console.error(
+        diagnosisSuccess = false;
+        errorMessages.push(
           `Error occurred while saving ${channelName} channel asset:`,
           error
-        );
-        alert(
-          `❌ Error occurred while saving ${channelName} channel asset: ` +
-            (error.response?.data?.error || error.message)
-        );
+        );      
       }
     };
 
@@ -1609,31 +1639,47 @@ export default {
           }
         );
 
-        if (!response.data?.success) {
-          const errorMessages = Array.isArray(response.data.error)
-            ? response.data.error.join('\n')
-            : response.data.error || "unknown error";
-          
-          console.error(
+        const { status, success, error } = response.data || {};
+
+        // status가 0이면 무조건 실패
+        if (status === "0" || status === 0) {
+          const errorMessages = Array.isArray(error)
+            ? error.join('\n')
+            : error || "API request failed";
+          diagnosisSuccess = false;
+          errorMessages.push(
+            `❌ Failed to save ${channelName} channel asset parameters:\n
+            Check Smart API Service: \n
+            ${errorMessages}`
+          );
+          return;
+        }
+
+        // status가 1이면서 success가 false면 실패
+        if ((status === "1" || status === 1) && !success) {
+          const errorMessages = Array.isArray(error)
+            ? error.join('\n')
+            : error || "unknown error";
+          diagnosisSuccess = false;
+          errorMessages.push(
             `❌ Failed to save ${channelName} channel asset parameters:\n${errorMessages}`
           );
-        } else {
+          return;
+        }
+
+        // status가 1이면서 success가 true면 성공
+        if ((status === "1" || status === 1) && success) {
           console.log(
             `✅ Successfully saved ${channelName} channel asset parameters`
           );
         }
       } catch (error) {
-        console.error(
+        diagnosisSuccess = false;
+        errorMessages.push(
           `Error occurred while saving ${channelName} channel asset parameters:`,
           error
         );
-        const errorMessages = Array.isArray(error.response?.data?.error)
-          ? error.response.data.error.join('\n')
-          : error.response?.data?.error || error.message;
-        
-        alert(
-          `❌ Error occurred while saving ${channelName} channel asset parameters:\n${errorMessages}`
-        );
+  
       }
     };
 
