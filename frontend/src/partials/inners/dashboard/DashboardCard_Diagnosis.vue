@@ -108,44 +108,44 @@
     //   { immediate: true }
     // );
  
-     const fetchData = async () => {
-          if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
-            //console.log("⏳ asset 준비 안됨. fetchData 대기중");
-            //console.log(asset.value);
-            return;
-          }
-         const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
-         const chNick = channel.value.toLowerCase() == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
-         if(chName != ''){
-           const chN = channel.value.toLowerCase() == 'main'? 'Main' : 'Sub';
-           try {
-             const response = await axios.get(`/api/getStatus/${chName}/${chN}`);
-              //console.log(response.data.status);
-             if (response.data.status >= 0) {
-                // stData.value.devName = chName;
-                // stData.value.devType = chType;
-                // stData.value.devStatus = response.data.status;
-                stData.value.devName = chName;
-                stData.value.devType = chType;
-                stData.value.devStatus = response.data.status;
-                stData.value.devNickname = chNick;
-                stData.value.updateTime = response.data.updateTime;
-                // if(assetTypes.value == 'Transformer'){                 
-                //     if (channel.value === 'main') {
-                //       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
-                //     } else {
-                //       transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
-                //     }
-                // }
-             }else{
-               console.log('No Data');
-             }
-           }catch (error) {
-             console.log("데이터 가져오기 실패:", error);
-           } 
-         }
-     };
+    //  const fetchData = async () => {
+    //       if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
+    //         //console.log("⏳ asset 준비 안됨. fetchData 대기중");
+    //         //console.log(asset.value);
+    //         return;
+    //       }
+    //      const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+    //      const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+    //      const chNick = channel.value.toLowerCase() == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
+    //      if(chName != ''){
+    //        const chN = channel.value.toLowerCase() == 'main'? 'Main' : 'Sub';
+    //        try {
+    //          const response = await axios.get(`/api/getStatus/${chName}/${chN}`);
+    //           //console.log(response.data.status);
+    //          if (response.data.status >= 0) {
+    //             // stData.value.devName = chName;
+    //             // stData.value.devType = chType;
+    //             // stData.value.devStatus = response.data.status;
+    //             stData.value.devName = chName;
+    //             stData.value.devType = chType;
+    //             stData.value.devStatus = response.data.status;
+    //             stData.value.devNickname = chNick;
+    //             stData.value.updateTime = response.data.updateTime;
+    //             // if(assetTypes.value == 'Transformer'){                 
+    //             //     if (channel.value === 'main') {
+    //             //       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
+    //             //     } else {
+    //             //       transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
+    //             //     }
+    //             // }
+    //          }else{
+    //            console.log('No Data');
+    //          }
+    //        }catch (error) {
+    //          console.log("데이터 가져오기 실패:", error);
+    //        } 
+    //      }
+    //  };
 
      
     //  const fetchRealData = async () => {
@@ -172,30 +172,70 @@
     //      }
     //  };
 
-    const fetchPQData = async () => {
+    // const fetchPQData = async () => {
+    //       if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
+    //         //console.log("⏳ asset 준비 안됨. fetchData 대기중");
+    //         //console.log(asset.value);
+    //         return;
+    //       }
+    //      const channelName = channel.value.toLowerCase() == 'main'? 'Main':'Sub'
+    //      const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+    //      const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+    //      if(chName != ''){
+    //        try {
+    //          const response = await axios.get(`/api/getPQStatus/${chName}/${channelName}`);
+    //          if (response.data.status >= 0) {
+    //             pqData.value.devName = response.data.item;
+    //             pqData.value.devStatus = response.data.status;
+    //             pqData.value.updateTime = response.data.updateTime;
+    //          }else{
+    //            console.log('No Data');
+    //          }
+    //        }catch (error) {
+    //          console.log("데이터 가져오기 실패:", error);
+    //        } 
+    //      }
+    //  };
+
+     const fetchDashData = async () => {
           if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
-            //console.log("⏳ asset 준비 안됨. fetchData 대기중");
-            //console.log(asset.value);
+            console.log("⏳ asset 준비 안됨. fetchData 대기중");
+            console.log(asset.value);
             return;
           }
-         const channelName = channel.value.toLowerCase() == 'main'? 'Main':'Sub'
-         const chName = channel.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
-         const chType = channel.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
-         if(chName != ''){
-           try {
-             const response = await axios.get(`/api/getPQStatus/${chName}/${channelName}`);
+         const chName = channel.value == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+         const chType = channel.value == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
+         const chNick = channel.value == 'main'? asset.value.assetNickname_main : asset.value.assetNickname_sub;
+         const channelName = channel.value == 'main'? 'Main' : 'Sub';
+         try {
+             const response = await axios.get(`/api/getDashSatatus/${chName}/${channelName}`);
+             //console.log('DashboardCard_New', response.data.status);
+              //console.log(response.data.status);
              if (response.data.status >= 0) {
-                pqData.value.devName = response.data.item;
-                pqData.value.devStatus = response.data.status;
-                pqData.value.updateTime = response.data.updateTime;
+                stData.value.devName = chName;
+                stData.value.devType = chType;
+                stData.value.devStatus = response.data.data["Diagnostic"]["status"];
+                stData.value.devNickname = chNick;
+                stData.value.runhour = response.data.runhours;
+                
+                if(assetTypes.value.includes('Transformer')){                 
+                    if (channelName == 'Main') {
+                      transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
+                    } else {
+                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
+                    }
+                }else{
+                  stData.value.Ig = channelName === 'Main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
+                }
+                pqData.value.devName = response.data.data["PQ"]["item"];
+                pqData.value.devStatus =response.data.data["PQ"]["status"];
              }else{
                console.log('No Data');
              }
            }catch (error) {
              console.log("데이터 가져오기 실패:", error);
            } 
-         }
-     };
+    };
 
      
     watch(asset, (newVal, oldVal) => {
@@ -205,8 +245,9 @@
     else
       assetTypes.value = newVal.assetType_sub;
       
-    fetchData();
-    fetchPQData();
+    // fetchData();
+    // fetchPQData();
+    fetchDashData();
 
     // 타이머 재설정
     if (updateInterval) {
@@ -216,11 +257,11 @@
     
     // 새 타이머 설정
     updateInterval = setInterval(async () => {
-      await fetchData();
+      await fetchDashData(); //fetchData();
       // if(assetTypes.value != 'Transformer'){
       //   await fetchRealData();
       // }
-      await fetchPQData();
+      //await fetchPQData();
     }, 60000);  // 5분
   }
 }, { immediate: true });
@@ -283,7 +324,8 @@
        channel,
        stData,
        channelStatus,
-       fetchData,
+       //fetchData,
+       fetchDashData,
        asset,
        status,
        data,
