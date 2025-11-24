@@ -1209,7 +1209,10 @@ async def set_diagnosisprofile(request: Request):
         return {"status": "0", "success": False, "error": [str(e)]}
 
     if data:
-        return {"status": "1","success": True }
+        if data["Status"] == 0:
+            return {"status": "1", "success": True }
+        else:
+            return {"status": "1", "success": False, "error": data["Messages"]}
     else:
         return {"status": "1", "success": False, "error": ["Save Failed in setProfile API"]}
 
@@ -2239,7 +2242,7 @@ async def set_assetParams(asset:str, request:Request):
         return {"status":"0", "success": False, "error": [str(e)]}
 
     if result:
-        if result["Status"] == 1:
+        if result["Status"] == 0:
             return {"status":"1", "success": True}
         else:
             return {"status":"1", "success": False, "error": result["Messages"]}
