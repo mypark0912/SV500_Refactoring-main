@@ -33,13 +33,13 @@
         <!-- 운용 현황 카드들 -->
         <div class="status-cards">
           <!-- 온도 카드 -->
-          <div class="status-card temperature-card">
+          <!--div class="status-card temperature-card">
             <div class="status-value">
               <span class="value-number">{{ displayData.Temp }}</span>
               <span class="value-unit">℃</span>
             </div>
             <div class="status-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-          </div>
+          </div-->
 
           <!-- 부하율 카드 -->
           <div class="status-card load-card">
@@ -60,13 +60,13 @@
           </div>
 
           <!-- 전류 카드 -->
-          <div class="status-card current-card">
+          <!--div class="status-card current-card">
             <div class="status-value">
               <span class="value-number">{{ displayData.Ig }}</span>
               <span class="value-unit">A</span>
             </div>
             <div class="status-label">{{ t('dashboard.transDiag.Ig') }}</div>
-          </div>
+          </div-->
         </div>
 
         <!-- 설비 사양 -->
