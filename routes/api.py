@@ -1158,9 +1158,9 @@ async def get_dashStatus(asset, channel):
             data = response.json()
 
             # Temporarily Reverse
-            if "Diagnostic" in data and "PQ" in data:
-                data["Diagnostic"], data["PQ"] = data["PQ"], data["Diagnostic"]
-                logging.info(f"[TEMP FIX] Swapped Diagnostic <-> PQ for {asset}")
+            # if "Diagnostic" in data and "PQ" in data:
+            #     data["Diagnostic"], data["PQ"] = data["PQ"], data["Diagnostic"]
+            #     logging.info(f"[TEMP FIX] Swapped Diagnostic <-> PQ for {asset}")
 
             eventTree = data.get("Events", [])
         # 2. Redis에서 DashAlarms 설정 가져오기
