@@ -1190,10 +1190,9 @@ export default {
                 diagnosisResponse.data["status"] !== "1"
               ) {
                 diagnosisSuccess = false;
-                const errorMsg =
-                  diagnosisResponse.data?.error ||
-                  "Diagnosis settings save failed";
-                errorMessages.push(`Diagnosis settings: ${errorMsg}`);
+                const errors = diagnosisResponse.data?.error || ["Diagnosis settings save failed"];
+                const errorList = Array.isArray(errors) ? errors : [errors];
+                errorMessages.push(...errorList.map(err => `Diagnosis settings: ${err}`));
               }
             }
 
@@ -1215,19 +1214,16 @@ export default {
                 advancedResponse.data["status"] !== "1"
               ) {
                 diagnosisSuccess = false;
-                const errorMsg =
-                  advancedResponse.data?.error ||
-                  "Advanced diagnosis settings save failed";
-                errorMessages.push(`Advanced diagnosis settings: ${errorMsg}`);
+                const errors = advancedResponse.data?.error || ["Advanced diagnosis settings save failed"];
+                const errorList = Array.isArray(errors) ? errors : [errors];
+                errorMessages.push(...errorList.map(err => `Advanced diagnosis settings: ${err}`));
               }
             }
-          } catch (err) {
+          } catch (err)  {
             diagnosisSuccess = false;
-            const errorMsg =
-              err.response?.data?.error ||
-              err.message ||
-              "Diagnosis settings save error";
-            errorMessages.push(`Diagnosis settings: ${errorMsg}`);
+            const errors = err.response?.data?.error || [err.message || "Diagnosis settings save error"];
+            const errorList = Array.isArray(errors) ? errors : [errors];
+            errorMessages.push(...errorList.map(err => `Diagnosis settings: ${err}`));
             console.error("Diagnosis 저장 실패:", err);
           }
         }
@@ -1537,7 +1533,7 @@ export default {
         );
 
         if (!response.data?.success) {
-          alert(
+          console.error(
             `❌ Failed to save ${channelName} channel asset settings: ` +
               (response.data.error || "unknown error")
           );
@@ -1614,9 +1610,12 @@ export default {
         );
 
         if (!response.data?.success) {
-          alert(
-            `❌ Failed to save ${channelName} channel asset parameters: ` +
-              (response.data.error || "unknown error")
+          const errorMessages = Array.isArray(response.data.error)
+            ? response.data.error.join('\n')
+            : response.data.error || "unknown error";
+          
+          console.error(
+            `❌ Failed to save ${channelName} channel asset parameters:\n${errorMessages}`
           );
         } else {
           console.log(
@@ -1628,9 +1627,12 @@ export default {
           `Error occurred while saving ${channelName} channel asset parameters:`,
           error
         );
+        const errorMessages = Array.isArray(error.response?.data?.error)
+          ? error.response.data.error.join('\n')
+          : error.response?.data?.error || error.message;
+        
         alert(
-          `❌ Error occurred while saving ${channelName} channel asset parameters: ` +
-            (error.response?.data?.error || error.message)
+          `❌ Error occurred while saving ${channelName} channel asset parameters:\n${errorMessages}`
         );
       }
     };

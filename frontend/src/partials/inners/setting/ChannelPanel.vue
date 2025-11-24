@@ -1547,7 +1547,7 @@ export default {
         );
 
         if (!response.data?.success) {
-          alert(
+          console.error(
             "❌ Failed to save asset settings: " +
               (response.data.error || "unknown error")
           );
@@ -1574,7 +1574,7 @@ export default {
       }
     };
 
-    const setNameplateConfig = async () => {
+    const setNameplateConfig = async () => { 
       try {
         const plainTableData = tableData.value.map((item) => ({ ...item }));
         const currentDict = getInputDict();
@@ -1588,9 +1588,12 @@ export default {
         );
 
         if (!response.data?.success) {
-          alert(
-            "❌ Failed to save asset settings: " +
-              (response.data.error || "unknown error")
+          const errorMessages = Array.isArray(response.data.error)
+            ? response.data.error.join('\n')
+            : response.data.error || "unknown error";
+          
+          console.error(
+            `❌ Failed to save asset settings:\n${errorMessages}`
           );
         }
       } catch (error) {
