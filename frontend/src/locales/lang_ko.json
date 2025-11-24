@@ -87,6 +87,7 @@
     "maintenance": "유지보수"
   },
   "dashboard": {
+    "loading":"대시보드 로딩 중",
     "singleinfo": {
       "title": "설비 현황",
       "Operatingtime": "운전 시간",

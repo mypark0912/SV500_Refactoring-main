@@ -87,6 +87,7 @@
         "maintenance": "Maintenance"
     },
     "dashboard": {
+       "loading":"Dashboard Loading",
        "singleinfo":{
             "title": "Equipment Info",
             "Operatingtime": "Running Hours",
