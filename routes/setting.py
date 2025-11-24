@@ -1160,7 +1160,7 @@ async def set_diagnosissetting(request: Request):
     data = await request.json()
     status = 0
     if not data:
-        return {"status": "0", "error": ["No data provided"]}
+        return {"success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setSettings", json=data)
         # data = response.json()
@@ -1190,7 +1190,7 @@ async def set_diagnosissetting(request: Request):
 async def set_diagnosisprofile(request: Request):
     data = await request.json()
     if not data:
-        return {"status": "0", "error": ["No data provided"]}
+        return {"success": False, "error": ["No data provided"]}
     try:
         # response = await  http_state.client.post(f"/setProfile", json=data)
         # data = response.json()

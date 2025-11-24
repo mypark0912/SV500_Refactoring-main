@@ -1187,7 +1187,7 @@ export default {
 
               if (
                 !diagnosisResponse.data ||
-                diagnosisResponse.data["status"] !== "1"
+                diagnosisResponse.data["success"] !== true
               ) {
                 diagnosisSuccess = false;
                 const errors = diagnosisResponse.data?.error || ["Diagnosis settings save failed"];
@@ -1211,7 +1211,7 @@ export default {
 
               if (
                 !advancedResponse.data ||
-                advancedResponse.data["status"] !== "1"
+                advancedResponse.data["success"] !== true
               ) {
                 diagnosisSuccess = false;
                 const errors = advancedResponse.data?.error || ["Advanced diagnosis settings save failed"];
