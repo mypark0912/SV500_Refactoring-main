@@ -25,6 +25,17 @@
           {{ channel == 'main' ? AssetInfo.assetType_main : AssetInfo.assetType_sub }}
         </p>
       </div>
+      <div class="equipment-status">
+          <span 
+            class="status-badge"
+            :class="isRunning ? 'status-running' : 'status-stopped'"
+          >
+            <span class="status-indicator"></span>
+            <span class="status-text">
+              {{ isRunning ? t('dashboard.singleinfo.running') : t('dashboard.singleinfo.stopped') }}
+            </span>
+          </span>
+        </div>
     </div>
 
     <!-- 데이터 테이블 -->
@@ -89,7 +100,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import sampleImg from '@/images/transformer_m.png'
 import { useSetupStore } from '@/store/setup'
@@ -105,12 +116,12 @@ export default {
     const { t } = useI18n()
     const setupStore = useSetupStore()
     const realtimeStore = useRealtimeStore()
-
+    let updateInterval = null;
     // 반응형 데이터
     //const LoadRate = ref(0)
     const LoadFactor = ref(-1)
     const rawdata = ref([])
-
+    const isRunning = ref(0);
     // 계산된 속성
     const AssetInfo = computed(() => setupStore.getAssetConfig)
     const motorImageSrc = computed(() => sampleImg)
@@ -222,6 +233,15 @@ export default {
       }
     }
 
+    const getStatus = async() =>{
+      const chName = props.channel?.toLowerCase() === 'main'?'Main':'Sub'
+        const response = await axios.get(`/api/getEquipStatus/${chName}`);
+        if (response.data.success){
+          //console.log(response.data);
+          isRunning.value = response.data.status;
+        }
+      }
+
     // 부하율 자동 업데이트 (실시간 데이터 변경 시)
     // watch(
     //   () => displayData.value.Stotal,
@@ -235,9 +255,21 @@ export default {
     // )
 
     // 마운트 시 설비 정보 로드
-    onMounted(() => {
-      fetchAsset()
-    })
+    onMounted(async() => {
+      await fetchAsset()
+      await getStatus();
+        updateInterval = setInterval(async () => {
+          await fetchAsset()
+          await getStatus();
+        }, 300000);  // 5분
+    });
+
+    onUnmounted(() => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
+      });
 
     return {
       // 데이터
@@ -247,7 +279,7 @@ export default {
       LoadRate,
       LoadFactor,
       rawdata,
-
+      isRunning,
       // 함수
       t,
       getLoadRateClass,
@@ -320,6 +352,45 @@ export default {
   @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300;
   @apply px-2 py-1 rounded-md inline-block;
 }
+
+.equipment-status {
+    @apply flex items-center;
+    @apply flex-shrink-0 ml-auto;
+  }
+
+  .status-badge {
+    @apply flex items-center gap-2 px-3 py-1.5;
+    @apply rounded-full font-semibold text-xs;
+    @apply border-2 transition-all duration-300;
+    @apply shadow-sm;
+    @apply whitespace-nowrap;
+  }
+
+  .status-indicator {
+    @apply w-2 h-2 rounded-full;
+    @apply animate-pulse;
+  }
+
+  .status-running {
+    @apply bg-green-50 dark:bg-green-900/30;
+    @apply border-green-500 dark:border-green-600;
+    @apply text-green-700 dark:text-green-300;
+  }
+
+  .status-running .status-indicator {
+    @apply bg-green-500;
+  }
+
+  .status-stopped {
+    @apply bg-gray-50 dark:bg-gray-700/30;
+    @apply border-gray-400 dark:border-gray-500;
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  .status-stopped .status-indicator {
+    @apply bg-gray-400;
+    @apply animate-none;
+  }
 
 .data-section {
   @apply flex-1 p-4;

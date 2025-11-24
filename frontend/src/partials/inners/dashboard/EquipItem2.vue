@@ -4,7 +4,7 @@
       <!-- 12 컬럼 그리드로 변경 -->
       <div class="grid grid-cols-12 gap-4 items-center">
         <!-- 장비 정보 섹션 - 6 컬럼 -->
-        <div class="col-span-6">
+        <div class="col-span-9">
           <div class="flex items-center gap-3 justify-between">
             <div class="flex items-center gap-3">
               <div class="equipment-avatar">
@@ -30,17 +30,17 @@
         </div>
  
         <!-- 메트릭 섹션 - 6 컬럼 -->
-        <div class="col-span-6">
+        <div class="col-span-3">
           <div class="metrics-section">
             <!-- Transformer -->
             <template v-if="stData.devType.includes('Transformer')">
-              <div class="metric-box temperature">
+              <!--div class="metric-box temperature">
                 <div class="metric-label">{{ t('dashboard.transDiag.Temperature') }}</div>
                 <div class="metric-main">
                   <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
                   <span class="metric-unit">℃</span>
                 </div>
-              </div>
+              </div-->
               <div class="metric-box load">
                 <div class="metric-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
                 <div class="metric-main">
@@ -48,13 +48,13 @@
                   <span class="metric-unit">%</span>
                 </div>
               </div>
-              <div class="metric-box current">
+              <!--div class="metric-box current">
                 <div class="metric-label">{{ t('dashboard.transDiag.Ig') }}</div>
                 <div class="metric-main">
                   <span class="metric-value">{{ transData.Ig?.toFixed(1) || 0 }}</span>
                   <span class="metric-unit">A</span>
                 </div>
-              </div>
+              </div-->
             </template>
  
             <!-- VFD -->
