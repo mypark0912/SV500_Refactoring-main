@@ -1157,12 +1157,11 @@ async def get_dashStatus(asset, channel):
             response = await client.get(f"http://{os_spec.restip}:5000/api/getbargraphs?name={asset}")
             data = response.json()
 
-            # for category in ['Diagnostic', 'PQ', 'Events', 'Faults']:
-            #     if category in data and isinstance(data[category], list):
-            #         for item in data[category]:
-            #             if 'Title' in item:
-            #                 # 공백 제거하여 Name 생성
-            #                 item['Name'] = item['Title'].replace(' ', '')
+            # Temporarily Reverse
+            if "Diagnostic" in data and "PQ" in data:
+                data["Diagnostic"], data["PQ"] = data["PQ"], data["Diagnostic"]
+                logging.info(f"[TEMP FIX] Swapped Diagnostic <-> PQ for {asset}")
+
             eventTree = data.get("Events", [])
         # 2. Redis에서 DashAlarms 설정 가져오기
         redis_state.client.select(0)
