@@ -15,6 +15,7 @@ from .util import is_service_active
 from. diagnosis_map import AlarmStatusMatcher
 from concurrent.futures import ThreadPoolExecutor
 import asyncio, math
+from typing import Dict, List, Any
 
 EN_FILES = 'en50160_info.json'
 
@@ -415,7 +416,7 @@ def proc_eventFaultData(datas):
 
 def proc_DiagnosisData_optimized(datas):
     import time
-    start = time.time()
+    # start = time.time()
 
     # 1. NodeType 집합으로 변환 (O(1) 조회)
     superNodes = {item["NodeType"] for item in datas["BarGraph"]}
@@ -485,7 +486,7 @@ def proc_DiagnosisData_optimized(datas):
 
             superlist.append(superdict)
 
-    print(f"Processing time: {time.time() - start:.3f}s")
+    # print(f"Processing time: {time.time() - start:.3f}s")
     return {"data_status": datas["BarGraph"], "data_tree": superlist}
 
 def proc_DiagnosisData(datas):
@@ -640,9 +641,69 @@ async def get_diagPQ(asset, request: Request):
 
     if datas:
         ret = proc_DiagnosisData_optimized(datas)
+        # harmonics_data = await get_harmonics_data(ret)
         return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
     else:
         return {"success": False, "error": "No Data"}
+
+
+async def get_harmonics_data(processed_data):  # add - PQ Diagnosis Harmonics Chart
+    try:
+        # proc_DiagnosisData_optimized로 이미 처리된 데이터에서 추출
+        data_tree = processed_data.get("data_tree", [])
+
+        harmonics_data = {
+            "harmonics": []
+        }
+
+        def extract_harmonics_order(name: str) -> int:
+            """harmonics 이름에서 차수 추출"""
+            match = re.search(r'(\d+)$', name)
+            if match:
+                return int(match.group(1))
+            return 0
+
+        # data_tree에서 Name이 "Harmonics"인 항목들 찾기
+        for item in data_tree:
+            if item.get("Name") == "Harmonics":
+                harmonics_values = []
+
+                # children 순회하며 harmonicsSelected로 시작하는 항목들 찾기
+                children = item.get("children", [])
+                for child in children:
+                    child_name = child.get("Name", "")
+
+                    # harmonicsSelectedI 또는 harmonicsSelectedV인 경우
+                    if child_name.startswith("harmonicsSelectedI") or child_name.startswith("harmonicsSelectedV"):
+                        # 이 child의 children (NodeType 11)들이 실제 차수별 데이터
+                        sub_children = child.get("children", [])
+                        for sub_child in sub_children:
+                            sub_name = sub_child.get("Name", "")
+                            order = extract_harmonics_order(sub_name)
+                            if order > 0:
+                                harmonics_values.append({
+                                    "order": order,
+                                    "value": sub_child.get("Value")
+                                })
+
+                # 차수 순으로 정렬
+                harmonics_values.sort(key=lambda x: x["order"])
+
+                harmonics_data["harmonics"].append({
+                    "assembly_id": item.get("AssemblyID"),
+                    "title": item.get("Title"),
+                    "titles": item.get("Titles"),
+                    "data": harmonics_values
+                })
+
+        logging.info(f"Harmonics 데이터 추출 완료: {len(harmonics_data['harmonics'])}개")
+        return harmonics_data
+
+    except Exception as e:
+        logging.error(f"Error in get_harmonics_data: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        return None
 
 @router.get("/getEvents/{asset}")  # Diagnosis Vue : get diagnosis
 async def get_events(asset, request: Request):
