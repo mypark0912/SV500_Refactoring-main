@@ -155,7 +155,7 @@ export default {
 
     // 부하율 계산
     const LoadRate = computed(() => {
-      console.log('Stotal', displayData.value.Stotal);
+      //console.log('Stotal', displayData.value.Stotal);
       if (LoadFactor.value > 0 && displayData.value.Stotal > 0) {
         return (((displayData.value.Stotal/1000) / LoadFactor.value) * 100).toFixed(2)
       }

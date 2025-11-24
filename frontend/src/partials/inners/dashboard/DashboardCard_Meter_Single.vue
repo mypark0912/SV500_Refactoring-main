@@ -126,7 +126,7 @@
       const realtimeData = computed(() => {
         // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
         const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
-        console.log('useRealtimeStore',channelName,store.getChannelData(channelName))
+       // console.log('useRealtimeStore',channelName,store.getChannelData(channelName))
         return store.getChannelData(channelName) || {}
       })
   

@@ -222,17 +222,18 @@
                 stData.value.devNickname = chNick;
                 stData.value.runhour = response.data.runhours;
                 
-                if(assetTypes.value.includes('Transformer')){                 
-                    if (channelName == 'Main') {
-                      transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
-                    } else {
-                      transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
-                    }
-                }else{
-                  stData.value.Ig = channelName === 'Main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
-                }
+                // if(assetTypes.value.includes('Transformer')){                 
+                //     if (channelName == 'Main') {
+                //       transData.value = { Temp: meterDictMain.value.Temp, Ig: meterDictMain.value.Ig, Stotal:meterDictMain.value.S4 }
+                //     } else {
+                //       transData.value = { Temp: meterDictSub.value.Temp, Ig: meterDictSub.value.Ig, Stotal:meterDictSub.value.S4 }
+                //     }
+                // }else{
+                //   stData.value.Ig = channelName === 'Main' ? meterDictMain.value.Ig : meterDictSub.value.Ig;
+                // }
                 pqData.value.devName = response.data.data["PQ"]["item"];
                 pqData.value.devStatus =response.data.data["PQ"]["status"];
+                //console.log(pqData.value);
              }else{
                console.log('No Data');
              }
