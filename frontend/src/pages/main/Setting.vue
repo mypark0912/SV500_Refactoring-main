@@ -1291,198 +1291,200 @@ export default {
       await setupStore.checkSetting();
     };
 
-    const savefile = async () => {
-      // 이미 저장 중이면 중단
-      if (isSaving.value) {
-        return;
-      }
+const savefile = async () => {
+  // 이미 저장 중이면 중단
+  if (isSaving.value) {
+    return;
+  }
 
-      // 충돌 상황 체크 - 업데이트된 로직
-      if (showConflictWarning.value) {
+  // 충돌 상황 체크 - 업데이트된 로직
+  if (showConflictWarning.value) {
+    alert(
+      "Cannot use Waveform FTP and Diagnosis simultaneously. Please disable one of them."
+    );
+    return;
+  }
+
+  try {
+    isSaving.value = true; // ✅ 저장 시작
+
+    // 진단 미사용 채널의 Asset 등록 체크
+    for (const channelName in diagnosis_detail.value) {
+      const channelData = diagnosis_detail.value[channelName];
+
+      // Main/Sub 채널별 diagnosis 사용 여부 확인
+      const isDiagnosisEnabledForChannel =
+        channelName === "main"
+          ? inputDict.value.useFuction.diagnosis_main
+          : inputDict.value.useFuction.diagnosis_sub;
+
+      // 진단이 OFF인데 Asset이 등록되어 있는 경우
+      if (
+        !isDiagnosisEnabledForChannel &&
+        channelData.assetName &&
+        channelData.assetName !== ""
+      ) {
         alert(
-          "Cannot use Waveform FTP and Diagnosis simultaneously. Please disable one of them."
+          `Diagnosis is disabled for ${channelName} channel, but an asset (${channelData.assetName}) is registered. Please remove the asset or enable diagnosis.`
         );
         return;
       }
+    }
 
-      try {
-        isSaving.value = true; // ✅ 저장 시작
+    // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
+    let needsNameplateConfirmation = false;
+    let nameplateChannels = [];
 
-        // 진단 미사용 채널의 Asset 등록 체크
-        for (const channelName in diagnosis_detail.value) {
-          const channelData = diagnosis_detail.value[channelName];
+    for (const channelName in diagnosis_detail.value) {
+      const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
 
-          // Main/Sub 채널별 diagnosis 사용 여부 확인
-          const isDiagnosisEnabledForChannel =
-            channelName === "main"
-              ? inputDict.value.useFuction.diagnosis_main
-              : inputDict.value.useFuction.diagnosis_sub;
+      // Main/Sub 채널별 diagnosis 사용 여부 확인
+      const isDiagnosisEnabledForChannel =
+        channelName === "main"
+          ? inputDict.value.useFuction.diagnosis_main
+          : inputDict.value.useFuction.diagnosis_sub;
 
-          // 진단이 OFF인데 Asset이 등록되어 있는 경우
-          if (
-            !isDiagnosisEnabledForChannel &&
-            channelData.assetName &&
-            channelData.assetName !== ""
-          ) {
-            alert(
-              `Diagnosis is disabled for ${channelName} channel, but an asset (${channelData.assetName}) is registered. Please remove the asset or enable diagnosis.`
-            );
-            return;
-          }
-        }
-
-        // 1. 먼저 nameplate configuration 체크 - 가장 먼저 실행
-        let needsNameplateConfirmation = false;
-        let nameplateChannels = [];
-
-        for (const channelName in diagnosis_detail.value) {
-          const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
-
-          // Main/Sub 채널별 diagnosis 사용 여부 확인
-          const isDiagnosisEnabledForChannel =
-            channelName === "main"
-              ? inputDict.value.useFuction.diagnosis_main
-              : inputDict.value.useFuction.diagnosis_sub;
-
-          // assetName과 tableData 검증 및 nameplate 체크
-          if (
-            channelData.use &&
-            isDiagnosisEnabledForChannel &&
-            channelData.assetName &&
-            channelData.assetName !== "" &&
-            channelData.tableData &&
-            Array.isArray(channelData.tableData) &&
-            channelData.tableData.length > 0
-          ) {
-            try {
-              const combinedData = [
-                ...channelData.tableData,
-                ...(channelData.modalData &&
-                Array.isArray(channelData.modalData)
-                  ? channelData.modalData
-                  : []),
-              ];
-              const nameplateFlag = await checkNameplateConfig(
-                combinedData,
-                channelData.assetName
-              );
-              // console.log(
-              //   channelData.assetName,
-              //   "Nameplate check result:",
-              //   nameplateFlag
-              // );
-              if (nameplateFlag) {
-                needsNameplateConfirmation = true;
-                nameplateChannels.push(
-                  `${channelName} channel(${channelData.assetName})`
-                );
-              }
-            } catch (error) {
-              console.error(
-                `Error checking nameplate for ${channelName}:`,
-                error
-              );
-              alert(
-                `An error occurred while checking nameplate configuration for ${channelName}: ${error.message}`
-              );
-              return;
-            }
-          }
-        }
-
-        // 2. Nameplate 변경이 필요한 경우 사용자 확인
-        if (needsNameplateConfirmation) {
-          const channelList = nameplateChannels.join(", ");
-          const userConfirmed = await askNameplateConfirm(nameplateChannels);
-          if (!userConfirmed) return;
-        }
-
-        for (const channelName in diagnosis_detail.value) {
-          const channelData = diagnosis_detail.value[channelName]; // main 또는 sub 데이터
-          // Main/Sub 채널별 diagnosis 사용 여부 확인
-          const isDiagnosisEnabledForChannel =
-            channelName === "main"
-              ? inputDict.value.useFuction.diagnosis_main
-              : inputDict.value.useFuction.diagnosis_sub;
-
-          // Nameplate 설정 저장
-          if (
-            channelData.use &&
-            isDiagnosisEnabledForChannel &&
-            channelData.assetName &&
-            channelData.assetName !== "" &&
-            channelData.tableData &&
-            Array.isArray(channelData.tableData) &&
-            channelData.tableData.length > 0
-          ) {
-            const combinedData = [
-              ...channelData.tableData,
-              ...(channelData.modalData && Array.isArray(channelData.modalData)
-                ? channelData.modalData
-                : []),
-            ];
-
-            await setNameplateConfig(
-              combinedData,
-              channelData.assetName,
-              channelName
-            );
-          }
-          // assetName과 paramData 검증
-          if (
-            channelData.use &&
-            isDiagnosisEnabledForChannel &&
-            channelData.assetName &&
-            channelData.assetName !== "" &&
-            channelData.paramData &&
-            Array.isArray(channelData.paramData) &&
-            channelData.paramData.length > 0
-          ) {
-            await setAssetParams(
-              channelData.paramData,
-              channelData.assetName,
-              channelName
-            );
-          }
-        }
-
-        //console.log("devMode.value", devMode.value);
-        if (devMode.value === "device0") {
-          const device0Params = [
-            "Temperature",
-            "Frequency",
-            "Line Voltage",
-            "Phase Voltage",
-            "Current",
-            "Unbalance",
-            "PF",
-            "THD",
-            "TDD",
-            "Power",
+      // assetName과 tableData 검증 및 nameplate 체크
+      if (
+        channelData.use &&
+        isDiagnosisEnabledForChannel &&
+        channelData.assetName &&
+        channelData.assetName !== "" &&
+        channelData.tableData &&
+        Array.isArray(channelData.tableData) &&
+        channelData.tableData.length > 0
+      ) {
+        try {
+          const combinedData = [
+            ...channelData.tableData,
+            ...(channelData.modalData &&
+            Array.isArray(channelData.modalData)
+              ? channelData.modalData
+              : []),
           ];
-
-          // Main과 Sub 채널 모두에 적용
-          if (!channel_main.value.trendInfo) {
-            channel_main.value.trendInfo = {};
+          const nameplateFlag = await checkNameplateConfig(
+            combinedData,
+            channelData.assetName
+          );
+          if (nameplateFlag) {
+            needsNameplateConfirmation = true;
+            nameplateChannels.push(
+              `${channelName} channel(${channelData.assetName})`
+            );
           }
-          channel_main.value.trendInfo.params = [...device0Params];
-
-          if (!channel_sub.value.trendInfo) {
-            channel_sub.value.trendInfo = {};
-          }
-          channel_sub.value.trendInfo.params = [...device0Params];
+        } catch (error) {
+          console.error(
+            `Error checking nameplate for ${channelName}:`,
+            error
+          );
+          alert(
+            `An error occurred while checking nameplate configuration for ${channelName}: ${error.message}`
+          );
+          return;
         }
-
-        // 저장 진행
-        await saveAllSettings();
-      } catch (error) {
-        console.error("Save error:", error);
-        alert(`An error occurred while saving: ${error.message}`);
-      } finally {
-        isSaving.value = false; // ✅ 저장 완료 (성공/실패 무관)
       }
-    };
+    }
 
+    // 2. Nameplate 변경이 필요한 경우 사용자 확인
+    if (needsNameplateConfirmation) {
+      const userConfirmed = await askNameplateConfirm(nameplateChannels);
+      if (!userConfirmed) return;
+    }
+
+    // 3. Nameplate 및 Asset Params 저장
+    for (const channelName in diagnosis_detail.value) {
+      const channelData = diagnosis_detail.value[channelName];
+      const isDiagnosisEnabledForChannel =
+        channelName === "main"
+          ? inputDict.value.useFuction.diagnosis_main
+          : inputDict.value.useFuction.diagnosis_sub;
+
+      // Nameplate 설정 저장
+      if (
+        channelData.use &&
+        isDiagnosisEnabledForChannel &&
+        channelData.assetName &&
+        channelData.assetName !== "" &&
+        channelData.tableData &&
+        Array.isArray(channelData.tableData) &&
+        channelData.tableData.length > 0
+      ) {
+        const combinedData = [
+          ...channelData.tableData,
+          ...(channelData.modalData && Array.isArray(channelData.modalData)
+            ? channelData.modalData
+            : []),
+        ];
+
+        const nameplateResult = await setNameplateConfig(
+          combinedData,
+          channelData.assetName,
+          channelName
+        );
+        
+        if (!nameplateResult.success) {
+          alert(`❌ Failed to save ${channelName} channel nameplate settings:\n${nameplateResult.error}`);
+          return;
+        }
+      }
+
+      // Asset Params 저장
+      if (
+        channelData.use &&
+        isDiagnosisEnabledForChannel &&
+        channelData.assetName &&
+        channelData.assetName !== "" &&
+        channelData.paramData &&
+        Array.isArray(channelData.paramData) &&
+        channelData.paramData.length > 0
+      ) {
+        const paramsResult = await setAssetParams(
+          channelData.paramData,
+          channelData.assetName,
+          channelName
+        );
+        
+        if (!paramsResult.success) {
+          alert(`❌ Failed to save ${channelName} channel asset parameters:\n${paramsResult.error}`);
+          return;
+        }
+      }
+    }
+
+    if (devMode.value === "device0") {
+      const device0Params = [
+        "Temperature",
+        "Frequency",
+        "Line Voltage",
+        "Phase Voltage",
+        "Current",
+        "Unbalance",
+        "PF",
+        "THD",
+        "TDD",
+        "Power",
+      ];
+
+      if (!channel_main.value.trendInfo) {
+        channel_main.value.trendInfo = {};
+      }
+      channel_main.value.trendInfo.params = [...device0Params];
+
+      if (!channel_sub.value.trendInfo) {
+        channel_sub.value.trendInfo = {};
+      }
+      channel_sub.value.trendInfo.params = [...device0Params];
+    }
+
+    // 저장 진행
+    await saveAllSettings();
+  } catch (error) {
+    console.error("Save error:", error);
+    alert(`An error occurred while saving: ${error.message}`);
+  } finally {
+    isSaving.value = false;
+  }
+};
     const checkNameplateConfig = async (tableData, assetName) => {
       try {
         if (!Array.isArray(tableData) || tableData.length === 0) {
@@ -1520,69 +1522,59 @@ export default {
     };
 
 const setNameplateConfig = async (tableData, assetName, channelName) => {
-      try {
-        if (!Array.isArray(tableData) || tableData.length === 0) {
-          console.error("Invalid or empty tableData:", tableData);
-          return;
-        }
+  try {
+    if (!Array.isArray(tableData) || tableData.length === 0) {
+      console.error("Invalid or empty tableData:", tableData);
+      return { success: false, error: "Invalid or empty tableData" };
+    }
 
-        if (!assetName || assetName === "") {
-          console.error("No asset name provided");
-          return;
-        }
+    if (!assetName || assetName === "") {
+      console.error("No asset name provided");
+      return { success: false, error: "No asset name provided" };
+    }
 
-        const plainTableData = tableData.map((item) => ({ ...item }));
+    const plainTableData = tableData.map((item) => ({ ...item }));
 
-        const response = await axios.post(
-          `/setting/setAssetConfig/${assetName}`,
-          plainTableData,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        const { status, success, error } = response.data || {};
-
-        // status가 0이면 무조건 실패
-        if (status === "0" || status === 0) {
-          const errorMessages = Array.isArray(error)
-            ? error.join('\n')
-            : error || "API request failed";
-          diagnosisSuccess = false;
-          errorMessages.push(
-            `❌ Failed to save ${channelName} channel asset settings:\n
-            Check Smart API Service: \n
-            ${errorMessages}`
-          );
-          return;
-        }
-
-        // status가 1이면서 success가 false면 실패
-        if ((status === "1" || status === 1) && !success) {
-          const errorMessages = Array.isArray(error)
-            ? error.join('\n')
-            : error || "unknown error";
-          diagnosisSuccess = false;
-          errorMessages.push(
-            `❌ Failed to save ${channelName} channel asset settings:\n${errorMessages}`
-          );
-          return;
-        }
-
-        // status가 1이면서 success가 true면 성공
-        if ((status === "1" || status === 1) && success) {
-          console.log(
-            `✅ Successfully saved ${channelName} channel asset settings`
-          );
-        }
-      } catch (error) {
-        diagnosisSuccess = false;
-        errorMessages.push(
-          `Error occurred while saving ${channelName} channel asset:`,
-          error
-        );      
+    const response = await axios.post(
+      `/setting/setAssetConfig/${assetName}`,
+      plainTableData,
+      {
+        headers: { "Content-Type": "application/json" },
       }
-    };
+    );
+
+    const { status, success, error } = response.data || {};
+
+    // status가 0이면 무조건 실패
+    if (status === "0" || status === 0) {
+      const errorMsg = Array.isArray(error)
+        ? error.join('\n')
+        : error || "API request failed";
+      console.error(`❌ Failed to save ${channelName} channel asset settings:`, errorMsg);
+      return { success: false, error: `Check Smart API Service: ${errorMsg}` };
+    }
+
+    // status가 1이면서 success가 false면 실패
+    if ((status === "1" || status === 1) && !success) {
+      const errorMsg = Array.isArray(error)
+        ? error.join('\n')
+        : error || "unknown error";
+      console.error(`❌ Failed to save ${channelName} channel asset settings:`, errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    // status가 1이면서 success가 true면 성공
+    if ((status === "1" || status === 1) && success) {
+      console.log(`✅ Successfully saved ${channelName} channel asset settings`);
+      return { success: true };
+    }
+
+    return { success: false, error: "Unknown response status" };
+  } catch (error) {
+    console.error(`Error occurred while saving ${channelName} channel asset:`, error);
+    return { success: false, error: error.message || "Unknown error" };
+  }
+};
 
     const checkTableData = async (tableData, assetName, channelName) => {
       try {
@@ -1617,72 +1609,60 @@ const setNameplateConfig = async (tableData, assetName, channelName) => {
       }
     };
 
-    const setAssetParams = async (paramData, assetName, channelName) => {
-      try {
-        if (!Array.isArray(paramData) || paramData.length === 0) {
-          console.error("Invalid or empty paramData:", paramData);
-          return;
-        }
+const setAssetParams = async (paramData, assetName, channelName) => {
+  try {
+    if (!Array.isArray(paramData) || paramData.length === 0) {
+      console.error("Invalid or empty paramData:", paramData);
+      return { success: false, error: "Invalid or empty paramData" };
+    }
 
-        if (!assetName || assetName === "") {
-          console.error("No asset name provided");
-          return;
-        }
+    if (!assetName || assetName === "") {
+      console.error("No asset name provided");
+      return { success: false, error: "No asset name provided" };
+    }
 
-        const plainTableData = paramData.map((item) => ({ ...item }));
+    const plainTableData = paramData.map((item) => ({ ...item }));
 
-        const response = await axios.post(
-          `/setting/setAssetParams/${assetName}`,
-          plainTableData,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        const { status, success, error } = response.data || {};
-
-        // status가 0이면 무조건 실패
-        if (status === "0" || status === 0) {
-          const errorMessages = Array.isArray(error)
-            ? error.join('\n')
-            : error || "API request failed";
-          diagnosisSuccess = false;
-          errorMessages.push(
-            `❌ Failed to save ${channelName} channel asset parameters:\n
-            Check Smart API Service: \n
-            ${errorMessages}`
-          );
-          return;
-        }
-
-        // status가 1이면서 success가 false면 실패
-        if ((status === "1" || status === 1) && !success) {
-          const errorMessages = Array.isArray(error)
-            ? error.join('\n')
-            : error || "unknown error";
-          diagnosisSuccess = false;
-          errorMessages.push(
-            `❌ Failed to save ${channelName} channel asset parameters:\n${errorMessages}`
-          );
-          return;
-        }
-
-        // status가 1이면서 success가 true면 성공
-        if ((status === "1" || status === 1) && success) {
-          console.log(
-            `✅ Successfully saved ${channelName} channel asset parameters`
-          );
-        }
-      } catch (error) {
-        diagnosisSuccess = false;
-        errorMessages.push(
-          `Error occurred while saving ${channelName} channel asset parameters:`,
-          error
-        );
-  
+    const response = await axios.post(
+      `/setting/setAssetParams/${assetName}`,
+      plainTableData,
+      {
+        headers: { "Content-Type": "application/json" },
       }
-    };
+    );
 
+    const { status, success, error } = response.data || {};
+
+    // status가 0이면 무조건 실패
+    if (status === "0" || status === 0) {
+      const errorMsg = Array.isArray(error)
+        ? error.join('\n')
+        : error || "API request failed";
+      console.error(`❌ Failed to save ${channelName} channel asset parameters:`, errorMsg);
+      return { success: false, error: `Check Smart API Service: ${errorMsg}` };
+    }
+
+    // status가 1이면서 success가 false면 실패
+    if ((status === "1" || status === 1) && !success) {
+      const errorMsg = Array.isArray(error)
+        ? error.join('\n')
+        : error || "unknown error";
+      console.error(`❌ Failed to save ${channelName} channel asset parameters:`, errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    // status가 1이면서 success가 true면 성공
+    if ((status === "1" || status === 1) && success) {
+      console.log(`✅ Successfully saved ${channelName} channel asset parameters`);
+      return { success: true };
+    }
+
+    return { success: false, error: "Unknown response status" };
+  } catch (error) {
+    console.error(`Error occurred while saving ${channelName} channel asset parameters:`, error);
+    return { success: false, error: error.message || "Unknown error" };
+  }
+};
     // 헬퍼 함수
     const saveChannelData = async (channelData, channelName) => {
       try {
