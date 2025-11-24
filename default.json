@@ -59,7 +59,7 @@
 					0
 				],
 				"startingcurrent": 100,
-				"inorminal": 100,
+				"inorminal": 1000,
 				"ct1": 100,
 				"ct2": 1,
 				"zctscale": 1000,
@@ -329,7 +329,7 @@
 					0
 				],
 				"startingcurrent": 100,
-				"inorminal": 100,
+				"inorminal": 1000,
 				"ct1": 100,
 				"ct2": 1,
 				"zctscale": 1000,
