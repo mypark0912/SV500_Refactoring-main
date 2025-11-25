@@ -1211,7 +1211,11 @@ async def get_dashStatus(asset, channel):
 
             # 매칭된 항목이 없으면
             if not matched_params:
-                retDict[state_list[i]] = {"status": 1, "item": "All"}
+                if final_status == 0:
+                    retDict[state_list[i]] = {"status": 0, "item": "All"}  # NoData
+                else:
+                    retDict[state_list[i]] = {"status": 1, "item": "All"}  # OK
+                # retDict[state_list[i]] = {"status": 1, "item": "All"}
                 continue  # ✅ 다음 카테고리로 계속 진행
             # if not matched_params:
             #     return {"status": 1, "item": "All"}
