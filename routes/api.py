@@ -26,7 +26,8 @@ base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
 
 cpu_count = os.cpu_count() or 4
-MAX_WORKERS = min(max(2, cpu_count), 8)  # 2~8 사이
+MAX_WORKERS = min(max(2, cpu_count // 2), 3)  # 2~3 사이, CPU의 절반만 사용
+# MAX_WORKERS = min(max(2, cpu_count), 8)  # 2~8 사이
 executor: Optional[ThreadPoolExecutor] = None
 
 
@@ -3360,10 +3361,95 @@ def get_service():
             status = False
     return {"status": status, "services":statusDict}
 
-@router.post('/getMeterTrend/{channel}')
-def getMeterTrendPost(channel: str, request: TrendRequest):
+
+def get_bucket_by_duration(start_date: str, end_date: str) -> str:
+    return "ntek"  # 파싱 실패 시 기본값
+    # try:
+    #     start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+    #     end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+    #     duration = end - start
+    #
+    #     if duration <= timedelta(days=7):
+    #         return "ntek"  # 5분 원본 데이터
+    #     elif duration <= timedelta(days=90):
+    #         return "ntek_1h"  # 1시간 평균
+    #     else:
+    #         return "ntek_1d"  # 1일 평균
+    # except:
+    #     return "ntek"  # 파싱 실패 시 기본값
+
+
+def query_trend_data(
+        channel: str,
+        start_date: str,
+        end_date: str,
+        fields: list = None
+):
     """
-    POST 방식으로 필드를 선택하여 트렌드 데이터 조회
+    동기 트렌드 쿼리 함수 (executor에서 실행됨)
+    InfluxDB에서 pivot 수행 - 성능 개선
+    """
+    if influx_state.query_api is None:
+        raise Exception("query_api not available")
+
+    # 버킷 선택
+    bucket = get_bucket_by_duration(start_date, end_date)
+
+    # 날짜 범위 설정
+    if start_date and end_date:
+        range_filter = f'from(bucket: "{bucket}") |> range(start: {start_date}, stop: {end_date})'
+    else:
+        range_filter = f'from(bucket: "{bucket}") |> range(start: -2d)'
+
+    # 필드 필터 생성
+    if fields and len(fields) > 0:
+        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in fields])
+        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+    else:
+        # 기본 필드
+        default_fields = ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "PF2", "PF3", "Freq", "THD_U1","THD_U2","THD_U2", "THD_I1","THD_I2","THD_I3"]
+        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in default_fields])
+        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+
+    # 쿼리 생성 - InfluxDB에서 pivot 수행
+    query = (
+        f'{range_filter} '
+        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+        f'{field_filter_query} '
+        f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+    )
+
+    # 쿼리 실행
+    tables = influx_state.query_api.query(org='ntek', query=query)
+
+    # 이미 pivot된 데이터 처리 (훨씬 간단)
+    results = []
+    for table in tables:
+        for record in table.records:
+            # 시간 포맷팅
+            row = {
+                '_time': record.get_time().astimezone().strftime('%Y-%m-%d %H:%M:%S'),
+                'channel': channel
+            }
+
+            # 모든 필드 값 추가
+            for key, value in record.values.items():
+                if key not in ['result', 'table', '_start', '_stop', '_time', '_measurement', 'channel']:
+                    row[key] = value
+
+            results.append(row)
+
+    return {
+        "results": results,
+        "bucket_used": bucket,
+        "count": len(results)
+    }
+
+
+@router.post('/getMeterTrend/{channel}')
+async def getMeterTrendPost(channel: str, request: TrendRequest):
+    """
+    POST 방식으로 필드를 선택하여 트렌드 데이터 조회 (최적화 버전)
 
     Body 예시:
     {
@@ -3374,120 +3460,98 @@ def getMeterTrendPost(channel: str, request: TrendRequest):
     """
     start_time = datetime.now()
 
+    # InfluxDB 상태 체크
     if influx_state.client is None:
-        return {"result": False, "error": "InfluxDB client not initialized"}
+        raise HTTPException(status_code=503, detail="InfluxDB client not initialized")
 
     if influx_state.error:
-        print("error: InfluxDB error state")
-        return {"result": False, "data": []}
-
-    query_api = influx_state.query_api
-    if not query_api:
-        print("error: query_api not available")
-        return {"result": False, "data": []}
-
-    # 날짜 범위 설정
-    if request.startDate and request.endDate:
-        range_filter = f'from(bucket: "ntek") |> range(start: {request.startDate}, stop: {request.endDate})'
-        print(f"📅 날짜 범위: {request.startDate} ~ {request.endDate}")
-    else:
-        range_filter = 'from(bucket: "ntek") |> range(start: -2d)'
-        print(f"📅 기본 범위: -2d")
-
-    # 필드 필터 생성
-    if request.fields and len(request.fields) > 0:
-        # 사용자가 지정한 필드만
-        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in request.fields])
-        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
-        print(f"📋 선택된 필드 ({len(request.fields)}개): {request.fields}")
-    else:
-        # 필드 지정 없으면 기본 주요 필드
-        default_fields = ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "PF2", "PF3", "Freq", "THD_U1", "THD_I1"]
-        fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in default_fields])
-        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
-        print(f"📋 기본 필드 사용 ({len(default_fields)}개)")
-
-    # 쿼리 생성 (pivot 제거 - 더 빠름)
-    query = (
-        f'{range_filter} '
-        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
-        f'{field_filter_query}'
-    )
-
-    # 쿼리 실행
-    query_start = datetime.now()
-    print(f"🔍 쿼리 실행 시작...")
+        raise HTTPException(status_code=503, detail="InfluxDB error state")
 
     try:
-        tables = query_api.query(org='ntek', query=query)
-        query_duration = (datetime.now() - query_start).total_seconds()
-        print(f"⏱️  쿼리 실행 시간: {query_duration:.3f}초")
+        # 날짜 범위 로깅
+        if request.startDate and request.endDate:
+            start_dt = datetime.fromisoformat(request.startDate.replace('Z', '+00:00'))
+            end_dt = datetime.fromisoformat(request.endDate.replace('Z', '+00:00'))
+            duration = end_dt - start_dt
+            print(f"📅 날짜 범위: {request.startDate} ~ {request.endDate}")
+            print(f"📏 조회 기간: {duration.days}일")
+        else:
+            print(f"📅 기본 범위: -2d")
+
+        # 필드 로깅
+        if request.fields and len(request.fields) > 0:
+            print(f"📋 선택된 필드 ({len(request.fields)}개): {request.fields}")
+        else:
+            print(f"📋 기본 필드 사용")
+
+        print(f"🔍 쿼리 실행 시작... (채널: {channel})")
+
+        # Executor로 비동기 실행 (블로킹 방지)
+        result = await run_influx_query(
+            query_trend_data,
+            channel=channel,
+            start_date=request.startDate,
+            end_date=request.endDate,
+            fields=request.fields,
+            timeout=60  # 트렌드는 더 긴 timeout
+        )
+
+        results = result["results"]
+        bucket_used = result["bucket_used"]
+
+        # 마지막 날짜
+        last_date = results[-1]['_time'] if results else None
+
+        # 전체 시간
+        total_duration = (datetime.now() - start_time).total_seconds()
+        print(f"✅ 완료: {len(results)}개 레코드, {total_duration:.3f}초 (버킷: {bucket_used})")
+        print(f"=" * 60)
+
+        return {
+            "result": True,
+            "data": results,
+            "date": last_date,
+            "count": len(results),
+            "fields": request.fields if request.fields else "default",
+            "bucket_used": bucket_used,
+            "duration_seconds": round(total_duration, 3)
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"❌ 쿼리 실패: {e}")
-        return {"result": False, "error": str(e)}
+        print(f"❌ 트렌드 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Trend query failed: {str(e)}"
+        )
 
-    # 데이터 처리 (pivot을 Python에서 수행)
-    process_start = datetime.now()
-    data_dict = {}
 
-    for table in tables:
-        for record in table.records:
-            timestamp = record.get_time()
-            field = record.get_field()
-            value = record.get_value()
+def query_energy_trend_data(
+        channel: str,
+        start_date: str = None,
+        end_date: str = None
+):
+    """
+    동기 에너지 트렌드 쿼리 함수 (executor에서 실행됨)
+    """
+    if influx_state.query_api is None:
+        raise Exception("query_api not available")
 
-            ts_str = timestamp.isoformat()
-            if ts_str not in data_dict:
-                data_dict[ts_str] = {
-                    '_time': timestamp.astimezone().strftime('%Y-%m-%d %H:%M:%S'),
-                    'channel': channel
-                }
-
-            data_dict[ts_str][field] = value
-
-    # 시간순 정렬
-    results = [data_dict[ts] for ts in sorted(data_dict.keys())]
-
-    process_duration = (datetime.now() - process_start).total_seconds()
-    print(f"📊 데이터 처리 시간: {process_duration:.3f}초 (레코드 수: {len(results)})")
-
-    # 마지막 날짜
-    last_date = results[-1]['_time'] if results else None
-
-    # 전체 시간
-    total_duration = (datetime.now() - start_time).total_seconds()
-    print(f"🎯 전체 실행 시간: {total_duration:.3f}초")
-    print(f"=" * 60)
-
-    return {
-        "result": True,
-        "data": results,
-        "date": last_date,
-        "count": len(results),
-        "fields": request.fields if request.fields else "default"
-    }
-
-@router.get('/getMeterTrend/{channel}')
-def getMeterTrend(channel, startDate: str = None, endDate: str = None):
-    if influx_state.client is None:
-        return {"result": False}
-
-    if influx_state.error:
-        print("error1")
-        return {"result": False, "data": []}
     query_api = influx_state.query_api
-    if not query_api:
-        print("error1")
-        return {"result": False, "data": []}
 
-    # 쿼리 범위 설정: 날짜 값이 제공되면 해당 날짜로 필터링
-    range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
+    # 쿼리 범위 설정
+    if start_date and end_date:
+        range_filter = f'from(bucket: "ntek") |> range(start: time(v: "{start_date}"), stop: time(v: "{end_date}"))'
+    else:
+        range_filter = 'from(bucket: "ntek") |> range(start: -5y)'
 
-    if startDate and endDate:
-        range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
+    # 메인 쿼리 - pivot 포함
     query = (
         f'{range_filter} '
-        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+        f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
         f'|> sort(columns: ["_time"], desc: false) '
         f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
     )
@@ -3496,89 +3560,302 @@ def getMeterTrend(channel, startDate: str = None, endDate: str = None):
     tables = query_api.query(org='ntek', query=query)
 
     results = []
+    last_date = None
+
     for table in tables:
         for record in table.records:
-            record_data = record.values
-            results.append(record_data)
-    # print(f"Got {len(results)} records from Influx")
-    last_date_query = (
-        f'from(bucket: "ntek") '
-        f'|> range(start: -5y) '
-        f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
-        f'|> last()'  # keep() 없이 사용
-    )
+            results.append(record.values)
 
-    last_date = None
-    try:
-        last_date_tables = query_api.query(org='ntek', query=last_date_query)
-        for table in last_date_tables:
-            for record in table.records:
-                # last_date = record.get_time()
-                utc_time = record.get_time()  # UTC datetime 객체
+            # 마지막 레코드의 시간을 last_date로 저장 (정렬되어 있으므로)
+            if record.get_time():
+                utc_time = record.get_time()
                 local_time = utc_time.astimezone()
                 last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
-                break
-    except Exception as e:
-        print(f"마지막 날짜 조회 오류: {e}")
-    # last_date = results[-1].get('_time') if results else None
 
-    return {"result": True, "data": results, "date":last_date}
+    return {
+        "results": results,
+        "last_date": last_date,
+        "count": len(results)
+    }
 
 
 @router.get('/getEnergyTrend/{channel}')
-def getEnergyTrend(channel, startDate: str = None, endDate: str = None):
+async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = None):
+    """
+    에너지 트렌드 데이터 조회 (비동기 처리)
+
+    Parameters:
+    - channel: 채널명
+    - startDate: 시작 날짜 (ISO format, optional)
+    - endDate: 종료 날짜 (ISO format, optional)
+    """
+    # InfluxDB 상태 체크
     if influx_state.client is None:
-        return {"result": False}
+        raise HTTPException(status_code=503, detail="InfluxDB client not initialized")
 
     if influx_state.error:
-        print("error1")
-        return {"result": False, "data": []}
-    query_api = influx_state.query_api
-    if not query_api:
-        print("error1")
-        return {"result": False, "data": []}
+        raise HTTPException(status_code=503, detail="InfluxDB error state")
 
-    # 쿼리 범위 설정: 날짜 값이 제공되면 해당 날짜로 필터링
-    range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
-
-    if startDate and endDate:
-        range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
-    query = (
-        f'{range_filter} '
-        f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
-        f'|> sort(columns: ["_time"], desc: false) '
-        f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
-    )
-
-    # 쿼리 실행
-    tables = query_api.query(org='ntek', query=query)
-    results = []
-    for table in tables:
-        for record in table.records:
-            record_data = record.values
-            results.append(record_data)
-    print(f"Got {len(results)} records from Influx")
-
-    last_date_query = (
-        f'from(bucket: "ntek") '
-        f'|> range(start: -5y) '
-        f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
-        f'|> last()'  # keep() 없이 사용
-    )
-
-    last_date = None
     try:
-        last_date_tables = query_api.query(org='ntek', query=last_date_query)
-        for table in last_date_tables:
-            for record in table.records:
-                utc_time = record.get_time()  # UTC datetime 객체
-                local_time = utc_time.astimezone()
-                last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
-                break
-    except Exception as e:
-        print(f"마지막 날짜 조회 오류: {e}")
+        print(f"🔋 에너지 트렌드 조회 시작 (채널: {channel})")
+        if startDate and endDate:
+            print(f"📅 날짜 범위: {startDate} ~ {endDate}")
+        else:
+            print(f"📅 기본 범위: -5y")
 
-    return {"result": True, "data": results, "date":last_date}
+        # Executor로 비동기 실행
+        result = await run_influx_query(
+            query_energy_trend_data,
+            channel=channel,
+            start_date=startDate,
+            end_date=endDate,
+            timeout=90  # 에너지 데이터는 범위가 넓을 수 있어서 90초
+        )
+
+        results = result["results"]
+        last_date = result["last_date"]
+
+        print(f"✅ 완료: {len(results)}개 레코드")
+        print(f"📊 마지막 날짜: {last_date}")
+        print(f"=" * 60)
+
+        return {
+            "result": True,
+            "data": results,
+            "date": last_date,
+            "count": len(results)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ 에너지 트렌드 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Energy trend query failed: {str(e)}"
+        )
+
+# @router.post('/getMeterTrend/{channel}')
+# def getMeterTrendPost(channel: str, request: TrendRequest):
+#     """
+#     POST 방식으로 필드를 선택하여 트렌드 데이터 조회
+#
+#     Body 예시:
+#     {
+#         "startDate": "2025-11-15T00:00:00+09:00",
+#         "endDate": "2025-11-17T23:59:59+09:00",
+#         "fields": ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "Freq"]
+#     }
+#     """
+#     start_time = datetime.now()
+#
+#     if influx_state.client is None:
+#         return {"result": False, "error": "InfluxDB client not initialized"}
+#
+#     if influx_state.error:
+#         print("error: InfluxDB error state")
+#         return {"result": False, "data": []}
+#
+#     query_api = influx_state.query_api
+#     if not query_api:
+#         print("error: query_api not available")
+#         return {"result": False, "data": []}
+#
+#     # 날짜 범위 설정
+#     if request.startDate and request.endDate:
+#         range_filter = f'from(bucket: "ntek") |> range(start: {request.startDate}, stop: {request.endDate})'
+#         print(f"📅 날짜 범위: {request.startDate} ~ {request.endDate}")
+#     else:
+#         range_filter = 'from(bucket: "ntek") |> range(start: -2d)'
+#         print(f"📅 기본 범위: -2d")
+#
+#     # 필드 필터 생성
+#     if request.fields and len(request.fields) > 0:
+#         # 사용자가 지정한 필드만
+#         fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in request.fields])
+#         field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+#         print(f"📋 선택된 필드 ({len(request.fields)}개): {request.fields}")
+#     else:
+#         # 필드 지정 없으면 기본 주요 필드
+#         default_fields = ["U1", "U2", "U3", "I1", "I2", "I3", "PF1", "PF2", "PF3", "Freq", "THD_U1", "THD_I1"]
+#         fields_filter = ' or '.join([f'r["_field"] == "{field}"' for field in default_fields])
+#         field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+#         print(f"📋 기본 필드 사용 ({len(default_fields)}개)")
+#
+#     # 쿼리 생성 (pivot 제거 - 더 빠름)
+#     query = (
+#         f'{range_filter} '
+#         f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+#         f'{field_filter_query}'
+#     )
+#
+#     # 쿼리 실행
+#     query_start = datetime.now()
+#     print(f"🔍 쿼리 실행 시작...")
+#
+#     try:
+#         tables = query_api.query(org='ntek', query=query)
+#         query_duration = (datetime.now() - query_start).total_seconds()
+#         print(f"⏱️  쿼리 실행 시간: {query_duration:.3f}초")
+#     except Exception as e:
+#         print(f"❌ 쿼리 실패: {e}")
+#         return {"result": False, "error": str(e)}
+#
+#     # 데이터 처리 (pivot을 Python에서 수행)
+#     process_start = datetime.now()
+#     data_dict = {}
+#
+#     for table in tables:
+#         for record in table.records:
+#             timestamp = record.get_time()
+#             field = record.get_field()
+#             value = record.get_value()
+#
+#             ts_str = timestamp.isoformat()
+#             if ts_str not in data_dict:
+#                 data_dict[ts_str] = {
+#                     '_time': timestamp.astimezone().strftime('%Y-%m-%d %H:%M:%S'),
+#                     'channel': channel
+#                 }
+#
+#             data_dict[ts_str][field] = value
+#
+#     # 시간순 정렬
+#     results = [data_dict[ts] for ts in sorted(data_dict.keys())]
+#
+#     process_duration = (datetime.now() - process_start).total_seconds()
+#     print(f"📊 데이터 처리 시간: {process_duration:.3f}초 (레코드 수: {len(results)})")
+#
+#     # 마지막 날짜
+#     last_date = results[-1]['_time'] if results else None
+#
+#     # 전체 시간
+#     total_duration = (datetime.now() - start_time).total_seconds()
+#     print(f"🎯 전체 실행 시간: {total_duration:.3f}초")
+#     print(f"=" * 60)
+#
+#     return {
+#         "result": True,
+#         "data": results,
+#         "date": last_date,
+#         "count": len(results),
+#         "fields": request.fields if request.fields else "default"
+#     }
+
+# @router.get('/getMeterTrend/{channel}')
+# def getMeterTrend(channel, startDate: str = None, endDate: str = None):
+#     if influx_state.client is None:
+#         return {"result": False}
+#
+#     if influx_state.error:
+#         print("error1")
+#         return {"result": False, "data": []}
+#     query_api = influx_state.query_api
+#     if not query_api:
+#         print("error1")
+#         return {"result": False, "data": []}
+#
+#     # 쿼리 범위 설정: 날짜 값이 제공되면 해당 날짜로 필터링
+#     range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
+#
+#     if startDate and endDate:
+#         range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
+#     query = (
+#         f'{range_filter} '
+#         f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+#         f'|> sort(columns: ["_time"], desc: false) '
+#         f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+#     )
+#
+#     # 쿼리 실행
+#     tables = query_api.query(org='ntek', query=query)
+#
+#     results = []
+#     for table in tables:
+#         for record in table.records:
+#             record_data = record.values
+#             results.append(record_data)
+#     # print(f"Got {len(results)} records from Influx")
+#     last_date_query = (
+#         f'from(bucket: "ntek") '
+#         f'|> range(start: -5y) '
+#         f'|> filter(fn: (r) => r["_measurement"] == "trend" and r["channel"] == "{channel}") '
+#         f'|> last()'  # keep() 없이 사용
+#     )
+#
+#     last_date = None
+#     try:
+#         last_date_tables = query_api.query(org='ntek', query=last_date_query)
+#         for table in last_date_tables:
+#             for record in table.records:
+#                 # last_date = record.get_time()
+#                 utc_time = record.get_time()  # UTC datetime 객체
+#                 local_time = utc_time.astimezone()
+#                 last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+#                 break
+#     except Exception as e:
+#         print(f"마지막 날짜 조회 오류: {e}")
+#     # last_date = results[-1].get('_time') if results else None
+#
+#     return {"result": True, "data": results, "date":last_date}
+
+
+# @router.get('/getEnergyTrend/{channel}')
+# def getEnergyTrend(channel, startDate: str = None, endDate: str = None):
+#     if influx_state.client is None:
+#         return {"result": False}
+#
+#     if influx_state.error:
+#         print("error1")
+#         return {"result": False, "data": []}
+#     query_api = influx_state.query_api
+#     if not query_api:
+#         print("error1")
+#         return {"result": False, "data": []}
+#
+#     # 쿼리 범위 설정: 날짜 값이 제공되면 해당 날짜로 필터링
+#     range_filter = 'from(bucket: "ntek") |> range(start: -5y)'  # 기본 5년
+#
+#     if startDate and endDate:
+#         range_filter = f'from(bucket: "ntek") |> range(start:time(v:"{startDate}"), stop:time(v:"{endDate}"))'
+#     query = (
+#         f'{range_filter} '
+#         f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
+#         f'|> sort(columns: ["_time"], desc: false) '
+#         f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+#     )
+#
+#     # 쿼리 실행
+#     tables = query_api.query(org='ntek', query=query)
+#     results = []
+#     for table in tables:
+#         for record in table.records:
+#             record_data = record.values
+#             results.append(record_data)
+#     print(f"Got {len(results)} records from Influx")
+#
+#     last_date_query = (
+#         f'from(bucket: "ntek") '
+#         f'|> range(start: -5y) '
+#         f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
+#         f'|> last()'  # keep() 없이 사용
+#     )
+#
+#     last_date = None
+#     try:
+#         last_date_tables = query_api.query(org='ntek', query=last_date_query)
+#         for table in last_date_tables:
+#             for record in table.records:
+#                 utc_time = record.get_time()  # UTC datetime 객체
+#                 local_time = utc_time.astimezone()
+#                 last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+#                 break
+#     except Exception as e:
+#         print(f"마지막 날짜 조회 오류: {e}")
+#
+#     return {"result": True, "data": results, "date":last_date}
 
 
 def fill_missing_hours_safe(hourly_data, start_time, end_time):
