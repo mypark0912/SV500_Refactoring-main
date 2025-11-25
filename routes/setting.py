@@ -2599,8 +2599,10 @@ async def update_smartsystem(mode):
             return {"success": False, "message": "Install timeout"}
 
     else:
-        reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
-        reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
+        if main_channel_data['assetInfo']['name'] != '':
+            reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
+        if sub_channel_data['assetInfo']['name'] != '':
+            reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
         try:
             result = subprocess.run(
                 ['sh', '/home/root/iss/install.sh'],
