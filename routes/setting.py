@@ -2610,7 +2610,7 @@ async def update_smartsystem(mode):
                 text=True,
                 check=True
             )
-            return {"success": True, "message": "Install completed"}
+            return {"success": True, "message": "Update completed"}
         except subprocess.CalledProcessError as e:
             return {"success": False, "message": f"Install failed: {e.stderr}"}
         except subprocess.TimeoutExpired:
