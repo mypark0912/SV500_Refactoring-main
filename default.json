@@ -316,7 +316,16 @@
 					0
 				],
 				"CompareTimeDelay": 1
-			}
+			},
+			"confStatus": 0,
+            "useDO": 0,
+            "useAI": 0,
+            "status_Info": {
+                "diagnosis": [],
+                "pq": [],
+                "faults": [],
+                "events": []
+            }
 		},
 		{
 			"channel": "Sub",
@@ -586,7 +595,16 @@
 					0
 				],
 				"CompareTimeDelay": 1
-			}
+			},
+			"confStatus": 0,
+            "useDO": 0,
+            "useAI": 0,
+            "status_Info": {
+                "diagnosis": [],
+                "pq": [],
+                "faults": [],
+                "events": []
+            }
 		}
 	]
 }
