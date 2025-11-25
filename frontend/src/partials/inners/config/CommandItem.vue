@@ -516,7 +516,6 @@ export default {
         } else {
           ch = props.channel == "Main" ? 0 : 1;
         }
-        //console.log(ch);
 
         const data = {
           type: ch,

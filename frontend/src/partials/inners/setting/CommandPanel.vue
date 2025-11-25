@@ -186,17 +186,17 @@ export default {
     return result;
   }
 
-  watch(
-    () => ChannelState.value,
-    (newVal, oldVal) => {
-      if (newVal) {
-        CheckAPI();
-      } else {
-        console.log('둘 다 비활성화됨');
-      }
-    },
-    { immediate: true }
-  );
+  // watch(
+  //   () => ChannelState.value,
+  //   (newVal, oldVal) => {
+  //     if (newVal) {
+  //       CheckAPI();
+  //     } else {
+  //       console.log('둘 다 비활성화됨');
+  //     }
+  //   },
+  //   { immediate: true }
+  // );
 
     return {
       message,

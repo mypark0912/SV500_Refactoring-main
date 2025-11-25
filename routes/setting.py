@@ -9,7 +9,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 #from routes.auth import checkLoginAPI
-from routes.util import get_mac_address, sysService, is_service_active
+from routes.util import get_mac_address, sysService, is_service_active, getVersions
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
@@ -227,6 +227,13 @@ async def complete_influx_setup():
             redis_state.client.hset("influx_init", "status", "P.FAIL")
             logging.warning(f"⚠️ Bucket creation failed: {bucket_result['message']}")
 
+        # 다운샘플링 설정 (버킷 + Task) 추가
+        downsampling_result = await setup_downsampling()
+        if not downsampling_result["success"]:
+            logging.warning(f"⚠️ Downsampling setup had issues: {downsampling_result['message']}")
+        else:
+            logging.info("✅ Downsampling buckets and tasks configured")
+
         # 다른 서비스 재시작
         if sysMode != 'device0':
             sysService('restart', 'SmartSystems')
@@ -247,7 +254,7 @@ async def create_influx_bucket():
         config = aesState.getInflux()
         token = aesState.decrypt(config["cipher"])
         bucket_name = "ntek"
-        retention_seconds = 730 * 24 * 60 * 60
+        retention_seconds = 365 * 24 * 60 * 60
         bucket_data = {
             "orgID": config['org_id'],
             "name": bucket_name,
@@ -278,6 +285,233 @@ async def create_influx_bucket():
     except Exception as e:
         logging.error(f"❌ Bucket creation error: {e}")
         return {"success": False, "message": str(e)}
+
+
+async def create_downsampling_buckets():
+    """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d)"""
+    try:
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+
+        buckets = [
+            {
+                "name": "ntek_1h",
+                "retention_seconds": 90 * 24 * 60 * 60,  # 90일
+                "description": "1시간 평균 데이터"
+            },
+            {
+                "name": "ntek_1d",
+                "retention_seconds": 730 * 24 * 60 * 60,  # 2년
+                "description": "1일 평균/합계 데이터"
+            }
+        ]
+
+        results = []
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            for bucket_info in buckets:
+                bucket_data = {
+                    "orgID": config['org_id'],
+                    "name": bucket_info["name"],
+                    "retentionRules": []
+                }
+
+                # retention 설정 (0이면 무제한)
+                if bucket_info["retention_seconds"] > 0:
+                    bucket_data["retentionRules"] = [
+                        {
+                            "type": "expire",
+                            "everySeconds": bucket_info["retention_seconds"]
+                        }
+                    ]
+
+                response = await client.post(
+                    f"http://127.0.0.1:8086/api/v2/buckets",
+                    headers={"Authorization": f"Token {token}"},
+                    json=bucket_data
+                )
+
+                if response.status_code == 201:
+                    retention_info = f"{bucket_info['retention_seconds'] // (24 * 60 * 60)} days" if bucket_info[
+                                                                                                         'retention_seconds'] > 0 else "infinite"
+                    logging.info(f"✅ Bucket '{bucket_info['name']}' created (retention: {retention_info})")
+                    results.append({"bucket": bucket_info["name"], "success": True})
+                elif response.status_code == 422:
+                    # 이미 존재하는 버킷
+                    logging.info(f"ℹ️ Bucket '{bucket_info['name']}' already exists")
+                    results.append({"bucket": bucket_info["name"], "success": True, "existed": True})
+                else:
+                    error_msg = response.json().get("message", response.text)
+                    logging.error(f"❌ Bucket '{bucket_info['name']}' creation failed: {error_msg}")
+                    results.append({"bucket": bucket_info["name"], "success": False, "error": error_msg})
+
+        success_count = sum(1 for r in results if r["success"])
+        return {
+            "success": success_count > 0,
+            "message": f"Created/verified {success_count}/{len(buckets)} buckets",
+            "results": results
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Downsampling buckets creation error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+async def create_downsampling_tasks():
+    """다운샘플링 Task 생성"""
+    try:
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+        org_name = "ntek"  # 조직 이름
+
+        tasks = [
+            # Task 1: trend 5분 → 1시간 평균
+            {
+                "name": "downsample_trend_to_1h",
+                "flux": f'''
+option task = {{name: "downsample_trend_to_1h", every: 1h, offset: 5m}}
+
+from(bucket: "ntek")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)
+  |> to(bucket: "ntek_1h", org: "{org_name}")
+''',
+                "every": "1h",
+                "description": "Downsample trend data to 1h average"
+            },
+
+            # Task 2: trend 1시간 → 1일 평균
+            {
+                "name": "downsample_trend_to_1d",
+                "flux": f'''
+option task = {{name: "downsample_trend_to_1d", cron: "10 0 * * *"}}
+
+from(bucket: "ntek_1h")
+  |> range(start: -1d)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)
+  |> to(bucket: "ntek_1d", org: "{org_name}")
+''',
+                "cron": "10 0 * * *",
+                "description": "Downsample trend data to 1d average"
+            },
+
+            # Task 3: energy_consumption 1시간 → 1일 합계
+            {
+                "name": "downsample_energy_consumption_to_1d",
+                "flux": f'''
+option task = {{name: "downsample_energy_consumption_to_1d", cron: "15 0 * * *"}}
+
+from(bucket: "ntek")
+  |> range(start: -1d)
+  |> filter(fn: (r) => r["_measurement"] == "energy_consumption")
+  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)
+  |> to(bucket: "ntek_1d", org: "{org_name}")
+''',
+                "cron": "15 0 * * *",
+                "description": "Downsample energy_consumption to 1d sum"
+            },
+
+            # Task 4: energy_cumulative 1시간 → 1일 마지막 값
+            {
+                "name": "downsample_energy_cumulative_to_1d",
+                "flux": f'''
+option task = {{name: "downsample_energy_cumulative_to_1d", cron: "20 0 * * *"}}
+
+from(bucket: "ntek")
+  |> range(start: -1d)
+  |> filter(fn: (r) => r["_measurement"] == "energy_cumulative")
+  |> aggregateWindow(every: 1d, fn: last, createEmpty: false)
+  |> to(bucket: "ntek_1d", org: "{org_name}")
+''',
+                "cron": "20 0 * * *",
+                "description": "Downsample energy_cumulative to 1d last value"
+            }
+        ]
+
+        results = []
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            for task_info in tasks:
+                task_data = {
+                    "orgID": config['org_id'],
+                    "org": org_name,
+                    "name": task_info["name"],
+                    "description": task_info["description"],
+                    "status": "active",
+                    "flux": task_info["flux"]
+                }
+
+                response = await client.post(
+                    f"http://127.0.0.1:8086/api/v2/tasks",
+                    headers={"Authorization": f"Token {token}"},
+                    json=task_data
+                )
+
+                if response.status_code == 201:
+                    task_id = response.json().get("id")
+                    logging.info(f"✅ Task '{task_info['name']}' created (ID: {task_id})")
+                    results.append({"task": task_info["name"], "success": True, "id": task_id})
+                elif response.status_code == 422:
+                    # 이미 존재하는 Task
+                    logging.info(f"ℹ️ Task '{task_info['name']}' already exists")
+                    results.append({"task": task_info["name"], "success": True, "existed": True})
+                else:
+                    error_msg = response.json().get("message", response.text)
+                    logging.error(f"❌ Task '{task_info['name']}' creation failed: {error_msg}")
+                    results.append({"task": task_info["name"], "success": False, "error": error_msg})
+
+        success_count = sum(1 for r in results if r["success"])
+        return {
+            "success": success_count > 0,
+            "message": f"Created/verified {success_count}/{len(tasks)} tasks",
+            "results": results
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Downsampling tasks creation error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+async def setup_downsampling():
+    """다운샘플링 전체 설정 (버킷 + Task)"""
+    try:
+        logging.info("🔧 Starting downsampling setup...")
+
+        # 1. 버킷 생성
+        bucket_result = await create_downsampling_buckets()
+        if not bucket_result["success"]:
+            logging.warning(f"⚠️ Bucket creation had issues: {bucket_result['message']}")
+
+        # 2. Task 생성
+        task_result = await create_downsampling_tasks()
+        if not task_result["success"]:
+            logging.warning(f"⚠️ Task creation had issues: {task_result['message']}")
+
+        # 3. 결과 요약
+        overall_success = bucket_result["success"] and task_result["success"]
+
+        if overall_success:
+            logging.info("✅ Downsampling setup completed successfully")
+            return {
+                "success": True,
+                "message": "Downsampling buckets and tasks created",
+                "buckets": bucket_result["results"],
+                "tasks": task_result["results"]
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Downsampling setup had issues",
+                "buckets": bucket_result.get("results", []),
+                "tasks": task_result.get("results", [])
+            }
+
+    except Exception as e:
+        logging.error(f"❌ Downsampling setup error: {e}")
+        return {"success": False, "message": str(e)}
+
 
 @router.get('/initDB/status')
 async def get_init_status():
@@ -2356,8 +2590,23 @@ async def check_SmartStatus():
     except Exception as e:
         return {"success": False, "msg":str(e)}
 
+def is_same_version(current: str, new: str) -> bool:
+    """두 버전이 같은지"""
+    return tuple(map(int, new.split('.'))) == tuple(map(int, current.split('.')))
+
+async def check_SmartStatus():
+    try:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/version")
+            data = response.json()
+            short_version = '.'.join(data["Version"].split('.')[:3])
+            return {"success": True, "Version":short_version}
+
+    except Exception as e:
+        return {"success": False, "Version": "1.0.3"}
+
 @router.get("/SysCheck")
-def check_sysStatus():
+async def check_sysStatus():
     data = {}
 
     if os_spec.os == 'Windows':
@@ -2377,6 +2626,22 @@ def check_sysStatus():
 
         return {"success": True, "data": data, "disk": [disk1]}
     else:
+        version_dict = getVersions()
+        key_map = {
+            'a35': 'A35',
+            'web': 'WebServer',
+            'core': 'Core',
+            'smartsystem': 'SmartSystems'
+        }
+        versionDict = {}
+        if version_dict:
+            for src_key, dst_key in key_map.items():
+                versionDict[dst_key] = version_dict[src_key]
+
+        apiResult = await check_SmartStatus()
+        if not is_same_version(versionDict['SmartSystems'], apiResult['Version']):
+            versionDict['SmartSystems'] = apiResult['Version']
+
         servicedict = {
             'smartsystem' : 'smartsystemsservice',
             'smartapi': 'smartsystemsrestapiservice',
@@ -2408,7 +2673,7 @@ def check_sysStatus():
             "status": "ok" if usage.percent < 90 else "warning"
         }
 
-        return {"success": True, "data":service_status,  "disk":[disk1, disk2]}
+        return {"success": True, "data":service_status,  "disk":[disk1, disk2], "versions":versionDict}
 
 @router.get('/SysService/{cmd}/{item}')
 def control_service(cmd, item):

@@ -129,10 +129,10 @@
           <div class="grid grid-cols-12 gap-6">
             <ServiceCard :item="'Redis'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard :item="'InfluxDB'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            <ServiceCard :item="'Core'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            <ServiceCard :item="'WebServer'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
-            <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
+            <ServiceCard :item="'Core'" :mode="'Service'" :state="ChannelState" :version="versionDict['Core']" @service-done="showMessage"/>
+            <ServiceCard :item="'WebServer'" :mode="'Service'" :state="ChannelState" :version="versionDict['WebServer']" @service-done="showMessage"/>
+            <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" :version="versionDict['A35']" @service-done="showMessage"/>
+            <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
             <!--ServiceCard :item="'System'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
@@ -313,6 +313,7 @@
       const initInfluxStatus = ref('');
       const checkSmartflag = ref(false);
       const errorSmart = ref([]);
+      const versionDict = ref({});
       const showMessage = async(text) => {
         message.value = text
         await SysCheck();
@@ -364,6 +365,7 @@
         if (response.data.success){
            diskStatus.value = response.data.disk;
            sysStatus.value = response.data.data;
+           versionDict.value = response.data.versions;
 
            if(!sysStatus.value["smartsystem"])
             checkSmart(sysStatus.value)
@@ -550,6 +552,7 @@
         initInfluxStatus,
         checkSmartflag,
         errorSmart,
+        versionDict,
       }
 
     }

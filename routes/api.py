@@ -3363,20 +3363,19 @@ def get_service():
 
 
 def get_bucket_by_duration(start_date: str, end_date: str) -> str:
-    return "ntek"  # 파싱 실패 시 기본값
-    # try:
-    #     start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-    #     end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-    #     duration = end - start
-    #
-    #     if duration <= timedelta(days=7):
-    #         return "ntek"  # 5분 원본 데이터
-    #     elif duration <= timedelta(days=90):
-    #         return "ntek_1h"  # 1시간 평균
-    #     else:
-    #         return "ntek_1d"  # 1일 평균
-    # except:
-    #     return "ntek"  # 파싱 실패 시 기본값
+    try:
+        start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        duration = end - start
+
+        if duration <= timedelta(days=7):
+            return "ntek"  # 5분 원본 데이터
+        elif duration <= timedelta(days=90):
+            return "ntek_1h"  # 1시간 평균
+        else:
+            return "ntek_1d"  # 1일 평균
+    except:
+        return "ntek"  # 파싱 실패 시 기본값
 
 
 def query_trend_data(

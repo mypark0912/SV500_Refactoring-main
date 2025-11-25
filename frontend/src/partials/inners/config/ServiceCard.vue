@@ -3,7 +3,8 @@
               <!-- Card content -->
               <div class="flex flex-col h-full p-5">
                 <div class="grow">
-                  <header class="flex items-center mb-4">
+                  <header class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
                     <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold mr-4">{{ itemDict[item] }}</h3>
                     
                     <!-- Redis, InfluxDB,'Core', 'WebServer' 상태 -->
@@ -77,6 +78,10 @@
                           Core Stopped
                       </span>
                     </template>
+                    </div>
+                    <span v-if="versionInfo && item != 'Redis' && item != 'InfluxDB' && item != 'SmartAPI'" class="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                      v{{ versionInfo }}
+                    </span>
                   </header>
                   <div class="flex flex-col">
                     <div v-if="mode =='Service'" class="flex justify-center space-x-4">
@@ -171,7 +176,7 @@ import { useAuthStore } from "@/store/auth";
 
 export default {
   name: 'ServiceCard',
-  props: ['item', 'mode', 'state'],
+  props: ['item', 'mode', 'state','version'],
   emits: ['service-done'],
   setup(props, { emit }){
     const authStore = useAuthStore();
@@ -181,6 +186,8 @@ export default {
 
 
     const item = ref(props.item);
+    const versionInfo = ref(props.version);
+
     const Status = inject('sysStatus');
     const apiHealth = inject('health');
 
@@ -204,6 +211,11 @@ export default {
 
     watch(() => props.item, (newChannel) => {
         item.value = newChannel;
+    }, { immediate: true });
+
+    watch(() => props.version, (newVersion) => {
+      versionInfo.value = newVersion || '';
+      console.log(versionInfo.value);
     }, { immediate: true });
 
     watch([Status, apiHealth], () => {
@@ -313,6 +325,7 @@ export default {
       coreHealth,
       checkDBMS,
       dbInit,
+      versionInfo,
     }
   }
 }

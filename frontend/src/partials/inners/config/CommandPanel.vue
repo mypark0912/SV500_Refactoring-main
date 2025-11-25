@@ -25,12 +25,12 @@
         <div class="grid grid-cols-12 gap-6">
           <CommandItem
             :item="'Clear'"
-            :channel="'main'"
+            :channel="'Main'"
             @service-done="showMessage"
           />
           <CommandItem
             :item="'Clear'"
-            :channel="'sub'"
+            :channel="'Sub'"
             @service-done="showMessage"
           />
         </div>
@@ -454,17 +454,17 @@ export default {
     provide("sysStatus", sysStatus);
     provide("health", health);
 
-    watch(
-      () => ChannelState.value,
-      (newVal, oldVal) => {
-        if (newVal) {
-          CheckAPI();
-        } else {
-          console.log("둘 다 비활성화됨");
-        }
-      },
-      { immediate: true }
-    );
+    // watch(
+    //   () => ChannelState.value,
+    //   (newVal, oldVal) => {
+    //     if (newVal) {
+    //       CheckAPI();
+    //     } else {
+    //       console.log("둘 다 비활성화됨");
+    //     }
+    //   },
+    //   { immediate: true }
+    // );
 
     return {
       message,
