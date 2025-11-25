@@ -2574,7 +2574,7 @@ async def update_smartsystem(mode):
     if not main_channel_data or not sub_channel_data:
         return {"success": False, "message": "Channel data not found"}
 
-    if mode == 1:
+    if int(mode) == 1:
         main_channel_data['assetInfo']['name'] = ''
         main_channel_data['assetInfo']['type'] = ''
         main_channel_data['assetInfo']['nickname'] = ''
