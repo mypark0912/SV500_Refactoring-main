@@ -79,7 +79,7 @@
                       </span>
                     </template>
                     </div>
-                    <span v-if="versionInfo && item != 'Redis' && item != 'InfluxDB' && item != 'SmartAPI'" class="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                    <span v-if="versionInfo && item != 'Redis' && item != 'InfluxDB'" class="text-sm text-gray-500 dark:text-gray-400 font-mono">
                       v{{ versionInfo }}
                     </span>
                   </header>
