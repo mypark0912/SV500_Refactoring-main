@@ -132,6 +132,7 @@
             <ServiceCard :item="'Core'" :mode="'Service'" :state="ChannelState" :version="versionDict['Core']" @service-done="showMessage"/>
             <ServiceCard :item="'WebServer'" :mode="'Service'" :state="ChannelState" :version="versionDict['WebServer']" @service-done="showMessage"/>
             <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" :version="versionDict['A35']" @service-done="showMessage"/>
+            <ServiceCard2 :item="'fw'" :version="versionDict['fw']" />
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
@@ -283,6 +284,7 @@
   
   <script>
   import ServiceCard from './ServiceCard.vue';
+  import ServiceCard2 from './ServiceCard2.vue';
   import ServiceDetail from './ServiceDetail.vue';
     import ServiceStatus from './ServiceStatus.vue';
     import LoadingModal from "../../../components/LoadingModal.vue";
@@ -299,6 +301,7 @@
         ServiceStatus,
         LoadingModal,
         ServiceDetail,
+        ServiceCard2,
     },
     setup(){
       const setupStore = useSetupStore();

@@ -2595,7 +2595,7 @@ def is_same_version(current: str, new: str) -> bool:
     """두 버전이 같은지"""
     return tuple(map(int, new.split('.'))) == tuple(map(int, current.split('.')))
 
-async def check_SmartStatus():
+async def check_SmartVersion():
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/version")
@@ -2605,6 +2605,15 @@ async def check_SmartStatus():
 
     except Exception as e:
         return {"success": False, "Version": "1.0.3"}
+
+def check_a35version():
+    redis_state.client.select(0)
+    if not redis_state.client.exists("version"):
+        return None
+    fw = redis_state.client.hget("version","fw")
+    a35 = redis_state.client.hget("version","a35")
+
+    return {"fw":fw , "A35":a35}
 
 @router.get("/SysCheck")
 async def check_sysStatus():
@@ -2629,6 +2638,7 @@ async def check_sysStatus():
     else:
         version_dict = getVersions()
         key_map = {
+            'fw': 'fw',
             'a35': 'A35',
             'web': 'WebServer',
             'core': 'Core',
@@ -2639,9 +2649,15 @@ async def check_sysStatus():
             for src_key, dst_key in key_map.items():
                 versionDict[dst_key] = version_dict[src_key]
 
-        apiResult = await check_SmartStatus()
-        if not is_same_version(versionDict['SmartSystems'], apiResult['Version']):
+        apiResult = await check_SmartVersion()
+
+        if apiResult:
             versionDict['SmartSystems'] = apiResult['Version']
+
+        a35Dict = check_a35version()
+        if not a35Dict is None:
+            versionDict['fw'] = a35Dict['fw']
+            versionDict['A35'] = a35Dict['A35']
 
         servicedict = {
             'smartsystem' : 'smartsystemsservice',
