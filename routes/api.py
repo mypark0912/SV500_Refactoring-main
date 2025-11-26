@@ -1248,6 +1248,8 @@ def get_running(channel):
         redisKey = 'runhour_main'
     else:
         redisKey = 'runhour_sub'
+
+    redis_state.client.select(1)
     if redis_state.client.exists(redisKey):
         total = redis_state.client.hget(redisKey, "tot")
         current = redis_state.client.hget(redisKey, "cur")
