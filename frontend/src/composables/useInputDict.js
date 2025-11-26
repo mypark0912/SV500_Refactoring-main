@@ -158,7 +158,9 @@ export function useInputDict() {
     useAI:0,
     status_Info:{
       "diagnosis":[],
-      "pq":[]
+      "pq":[],
+      "faults": [],
+      "events": []
     }
   });
 
@@ -232,7 +234,9 @@ export function useInputDict() {
     useAI:0,
     status_Info:{
       "diagnosis":[],
-      "pq":[]
+      "pq":[],
+      "faults": [],
+      "events": []
     }
   });
 
