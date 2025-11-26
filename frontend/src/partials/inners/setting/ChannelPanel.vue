@@ -1019,7 +1019,7 @@ export default {
     const { parameterOptions, selectedTrendSetup } = useInputDict();
     const assetDriveType = ref('DOL');
 
-    provide('assetDriveType', assetDriveType);
+    //provide('assetDriveType', assetDriveType);
 
     provide("selectedTrendSetup", selectedTrendSetup);
 

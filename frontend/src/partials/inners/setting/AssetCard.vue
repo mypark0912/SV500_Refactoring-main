@@ -152,7 +152,7 @@
             <div v-if="canSelectDriveType" class="flex items-center gap-2">
               <label class="w-32 text-sm font-medium shrink-0 whitespace-nowrap">Drive Type</label>
               <select
-                v-model="driveType"
+                v-model="inputDict.assetInfo.driveType"
                 class="form-select flex-1 bg-gray-100"
                 :disabled="selectedbtn != 1"
               >
@@ -303,8 +303,9 @@ const assetTypeList = ref([
             "Fan",
             "Compressor"
         ]);
-const assetDriveType = inject('assetDriveType', ref('DOL'));
-const driveType = ref('DOL');  // 'DOL' 또는 'VFD'
+//const assetDriveType = inject('assetDriveType', ref('DOL'));
+//const driveType = ref('DOL');  // 'DOL' 또는 'VFD'
+
 
 const vfdSupportedTypes = [
     "MotorFeed",
