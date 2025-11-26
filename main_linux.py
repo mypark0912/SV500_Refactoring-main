@@ -41,7 +41,7 @@ def setup_logging():
     
     # 로거 설정
     logger = logging.getLogger()
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
     
     # 기존 핸들러 제거
     for handler in logger.handlers[:]:

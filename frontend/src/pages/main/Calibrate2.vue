@@ -53,7 +53,8 @@
                   </div>
                 </div>
                 <System v-else-if="channel == 'Command'" />
-                <Maintenance v-else />
+                <Maintenance v-else-if="channel == 'Maintenance'" />
+                <LogView v-else />
             </div>
         </div>
         </main>
@@ -73,6 +74,7 @@
   import CaliPanel from '../../partials/inners/config/CaliPanel2.vue'
   import ServicePanel from '../../partials/inners/config/ServicePanel.vue'
   import Maintenance from '../../partials/inners/config/MaintenancePanel.vue'
+  import LogView from '../../partials/inners/config/LogPanel.vue' 
   import System from '../../partials/inners/config/CommandPanel.vue'
   //import { useAuthStore } from "@/store"; // ✅ Pinia Store 사용
    import { useRoute } from 'vue-router'
@@ -89,6 +91,7 @@
       ServicePanel,
       Maintenance,
       System,
+      LogView
     },
     setup(props) {
       //const authStore = useAuthStore();

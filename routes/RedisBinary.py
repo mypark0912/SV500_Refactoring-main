@@ -195,7 +195,7 @@ class BinaryDataProcessor:
         self.redis_key_patterns[config.name] = redis_key_pattern
         self.parsers[config.name] = parser or self.default_parser
 
-        logging.info(f"바이너리 설정 등록: {config.name}")
+        logging.debug(f"바이너리 설정 등록: {config.name}")
 
     def get_redis_data(
             self,
@@ -415,6 +415,28 @@ class Command(BaseModel):
         if v < 0:
             raise ValueError('type must be non-negative')
         return v
+
+    def get_item_name(self) -> str:
+        # if self.cmd != CmdType.CMD_CLR.value:  # 또는 if self.cmd != 0:
+        #     raise ValueError(f'This method is only valid when cmd is CMD_CLR, but got {self.cmd}')
+
+        ch = 'Main' if self.type == 0 else 'Sub'
+
+        # 정수를 키로 사용하는 딕셔너리
+        item_mapping = {
+            0: "Demand Data",  # ITEM_DEMAND
+            1: "Max/Min Data",  # ITEM_MAXMIN
+            2: "Energy Data",  # ITEM_ENERGY
+            3: "Alarm Count",  # ITEM_ALARM
+            4: "Event Count",  # ITEM_EVENT
+            5: "Reboot",  # ITEM_REBOOT
+            6: "RunHour Data",  # ITEM_RUNHOUR
+            7: "Waveform Data",  # ITEM_WAVEFORM
+            8: "All Data"  # ITEM_ALL
+        }
+
+        item_name = item_mapping.get(self.item, "Unknown")
+        return f"Clear {item_name} in {ch}"
 
     class Config:
         use_enum_values = True  # enum을 정수값으로 직렬화

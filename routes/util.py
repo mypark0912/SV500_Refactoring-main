@@ -3,10 +3,12 @@ import uuid, psutil, sqlite3, os, subprocess
 from pathlib import Path
 from datetime import date
 from pydantic import BaseModel
+from fastapi import Request
 
 base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
 DB_PATH = os.path.join(SETTING_FOLDER, "maintenance.db")
+LogDB_PATH = "/usr/local/sv500/logs/web/log.db"
 
 class Post(BaseModel):
     title: str
@@ -55,6 +57,69 @@ def get_db_connection():
         logging.error(f"DB Connection Error: {str(e)} - {DB_PATH}")
         print(f"DB Connection Error: {str(e)} - {DB_PATH}")
         raise
+
+
+def create_logdb_connection():
+    conn = sqlite3.connect(LogDB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            logdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            account TEXT NOT NULL,
+            userRole TEXT NOT NULL,
+            action TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+    if os.path.exists(LogDB_PATH):
+        return True
+    else:
+        return False
+
+def check_get_logdb():
+    conn = sqlite3.connect(LogDB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def saveLog(action: str, request: Request):
+    user = request.session.get("user")
+    userRole = request.session.get("userRole")
+
+    conn = check_get_logdb()
+    if conn is None:
+        logging.error("Database connection failed")
+        return
+
+    try:
+        cursor = conn.cursor()
+
+        # 로그 삽입
+        cursor.execute(
+            "INSERT INTO log (account, userRole, action) VALUES (?, ?, ?)",
+            (user, userRole, action)
+        )
+
+        # 방금 삽입한 ID로 조회
+        last_id = cursor.lastrowid
+        cursor.execute("SELECT * FROM log WHERE id = ?", (last_id,))
+        last_record = cursor.fetchone()
+
+        if last_record:
+            logMessage = f"{last_record['logdate']}: {last_record['action']}/{last_record['userRole']}-{last_record['account']}"
+            logging.debug(logMessage)
+
+        conn.commit()
+
+    except Exception as e:
+        logging.error(f"Error in saveLog: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
 
 def get_mac_address():
     """지정된 네트워크 카드들의 MAC 주소 가져오기"""

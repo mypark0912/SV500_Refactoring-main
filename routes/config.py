@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from .util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions
+from .util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb
 from datetime import datetime
 router = APIRouter()
 
@@ -249,6 +249,9 @@ def set_cmd(data:CaliSet):
                               float(msg['ref2']))  # 명시적 변환
 
         redis_state.binary_client.lpush('cali_command',binary_data)
+        if data.type == 'SAVE':
+            post= Post( title = 'Calibration',  context = 'Calibration',mtype = 3, utype='')
+            save_post(post, 0, 0)
         return {'passOK': '1'}
     except Exception as e:
         logging.error(f"Error: {e}")
@@ -378,3 +381,35 @@ def delete_post(idx):
     except Exception as e:
         print(str(e))
         return {"result": 0}
+
+@router.get('/getLog')
+def get_log(page: int = 1, page_size: int = 10):
+    """log 테이블의 데이터를 페이징하여 조회 (최신순)"""
+    try:
+        conn = check_get_logdb()
+        cursor = conn.cursor()
+
+        # 전체 개수
+        cursor.execute("SELECT COUNT(*) as total FROM log")
+        total = cursor.fetchone()['total']
+
+        # 페이징
+        offset = (page - 1) * page_size
+        cursor.execute(
+            "SELECT * FROM log ORDER BY id DESC LIMIT ? OFFSET ?",
+            (page_size, offset)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        return {
+            "result": 1 if rows else 0,
+            "data": [dict(row) for row in rows] if rows else [],
+            "total": total,
+            "page": page,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+
+    except Exception as e:
+        print(f"GET_POST ERROR: {e}")
+        return {"result": 0, "msg": str(e)}

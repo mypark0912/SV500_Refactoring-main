@@ -26,11 +26,31 @@
                 <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
                 <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14" />
             </svg>
-            <svg v-else class="shrink-0 mr-2 stroke-current text-pink-500 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-else-if="item.mtype == 2" class="shrink-0 mr-2 stroke-current text-pink-500 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 3 21 3 21 8" />
                 <line x1="4" y1="20" x2="21" y2="3" />
                 <polyline points="8 21 3 21 3 16" />
             </svg>
+            <svg v-else
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                class="shrink-0 mr-2 stroke-current text-violet-500 transition-colors"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 8h4v4h-4z" />
+                <path d="M6 4l0 4" />
+                <path d="M6 12l0 8" />
+                <path d="M10 14h4v4h-4z" />
+                <path d="M12 4l0 10" />
+                <path d="M12 18l0 2" />
+                <path d="M16 5h4v4h-4z" />
+                <path d="M18 4l0 1" />
+                <path d="M18 9l0 11" />
+              </svg>
           </div>
       </div>
   </div>

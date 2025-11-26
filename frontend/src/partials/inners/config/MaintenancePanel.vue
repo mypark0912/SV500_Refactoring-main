@@ -138,6 +138,41 @@
                         t("config.maintenance.Replacement")
                       }}</span>
                     </label>
+                    <label
+                      class="inline-flex items-center text-sm font-medium cursor-pointer text-gray-400 peer-checked:text-violet-500"
+                    >
+                      <input
+                        type="radio"
+                        class="sr-only peer"
+                        name="action"
+                        value="3"
+                        v-model="mtype"
+                      />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        class="shrink-0 mr-2 stroke-current peer-checked:text-violet-500 transition-colors"
+                        fill="none"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M4 8h4v4h-4z" />
+                        <path d="M6 4l0 4" />
+                        <path d="M6 12l0 8" />
+                        <path d="M10 14h4v4h-4z" />
+                        <path d="M12 4l0 10" />
+                        <path d="M12 18l0 2" />
+                        <path d="M16 5h4v4h-4z" />
+                        <path d="M18 4l0 1" />
+                        <path d="M18 9l0 11" />
+                      </svg>
+                      <span class="peer-checked:text-violet-500">{{
+                        t("config.maintenance.Calibration")
+                      }}</span>
+                    </label>
                   </div>
 
                   <!-- Component Selection - 수정된 부분 -->
