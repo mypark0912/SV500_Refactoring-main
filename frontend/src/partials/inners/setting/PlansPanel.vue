@@ -285,11 +285,11 @@
                   maxlength="20"
                 />
               </div>
-<!--DNS Server
+
               <div>
                 <label class="block text-sm font-medium mb-2" for="dns-server">
                   {{ t("config.plansPanel.communication.dns")
-                  }}</label
+                  }}<!--DNS Server--></label
                 >
                 <input
                   v-model="inputDict.tcpip.dnsserver"
@@ -298,10 +298,7 @@
                   maxlength="20"
                 />
               </div>
--->
-
             </div>
-
           </div>
 
           <!-- Modbus -->
