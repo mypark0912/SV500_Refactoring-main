@@ -2600,8 +2600,8 @@ async def check_SmartVersion():
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/version")
             data = response.json()
-            short_version = '.'.join(data["Version"].split('.')[:3])
-            return {"success": True, "Version":short_version}
+            # short_version = '.'.join(data["Version"].split('.')[:3])
+            return {"success": True, "Version":data["Version"]}
 
     except Exception as e:
         return {"success": False, "Version": "1.0.3"}

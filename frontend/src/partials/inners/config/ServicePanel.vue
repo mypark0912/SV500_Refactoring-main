@@ -134,7 +134,7 @@
             <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" :version="versionDict['A35']" @service-done="showMessage"/>
             <ServiceCard2 :item="'fw'" :version="versionDict['fw']" />
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
-            <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
+            <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
             <!--ServiceCard :item="'System'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'Backup Download'" :mode="'Download'" @service-done="showMessage"/-->
