@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from .util import save_post, Post, get_mac_address, getVersions, is_service_active, sysService
+from .util import save_post, Post, get_mac_address, getVersions, is_service_active, sysService, create_logdb_connection
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 router = APIRouter()
 
@@ -87,7 +87,7 @@ def is_service_active(service_name):
                                 timeout=2)
         return result.stdout.strip() == 'active'
     except Exception as e:
-        logging.info(f"❌ 서비스 상태 확인 실패: {service_name} - {e}")
+        logging.error(f"❌ 서비스 상태 확인 실패: {service_name} - {e}")
         return False
 
 @router.get('/getInfluxdb')
@@ -175,6 +175,10 @@ async def checkInstall():
             flag = True
     conn.commit()
     conn.close()
+    if create_logdb_connection():
+        logging.info("Create table : log.db")
+    else:
+        logging.warning("Failed to create table log.db")
     if os.path.exists(CAL_PATH):
         calibated = True
     else:

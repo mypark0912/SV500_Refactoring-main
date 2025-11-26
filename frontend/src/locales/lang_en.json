@@ -536,11 +536,13 @@
         },
         "maintenance":{
             "header":"System Maintenance",
+            "header2": "User Action Log",
             "Title":"Title",
             "enterTitle":"Enter Title",
             "Installation": "Installation",
             "Update": "Update",
             "Replacement": "Replacement",
+            "Calibration":"Calibration",
             "FirmWare": "Firmware",
             "App":"App",
             "Web":"Web",

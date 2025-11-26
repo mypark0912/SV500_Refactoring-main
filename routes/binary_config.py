@@ -49,4 +49,4 @@ def setup_all_processors(processor: BinaryDataProcessor):
 
     # 기타 설정들...
 
-    logging.info(f"Registered {len(processor.configs)} binary configurations")
+    logging.debug(f"Registered {len(processor.configs)} binary configurations")

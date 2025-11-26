@@ -9,7 +9,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 #from routes.auth import checkLoginAPI
-from routes.util import get_mac_address, sysService, is_service_active, getVersions
+from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
@@ -210,7 +210,7 @@ async def complete_influx_setup():
                     health = await client.get(f"http://127.0.0.1:8086/health")
                     if health.status_code == 200:
                         influx_ready = True
-                        logging.info("✅ InfluxDB is ready")
+                        logging.debug("✅ InfluxDB is ready")
                         break
             except:
                 pass
@@ -1117,7 +1117,7 @@ def reset():
 #         print(str(e))
 #         return {"success": False, "msg": str(e)}
 
-async def reset_count():
+async def reset_count(request:Request):
     redis_state.client.select(0)
     if redis_state.client.hexists("System","setup"):
         setup = json.loads(redis_state.client.hget("System","setup"))
@@ -1133,12 +1133,12 @@ async def reset_count():
                 break
         if mainEnable == 1:
             allcmd0 = Command(type=0, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
-            ret0 = await push_command_left(allcmd0)
+            ret0 = await push_command_left(allcmd0, request)
             if not ret0["success"]:
                 return False
         if subEnable == 1:
             allcmd1 = Command(type=1, cmd=0, item=8)  # all item clear  (add item 8 to minhyuk)
-            ret1 = await push_command_left(allcmd1)
+            ret1 = await push_command_left(allcmd1, request)
             if not ret1["success"]:
                 return False
 
@@ -1147,7 +1147,7 @@ async def reset_count():
         return False
 
 
-async def reset_system():
+async def reset_system(request:Request):
     ret = sysService("stop", "Core")
     retflag = True
     if ret["success"]:
@@ -1204,7 +1204,7 @@ async def reset_system():
         retflag = result["success"]
 
     if retflag:
-        res = await reset_count()
+        res = await reset_count(request)
         if not res:
             return {"success": False, "msg": "Failed clearing system count"}
         return {"success": True}
@@ -1284,8 +1284,9 @@ def delete_channel_data():
 
 
 @router.get('/ResetAll')
-async def resetAll():
+async def resetAll(request:Request):
     # 1. stop service core and delete ntek 2. stop service SmartSystem 3. clear service SmartSystem and delete ssdb,ssdbnr 4. Clear count, 5. Delete setup, 6. Delete user.db
+    saveLog("Factory Default", request)
     msg = ''
     if not redis_state.client is None:
         redis_state.client.execute_command("SELECT", 0)
@@ -1293,7 +1294,7 @@ async def resetAll():
             checkflag = redis_state.client.hget("Service", "setting")
             if int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
-        ret = await reset_system() #stop core, reinstall smartsystem
+        ret = await reset_system(request) #stop core, reinstall smartsystem
         if not ret["success"]:
             return ret
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
@@ -2177,7 +2178,7 @@ async def manage_smart(mode):
             max_attempts = 10  # 최대 15초 (30 * 0.5초)
             for i in range(max_attempts):
                 if await checkSmartAPI_active():
-                    logging.info(f"✅ SmartAPI ready after {i * 0.5:.1f}s")
+                    logging.debug(f"✅ SmartAPI ready after {i * 0.5:.1f}s")
                     break
 
                 if i == max_attempts - 1:
@@ -2370,7 +2371,7 @@ async def check_assetconfig(asset: str, request: Request):
             return {"success": False, "error": "resetRequired field not found in response"}
 
     except Exception as e:
-        logging.info(str(e))
+        logging.error(str(e))
         return {"success": False, "error": str(e)}
 
 # @router.post("/checkAssetConfig/{asset}")
@@ -2758,8 +2759,10 @@ def get_system_status():
     return highList
 
 @router.post("/command")
-async def push_command_left(command: Command):
+async def push_command_left(command: Command, request:Request):
     """새로운 command를 Redis 리스트의 왼쪽에 추가"""
+    if command.cmd != 2:
+        saveLog(command.get_item_name(), request)
     try:
         binary_data = command_to_binary(command)
         redis_state.client.select(1)
@@ -2779,6 +2782,7 @@ async def push_command_left(command: Command):
 
 @router.get("/trigger")
 async def push_both_channels(
+        request: Request,
         cmd: int = CmdType.CMD_CAPTURE,  # 기본값: 2 (캡처)
         item: int = ItemType.ITEM_WAVEFORM  # 기본값: 7 (웨이브폼)
 ):
@@ -2789,7 +2793,7 @@ async def push_both_channels(
             cmd=cmd,
             item=item
         )
-        result_0 = await push_command_left(channel_0_command)
+        result_0 = await push_command_left(channel_0_command, request)
 
         # 채널 1에 푸시
         channel_1_command = Command(
@@ -2797,7 +2801,7 @@ async def push_both_channels(
             cmd=cmd,
             item=item
         )
-        result_1 = await push_command_left(channel_1_command)
+        result_1 = await push_command_left(channel_1_command, request)
 
         return {
             "success": True,
@@ -2826,7 +2830,8 @@ def get_sysMode():
         return {"success": False}
 
 @router.get('/updateSmartSystem/{mode}')
-async def update_smartsystem(mode):
+async def update_smartsystem(mode, request:Request):
+    saveLog("Update SmartSystem", request)
     redis_state.client.select(0)
     result = redis_state.client.hget("System", "setup")
     if not result:

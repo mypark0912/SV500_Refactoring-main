@@ -51,7 +51,7 @@ def gc_after_large_data(threshold_mb=50):
             # 메모리 증가량이 임계값 초과시 GC
             if after_memory - before_memory > threshold_mb:
                 gc.collect()
-                logging.info(f"GC triggered after {func.__name__}: {after_memory - before_memory:.1f}MB freed")
+                logging.debug(f"GC triggered after {func.__name__}: {after_memory - before_memory:.1f}MB freed")
 
             return result
 
@@ -68,7 +68,7 @@ def get_or_create_executor() -> ThreadPoolExecutor:
             max_workers=MAX_WORKERS,
             thread_name_prefix="influx-"
         )
-        logging.info(f"Created ThreadPoolExecutor with {MAX_WORKERS} workers")
+        logging.debug(f"Created ThreadPoolExecutor with {MAX_WORKERS} workers")
     return executor
 
 
@@ -697,7 +697,7 @@ async def get_harmonics_data(processed_data):  # add - PQ Diagnosis Harmonics Ch
                     "data": harmonics_values
                 })
 
-        logging.info(f"Harmonics 데이터 추출 완료: {len(harmonics_data['harmonics'])}개")
+        logging.debug(f"Harmonics 데이터 추출 완료: {len(harmonics_data['harmonics'])}개")
         return harmonics_data
 
     except Exception as e:

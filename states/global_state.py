@@ -70,7 +70,7 @@ class AESEncDec:
             with open(ADMIN_PATH, 'rb') as f:
                 raw = base64.b64decode(f.read())
         except Exception as e:
-            logging.info(f"❌ {ADMIN_PATH} Admin Password Encryption File Error: {e}")
+            logging.warning(f"❌ {ADMIN_PATH} Admin Password Encryption File Error: {e}")
         self.adminIv = raw[:16]
         self.encrypted = raw[16:]  # ← 암호문은 따로 저장해둬야 함
 

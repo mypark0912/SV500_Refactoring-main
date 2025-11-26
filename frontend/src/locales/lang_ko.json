@@ -530,11 +530,13 @@
     },
     "maintenance": {
       "header": "시스템 유지보수",
+      "header2": "사용자 행위 로그",
       "Title": "타이틀",
       "enterTitle": "타이틀 입력",
       "Installation": "설치",
       "Update": "업데이트",
       "Replacement": "교체",
+      "Calibration":"캘리브레이션",
       "FirmWare": "펌웨어",
       "App": "앱",
       "Web": "웹",
