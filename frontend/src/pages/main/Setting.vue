@@ -1684,13 +1684,13 @@ const setAssetParams = async (paramData, assetName, channelName) => {
           data.useAI = (data.useAI === true || data.useAI === 1) ? 1 : 0;
         }
       // 🔥 useDO가 false이면 status_Info 초기화
-        // const isUseDOEnabled = data.useDO === 1 || data.useDO === true;
-        // if (!isUseDOEnabled && data.status_Info) {
-        //   data.status_Info.diagnosis = [];
-        //   data.status_Info.pq = [];    
-        //   data.status_Info.faults = [];
-        //   data.status_Info.events = [];
-        // }
+        const isUseDOEnabled = data.confStatus === 1 || data.confStatus === true;
+        if (!isUseDOEnabled && data.status_Info) {
+          data.status_Info.diagnosis = [];
+          data.status_Info.pq = [];    
+          data.status_Info.faults = [];
+          data.status_Info.events = [];
+        }
         // 데이터 타입 변환
         for (const key in data.ctInfo) {
           if (key == "direction") {
