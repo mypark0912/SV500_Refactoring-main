@@ -117,7 +117,7 @@ export function useInputDict() {
       name: "",
       type: "",
       nickname:"",
-      driveType:"",
+      driveType:"DOL",
     },
     eventInfo: {
       oc_action: 0,
@@ -194,7 +194,7 @@ export function useInputDict() {
       name: "",
       type: "",
       nickname:"",
-      driveType:"",
+      driveType:"DOL",
     },
     eventInfo: {
       oc_action: 0,

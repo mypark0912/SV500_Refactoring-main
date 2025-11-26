@@ -237,6 +237,9 @@
     "info": {
       "name": "설비 이름",
       "type": "설비 종류",
+      "drivetype": "구동방식",
+      "dr1":"직입기동",
+      "dr2":"인버터기동",
       "location": "설치 장소",
       "status": "설비 상태",
       "Rated Voltage": "정격 전압",

@@ -70,7 +70,7 @@
 </template>
   
 <script>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSetupStore } from '@/store/setup'; // Pinia Store 
 import axios from 'axios'
@@ -102,7 +102,7 @@ export default {
     //const langset = computed(() => authStore.getLang);
     const asset = computed(() => setupStore.getAssetConfig);
     const rawdata = ref([]);
-
+    const drType = ref('');
     const activeTab = ref('Status');
     const tabs = ref([
       { name: 'Status', label: 'Dignosis Status'},
@@ -131,6 +131,8 @@ export default {
           const response = await axios.get(`/api/getAsset/${chName}`);
           if (response.data.success) {
             rawdata.value = response.data.data;
+            drType.value = response.data.driveType;
+            //console.log(chName,'-',drType.value);
           }else{
             console.log('No Data');
           }
@@ -141,6 +143,8 @@ export default {
         alert('There are no registered Asset.');
       }
     };
+
+    provide('driveType', drType);
 
     const fetchRealtimeAsset = async () => {
       if(!asset.value)
@@ -197,6 +201,7 @@ export default {
       rawdata,
       tabs,
       t,
+      drType,
     }  
   }
 }

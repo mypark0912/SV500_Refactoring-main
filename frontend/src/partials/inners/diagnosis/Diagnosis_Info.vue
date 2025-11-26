@@ -19,6 +19,10 @@
                   <span class="text-xs font-bold text-gray-500 dark:text-white uppercase">{{ t('diagnosis.info.type') }}</span>
                   <span class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ thisAsset.type }}</span>
                 </div>
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-gray-500 dark:text-white uppercase">{{ t('diagnosis.info.drivetype') }}</span>
+                  <span class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ driveType == 'DOL'? t('diagnosis.info.dr1') : t('diagnosis.info.dr2') }}</span>
+                </div>
               </div>
             </div> 
             <!-- 타입 -->
@@ -40,7 +44,7 @@
   
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import motorImg from '@/images/motor_m.png'
 import fanImg from '@/images/fan_m.png'
 import pumpImg from '@/images/pump_m.png'
@@ -64,12 +68,14 @@ export default {
     channel:{
       type:String,
       default: ''
-    }
+    },
   },
   setup(props){
     const { t } = useI18n();
     const channel = ref(props.channel);
     const asset = ref(props.asset);
+    const driveType = inject('driveType');
+    //console.log(channel.value,'-', driveType.value);
     // ✅ props 직접 사용 또는 computed로 감싸야 반응함
     const thisAsset = computed(() => {
       const chName = props.channel === 'Main' ? props.asset.assetNickname_main : props.asset.assetNickname_sub;
@@ -108,6 +114,7 @@ export default {
       equipImageSrc,
       channel,
       t,
+      driveType,
     }
   }
 }

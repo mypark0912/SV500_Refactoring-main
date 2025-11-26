@@ -238,6 +238,9 @@
         "info": {
             "name": "Equipment Name",
             "type": "Equipment Type",
+            "drivetype": "Drive Type",
+            "dr1":"DOL",
+            "dr2":"VFD",
             "location": "Installation Location",
             "status": "Equipment Status",
             "Rated Voltage": "Rated Voltage",

@@ -141,10 +141,21 @@ import transImg from '@/images/trans.png'
 
       const stData = ref(props.data);
       const transData = computed(()=>{
-        if(stData.value.devType.includes('Transformer'))
-          return props.transData;
-        else
-          return props.transData["realtime"];
+          if (!props.transData) {
+            console.log('transData is undefined!');
+            return [];
+          }
+          
+          if (stData.value.devType.includes('Transformer')) {
+            return props.transData;
+          } else {
+            return props.transData.realtime || [];
+          }
+        // console.log(props.transData);
+        // if(stData.value.devType.includes('Transformer'))
+        //   return props.transData;
+        // else
+        //   return props.transData["realtime"];
       });
       //console.log('transData - ',transData.value)
       const LoadRate = ref(0);

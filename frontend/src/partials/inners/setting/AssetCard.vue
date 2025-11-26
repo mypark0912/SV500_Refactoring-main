@@ -303,7 +303,7 @@ const assetTypeList = ref([
             "Fan",
             "Compressor"
         ]);
-//const assetDriveType = inject('assetDriveType', ref('DOL'));
+const assetDriveType = inject('assetDriveType', ref('DOL'));
 //const driveType = ref('DOL');  // 'DOL' 또는 'VFD'
 
 
@@ -355,13 +355,13 @@ const finalAssetType = computed(() => {
 // AssetType 변경 시 DriveType 초기화
 watch(() => assetMode.value.type, (newType) => {
     if (!vfdSupportedTypes.includes(newType)) {
-        driveType.value = 'DOL';
+        inputDict.value.assetInfo.driveType = 'DOL';
     }
 });
 
 watch(assetDriveType, (newValue) => {
-  driveType.value = newValue;
-});
+  inputDict.value.assetInfo.driveType = newValue;
+},{ immediate: true });
 
 const m_kva = computed(() => setupStore.getMkva);
 const s_kva = computed(() => setupStore.getSkva);
@@ -956,11 +956,11 @@ const createAsset = async () => {
       return; // 중복이면 함수 종료
     }
     let sendType;
-    if(driveType.value == 'VFD')
-      sendType = assetMode.value.type +"-" + driveType.value;
+    if(inputDict.value.assetInfo.driveType == 'VFD')
+      sendType = assetMode.value.type +"-" + inputDict.value.assetInfo.driveType;
     else
       sendType = assetMode.value.type;
-    console.log(sendType);
+    //console.log(sendType);
     const payload = {
       assetType: sendType, //inputDict.value.assetInfo.type,
       assetName: assetMode.value.name, //tempAssetName.value,

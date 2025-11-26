@@ -1363,10 +1363,11 @@ async def get_asset(asset, request: Request):
             (ch for ch in setting["channel"] if ch.get("assetInfo", {}).get("name") == asset),
             None
         )
-
+        assetDriveType = ''
         if transformer_channel:
             pt_info = transformer_channel.get("ptInfo")
             assetType = transformer_channel["assetInfo"]["type"]
+            assetDriveType = transformer_channel["assetInfo"].get("driveType")
             n_kva = transformer_channel.get("n_kva")
             datalist.append(
                 {"Title": "PT WiringMode", "Name": "PT_WiringMode", "Value": ptInfo[pt_info['wiringmode']], "Unit": ""})
@@ -1383,7 +1384,7 @@ async def get_asset(asset, request: Request):
             elif data[i]["Name"] == "RatedCurrent":
                 datalist.append({"Title": data[i]["Title"], "Name": data[i]["Name"], "Value": data[i]["Value"],
                                  "Unit": data[i]["Unit"]})
-        return {"success": True, "data": datalist, "mac": mac}
+        return {"success": True, "data": datalist, "mac": mac, "driveType":assetDriveType}
     else:
         return {"success": False, "error": "No Data"}
 
