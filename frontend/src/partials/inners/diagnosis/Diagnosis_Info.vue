@@ -19,7 +19,7 @@
                   <span class="text-xs font-bold text-gray-500 dark:text-white uppercase">{{ t('diagnosis.info.type') }}</span>
                   <span class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ thisAsset.type }}</span>
                 </div>
-                <div class="flex flex-col">
+                <div v-if="!thisAsset.type?.includes('Transformer')" class="flex flex-col">
                   <span class="text-xs font-bold text-gray-500 dark:text-white uppercase">{{ t('diagnosis.info.drivetype') }}</span>
                   <span class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ driveType == 'DOL'? t('diagnosis.info.dr1') : t('diagnosis.info.dr2') }}</span>
                 </div>
