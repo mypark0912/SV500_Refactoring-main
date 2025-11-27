@@ -779,7 +779,14 @@ const unregisterAsset = async () => {
 
     if (response.data.success) {
       flag = true;
-    }
+    }else {
+    // ✅ 에러 메시지 배열 처리
+    const errorMessages = Array.isArray(response.data.error)
+      ? response.data.error.join('\n')
+      : response.data.error || 'Unknown error';
+    alert(`❌ Unregister failed:\n${errorMessages}`);
+    return;
+  }
   } catch (error) {
     console.log(error);
   }
@@ -791,6 +798,10 @@ const unregisterAsset = async () => {
       inputDict.value.status_Info.pq = [];
       inputDict.value.status_Info.faults = [];
       inputDict.value.status_Info.events = [];
+      inputDict.value.confStatus = 0;
+      inputDict.value.useDO = 0;
+      inputDict.value.useAI = 0;
+
     }
 
     inputDict.value.assetInfo.name = "";
@@ -873,7 +884,14 @@ const registerAsset = async () => {
   }
 
   let flag = false;
-  await props.savefile("fromChild");
+  // try {
+  //   if (props.savefile && typeof props.savefile === 'function') {
+  //     await props.savefile("fromChild");
+  //   }
+  // } catch (e) {
+  //   console.warn("savefile 호출 실패:", e);
+  // }
+
   try {
     const response = await axios.get(
       `/setting/registerAsset/${channel.value}/${selectedAsset.value.name}/${selectedAsset.value.type}`
@@ -881,7 +899,14 @@ const registerAsset = async () => {
 
     if (response.data.success) {
       flag = true;
-    }
+    } else {
+    // ✅ 에러 메시지 배열 처리
+    const errorMessages = Array.isArray(response.data.error)
+      ? response.data.error.join('\n')
+      : response.data.error || 'Unknown error';
+    alert(`❌ Registration failed:\n${errorMessages}`);
+    return; // 에러 시 함수 종료
+  }
   } catch (error) {
     console.log(error);
   }
