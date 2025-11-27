@@ -1157,22 +1157,21 @@ async def get_dashStatus(asset, channel):
         async with httpx.AsyncClient(timeout=api_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/getbargraphs?name={asset}")
             data = response.json()
-
-            # Temporarily Reverse
-            # if "Diagnostic" in data and "PQ" in data:
-            #     data["Diagnostic"], data["PQ"] = data["PQ"], data["Diagnostic"]
-            #     logging.info(f"[TEMP FIX] Swapped Diagnostic <-> PQ for {asset}")
-
             eventTree = data.get("Events", [])
+
         # 2. Redis에서 DashAlarms 설정 가져오기
         redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
+
+        # 데이터 검증
+        if not data or not isinstance(data, dict):
+            return {"status": -1}
 
         # 설정이 없으면 기존 로직 사용
         if not redis_data:
             print(f"{channel} - Not Redis : get_state_legacy")
             legacy = await get_state_legacy(data, channel)
-            return {"status": 0,"data": legacy, "eventTree": eventTree, "runhours": runhours}
+            return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
 
         dash_alarms = json.loads(redis_data)
         channel_config = dash_alarms.get(channel)
@@ -1187,38 +1186,43 @@ async def get_dashStatus(asset, channel):
         print(str(e))
         return {"status": -1}
 
-    # 데이터 검증
-    if not data or not isinstance(data, dict):  # ✅ 딕셔너리 체크
-        return {"status": -1}
-
-    # 3. AlarmStatusMatcher로 PQ 계산
+    # 3. 카테고리별로 처리 (설정 있으면 AlarmStatusMatcher, 없으면 레거시)
     try:
         state_list = ['Diagnostic', 'PQ', 'Events', 'Faults']
         matcher = AlarmStatusMatcher()
         status_info = {
-            "Diagnostic": channel_config.get("diagnosis", []),  # PQ만 계산
+            "Diagnostic": channel_config.get("diagnosis", []),
             "PQ": channel_config.get("pq", []),
             "Events": channel_config.get("event", []),
             "Faults": channel_config.get("fault", [])
         }
+
+        # 레거시 데이터 미리 가져오기 (필요시 사용)
+        legacy_data = await get_state_legacy(data, channel)
+
         retDict = dict()
 
-        for i in range(len(state_list)):
-            bar_graph = data.get(state_list[i], [])
-            result = matcher.diagnose(status_info[state_list[i]], bar_graph)
+        for category in state_list:
+            config_list = status_info[category]
+
+            # ✅ 설정이 비어있으면 레거시 로직 사용
+            if not config_list:
+                retDict[category] = legacy_data.get(category, {"status": 1, "item": "All"})
+                continue
+
+            # ✅ 설정이 있으면 AlarmStatusMatcher 사용
+            bar_graph = data.get(category, [])
+            result = matcher.diagnose(config_list, bar_graph)
             final_status = result["final_status"]
             matched_params = result["matched_parameters"]
 
             # 매칭된 항목이 없으면
             if not matched_params:
                 if final_status == 0:
-                    retDict[state_list[i]] = {"status": 0, "item": "All"}  # NoData
+                    retDict[category] = {"status": 0, "item": "All"}  # NoData
                 else:
-                    retDict[state_list[i]] = {"status": 1, "item": "All"}  # OK
-                # retDict[state_list[i]] = {"status": 1, "item": "All"}
-                continue  # ✅ 다음 카테고리로 계속 진행
-            # if not matched_params:
-            #     return {"status": 1, "item": "All"}
+                    retDict[category] = {"status": 1, "item": "All"}  # OK
+                continue
 
             # 매칭된 항목들 중 가장 높은 status들만
             max_status = max(p["actual_status"] for p in matched_params)
@@ -1232,16 +1236,15 @@ async def get_dashStatus(asset, channel):
             else:
                 item_label = f"{top_items[0]['name']} ... +{len(top_items) - 1}"
 
-            retDict[state_list[i]] = {"status": final_status, "item": item_label}
+            retDict[category] = {"status": final_status, "item": item_label}
 
-
-        return {"status": 0,"data": retDict, "eventTree": eventTree, "runhours": runhours}
+        return {"status": 0, "data": retDict, "eventTree": eventTree, "runhours": runhours}
 
     except Exception as e:
         print(f"AlarmStatusMatcher error: {str(e)}")
         # 에러 시 기존 로직으로 fallback
         legacy = await get_state_legacy(data, channel)
-        return {"status": 0,"data": legacy, "eventTree": eventTree, "runhours": runhours}
+        return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
 
 def get_running(channel):
     if channel == 'Main':
