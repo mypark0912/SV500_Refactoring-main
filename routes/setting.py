@@ -1962,7 +1962,7 @@ async def unreg_Asset(channel, asset):
     #     response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
     #     data = response.json()
     data = await reset_smart(asset, 0)
-    if len(data) > 0:
+    if isinstance(data, list) and len(data) > 0:
         finflag = True
     else:
         finflag = False
@@ -2021,7 +2021,7 @@ async def reg_Asset(channel, assetName, assetType):
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
         data = response.json()
-    if len(data) > 0:
+    if isinstance(data, list) and len(data) > 0:
         finflag = True
     else:
         finflag = False
