@@ -1983,7 +1983,7 @@ async def unreg_Asset(channel, asset):
         return {"success":False}
 
 
-# @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
+# @router.get('/registerAsset/{channel}/{assetName}/{assetType}')  # Different response format (Fail, Success, Not Exist)
 # async def reg_Asset(channel, assetName, assetType):
 #     async with httpx.AsyncClient(timeout=setting_timeout) as client:
 #         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
