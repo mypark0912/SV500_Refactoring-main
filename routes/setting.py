@@ -1962,50 +1962,50 @@ async def unreg_Asset(channel, asset):
     #     response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
     #     data = response.json()
     data = await reset_smart(asset, 0)
-    if len(data) > 0:
+    if data and data["Status"] == 0:
         finflag = True
     else:
         finflag = False
-    redis_state.client.execute_command("SELECT", 0)
-    if redis_state.client.hexists("System","setup"):
-        datStr = redis_state.client.hget("System","setup")
-        setting = json.loads(datStr)
-        for chInfo in setting["channel"]:
-            if channel == chInfo["channel"]:
-                chInfo["assetInfo"]["name"] =''
-                chInfo["assetInfo"]["type"] = ''
-                finflag = True
-                break
-        redis_state.client.hset("System","setup", json.dumps(setting))
+
     if finflag:
+        redis_state.client.execute_command("SELECT", 0)
+        if redis_state.client.hexists("System", "setup"):
+            datStr = redis_state.client.hget("System", "setup")
+            setting = json.loads(datStr)
+            for chInfo in setting["channel"]:
+                if channel == chInfo["channel"]:
+                    chInfo["assetInfo"]["name"] = ''
+                    chInfo["assetInfo"]["type"] = ''
+                    break
+            redis_state.client.hset("System", "setup", json.dumps(setting))
         return {"success":True}
     else:
-        return {"success":False}
+        return {"success":False, "error": data["Messages"]}
 
 @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
 async def reg_Asset(channel, assetName, assetType):
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
         data = response.json()
-    if len(data) > 0:
+    if data and data["Status"] == 0:
         finflag = True
     else:
         finflag = False
-    redis_state.client.execute_command("SELECT", 0)
-    if redis_state.client.hexists("System","setup"):
-        datStr = redis_state.client.hget("System","setup")
-        setting = json.loads(datStr)
-        for chInfo in setting["channel"]:
-            if channel == chInfo["channel"]:
-                chInfo["assetInfo"]["name"] = assetName
-                chInfo["assetInfo"]["type"] = assetType
-                finflag = True
-                break
-        redis_state.client.hset("System","setup", json.dumps(setting))
+
     if finflag:
+        redis_state.client.execute_command("SELECT", 0)
+        if redis_state.client.hexists("System", "setup"):
+            datStr = redis_state.client.hget("System", "setup")
+            setting = json.loads(datStr)
+            for chInfo in setting["channel"]:
+                if channel == chInfo["channel"]:
+                    chInfo["assetInfo"]["name"] = assetName
+                    chInfo["assetInfo"]["type"] = assetType
+                    break
+            redis_state.client.hset("System", "setup", json.dumps(setting))
         return {"success":True}
     else:
-        return {"success":False}
+        return {"success":False, "error": data["Messages"]}
 
 
 def save_alarm_configs_to_redis(setting_dict: dict):
