@@ -1982,6 +1982,40 @@ async def unreg_Asset(channel, asset):
     else:
         return {"success":False}
 
+
+# @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
+# async def reg_Asset(channel, assetName, assetType):
+#     async with httpx.AsyncClient(timeout=setting_timeout) as client:
+#         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
+#         data = response.json()
+#         if isinstance(data, dict):
+#             status = data.get("Status")
+#         elif isinstance(data, list):
+#             status = 2
+#
+#     if status == 0:
+#         finflag = True
+#     else:
+#         finflag = False
+#
+#     if finflag:
+#         redis_state.client.execute_command("SELECT", 0)
+#         if redis_state.client.hexists("System", "setup"):
+#             datStr = redis_state.client.hget("System", "setup")
+#             setting = json.loads(datStr)
+#             for chInfo in setting["channel"]:
+#                 if channel == chInfo["channel"]:
+#                     chInfo["assetInfo"]["name"] = assetName
+#                     chInfo["assetInfo"]["type"] = assetType
+#                     break
+#             redis_state.client.hset("System", "setup", json.dumps(setting))
+#         return {"success": True}
+#     else:
+#         if status == 1:
+#             return {"success": False, "error": data["Messages"]}
+#         else:
+#             return {"success": False, "error": ['Asset is registered already']}
+
 @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
 async def reg_Asset(channel, assetName, assetType):
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
