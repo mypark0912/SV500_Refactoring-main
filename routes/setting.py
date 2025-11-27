@@ -9,7 +9,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 #from routes.auth import checkLoginAPI
-from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog
+from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 
@@ -2847,7 +2847,27 @@ def get_sysMode():
 
 @router.get('/updateSmartSystem/{mode}')
 async def update_smartsystem(mode, request:Request):
-    saveLog("Update SmartSystem", request)
+    if int(mode) == 1:
+        c_text = 'Smart System reinstall'
+        saveLog("Reinstll SmartSystem", request)
+    else:
+        c_text = 'Smart System update'
+        saveLog("Update SmartSystem", request)
+    lastpost = get_lastpost()
+    if lastpost["result"] == 1:
+        idx = int(lastpost["data"]["id"])
+        smartVersion = lastpost["data"]["smart_version"]
+        dict = getVersions()
+        if smartVersion != dict["smartsystem"]:
+            smartVersion = dict["smartsystem"]
+        update = Post(title='SW Update', context=c_text, mtype=1, utype='smartsystem',
+                      smart_version=smartVersion)
+        save_post(update, 1, idx)
+    else:
+        update = Post(title='SW Install', context='Smart System install', mtype=0, utype='smartsystem',
+                      smart_version='1.0.0')
+        save_post(update, 0, 0)
+
     redis_state.client.select(0)
     result = redis_state.client.hget("System", "setup")
     if not result:
