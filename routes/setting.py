@@ -493,6 +493,8 @@ async def setup_downsampling():
         overall_success = bucket_result["success"] and task_result["success"]
 
         if overall_success:
+            redis_state.client.select(0)
+            redis_state.client.hset("influx_init", "status", "COMPLETE")
             logging.info("✅ Downsampling setup completed successfully")
             return {
                 "success": True,
