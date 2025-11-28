@@ -513,6 +513,296 @@ async def setup_downsampling():
         return {"success": False, "message": str(e)}
 
 
+@router.get('/setup-downsampling')
+async def setup_downsampling_endpoint():
+    """
+    다운샘플링 버킷과 Task를 생성합니다.
+    (업데이트 후 1회 실행용)
+
+    생성 항목:
+    - 버킷: ntek_1h (90일), ntek_1d (2년)
+    - Task: trend 5분→1시간→1일, energy 일간 집계
+    """
+    try:
+        logging.info("🔧 다운샘플링 설정 시작...")
+
+        result = await setup_downsampling()
+
+        if result["success"]:
+            logging.info("✅ 다운샘플링 설정 완료")
+            return {
+                "result": True,
+                "message": "다운샘플링 버킷 및 Task가 생성되었습니다.",
+                "buckets": result.get("buckets", []),
+                "tasks": result.get("tasks", [])
+            }
+        else:
+            logging.warning(f"⚠️ 다운샘플링 설정 중 일부 실패: {result['message']}")
+            return {
+                "result": False,
+                "message": result["message"],
+                "buckets": result.get("buckets", []),
+                "tasks": result.get("tasks", [])
+            }
+
+    except Exception as e:
+        logging.error(f"❌ 다운샘플링 설정 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return{
+            "result": False,
+            "message":f"다운샘플링 설정 실패: {str(e)}"
+        }
+
+@router.get('/check-downsampling')
+async def check_downsampling_status():
+    """
+    다운샘플링 버킷과 Task의 존재 여부를 확인합니다.
+    """
+    try:
+        # 1. org_id 확인 및 가져오기
+        ret = check_org_id_exists()
+        print(f"check_org_id_exists: {ret}")
+
+        if not ret["result"]:
+            # org_id가 없으면 InfluxDB에서 조회해서 저장
+            org_id = await get_org_id_from_influxdb()
+            if not org_id:
+                return {
+                    "result": False,
+                    "message": "org_id를 찾을 수 없습니다"
+                }
+
+        # 2. config 가져오기
+        config = aesState.getInflux()
+
+        if not config["result"]:
+            return {
+                "result": False,
+                "message": "InfluxDB 설정 파일을 찾을 수 없습니다"
+            }
+
+        # 3. org_id 확인 (getInflux 결과에 없을 수도 있음)
+        if "org_id" not in config or not config["org_id"]:
+            # 파일에서 다시 확인
+            ret = check_org_id_exists()
+            if ret["result"] and ret["org_id"]:
+                config["org_id"] = ret["org_id"]
+            else:
+                return {
+                    "result": False,
+                    "message": "org_id를 찾을 수 없습니다"
+                }
+
+        token = aesState.decrypt(config["cipher"])
+
+        bucket_names = ["ntek_1h", "ntek_1d"]
+        task_names = [
+            "downsample_trend_to_1h",
+            "downsample_trend_to_1d",
+            "downsample_energy_consumption_to_1d",
+            "downsample_energy_cumulative_to_1d"
+        ]
+
+        bucket_status = []
+        task_status = []
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            # 버킷 상태 확인
+            try:
+                buckets_response = await client.get(
+                    f"http://127.0.0.1:8086/api/v2/buckets",
+                    headers={"Authorization": f"Token {token}"},
+                    params={"orgID": config['org_id']}
+                )
+
+                if buckets_response.status_code == 200:
+                    all_buckets = buckets_response.json().get("buckets", [])
+
+                    for bucket_name in bucket_names:
+                        bucket = next((b for b in all_buckets if b["name"] == bucket_name), None)
+
+                        if bucket:
+                            retention = bucket.get("retentionRules", [])
+                            retention_seconds = retention[0]["everySeconds"] if retention else 0
+                            retention_days = retention_seconds // (
+                                        24 * 60 * 60) if retention_seconds > 0 else "infinite"
+
+                            bucket_status.append({
+                                "name": bucket_name,
+                                "exists": True,
+                                "id": bucket["id"],
+                                "retention_days": retention_days,
+                                "created_at": bucket.get("createdAt")
+                            })
+                        else:
+                            bucket_status.append({
+                                "name": bucket_name,
+                                "exists": False
+                            })
+                else:
+                    logging.error(f"❌ 버킷 조회 실패: {buckets_response.status_code}")
+
+            except Exception as e:
+                logging.error(f"❌ 버킷 조회 중 오류: {e}")
+                for bucket_name in bucket_names:
+                    bucket_status.append({
+                        "name": bucket_name,
+                        "exists": False,
+                        "error": str(e)
+                    })
+
+            # Task 상태 확인
+            try:
+                tasks_response = await client.get(
+                    f"http://127.0.0.1:8086/api/v2/tasks",
+                    headers={"Authorization": f"Token {token}"},
+                    params={"orgID": config['org_id']}
+                )
+
+                if tasks_response.status_code == 200:
+                    all_tasks = tasks_response.json().get("tasks", [])
+
+                    for task_name in task_names:
+                        task = next((t for t in all_tasks if t["name"] == task_name), None)
+
+                        if task:
+                            task_status.append({
+                                "name": task_name,
+                                "exists": True,
+                                "id": task["id"],
+                                "status": task.get("status"),
+                                "created_at": task.get("createdAt"),
+                                "last_run_status": task.get("lastRunStatus"),
+                                "last_run_error": task.get("lastRunError")
+                            })
+                        else:
+                            task_status.append({
+                                "name": task_name,
+                                "exists": False
+                            })
+                else:
+                    logging.error(f"❌ Task 조회 실패: {tasks_response.status_code}")
+
+            except Exception as e:
+                logging.error(f"❌ Task 조회 중 오류: {e}")
+                for task_name in task_names:
+                    task_status.append({
+                        "name": task_name,
+                        "exists": False,
+                        "error": str(e)
+                    })
+
+        # 전체 상태 판단
+        all_buckets_exist = all(b["exists"] for b in bucket_status)
+        all_tasks_exist = all(t["exists"] for t in task_status)
+
+        return {
+            "result": True,
+            "all_configured": all_buckets_exist and all_tasks_exist,
+            "buckets": {
+                "all_exist": all_buckets_exist,
+                "details": bucket_status
+            },
+            "tasks": {
+                "all_exist": all_tasks_exist,
+                "details": task_status
+            },
+            "summary": {
+                "buckets_count": f"{sum(1 for b in bucket_status if b['exists'])}/{len(bucket_names)}",
+                "tasks_count": f"{sum(1 for t in task_status if t['exists'])}/{len(task_names)}"
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"❌ 다운샘플링 상태 확인 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "result": False,
+            "message": f"다운샘플링 상태 확인 실패: {str(e)}"
+        }
+
+
+def check_org_id_exists():
+    """
+    influx.json에 org_id가 있는지 확인
+
+    Returns:
+        bool: org_id가 있으면 True, 없으면 False
+    """
+    try:
+        file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+
+        if not os.path.exists(file_path):
+            return {"result": False}
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            influx_config = json.load(f)
+
+        if "org_id" in influx_config and influx_config["org_id"]:
+            return {"result": True, "org_id": influx_config["org_id"]}
+        else:
+            return {"result": False, "org_id": None}
+
+    except Exception as e:
+        logging.error(f"❌ Error checking org_id: {e}")
+        return {"result": False}
+
+
+async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
+    """
+    InfluxDB에서 organization ID를 조회하고 influx.json에 저장
+
+    Args:
+        org_name: 조직 이름 (기본값: "ntek")
+
+    Returns:
+        str: org_id 또는 None
+    """
+    try:
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(
+                "http://127.0.0.1:8086/api/v2/orgs",
+                headers={"Authorization": f"Token {token}"}
+            )
+
+            if response.status_code == 200:
+                orgs = response.json().get("orgs", [])
+                target_org = next((org for org in orgs if org["name"] == org_name), None)
+
+                if target_org:
+                    org_id = target_org["id"]
+                    logging.info(f"✅ Found org_id: {org_id}")
+
+                    # influx.json에 org_id 저장
+                    file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        influx_config = json.load(f)
+
+                    influx_config["org_id"] = org_id
+
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(influx_config, f, indent=4)
+
+                    logging.info(f"✅ org_id saved to influx.json")
+
+                    return org_id
+                else:
+                    logging.warning(f"⚠️ Organization '{org_name}' not found")
+                    return None
+            else:
+                logging.error(f"❌ API error: {response.status_code}")
+                return None
+
+    except Exception as e:
+        logging.error(f"❌ Error getting org_id: {e}")
+        return None
+
+
 @router.get('/initDB/status')
 async def get_init_status():
     redis_state.client.select(0)
