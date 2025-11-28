@@ -22,8 +22,31 @@
             </div>
           </div>
           <div class="text-right mt-1">
+            <div v-if="tap == `Meter` && isNtek" class="flex items-center justify-between mt-1">
+              <label class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="saveCsv"
+                :true-value="1"
+                :false-value="0"
+                class="form-checkbox text-violet-500"
+              />
+              <span class="text-sm">save CSV</span>
+            </label>
             <a
-              v-if="tap == `Meter`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawMeterChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
+            </div>
+            <a v-else-if="tap == `Meter` && !isNtek"
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
@@ -141,12 +164,13 @@
   </div>
 </template>
 <script>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import Trend_treetable from "./Trend_treetable.vue";
 import LineChart from "../../../charts/connect/LineChart01_Echart.vue";
 import Notification_origin from "./Notification_origin.vue";
 import { useI18n } from "vue-i18n";
+import { useAuthStore } from '@/store/auth'; // ✅ Pinia Store 사용
 export default {
   name: "TrendTab",
   props: {
@@ -181,6 +205,8 @@ export default {
     const channel = ref(props.channel);
     const tap = ref(props.tap);
     const items = ref([]);
+    const authStore = useAuthStore(); // ✅ Pinia Store 사용
+    const saveCsv = ref(0);
     const option = ref({
       lineLabels: [],
       lineData: [],
@@ -353,6 +379,14 @@ export default {
       "TDD I3": ["TDD_I3"],
       "TDD Iavg": ["tdd_i_avg"],
     };
+
+    const isNtek = computed(()=>{
+        const userName = authStore.getUser;
+        if (userName == 'ntek')
+          return true;
+        else
+          return false;
+      })
 
     const expandEnabledNames = (enabledParams, paramMap) => {
       const paramNames = enabledParams.flatMap(
@@ -617,7 +651,7 @@ export default {
       isLoading.value = true; // ✅ 로딩 시작
 
       try {
-        const url = `/api/getMeterTrend/${channel.value}`;
+        const url = `/api/getMeterTrend/${channel.value}/${saveCsv.value}`;
 
         // POST 요청으로 변경하고 body에 파라미터 전송
         const response = await axios.post(url, {
@@ -986,6 +1020,8 @@ export default {
       drawDiagnosisChart,
       trendTreeData,
       lastDate,
+      saveCsv,
+      isNtek,
     };
   },
 };

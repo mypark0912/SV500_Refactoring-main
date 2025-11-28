@@ -1,6 +1,6 @@
 from functools import wraps
 from fastapi import APIRouter, Request, HTTPException
-import os, httpx, re, logging, gc, psutil
+import os, httpx, re, logging, gc, psutil, csv
 import ujson as json
 from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
@@ -3455,8 +3455,43 @@ def query_trend_data(
     }
 
 
-@router.post('/getMeterTrend/{channel}')
-async def getMeterTrendPost(channel: str, request: TrendRequest):
+async def save_trend_to_csv(
+        param: str,
+        channel: str,
+        results: list,
+        output_dir: str = "/usr/local/sv500/trendcsv"
+):
+    try:
+        # 디렉토리 생성
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # 파일명 생성
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"meter_trend_{channel}_{param}_{timestamp}.csv"
+        filepath = output_path / filename
+
+        # CSV 저장
+        if results:
+            fieldnames = list(results[0].keys())
+
+            with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(results)
+
+            print(f"💾 CSV 저장 완료: {filepath} ({len(results)}개 레코드)")
+            return str(filepath)
+        else:
+            print("⚠️ 저장할 데이터가 없습니다")
+            return None
+
+    except Exception as e:
+        print(f"❌ CSV 저장 실패: {e}")
+        raise
+
+@router.post('/getMeterTrend/{channel}/{save_csv}')
+async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int = 0):
     """
     POST 방식으로 필드를 선택하여 트렌드 데이터 조회 (최적화 버전)
 
@@ -3511,6 +3546,15 @@ async def getMeterTrendPost(channel: str, request: TrendRequest):
         # 마지막 날짜
         last_date = results[-1]['_time'] if results else None
 
+        if request.fields and len(request.fields) > 0:
+            fields_str = "_".join(request.fields)
+        else:
+            fields_str = "all"
+
+        saved_file = None
+        if save_csv == 1 and results:
+            saved_file = await save_trend_to_csv(fields_str,channel, results)
+
         # 전체 시간
         total_duration = (datetime.now() - start_time).total_seconds()
         print(f"✅ 완료: {len(results)}개 레코드, {total_duration:.3f}초 (버킷: {bucket_used})")
@@ -3523,7 +3567,8 @@ async def getMeterTrendPost(channel: str, request: TrendRequest):
             "count": len(results),
             "fields": request.fields if request.fields else "default",
             "bucket_used": bucket_used,
-            "duration_seconds": round(total_duration, 3)
+            "duration_seconds": round(total_duration, 3),
+            "csv_file": saved_file  # 저장된 파일 경로 포함
         }
 
     except HTTPException:
