@@ -709,8 +709,10 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" />
             <AISetting :channel="channel"/>
+            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" type="diagnostic" />
+            <DOAlarmCard v-if="isUseDOAlarm" :channel="channel" type="faults" />
+            
           </div>
         </div>
       </section>
@@ -1573,7 +1575,10 @@ export default {
         return false;
       }
     };
-
+const isUseDOAlarm = computed(() => {
+  const currentDict = getInputDict();
+  return currentDict.useDO === 1 || currentDict.useDO === true;
+});
     const setNameplateConfig = async () => { 
       try {
         const plainTableData = tableData.value.map((item) => ({ ...item }));
@@ -1760,6 +1765,7 @@ export default {
       handleSelectedbtnUpdate,
       isConfigureStatus,
       assetDriveType,
+      isUseDOAlarm,
     };
   },
 };
