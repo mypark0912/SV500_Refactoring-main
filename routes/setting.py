@@ -2474,6 +2474,83 @@ async def saveSetting(channel: str, request: Request):
         return {"status": "0", "error": str(e)}
 
 
+@router.post('/savefileNew')  # ⭐ {channel} 제거
+async def saveSetting2(request: Request):
+    deviceMac = get_mac_address()
+    ser = ''
+
+    if os_spec.os != 'Windows':
+        mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+        if os.path.exists(mac_file_path):
+            ser = read_mac_plain(mac_file_path)
+
+    redis_state.client.execute_command("SELECT", 0)
+    if redis_state.client.hexists("Service", "setting"):
+        checkflag = redis_state.client.hget("Service", "setting")
+        if int(checkflag) == 1:
+            return {"status": "0", "error": "Modbus setting is activated"}
+
+    try:
+        FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
+
+        # 클라이언트로부터 전체 설정 데이터 받기
+        data = await request.json()
+        if not data:
+            return {"status": "0", "error": "No data provided"}
+
+        # 기본 구조 확인
+        if "General" not in data:
+            data["General"] = {}
+        if "channel" not in data or not isinstance(data["channel"], list):
+            data["channel"] = []
+
+        # MAC 주소 및 시리얼 번호 업데이트
+        if "deviceInfo" not in data["General"]:
+            data["General"]["deviceInfo"] = {}
+
+        data["General"]["deviceInfo"]["mac_address"] = deviceMac
+
+        if ser != '':
+            data["General"]["deviceInfo"]["serial_number"] = ser
+        else:
+            data["General"]["deviceInfo"]["serial_number"] = deviceMac
+
+        # 각 채널의 ctInfo.inorminal 값 처리
+        for ch in data["channel"]:
+            if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
+                ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
+
+        # 파일에 저장
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+        # 알람 설정 초기화
+        if len(data["channel"]) > 0:
+            for ch in data["channel"]:
+                if "channel" in ch and "alarm" in ch:
+                    initialize_alarm_configs(ch["channel"], ch["alarm"])
+
+        # Redis에 저장
+        redis_state.client.select(0)
+        saveCurrent = saveStartCurrent(data)
+        dash_alarms_data = save_alarm_configs_to_redis(data)
+
+        redis_state.client.hset("System", "setup", json.dumps(data))
+        redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
+
+        if dash_alarms_data:
+            redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
+        else:
+            redis_state.client.hdel("Equipment", "DashAlarms")
+
+        return {"status": "1", "data": data}
+
+    except Exception as e:
+        print("Error:", e)
+        import traceback
+        traceback.print_exc()
+        return {"status": "0", "error": str(e)}
+
 @router.get('/checkSmart')
 def check_smart():
     if is_service_active("smartsystemsrestapiservice"):
