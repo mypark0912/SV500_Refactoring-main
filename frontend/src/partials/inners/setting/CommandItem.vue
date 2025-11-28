@@ -10,9 +10,9 @@
             class="text-lg text-gray-800 dark:text-gray-100 font-semibold mr-4"
           >
             {{
-              channel === "main"
+              channel === "Main"
                 ? t("config.system.title_1")
-                : channel === "sub"
+                : channel === "Sub"
                 ? t("config.system.title_2")
                 : "초기화 명령어"
             }}
