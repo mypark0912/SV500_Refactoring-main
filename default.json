@@ -86,11 +86,11 @@
 				"oc_level": 120,
 				"oc_holdofftime": 500,
 				"tv_action": 0,
-				"tv_level": 4,
+				"tv_level": 200,
 				"tv_holdofftime": 200,
-				"tv_fastchange": 0,
+				"tv_fastchange": 4,
 				"tc_action": 0,
-				"tc_level": 4,
+				"tc_level": 150,
 				"tc_holdofftime": 200,
 				"inter_action": 0,
 				"inter_level": 5,
@@ -101,7 +101,7 @@
 				"swell_action": 0,
 				"swell_level": 120,
 				"swell_holdofftime": 500,
-				"tc_fastchange": 0
+				"tc_fastchange": 4
 			},
 			"sampling": {
 				"rate": 8000,
@@ -365,11 +365,11 @@
 				"oc_level": 120,
 				"oc_holdofftime": 500,
 				"tv_action": 0,
-				"tv_level": 4,
+				"tv_level": 200,
 				"tv_holdofftime": 200,
-				"tv_fastchange": 0,
+				"tv_fastchange": 4,
 				"tc_action": 0,
-				"tc_level": 4,
+				"tc_level": 150,
 				"tc_holdofftime": 200,
 				"inter_action": 0,
 				"inter_level": 5,
@@ -380,7 +380,7 @@
 				"swell_action": 0,
 				"swell_level": 120,
 				"swell_holdofftime": 500,
-				"tc_fastchange": 0
+				"tc_fastchange": 4
 			},
 			"sampling": {
 				"rate": 8000,
