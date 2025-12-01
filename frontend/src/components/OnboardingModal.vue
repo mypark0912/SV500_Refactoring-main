@@ -524,6 +524,7 @@
                     :title="'3-Phase ' + selectedMainChart"
                     :legend="['V1', 'V2', 'V3']"
                     :mode="'3phase'"
+                    :noData="mainWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedMainChart == 'Time Domain(Current)'"
@@ -532,6 +533,7 @@
                     :title="'3-Phase ' + selectedMainChart"
                     :legend="['I1', 'I2', 'I3']"
                     :mode="'3phase'"
+                    :noData="mainWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedMainChart == 'Frequency Domain(Voltage)'"
@@ -540,6 +542,7 @@
                     :title="selectedMainChart"
                     :legend="['VFFT']"
                     :mode="'1phase'"
+                    :noData="mainWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedMainChart == 'Frequency Domain(Current)'"
@@ -548,6 +551,7 @@
                     :title="selectedMainChart"
                     :legend="['IFFT']"
                     :mode="'1phase'"
+                    :noData="mainWaveformNoData"
                   />
                 </div>
               </div>
@@ -727,6 +731,7 @@
                     :title="'3-Phase ' + selectedSubChart"
                     :legend="['V1', 'V2', 'V3']"
                     :mode="'3phase'"
+                    :noData="subWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedSubChart == 'Time Domain(Current)'"
@@ -735,6 +740,7 @@
                     :title="'3-Phase ' + selectedSubChart"
                     :legend="['I1', 'I2', 'I3']"
                     :mode="'3phase'"
+                    :noData="subWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedSubChart == 'Frequency Domain(Voltage)'"
@@ -743,6 +749,7 @@
                     :title="selectedSubChart"
                     :legend="['VFFT']"
                     :mode="'1phase'"
+                    :noData="subWaveformNoData"
                   />
                   <LineChart
                     v-if="selectedSubChart == 'Frequency Domain(Current)'"
@@ -751,6 +758,7 @@
                     :title="selectedSubChart"
                     :legend="['IFFT']"
                     :mode="'1phase'"
+                    :noData="subWaveformNoData"
                   />
                 </div>
               </div>
@@ -1031,6 +1039,8 @@ export default {
     const diagnosis_detail = inject("diagnosis_detail");
     //const checkNameplateflag = inject("checkNameplateflag");
     // Validation data
+    const mainWaveformNoData = ref(false);
+    const subWaveformNoData = ref(false);
     const validationTimestamp = ref(new Date().toLocaleString());
     const validationResult = ref({
       isValid: true,
@@ -1366,32 +1376,47 @@ export default {
       else showSubDiagChart.value = true;
       await getWaveform(channel);
     };
-
     const getWaveform = async (channel) => {
       const isMain = channel === "main" ? true : false;
       const waveformDataRef = isMain ? mainWaveformData : subWaveformData;
+      const noDataRef = isMain ? mainWaveformNoData : subWaveformNoData;
       const assetName = isMain
         ? setupDict.value["main"]["assetInfo"]["name"]
         : setupDict.value["sub"]["assetInfo"]["name"];
       const showChartRef = isMain ? showMainDiagChart : showSubDiagChart;
-      const response = await axios.get(`/setting/testwave/${assetName}`);
+      
+      try {
+        const response = await axios.get(`/setting/testwave/${assetName}`);
 
-      if (response.data.success) {
-        console.log("getWave", response.data);
-        if (
-          response.data.waveT &&
-          Object.keys(response.data.waveT).length > 0
-        ) {
-          showChartRef.value = true;
-          waveformDataRef.value = response.data.waveT;
+        if (response.data.success) {
+          console.log("getWave", response.data);
+          if (
+            response.data.waveT &&
+            Object.keys(response.data.waveT).length > 0
+          ) {
+            showChartRef.value = true;
+            waveformDataRef.value = response.data.waveT;
+            noDataRef.value = false;
 
-          // Update chart display
-          if (isMain) {
-            updateMainChart();
+            if (isMain) {
+              updateMainChart();
+            } else {
+              updateSubChart();
+            }
           } else {
-            updateSubChart();
+            // 데이터가 비어있는 경우
+            showChartRef.value = true;
+            noDataRef.value = true;
           }
+        } else {
+          // response.data.success가 false인 경우
+          showChartRef.value = true;
+          noDataRef.value = true;
         }
+      } catch (error) {
+        console.error(`Error loading waveform for ${channel}:`, error);
+        showChartRef.value = true;
+        noDataRef.value = true;
       }
     };
 
@@ -1788,6 +1813,8 @@ export default {
       canProceedFromMain,
       canProceedFromSub,
       canProceedFromSettings,
+      mainWaveformNoData,
+      subWaveformNoData,
     };
   },
 };

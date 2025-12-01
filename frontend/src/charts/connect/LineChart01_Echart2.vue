@@ -4,7 +4,7 @@
     <VChart :option="chartOption" style="height: 300px;" />
   </div>
   <div v-else class="h-[300px] flex items-center justify-center text-gray-400 text-sm">
-    Loading chart...
+    {{ noData ? 'No data' : 'Loading chart...' }}
   </div>
 </template>
 
@@ -24,7 +24,7 @@ const props = defineProps({
     required: true
   },
   data: {
-    type: Array, // [[V1], [V2], [V3]] or [[Vfft]]
+    type: Array,
     required: true
   },
   title: {
@@ -36,14 +36,19 @@ const props = defineProps({
     required: true
   },
   mode: {
-    type: String, // '3phase' or '1phase'
+    type: String,
     required: true
+  },
+  noData: {
+    type: Boolean,
+    default: false
   }
 })
 
 const chartOption = ref({})
 
 const ready = computed(() => {
+  if (props.noData) return false
   const labelLen = props.label.length
   if (!labelLen) return false
   if (props.mode === '3phase') {
