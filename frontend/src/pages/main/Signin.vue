@@ -416,6 +416,11 @@ const Signup = () => {
 };
 
 const reset = async () => {
+  // 관리자 계정 보호
+  if (reAccount.value === "ntek") {
+    message.value = "Administrator account password cannot be changed.";
+    return;
+  }
   if (email.value == "") {
     message.value = "Please enter your email address.";
   } else if (rePass.value == "") {
