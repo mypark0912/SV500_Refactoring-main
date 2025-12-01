@@ -240,7 +240,7 @@
         try {
           const response = await axios.get(`/api/getEn50160/${channel.value}`);
           if (response.data.success) {
-              tbdata.value = response.data.data
+              tbdata.value = response.data.data;
           } else {
               console.warn("서버 응답이 success: false 입니다.");
               tbdata.value = {}; // 빈 객체로 설정

@@ -2285,51 +2285,51 @@ def transform_en50160_data(redis_data):
     transformed["compilance"] = redis_data.get("compliance", 0)  # 오타도 기존대로 유지
 
     # Frequency Variations - 단일 값 (L1만 표시)
-    transformed["Frequency Variation 1"] = round(redis_data.get("freq1_var", 0) * 100, 2)
-    transformed["Frequency Variation 2"] = round(redis_data.get("freq2_var", 0) * 100, 2)
+    transformed["Frequency Variation 1"] = round(redis_data.get("freq_var1", 0), 2)
+    transformed["Frequency Variation 2"] = round(redis_data.get("freq_var2", 0), 2)
 
     # Voltage Variations - 3상 배열
     volt1_var = redis_data.get("volt1_var", [0, 0, 0])
     volt2_var = redis_data.get("volt2_var", [0, 0, 0])
-    transformed["Voltage Variation 1 L1(%)"] = round(volt1_var[0] * 100, 2)
-    transformed["Voltage Variation 1 L2(%)"] = round(volt1_var[1] * 100, 2)
-    transformed["Voltage Variation 1 L3(%)"] = round(volt1_var[2] * 100, 2)
-    transformed["Voltage Variation 2 L1(%)"] = round(volt2_var[0] * 100, 2)
-    transformed["Voltage Variation 2 L2(%)"] = round(volt2_var[1] * 100, 2)
-    transformed["Voltage Variation 2 L3(%)"] = round(volt2_var[2] * 100, 2)
+    transformed["Voltage Variation 1 L1(%)"] = round(volt1_var[0], 2)
+    transformed["Voltage Variation 1 L2(%)"] = round(volt1_var[1], 2)
+    transformed["Voltage Variation 1 L3(%)"] = round(volt1_var[2], 2)
+    transformed["Voltage Variation 2 L1(%)"] = round(volt2_var[0], 2)
+    transformed["Voltage Variation 2 L2(%)"] = round(volt2_var[1], 2)
+    transformed["Voltage Variation 2 L3(%)"] = round(volt2_var[2], 2)
 
     # Voltage Unbalance - 단일 값
-    transformed["Voltage Unbalance"] = round(redis_data.get("voltbal_var", 0) * 100, 2)
+    transformed["Voltage Unbalance"] = round(redis_data.get("voltbal_var", 0), 2)
 
     # THD Variations - 3상 배열
     thd_var = redis_data.get("volt_thd_var", [0, 0, 0])
-    transformed["THDs Variation L1(%)"] = round(thd_var[0] * 100, 2)
-    transformed["THDs Variation L2(%)"] = round(thd_var[1] * 100, 2)
-    transformed["THDs Variation L3(%)"] = round(thd_var[2] * 100, 2)
+    transformed["THDs Variation L1(%)"] = round(thd_var[0], 2)
+    transformed["THDs Variation L2(%)"] = round(thd_var[1], 2)
+    transformed["THDs Variation L3(%)"] = round(thd_var[2], 2)
 
     # Harmonics Variations - 3상 배열
     hd_var = redis_data.get("volt_hd_var", [0, 0, 0])
-    transformed["Harmonics Variatiopn L1(%)"] = round(hd_var[0] * 100, 2)  # 오타도 기존대로
-    transformed["Harmonics Variatiopn L2(%)"] = round(hd_var[1] * 100, 2)
-    transformed["Harmonics Variatiopn L3(%)"] = round(hd_var[2] * 100, 2)
+    transformed["Harmonics Variatiopn L1(%)"] = round(hd_var[0], 2)  # 오타도 기존대로
+    transformed["Harmonics Variatiopn L2(%)"] = round(hd_var[1], 2)
+    transformed["Harmonics Variatiopn L3(%)"] = round(hd_var[2], 2)
 
     # Flicker Pst - 3상 배열
     pst_var = redis_data.get("pst_var", [0, 0, 0])
-    transformed["Flickers Pst L1(%)"] = round(pst_var[0] * 100, 2)
-    transformed["Flickers Pst L2(%)"] = round(pst_var[1] * 100, 2)
-    transformed["Flickers Pst L3(%)"] = round(pst_var[2] * 100, 2)
+    transformed["Flickers Pst L1(%)"] = round(pst_var[0], 2)
+    transformed["Flickers Pst L2(%)"] = round(pst_var[1], 2)
+    transformed["Flickers Pst L3(%)"] = round(pst_var[2], 2)
 
     # Flicker Plt - 3상 배열
     plt_var = redis_data.get("plt_var", [0, 0, 0])
-    transformed["Flickers Plt L1(%)"] = round(plt_var[0] * 100, 2)
-    transformed["Flickers Plt L2(%)"] = round(plt_var[1] * 100, 2)
-    transformed["Flickers Plt L3(%)"] = round(plt_var[2] * 100, 2)
+    transformed["Flickers Plt L1(%)"] = round(plt_var[0], 2)
+    transformed["Flickers Plt L2(%)"] = round(plt_var[1], 2)
+    transformed["Flickers Plt L3(%)"] = round(plt_var[2], 2)
 
     # Signal Voltage - 3상 배열
     svolt_var = redis_data.get("svolt_var", [0, 0, 0])
-    transformed["Signaling Voltage L1(%)"] = round(svolt_var[0] * 100, 2)
-    transformed["Signaling Voltage L2(%)"] = round(svolt_var[1] * 100, 2)
-    transformed["Signaling Voltage L3(%)"] = round(svolt_var[2] * 100, 2)
+    transformed["Signaling Voltage L1(%)"] = round(svolt_var[0], 2)
+    transformed["Signaling Voltage L2(%)"] = round(svolt_var[1], 2)
+    transformed["Signaling Voltage L3(%)"] = round(svolt_var[2], 2)
 
     # 이벤트 카운트 - 4개 배열의 각 요소
     sag = redis_data.get("sag", [0, 0, 0, 0])
@@ -2373,7 +2373,7 @@ def transform_en50160_data(redis_data):
 
     # status&compliance 추가 (getComp 함수용)
     # status는 complete 값 사용
-    transformed["status"] = redis_data.get("complete", 0)
+    # transformed["status"] = redis_data.get("complete", 0)
 
     # 각 항목의 err 값을 확인하여 compliance 비트 설정
     # err 값이 0이 아니면 해당 비트를 1로 설정 (Failed)
