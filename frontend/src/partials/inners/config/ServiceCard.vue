@@ -114,7 +114,7 @@
                       </svg>
                         &nbsp;Restart
                       </button>
-                      <button
+                      <button :disabled="item =='WebServer'"
                         class="btn h-9 px-5 bg-red-900 text-red-100 hover:bg-red-800 dark:bg-red-100 dark:text-red-800 dark:hover:bg-white"
                         @click="stop"
                       >

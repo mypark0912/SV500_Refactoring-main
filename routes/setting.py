@@ -2627,7 +2627,7 @@ async def manage_smart(mode):
                 restartapi = ret["success"]
 
         if restartapi:
-            max_attempts = 10  # 최대 15초 (30 * 0.5초)
+            max_attempts = 30  # 최대 15초 (30 * 0.5초)
             for i in range(max_attempts):
                 if await checkSmartAPI_active():
                     logging.debug(f"✅ SmartAPI ready after {i * 0.5:.1f}s")
