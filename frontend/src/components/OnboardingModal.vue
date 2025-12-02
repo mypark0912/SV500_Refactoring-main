@@ -1061,7 +1061,8 @@ export default {
       Channel: "N/A",
       Commissions: [],
     });
-    const applyMode = ref(props.applyMode);
+    const isProcessing = ref(false);  // 추가
+    const applyMode = computed(() => props.applyMode);
     const diagnosis_main = computed(() => {
       // props가 명시적으로 전달되지 않으면 undefined일 수 있음
       if (Object.keys(setupDict.value).length == 0) return false;
@@ -1595,91 +1596,94 @@ export default {
 
     // Navigation functions
     const nextStep = async () => {
-      // 현재 단계가 Main Test이고 에러가 있으면 진행 불가
-
-      if (currentStep.value === 2 && mainTestResult.value.err > 0) {
+    if (isProcessing.value) {
+        console.log('[DEBUG] 이미 처리 중, 무시');
         return;
-      }
+    }
+    isProcessing.value = true;
 
-      // 현재 단계가 Sub Test이고 에러가 있으면 진행 불가
-      if (currentStep.value === 3 && subTestResult.value.err > 0) {
-        return;
-      }
+    try {
+        // 현재 단계가 Main Test이고 에러가 있으면 진행 불가
+        if (currentStep.value === 2 && mainTestResult.value.err > 0) {
+            return;
+        }
 
-      const currentIndex = currentStepIndex.value;
-      if (currentIndex < availableSteps.value.length - 1) {
-        const nextStepId = availableSteps.value[currentIndex + 1].id;
+        // 현재 단계가 Sub Test이고 에러가 있으면 진행 불가
+        if (currentStep.value === 3 && subTestResult.value.err > 0) {
+            return;
+        }
 
-        if (currentStep.value === 1) {
-            const rest = await restartDevice();
+        const currentIndex = currentStepIndex.value;
+        if (currentIndex < availableSteps.value.length - 1) {
+            const nextStepId = availableSteps.value[currentIndex + 1].id;
 
-            if (rest && (nextStepId === 2 || nextStepId === 3)) {
-                isRestarting.value = true;
-                restartMessage.value = "Waiting for acquire waveform file";
+            if (currentStep.value === 1) {
+                console.log('[DEBUG] Step 1 시작, applyMode:', applyMode.value);
                 
-                const response2 = await axios.get(`/setting/trigger?target=${channelDiagnosis.value}`);
+                let rest = true;
                 
-                if (!response2.data.success) {
-                    alert(response2.data.message || "waveform file trigger failed");
+                // applyMode > 0 이면 restart 필요
+                if (applyMode.value > 0) {
+                    isRestarting.value = true;
+                    restartMessage.value = "Restarting device...";
+                    
+                    rest = await restartDevice();
+                    console.log('[DEBUG] restartDevice 완료:', rest);
+                    
+                    if (!rest) {
+                        restartMessage.value = "Device restart failed";
+                        isRestarting.value = false;
+                        return;
+                    }
+                }
+                
+                // applyMode = 1 이면 restart만 하고 완료로
+                if (applyMode.value === 1) {
+                    console.log('[DEBUG] applyMode=1, restart만 - 완료 단계로 이동');
                     isRestarting.value = false;
+                    currentStep.value = 4;
                     return;
                 }
                 
-                // 파일 생성 완료됨 - 바로 다음 단계로
-                isRestarting.value = false;
+                // 다음 단계가 테스트 단계일 때 (applyMode = 0 또는 2)
+                if (rest && (nextStepId === 2 || nextStepId === 3)) {
+                    console.log('[DEBUG] trigger 호출 시작');
+                    isRestarting.value = true;
+                    restartMessage.value = "Waiting for acquire waveform file";
+                    
+                    const response2 = await axios.get(`/setting/trigger?target=${channelDiagnosis.value}`);
+                    console.log('[DEBUG] trigger 응답:', response2.data);
+                    
+                    isRestarting.value = false;
+                    
+                    if (!response2.data.success) {
+                        restartMessage.value = response2.data.message || "waveform file trigger failed";
+                        return;
+                    }
+                }
+            }
+
+            console.log('[DEBUG] getCommision 호출 전');
+
+            // Load data when entering main or sub test steps
+            if (nextStepId === 2 && diagnosis_main.value) {
+                isLoadingMain.value = true;
+                mainTestLoaded.value = false;
+                currentStep.value = nextStepId;
+                await getCommision("main");
+            } else if (nextStepId === 3 && diagnosis_sub.value) {
+                isLoadingSub.value = true;
+                subTestLoaded.value = false;
+                currentStep.value = nextStepId;
+                await getCommision("sub");
+            } else {
+                currentStep.value = nextStepId;
             }
         }
-        // Load data when entering main or sub test steps
-        if (nextStepId === 2 && diagnosis_main.value) {
-            isLoadingMain.value = true;
-            mainTestLoaded.value = false;
-            currentStep.value = nextStepId;
-            // await delay(2000);  // 삭제
-            await getCommision("main");
-        } else if (nextStepId === 3 && diagnosis_sub.value) {
-            isLoadingSub.value = true;
-            subTestLoaded.value = false;
-            currentStep.value = nextStepId;
-            // await delay(2000);  // 삭제
-            await getCommision("sub");
-        }else {
-          // 로딩이 필요 없는 단계는 바로 전환
-          currentStep.value = nextStepId;
-        }
-                // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
-        // if (currentStep.value === 1) {
-        //   const rest = await restartDevice();
-
-        //   if (rest && (nextStepId === 2 || nextStepId === 3)) {
-        //     isRestarting.value = true;
-        //     restartMessage.value = "Waiting for acquire waveform file";
-        //     const response2 = await axios.get(`/setting/trigger`);
-        //     if (!response2.data.success) {
-        //       const errorMessage =
-        //         response2.data.error ||
-        //         "waveform file trigger failed. Please try again.";
-        //       alert(errorMessage);
-        //       return; // Stop navigation if restart fails
-        //     }
-        //   }
-        // }
-        // if (nextStepId === 2 && diagnosis_main.value) {
-        //   isLoadingMain.value = true;
-        //   mainTestLoaded.value = false;
-        //   currentStep.value = nextStepId;
-        //   await delay(2000);
-        //   await getCommision("main");
-        // } else if (nextStepId === 3 && diagnosis_sub.value) {
-        //   isLoadingSub.value = true;
-        //   subTestLoaded.value = false;
-        //   currentStep.value = nextStepId;
-        //   await delay(2000);
-        //   await getCommision("sub");
-        // }else {
-        //   currentStep.value = nextStepId;
-        // }
-      }
-    };
+    } finally {
+        isProcessing.value = false;  // 항상 해제
+    }
+};
 
     // Handle main test next button - skip sub if not needed
     const handleMainTestNext = async () => {
@@ -1761,17 +1765,17 @@ export default {
             currentStep.value = 1;
 
             // If validation passes and only has main test, load it immediately
-            if (
-              validationResult.value.isValid &&
-              diagnosis_main.value &&
-              !diagnosis_sub.value &&
-              availableSteps.value.length === 3
-            ) {
-              // Only settings, main, and complete steps
-              setTimeout(() => {
-                getCommision("main");
-              }, 100);
-            }
+            // if (
+            //   validationResult.value.isValid &&
+            //   diagnosis_main.value &&
+            //   !diagnosis_sub.value &&
+            //   availableSteps.value.length === 3
+            // ) {
+            //   // Only settings, main, and complete steps
+            //   setTimeout(() => {
+            //     getCommision("main");
+            //   }, 100);
+            // }
           }
         }
       }
@@ -1861,6 +1865,7 @@ export default {
       subWaveformNoData,
       channelDiagnosis,
       applyMode,
+      isProcessing,
     };
   },
 };

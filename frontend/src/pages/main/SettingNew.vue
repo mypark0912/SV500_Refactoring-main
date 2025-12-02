@@ -1153,42 +1153,72 @@
   /**
    * 전체 데이터 포맷 변환 (General + Main + Sub)
    */
-  const transFormat = () => {
-    // 1. General 데이터 변환
-    const generalData = { ...inputDict.value };
-    
-    if (generalData.useFuction) {
-      generalData.useFuction.ftp =
-        generalData.useFuction.ftp === true || generalData.useFuction.ftp === 1 ? 1 : 0;
-      generalData.useFuction.sntp =
-        generalData.useFuction.sntp === true || generalData.useFuction.sntp === 1 ? 1 : 0;
-    }
+   const transFormat = () => {
+  // 1. General 데이터 변환
+  const generalData = { ...inputDict.value };
   
-    if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
-      generalData.modbus.rtu_use =
-        generalData.modbus.rtu_use === true || generalData.modbus.rtu_use === 1 ? 1 : 0;
-    }
-  
-    // 2. Main 채널 변환
-    let mainData = null;
-    if (channel_main.value.Enable == 1 || channel_main.value.Enable === true) {
-      mainData = transNumber(channel_main.value);
-      mainData.channel = "Main";
-    }
-  
-    // 3. Sub 채널 변환
-    let subData = null;
-    if (channel_sub.value.Enable == 1 || channel_sub.value.Enable === true) {
-      subData = transNumber(channel_sub.value);
-      subData.channel = "Sub";
-    }
-  
-    return {
-      mode: setupDict.value.mode,
-      General: generalData,
-      channel: [mainData, subData].filter(ch => ch !== null)
-    };
+  if (generalData.useFuction) {
+    generalData.useFuction.ftp =
+      generalData.useFuction.ftp === true || generalData.useFuction.ftp === 1 ? 1 : 0;
+    generalData.useFuction.sntp =
+      generalData.useFuction.sntp === true || generalData.useFuction.sntp === 1 ? 1 : 0;
+  }
+
+  if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
+    generalData.modbus.rtu_use =
+      generalData.modbus.rtu_use === true || generalData.modbus.rtu_use === 1 ? 1 : 0;
+  }
+
+  // 2. Main 채널 변환 (Enable 여부와 관계없이 항상 포함)
+  const mainData = transNumber(channel_main.value);
+  mainData.channel = "Main";
+
+  // 3. Sub 채널 변환 (Enable 여부와 관계없이 항상 포함)
+  const subData = transNumber(channel_sub.value);
+  subData.channel = "Sub";
+
+  return {
+    mode: setupDict.value.mode,
+    General: generalData,
+    channel: [mainData, subData]  // 항상 둘 다 포함
   };
+};
+  // const transFormat = () => {
+  //   // 1. General 데이터 변환
+  //   const generalData = { ...inputDict.value };
+    
+  //   if (generalData.useFuction) {
+  //     generalData.useFuction.ftp =
+  //       generalData.useFuction.ftp === true || generalData.useFuction.ftp === 1 ? 1 : 0;
+  //     generalData.useFuction.sntp =
+  //       generalData.useFuction.sntp === true || generalData.useFuction.sntp === 1 ? 1 : 0;
+  //   }
+  
+  //   if (generalData.modbus && generalData.modbus.rtu_use !== undefined) {
+  //     generalData.modbus.rtu_use =
+  //       generalData.modbus.rtu_use === true || generalData.modbus.rtu_use === 1 ? 1 : 0;
+  //   }
+  
+  //   // 2. Main 채널 변환
+  //   let mainData = null;
+  //   if (channel_main.value.Enable == 1 || channel_main.value.Enable === true) {
+  //     mainData = transNumber(channel_main.value);
+  //     mainData.channel = "Main";
+  //   }
+  
+  //   // 3. Sub 채널 변환
+  //   let subData = null;
+  //   if (channel_sub.value.Enable == 1 || channel_sub.value.Enable === true) {
+  //     subData = transNumber(channel_sub.value);
+  //     subData.channel = "Sub";
+  //   }
+  
+  //   return {
+  //     mode: setupDict.value.mode,
+  //     General: generalData,
+  //     channel: [mainData, subData]  // 항상 둘 다 포함
+  //   };
+  // };
   
   /**
    * 채널 데이터의 숫자 변환 (Boolean → 0/1, String → Number)
@@ -1541,7 +1571,7 @@
           const ret  = response.data;
           console.log(ret);
           if(ret.restartDevice){
-            console.log('checkNameplateResult.value:',checkNameplateResult.value);
+            //console.log('checkNameplateResult.value:',checkNameplateResult.value);
             if(checkNameplateResult.value){
               applyMode.value = 2;  //restart & commisioning
             }else{
