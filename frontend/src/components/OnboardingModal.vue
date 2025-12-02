@@ -1713,7 +1713,7 @@ export default {
         const response = await axios.get(`/setting/restartdevice`);
         if (response.data.success) {
           //await new Promise((resolve) => setTimeout(resolve, 4000));
-          await delay(4000);
+          //await delay(4000);
           return true;
         } else {
           return false;

@@ -2709,19 +2709,45 @@ async def restartasset():
         print("Error:", e)
         return {"status": "0", "success": False, "error": "Redis Error"}
 
+# @router.get('/restartdevice')
+# def restartdevice():
+#     redis_state.client.select(0)
+#     if redis_state.client.hexists("Service", "setting"):
+#         checkflag = redis_state.client.hget("Service", "setting")
+#         if int(checkflag) == 1:
+#             return {"success": False, "error": "Modbus setting is activated"}
+#     try:
+#         redis_state.client.hset("Service", "save", 1)
+#         redis_state.client.hset("Service", "restart", 1)
+#         return {"success": True}
+#     except Exception as e:
+#         return {"success": False, "error": "Redis Error"}
+
 @router.get('/restartdevice')
-def restartdevice():
+async def restartdevice(timeout: int = 30):
     redis_state.client.select(0)
+
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
             return {"success": False, "error": "Modbus setting is activated"}
+
     try:
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
-        return {"success": True}
+
+        # save = 0 될 때까지 대기
+        for _ in range(timeout * 10):  # 0.1초 간격
+            await asyncio.sleep(0.1)
+
+            save_flag = redis_state.client.hget("Service", "save")
+            if save_flag is not None and int(save_flag) == 0:
+                return {"success": True, "message": "Restart completed"}
+
+        return {"success": False, "error": f"Timeout ({timeout}s) - save flag not cleared"}
+
     except Exception as e:
-        return {"success": False, "error": "Redis Error"}
+        return {"success": False, "error": f"Redis Error: {str(e)}"}
 
 @router.get('/restartCore')
 def restart_core():
