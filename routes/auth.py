@@ -394,8 +394,10 @@ def join_admin(data: SignupAdmin):
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("System", "mode", mode)
         if is_service_active("sv500A35"):
+            logging.info("sv500A35 is active")
             redis_state.client.hset("Service", "save", 1)
         else:
+            logging.info("sv500A35 is not active")
             sysService("start","A35")
 
         if is_service_active("core"):

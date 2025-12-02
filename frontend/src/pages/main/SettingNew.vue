@@ -483,6 +483,7 @@
             :OpMode="devMode"
             :restartDone="isRestartDone"
             :preventBackdropClose="true"
+            :applyMode="applyMode"
             @close-modal="handleCloseModal"
             @restart-validation="restart"
           />
@@ -562,12 +563,13 @@
       const isSaving = ref(false); // ✅ 저장 중 상태 추가
       const isStartingService = ref(false);
       const serviceLoadingMessage = ref("");
-  
+      const checkNameplateResult = ref(false);
       //const langset = computed(() => authStore.getLang);
       const isAdmin = computed(() => {
         if (parseInt(authStore.getUserRole) > 1) return true;
         else return false;
       });
+      const applyMode = ref(-1);
   
       function askNameplateConfirm(channels) {
         const channelList = channels.join(", ");
@@ -1034,6 +1036,7 @@
           );
   
           if (response.data.passOK == 1) {
+
             if (channel.value == "General") {
               Object.assign(inputDict.value, response.data.data); // ✅ 기존 데이터 유지하면서 새로운 데이터 병합
               //console.log(response.data.data);
@@ -1296,11 +1299,15 @@
               ? channelData.modalData
               : []),
           ];
-          const nameplateFlag = await checkNameplateConfig(
+          checkNameplateResult.value = await checkNameplateConfig(
             combinedData,
             channelData.assetName
           );
-          if (nameplateFlag) {
+          // const nameplateFlag = await checkNameplateConfig(
+          //   combinedData,
+          //   channelData.assetName
+          // );
+          if (checkNameplateResult.value) {
             needsNameplateConfirmation = true;
             nameplateChannels.push(
               `${channelName} channel(${channelData.assetName})`
@@ -1495,6 +1502,7 @@
   /**
    * 새로운 통합 저장 함수 (한번에 전체 저장)
    */
+
   const saveNew = async () => {
     try {
       let errorMessages = [];
@@ -1530,6 +1538,19 @@
   
       if (response.data && response.data.status === "1") {
         if (errorMessages.length === 0) {
+          const ret  = response.data;
+          console.log(ret);
+          if(ret.restartDevice){
+            console.log('checkNameplateResult.value:',checkNameplateResult.value);
+            if(checkNameplateResult.value){
+              applyMode.value = 2;  //restart & commisioning
+            }else{
+              applyMode.value = 1; //restart
+            }
+          }else{
+            applyMode.value = 0; //commisioning
+          }
+          console.log('ApplyMode', applyMode.value);
           alert("✅ All settings have been saved successfully!");
         } else {
           let errorMsg = "⚠️ Settings saved but with some warnings:\n";
@@ -1789,6 +1810,8 @@
         isSaving, // ✅ 추가
         isStartingService,
         serviceLoadingMessage,
+        checkNameplateResult,
+        applyMode,
       };
     },
   };

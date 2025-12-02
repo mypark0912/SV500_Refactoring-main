@@ -1076,6 +1076,8 @@ export default {
 
         if (response.data.passOK == 1) {
           setupDict.value = response.data.data;
+
+
           Object.assign(inputDict.value, setupDict.value["General"]);
           Object.assign(channel_main.value, setupDict.value["main"]);
           Object.assign(channel_sub.value, setupDict.value["sub"]);

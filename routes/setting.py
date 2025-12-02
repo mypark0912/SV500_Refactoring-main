@@ -8,10 +8,12 @@ import shutil, logging, subprocess, asyncio
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
-#from routes.auth import checkLoginAPI
-from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post
+from typing import Dict, Any
+from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
+import pyinotify, threading
+import asyncio
 
 import sqlite3
 
@@ -2473,6 +2475,44 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
+def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]:
+    result = {
+        "Main": {"status": "disabled", "changed_fields": []},
+        "Sub": {"status": "disabled", "changed_fields": []}
+    }
+
+    redis_channels = {ch["channel"]: ch for ch in redis_data.get("channel", [])}
+    post_channels = {ch["channel"]: ch for ch in post_data.get("channel", [])}
+
+    fields_to_compare = [
+        "Enable", "PowerQuality", "ctInfo", "ptInfo", "assetInfo",
+        "eventInfo", "sampling", "demand", "trendInfo", "alarm",
+        "n_kva", "confStatus", "useDO", "useAI"
+    ]
+
+    for channel_name in ["Main", "Sub"]:
+        redis_ch = redis_channels.get(channel_name, {})
+        post_ch = post_channels.get(channel_name, {})
+
+        if post_ch.get("Enable") != 1:
+            continue
+
+        changed_fields = [
+            field for field in fields_to_compare
+            if redis_ch.get(field) != post_ch.get(field)
+        ]
+
+        result[channel_name]["changed_fields"] = changed_fields
+
+        if not changed_fields:
+            result[channel_name]["status"] = "no_change"
+        elif changed_fields == ["assetInfo"]:
+            result[channel_name]["status"] = "asset_only"
+        else:
+            result[channel_name]["status"] = "config_changed"
+
+    return result
+
 
 @router.post('/savefileNew')  # ⭐ {channel} 제거
 async def saveSetting2(request: Request):
@@ -2534,6 +2574,15 @@ async def saveSetting2(request: Request):
         redis_state.client.select(0)
         saveCurrent = saveStartCurrent(data)
         dash_alarms_data = save_alarm_configs_to_redis(data)
+        prevSetup = redis_state.client.hget("System", "setup")
+        prevData = json.loads(prevSetup)
+        result = compare_channel_changes(prevData, data)
+        restartAsset = False
+        restartdevice = False
+        if result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
+            restartdevice = True
+        elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
+            restartAsset = True
 
         redis_state.client.hset("System", "setup", json.dumps(data))
         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
@@ -2543,7 +2592,7 @@ async def saveSetting2(request: Request):
         else:
             redis_state.client.hdel("Equipment", "DashAlarms")
 
-        return {"status": "1", "data": data}
+        return {"status": "1", "data": data, "restartDevice": restartdevice, "restartAsset": restartAsset}
 
     except Exception as e:
         print("Error:", e)
@@ -3198,45 +3247,115 @@ async def push_command_left(command: Command, request:Request):
             "message": str(e)
         }
 
+# @router.get("/trigger")
+# async def push_both_channels(
+#         request: Request,
+#         cmd: int = CmdType.CMD_CAPTURE,  # 기본값: 2 (캡처)
+#         item: int = ItemType.ITEM_WAVEFORM  # 기본값: 7 (웨이브폼)
+# ):
+#     try:
+#         # 채널 0에 푸시
+#         channel_0_command = Command(
+#             type=0,  # 채널 0
+#             cmd=cmd,
+#             item=item
+#         )
+#         result_0 = await push_command_left(channel_0_command, request)
+#
+#         # 채널 1에 푸시
+#         channel_1_command = Command(
+#             type=1,  # 채널 1
+#             cmd=cmd,
+#             item=item
+#         )
+#         result_1 = await push_command_left(channel_1_command, request)
+#
+#         return {
+#             "success": True,
+#             "message": "Command pushed to both channels (0 and 1)",
+#             "commands": {
+#                 "channel_0": channel_0_command.dict(),
+#                 "channel_1": channel_1_command.dict()
+#             },
+#             "results": {
+#                 "channel_0": result_0,
+#                 "channel_1": result_1
+#             }
+#         }
+#     except Exception as e:
+#         print(str(e))
+#         return {"success": False}
+
+async def wait_for_file(watch_paths: list, timeout: int = 10) -> dict:
+    """파일 생성 대기 (ThreadedNotifier 사용)"""
+    result = {path: None for path in watch_paths}
+    paths_completed = set()
+    event = threading.Event()
+
+    wm = pyinotify.WatchManager()
+
+    class Handler(pyinotify.ProcessEvent):
+        def process_IN_CLOSE_WRITE(self, event_data):
+            if event_data.pathname.endswith('.json'):
+                for path in watch_paths:
+                    if event_data.path == path:
+                        result[path] = event_data.pathname
+                        paths_completed.add(path)
+
+                        if len(paths_completed) == len(watch_paths):
+                            event.set()  # 완료 신호
+
+    handler = Handler()
+    notifier = pyinotify.ThreadedNotifier(wm, handler)
+
+    # 경로 감시 등록
+    for path in watch_paths:
+        wm.add_watch(path, pyinotify.IN_CLOSE_WRITE)
+
+    notifier.start()
+
+    try:
+        # 비동기로 완료 대기
+        for _ in range(timeout * 10):
+            if event.is_set() or len(paths_completed) == len(watch_paths):
+                return {"success": True, "files": result}
+            await asyncio.sleep(0.1)
+
+        return {"success": False, "message": "타임아웃", "files": result}
+
+    finally:
+        notifier.stop()
+
 
 @router.get("/trigger")
 async def push_both_channels(
         request: Request,
-        cmd: int = CmdType.CMD_CAPTURE,  # 기본값: 2 (캡처)
-        item: int = ItemType.ITEM_WAVEFORM  # 기본값: 7 (웨이브폼)
+        cmd: int = CmdType.CMD_CAPTURE,
+        item: int = ItemType.ITEM_WAVEFORM,
+        target: int = 2,  # 0: Main, 1: Sub, 2: Both
+        timeout: int = 10
 ):
     try:
-        # 채널 0에 푸시
-        channel_0_command = Command(
-            type=0,  # 채널 0
-            cmd=cmd,
-            item=item
-        )
+        # 감시할 경로 결정
+        if target == 2:
+            watch_paths = [WAVEFORM_PATHS[0], WAVEFORM_PATHS[1]]
+        else:
+            watch_paths = [WAVEFORM_PATHS[target]]
+
+        # 트리거 전송
+        channel_0_command = Command(type=0, cmd=cmd, item=item)
         result_0 = await push_command_left(channel_0_command, request)
 
-        # 채널 1에 푸시
-        channel_1_command = Command(
-            type=1,  # 채널 1
-            cmd=cmd,
-            item=item
-        )
+        channel_1_command = Command(type=1, cmd=cmd, item=item)
         result_1 = await push_command_left(channel_1_command, request)
 
-        return {
-            "success": True,
-            "message": "Command pushed to both channels (0 and 1)",
-            "commands": {
-                "channel_0": channel_0_command.dict(),
-                "channel_1": channel_1_command.dict()
-            },
-            "results": {
-                "channel_0": result_0,
-                "channel_1": result_1
-            }
-        }
+        # ThreadedNotifier로 파일 대기
+        result = await wait_for_file(watch_paths, timeout)
+
+        return result
+
     except Exception as e:
-        print(str(e))
-        return {"success": False}
+        return {"success": False, "message": str(e)}
 
 @router.get('/getMode')
 def get_sysMode():

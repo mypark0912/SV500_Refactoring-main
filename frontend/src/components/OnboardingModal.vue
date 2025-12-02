@@ -1024,6 +1024,10 @@ export default {
       default: "device0", // 'device0' or other modes
     },
     restartDone: { type: Boolean, default: false },
+    applyMode: {
+      type: Number,
+      default: -1, // 'device0' or other modes
+    },
   },
   emits: ["close-modal", "complete-setup", "restart-validation"],
   setup(props, { emit }) {
@@ -1057,7 +1061,7 @@ export default {
       Channel: "N/A",
       Commissions: [],
     });
-
+    const applyMode = ref(props.applyMode);
     const diagnosis_main = computed(() => {
       // props가 명시적으로 전달되지 않으면 undefined일 수 있음
       if (Object.keys(setupDict.value).length == 0) return false;
@@ -1088,7 +1092,16 @@ export default {
       }
       // return setupDict.value.sub.Enable
     });
-
+    const channelDiagnosis = computed(()=>{
+      if(diagnosis_main.value && diagnosis_sub.value)
+        return 2;
+      else if(diagnosis_main.value && !diagnosis_sub.value)
+        return 0;
+      else if(!diagnosis_main.value && diagnosis_sub.value)
+        return 1;
+      else
+        return -1;
+    })
     const mainTestResult = ref({ err: 0, warn: 0 });
     const mainTestLoaded = ref(false);
     const showMainDiagChart = ref(false);
@@ -1597,43 +1610,74 @@ export default {
       if (currentIndex < availableSteps.value.length - 1) {
         const nextStepId = availableSteps.value[currentIndex + 1].id;
 
-        // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
         if (currentStep.value === 1) {
-          const rest = await restartDevice();
+            const rest = await restartDevice();
 
-          if (rest && (nextStepId === 2 || nextStepId === 3)) {
-            isRestarting.value = true;
-            restartMessage.value = "Waiting for acquire waveform file";
-            const response2 = await axios.get(`/setting/trigger`);
-            if (!response2.data.success) {
-              const errorMessage =
-                response2.data.error ||
-                "waveform file trigger failed. Please try again.";
-              alert(errorMessage);
-              return; // Stop navigation if restart fails
+            if (rest && (nextStepId === 2 || nextStepId === 3)) {
+                isRestarting.value = true;
+                restartMessage.value = "Waiting for acquire waveform file";
+                
+                const response2 = await axios.get(`/setting/trigger?target=${channelDiagnosis.value}`);
+                
+                if (!response2.data.success) {
+                    alert(response2.data.message || "waveform file trigger failed");
+                    isRestarting.value = false;
+                    return;
+                }
+                
+                // 파일 생성 완료됨 - 바로 다음 단계로
+                isRestarting.value = false;
             }
-          }
         }
-
-        
-
         // Load data when entering main or sub test steps
         if (nextStepId === 2 && diagnosis_main.value) {
-          isLoadingMain.value = true;
-          mainTestLoaded.value = false;
-          currentStep.value = nextStepId;
-          await delay(2000);
-          await getCommision("main");
+            isLoadingMain.value = true;
+            mainTestLoaded.value = false;
+            currentStep.value = nextStepId;
+            // await delay(2000);  // 삭제
+            await getCommision("main");
         } else if (nextStepId === 3 && diagnosis_sub.value) {
-          isLoadingSub.value = true;
-          subTestLoaded.value = false;
-          currentStep.value = nextStepId;
-          await delay(2000);
-          await getCommision("sub");
+            isLoadingSub.value = true;
+            subTestLoaded.value = false;
+            currentStep.value = nextStepId;
+            // await delay(2000);  // 삭제
+            await getCommision("sub");
         }else {
           // 로딩이 필요 없는 단계는 바로 전환
           currentStep.value = nextStepId;
         }
+                // currentStep이 1이고 nextStepId가 2 또는 3일 때 라우트 호출
+        // if (currentStep.value === 1) {
+        //   const rest = await restartDevice();
+
+        //   if (rest && (nextStepId === 2 || nextStepId === 3)) {
+        //     isRestarting.value = true;
+        //     restartMessage.value = "Waiting for acquire waveform file";
+        //     const response2 = await axios.get(`/setting/trigger`);
+        //     if (!response2.data.success) {
+        //       const errorMessage =
+        //         response2.data.error ||
+        //         "waveform file trigger failed. Please try again.";
+        //       alert(errorMessage);
+        //       return; // Stop navigation if restart fails
+        //     }
+        //   }
+        // }
+        // if (nextStepId === 2 && diagnosis_main.value) {
+        //   isLoadingMain.value = true;
+        //   mainTestLoaded.value = false;
+        //   currentStep.value = nextStepId;
+        //   await delay(2000);
+        //   await getCommision("main");
+        // } else if (nextStepId === 3 && diagnosis_sub.value) {
+        //   isLoadingSub.value = true;
+        //   subTestLoaded.value = false;
+        //   currentStep.value = nextStepId;
+        //   await delay(2000);
+        //   await getCommision("sub");
+        // }else {
+        //   currentStep.value = nextStepId;
+        // }
       }
     };
 
@@ -1815,6 +1859,8 @@ export default {
       canProceedFromSettings,
       mainWaveformNoData,
       subWaveformNoData,
+      channelDiagnosis,
+      applyMode,
     };
   },
 };

@@ -8,6 +8,7 @@ export function useInputDict() {
     "main":{},
     "sub":{}
   });
+
   const inputDict = ref({
     useFuction: {
       ftp: 0,

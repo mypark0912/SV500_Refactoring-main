@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import date
 from pydantic import BaseModel
 from fastapi import Request
+from enum import IntEnum
 
 base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
@@ -21,6 +22,15 @@ class Post(BaseModel):
     c_version: str = ""
     smart_version: str = ""
 
+class WatchTarget(IntEnum):
+    MAIN = 0
+    SUB = 1
+    BOTH = 2
+
+WAVEFORM_PATHS = {
+    WatchTarget.MAIN: "/home/root/ch1/waveform",
+    WatchTarget.SUB: "/home/root/ch2/waveform"
+}
 
 def get_db_connection():
     """DB 연결 및 테이블 생성"""
