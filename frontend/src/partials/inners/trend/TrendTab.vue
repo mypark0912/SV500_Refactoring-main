@@ -499,7 +499,7 @@ export default {
       }
     };
 
-    function onCheckChange({
+function onCheckChange({
       id,
       checked,
       name,
@@ -508,11 +508,13 @@ export default {
     }) {
       if (checked) {
         if (!checkedIds.value.includes(id)) checkedIds.value.push(id);
-        children.forEach((cid) => {
+        // 자식 상위 3개만 체크
+        children.slice(0, 3).forEach((cid) => {
           if (!checkedIds.value.includes(cid)) checkedIds.value.push(cid);
         });
         if (!checkedNames.value.includes(name)) checkedNames.value.push(name);
-        childrenNames.forEach((cname) => {
+        // 자식 이름도 상위 3개만
+        childrenNames.slice(0, 3).forEach((cname) => {
           if (!checkedNames.value.includes(cname))
             checkedNames.value.push(cname);
         });
@@ -643,7 +645,7 @@ export default {
         }
       });
 
-      if (actualParamCount > 6) {
+      if (actualParamCount > 3) {
         alert(t("trend.Linechart.metercount"));
         return;
       }
@@ -848,7 +850,7 @@ export default {
         return;
       }
 
-      if (effectiveIds.length > 15) {
+      if (effectiveIds.length > 3) {
         alert(t("trend.Linechart.parametercount"));
         return;
       }

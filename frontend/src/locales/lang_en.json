@@ -504,8 +504,8 @@
         "Linechart": {
             "TrendChart": "Trend Chart",
             "nodata": "There is no data for the selected period",
-            "parametercount": "Maximum 15 parameters can be selected",
-            "metercount": "Maximum 6 parameters can be selected"
+            "parametercount": "Maximum 3 parameters can be selected",
+            "metercount": "Maximum 3 parameters can be selected"
         },
         "tabTitle": {
             "Meter": "Meter",
