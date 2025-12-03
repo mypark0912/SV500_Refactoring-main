@@ -340,11 +340,12 @@ export default {
 
     // 불평형률 상태
     const getUnbalanceClass = (value) => {
-      if (!value) return "status-unknown";
-      if (value >= 3) return "status-critical";
-      if (value >= 2) return "status-warning";
-      if (value >= 1) return "status-caution";
-      return "status-good";
+      // if (!value) return "status-unknown";
+      // if (value >= 3) return "status-critical";
+      // if (value >= 2) return "status-warning";
+      // if (value >= 1) return "status-caution";
+      //return "status-good";
+      return "status-black";
     };
 
     const getStatusColor2 = (status) => {
@@ -628,6 +629,9 @@ export default {
 
 .unbalance-value {
   @apply text-sm font-bold;
+}
+.unbalance-value.status-black {
+  @apply text-black dark:text-white;
 }
 
 .unbalance-value.status-good {
