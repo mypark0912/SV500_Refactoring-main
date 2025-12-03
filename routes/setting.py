@@ -198,7 +198,7 @@ source /etc/profile.d/influx.sh
 async def complete_influx_setup():
     """백그라운드에서 InfluxDB 재시작 대기 후 버킷 생성 및 서비스 재시작"""
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         sysMode = redis_state.client.hget("System", "mode")
         redis_state.client.hset("influx_init", "status", "WAITING")
 
@@ -495,7 +495,7 @@ async def setup_downsampling():
         overall_success = bucket_result["success"] and task_result["success"]
 
         if overall_success:
-            redis_state.client.select(0)
+            # redis_state.client.select(0)
             redis_state.client.hset("influx_init", "status", "COMPLETE")
             logging.info("✅ Downsampling setup completed successfully")
             return {
@@ -809,7 +809,7 @@ async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
 
 @router.get('/initDB/status')
 async def get_init_status():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     status = redis_state.client.hget("influx_init", "status") or "IDLE"
     return {"status": status}
 
@@ -1172,7 +1172,7 @@ def check_setupfile(request: Request):
         return {"result": "0", "error": "Redis not available"}
 
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
 
         # 1. 먼저 setup.json 파일 확인 및 생성
         if not os.path.exists(file_path):
@@ -1241,9 +1241,36 @@ def saveStartCurrent(setting):
         sub_c = 0
     return {"main": main_c, "sub": sub_c}
 
+def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
+    main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
+    if main_channel_data:
+        main_c = int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        if int(main_channel_data["demand"]["demand_interval"]) != 15:
+            main_d = int(main_channel_data["demand"]["demand_interval"])*60
+        else:
+            main_d = 15*60
+        main_s = int(main_channel_data["sampling"]["period"])*60
+    else:
+        main_c = 0
+        main_d = 15*60
+        main_s = 0
+    sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
+    if sub_channel_data:
+        sub_c = int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        if int(sub_channel_data["demand"]["demand_interval"]) != 15:
+            sub_d = int(sub_channel_data["demand"]["demand_interval"])*60
+        else:
+            sub_d = 15 * 60
+        sub_s = int(sub_channel_data["sampling"]["period"])*60
+    else:
+        sub_c = 0
+        sub_d = 15*60
+        sub_s = 0
+    return {"StartCurrent":{"main": main_c, "sub": sub_c},"Demand":{"main": main_d, "sub": sub_d},"Sampling":{"main": main_s, "sub": sub_s}}
+
 @router.get('/getSetting')
 def get_setting():
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System", "setup"):
         redisContext = redis_state.client.hget("System", "setup")
         setting = json.loads(redisContext)
@@ -1279,7 +1306,7 @@ def get_setting():
 
 @router.get('/getSettingData/{channel}')  # get setting with setup.json
 def getDatafromSetting(channel):
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System", "setup"):
         redisContext = redis_state.client.hget("System", "setup")
         setting = json.loads(redisContext)
@@ -1312,7 +1339,7 @@ def reset():
     msg = ''
 
     if not redis_state.client is None:
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("Service","setting"):
             checkflag = redis_state.client.hget("Service","setting")
             if int(checkflag) == 1:
@@ -1412,7 +1439,7 @@ def reset():
 #         return {"success": False, "msg": str(e)}
 
 async def reset_count(request:Request):
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("System","setup"):
         setup = json.loads(redis_state.client.hget("System","setup"))
         mainEnable = 0
@@ -1583,7 +1610,7 @@ async def resetAll(request:Request):
     saveLog("Factory Default", request)
     msg = ''
     if not redis_state.client is None:
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("Service", "setting"):
             checkflag = redis_state.client.hget("Service", "setting")
             if int(checkflag) == 1:
@@ -1817,7 +1844,7 @@ def upload_file(file: UploadFile = File(...)):
         file_content = file.file.read().decode("utf-8")
 
         # Redis에 그대로 문자열로 저장
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         redis_state.client.hset("System", "setup", file_content)
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
@@ -2260,7 +2287,7 @@ async def unreg_Asset(channel, asset):
         finflag = True
     else:
         finflag = False
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System","setup"):
         datStr = redis_state.client.hget("System","setup")
         setting = json.loads(datStr)
@@ -2319,7 +2346,7 @@ async def reg_Asset(channel, assetName, assetType):
         finflag = True
     else:
         finflag = False
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System","setup"):
         datStr = redis_state.client.hget("System","setup")
         setting = json.loads(datStr)
@@ -2373,8 +2400,8 @@ def initialize_alarm_configs(channel, alams):
         if alams[str(j)][0] != 0:
             alarmdict[str(j)] = alams[str(j)]
     if len(alarmdict.keys()) > 0:
-        redis_state.client.execute_command("SELECT", 1)
-        redis_state.client.delete(rediskey)
+        # redis_state.client_db1.execute_command("SELECT", 1)
+        redis_state.client_db1.delete(rediskey)
         for key in alarmdict:
             if alarmdict[key][1] == 0:
                 condstr = 'UNDER'
@@ -2392,7 +2419,7 @@ def initialize_alarm_configs(channel, alams):
                 "last_update": int(datetime.now().timestamp()),
                 "status_text": "None"
             }
-            redis_state.client.hset(rediskey, key, json.dumps(init_data))
+            redis_state.client_db1.hset(rediskey, key, json.dumps(init_data))
 
 @router.post('/savefile/{channel}')  # save setup.json
 async def saveSetting(channel: str, request: Request):
@@ -2405,7 +2432,7 @@ async def saveSetting(channel: str, request: Request):
             ser = read_mac_plain(mac_file_path)
             # if ser != deviceMac:
             #     deviceMac = ser
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
         if int(checkflag) == 1:
@@ -2461,7 +2488,7 @@ async def saveSetting(channel: str, request: Request):
             for i in range(0,len(setting["channel"])):
                 initialize_alarm_configs(setting["channel"][i]["channel"], setting["channel"][i]["alarm"])
 
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         saveCurrent = saveStartCurrent(setting)
         dash_alarms_data = save_alarm_configs_to_redis(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
@@ -2524,7 +2551,7 @@ async def saveSetting2(request: Request):
         if os.path.exists(mac_file_path):
             ser = read_mac_plain(mac_file_path)
 
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
@@ -2561,7 +2588,7 @@ async def saveSetting2(request: Request):
             if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
                 ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
 
-        redis_state.client.select(0)
+
         prevSetup = redis_state.client.hget("System", "setup")
         prevData = json.loads(prevSetup)
 
@@ -2576,8 +2603,8 @@ async def saveSetting2(request: Request):
                     initialize_alarm_configs(ch["channel"], ch["alarm"])
 
         # Redis에 저장
-
-        saveCurrent = saveStartCurrent(data)
+        # saveCurrent = saveStartCurrent(data)
+        procData = save_StartCurrent_DemandInterval_SamplingPeriod(data)
         dash_alarms_data = save_alarm_configs_to_redis(data)
         result = compare_channel_changes(prevData, data)
         restartAsset = False
@@ -2588,7 +2615,9 @@ async def saveSetting2(request: Request):
             restartAsset = True
 
         redis_state.client.hset("System", "setup", json.dumps(data))
-        redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(saveCurrent))
+        redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
+        redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
+        redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
 
         if dash_alarms_data:
             redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
@@ -2683,7 +2712,7 @@ async def checkSmartAPI_active():
 
 @router.get('/restartasset')  # save setup.json
 async def restartasset():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
         if int(checkflag) == 1:
@@ -2728,7 +2757,7 @@ async def restartasset():
 
 @router.get('/restartdevice')
 async def restartdevice(timeout: int = 30):
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
 
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
@@ -2754,7 +2783,7 @@ async def restartdevice(timeout: int = 30):
 
 @router.get('/restartCore')
 def restart_core():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
@@ -2784,7 +2813,7 @@ def restore_setting():
         shutil.copy(backup_file, setting_file)
         with open(backup_file, "r", encoding="utf-8") as f:
             setting = json.load(f)
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
@@ -3088,7 +3117,7 @@ async def check_SmartVersion():
         return {"success": False, "Version": "1.0.3"}
 
 def check_a35version():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if not redis_state.client.exists("version"):
         return None
     fw = redis_state.client.hget("version","fw")
@@ -3102,7 +3131,7 @@ async def check_sysStatus():
 
     if os_spec.os == 'Windows':
         if not redis_state.client is None:
-            redis_state.client.execute_command("SELECT", 0)
+            # redis_state.client.execute_command("SELECT", 0)
             if redis_state.client.hexists("System", "Status"):
                 data = json.loads(redis_state.client.hget("System", "Status"))
         data["core"] = 0
@@ -3179,7 +3208,7 @@ def control_service(cmd, item):
 
 @router.get('/ServiceStatus')
 def check_allservice():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     devMode = redis_state.client.hget("System", "mode")
 
     if devMode == 'device0':
@@ -3262,8 +3291,8 @@ async def push_command_left(command: Command, request:Request):
         saveLog(command.get_item_name(), request)
     try:
         binary_data = command_to_binary(command)
-        redis_state.client.select(1)
-        redis_state.client.lpush('command', binary_data)
+        # redis_state.client_db1.select(1)
+        redis_state.client_db1.lpush('command', binary_data)
 
         return {
             "success": True,
@@ -3418,7 +3447,7 @@ async def trigger_waveform(
 @router.get('/getMode')
 def get_sysMode():
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         result = redis_state.client.hget("System","mode")
         return {"success": True, "mode": result}
     except Exception as e:
@@ -3448,7 +3477,7 @@ async def update_smartsystem(mode, request:Request):
                       smart_version='1.0.0')
         save_post(update, 0, 0)
 
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     result = redis_state.client.hget("System", "setup")
     if not result:
         return {"success": False, "message": "Setup data not found"}

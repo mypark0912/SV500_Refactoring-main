@@ -108,7 +108,7 @@ def get_db_connection():
 
 def check_useDiagnosis():
     if not redis_state.client is None:
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("System","setup"):
             redisContext = redis_state.client.hget("System","setup")
             setting = json.loads(redisContext)
@@ -390,7 +390,7 @@ def join_admin(data: SignupAdmin):
         with open(SETUP_PATH, "w", encoding="utf-8") as ef:
             json.dump(setting, ef, indent=2)
 
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         redis_state.client.hset("System", "setup", json.dumps(setting))
         redis_state.client.hset("System", "mode", mode)
         if is_service_active("sv500A35"):
@@ -405,8 +405,8 @@ def join_admin(data: SignupAdmin):
         else:
             sysService("start", "Core")
 
-        redis_state.client.select(1)
-        redis_state.client.flushdb()
+        # redis_state.client.select(1)
+        redis_state.client_db1.flushdb()
         
         # ✅ Bearing DB 초기화 (회원가입 성공 시)
         try:
@@ -943,7 +943,7 @@ def join(data: SignupUser):
     
 def get_mode_from_redis(redis_client) -> str:  
     try:
-        redis_client.execute_command("SELECT", 0)
+        # redis_client.execute_command("SELECT", 0)
         if redis_client.hexists("System", "setup"):
             setup_json = redis_client.hget("System", "setup")
             setting = json.loads(setup_json)
@@ -1128,7 +1128,7 @@ async def checkLogins(request:Request, data: Login):
         conn.commit()
         conn.close()
         mode_setup = ''
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("System","setup"):
             setups = redis_state.client.hget("System","setup")
             setup = json.loads(setups)
@@ -1158,7 +1158,7 @@ async def check_remoteUser(user, request:Request):
     if not user:
         return {"success":False}
     try:
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("System","mode"):
             mode = redis_state.client.hget("System","mode")
             request.session["devMode"] = mode

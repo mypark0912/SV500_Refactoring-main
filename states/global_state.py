@@ -189,6 +189,7 @@ influx_state = InfluxGlobalState()
 
 class RedisGlobalState:
     client: Optional[redis.Redis] = None  # 텍스트용 (기존)
+    client_db1: Optional[redis.Redis] = None
     binary_client: Optional[redis.Redis] = None  # 바이너리용 (추가)
     processor: Optional['BinaryDataProcessor'] = None
     handler: Optional['MaxMinDataHandler'] = None  # handler도 추가
@@ -207,7 +208,15 @@ def init_redis():
             db=0,
             decode_responses=True  # 텍스트 자동 디코딩
         )
+
+        pool2 = redis.ConnectionPool(
+            host=f"{os_spec.redisip}",
+            port=6379,
+            db=1,
+            decode_responses=True  # 텍스트 자동 디코딩
+        )
         redis_state.client = redis.Redis(connection_pool=pool)
+        redis_state.client_db1 = redis.Redis(connection_pool=pool2)
 
         # 바이너리 데이터용 클라이언트 (추가)
         binary_pool = redis.ConnectionPool(
@@ -222,6 +231,7 @@ def init_redis():
 
     except Exception as e:
         redis_state.client = None
+        redis_state.client_db1 = None
         redis_state.binary_client = None
         redis_state.error = f"[Redis Init Error] {str(e)}"
         logging.error(f"❌ Redis Connect Error: {e}")

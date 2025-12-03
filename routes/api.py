@@ -209,9 +209,9 @@ parameter_options = [
 
 @router.get('/getChannelSetting/{channel}')  # report_info
 def getChannelSetting(channel):
-    redis_state.client.execute_command("SELECT", 0)
-    if redis_state.client.hexists("System", "setup"):
-        redisContext = redis_state.client.hget("System", "setup")
+    # redis_state.client_db1.execute_command("SELECT", 0)
+    if redis_state.client_db1.hexists("System", "setup"):
+        redisContext = redis_state.client_db1.hget("System", "setup")
         setting = json.loads(redisContext)
     else:
         file_path = os.path.join(SETTING_FOLDER, 'setup.json')
@@ -247,8 +247,8 @@ def getChannelSetting(channel):
 def getHarmonics(channel):
     key = get_RedisKey(channel, 'pq')
     try:
-        redis_state.client.execute_command("SELECT", 1)
-        harms = redis_state.client.hget(key, "harmonics")
+        # redis_state.client.execute_command("SELECT", 1)
+        harms = redis_state.client_db1.hget(key, "harmonics")
         harmdict = json.loads(harms)
         for key in harmdict:
             harmdict[key] = [x / 100 for x in harmdict[key]]
@@ -261,23 +261,23 @@ def getHarmonics(channel):
 def setWave(channel, state):
     key = get_RedisKey(channel, 'pq')
     try:
-        redis_state.client.select(1)
-        redis_state.client.hset(key, f"setWave", int(state))
+        # redis_state.client.select(1)
+        redis_state.client_db1.hset(key, f"setWave", int(state))
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 # get harmonics with redis
-def getWave(channel):
-    key = get_RedisKey(channel, 'pq')
-    try:
-        redis_state.client.execute_command("SELECT", 9)
-        harms = redis_state.client.hget(key, "waveform")
-        harmdict = json.loads(harms)
-        return {"success": True, "data": harmdict}
-    except Exception as e:
-        return {"success": False, "error": "Redis Read Error"}
+# def getWave(channel):
+#     key = get_RedisKey(channel, 'pq')
+#     try:
+#         redis_state.client.execute_command("SELECT", 9)
+#         harms = redis_state.client.hget(key, "waveform")
+#         harmdict = json.loads(harms)
+#         return {"success": True, "data": harmdict}
+#     except Exception as e:
+#         return {"success": False, "error": "Redis Read Error"}
 
 
 async def get_waveform(channel: str):
@@ -292,7 +292,7 @@ async def get_waveform(channel: str):
     """
     try:
         # Redis 키 생성 (실제 키 패턴에 맞게 수정 필요)
-        redis_state.binary_client.select(1)
+        # redis_state.binary_client.select(1)
         redis_key = f"pq_{channel.lower()}"
         processor = redis_state.processor
         # 바이너리 데이터 가져오기
@@ -330,11 +330,7 @@ async def get_waveform(channel: str):
 
 @router.get('/getWave/{channel}')
 async def get_waves(channel):
-    if os_spec.os == 'Windows':
-        result = getWave(channel)
-    else:
-        result = await get_waveform(channel)
-
+    result = await get_waveform(channel)
     return result
 
 
@@ -361,9 +357,9 @@ def checkNode(supers, name, path):  # check node level
     return ''
 
 def getSmartData(mode, channel):
-    redis_state.client.select(1)
+    # redis_state.client.select(1)
     rkey = f"SmartAPI:{channel}"
-    data = redis_state.client.hget(rkey, mode)
+    data = redis_state.client_db1.hget(rkey, mode)
     return data
 
 def proc_eventFaultData(datas):
@@ -575,7 +571,7 @@ async def get_diagnosis_cached(channel, asset):
     """
     진단 데이터 조회 - Redis 우선, 없으면 API 호출
     """
-    redis_state.client.select(1)
+    # redis_state.client.select(1)
     if channel == 'main' or channel == 'Main':
         chName = 'Main'
     else:
@@ -587,7 +583,7 @@ async def get_diagnosis_cached(channel, asset):
     # 1. Redis에서 조회
     try:
 
-        cached_data = redis_state.client.hget(cache_key, cache_field)
+        cached_data = redis_state.client_db1.hget(cache_key, cache_field)
         if cached_data:
             datas = json.loads(cached_data)
             print(f"[Redis] Data found for {chName}")
@@ -605,7 +601,7 @@ async def get_diagnosis_cached(channel, asset):
             # API에서 가져온 데이터 Redis에 저장
             if datas:
                 try:
-                    redis_state.client.hset(cache_key, cache_field, json.dumps(datas, ensure_ascii=False))
+                    redis_state.client_db1.hset(cache_key, cache_field, json.dumps(datas, ensure_ascii=False))
                 except:
                     pass  # 저장 실패 무시
 
@@ -731,7 +727,7 @@ async def get_faults(asset, request: Request):
 
 @router.get("/getTrendParameters/{channel}")
 def get_trendParams(channel):
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System", "setup"):
         dstr = redis_state.client.hget("System", "setup")
         data = json.loads(dstr)
@@ -901,7 +897,7 @@ async def getStatus(asset, channel):
             data = response.json()
 
         # 2. Redis에서 DashAlarms 설정 가져오기
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 설정이 없으면 기존 로직 사용
@@ -992,7 +988,7 @@ async def getPQStatus(asset, channel, request: Request):
             data = response.json()
 
         # 2. Redis에서 DashAlarms 설정 가져오기
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 설정이 없으면 기존 로직 사용
@@ -1160,7 +1156,7 @@ async def get_dashStatus(asset, channel):
             eventTree = data.get("Events", [])
 
         # 2. Redis에서 DashAlarms 설정 가져오기
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 데이터 검증
@@ -1252,10 +1248,10 @@ def get_running(channel):
     else:
         redisKey = 'runhour_sub'
 
-    redis_state.client.select(1)
-    if redis_state.client.exists(redisKey):
-        total = redis_state.client.hget(redisKey, "tot")
-        current = redis_state.client.hget(redisKey, "cur")
+    redis_state.client_db1.select(1)
+    if redis_state.client_db1.exists(redisKey):
+        total = redis_state.client_db1.hget(redisKey, "tot")
+        current = redis_state.client_db1.hget(redisKey, "cur")
         return {"total": total, "current": current}
     else:
         return {"total": 0, "current": 0}
@@ -1357,7 +1353,7 @@ async def get_asset(asset, request: Request):
     #             data = response.json()
     if len(data) > 0:
         datalist = list()
-        redis_state.client.execute_command("SELECT", 0)
+        # redis_state.client.execute_command("SELECT", 0)
         setupJson = redis_state.client.hget("System", "setup")
         setting = json.loads(setupJson)
         mac = setting["General"]["deviceInfo"]["mac_address"]
@@ -1892,7 +1888,7 @@ def format_influx_militime(dt: datetime, to_local: bool = True) -> str:
 
 @router.get("/getAlarmParms/{channel}")
 def get_almParms(channel):
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     alm_setup = {}
     if redis_state.client.hexists("System", "setup"):
         sets = redis_state.client.hget("System", "setup")
@@ -2171,11 +2167,11 @@ async def get_eventSearch(data: EventSearch, channel: str, page: int):
 
 @router.get("/getAlarmStatus/{channel}")  # get alarm status with redis
 def getAlarmStatus(channel):
-    redis_state.client.select(1)
+    # redis_state.client.select(1)
     key = f"alarm_status:{channel}"
-    if redis_state.client.exists(key):
+    if redis_state.client_db1.exists(key):
         try:
-            harms = redis_state.client.hgetall(key)
+            harms = redis_state.client_db1.hgetall(key)
             #            harmdict = json.loads(harms)
             #            print(harms)
             return {"success": True, "data": harms}
@@ -2203,10 +2199,10 @@ def getEn50160(channel):
         else:
             return {"success": False, "error": "No Data"}
     else:
-        redis_state.client.select(1)
-        if redis_state.client.exists("en50160_status"):
+        # redis_state.client.select(1)
+        if redis_state.client_db1.exists("en50160_status"):
             try:
-                harms = redis_state.client.hget("en50160_status", channel)
+                harms = redis_state.client_db1.hget("en50160_status", channel)
                 harmdict = json.loads(harms)
                 # 데이터 변환
                 transformed_data = transform_en50160_data(harmdict)
@@ -2218,7 +2214,7 @@ def getEn50160(channel):
 
 
 def get_setupContext():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("System", "setup"):
         redisContext = redis_state.client.hget("System", "setup")
         setting = json.loads(redisContext)
@@ -2464,9 +2460,9 @@ def loaditem_from_flat_redis(channel, item, mode):
     """
     Redis 1번 DB에서 분해된 필드를 dashboard_meter 기준으로 복원
     """
-    redis_state.client.execute_command("SELECT", 1)
+    # redis_state.client.execute_command("SELECT", 1)
     keyname = get_RedisKey(channel, item)
-    flat_data = redis_state.client.hgetall(keyname)
+    flat_data = redis_state.client_db1.hgetall(keyname)
 
     result = {}
     # normalized_data = {k.strip(): v for k, v in flat_data.items()}
@@ -2507,18 +2503,18 @@ def getTransRedis(channel):
 
 @router.get("/getEquipStatus/{channel}")
 def get_eqStatus(channel):
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if not redis_state.client.hexists("Equipment", "StartingCurrent"):
         status = False
         return {"success": False, "status": status}
 
     stCrDict = json.loads(redis_state.client.hget("Equipment", "StartingCurrent"))
-    redis_state.client.select(1)
+    # redis_state.client.select(1)
     if channel == 'Main':
-        itot = redis_state.client.hget("meter_main", "Itot")
+        itot = redis_state.client_db1.hget("meter_main", "Itot")
         status = float(itot) > (float(stCrDict["main"]) * 3)
     else:
-        itot = redis_state.client.hget("meter_sub", "Itot")
+        itot = redis_state.client_db1.hget("meter_sub", "Itot")
         status = float(itot) > (float(stCrDict["sub"]) * 3)
     return {"success": True, "status": status}
 
@@ -2607,8 +2603,8 @@ def load_json_from_redisString(key: str):
 
 
 def load_json_from_redisHash(key: str, field):
-    redis_state.client.execute_command("SELECT", 1)
-    raw = redis_state.client.hget(key, field)
+    # redis_state.client.execute_command("SELECT", 1)
+    raw = redis_state.client_db1.hget(key, field)
     return json.loads(raw) if raw else {}
 
 
@@ -2637,9 +2633,9 @@ def loaditems_json_from_redis(channel, item):
     """
     RedisMapped.mapdict 기준으로 Redis 1번 DB에서 분해된 해시 데이터를 category별로 복원
     """
-    redis_state.client.execute_command("SELECT", 1)
+    # redis_state.client.execute_command("SELECT", 1)
     keyname = get_RedisKey(channel, item)
-    flat_data = redis_state.client.hgetall(keyname)
+    flat_data = redis_state.client_db1.hgetall(keyname)
 
     # 공백 제거, 문자열 처리
     normalized_data = {k.strip(): v for k, v in flat_data.items()}
@@ -2671,14 +2667,14 @@ def extract_key_list(key_dict_list):
 
 def get_Calibrate(channel):
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         refdict = None
         if redis_state.client.hexists("calibration","ref"):
             refStr = redis_state.client.hget("calibration","ref")
             refdict = json.loads(refStr)
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
         field_keys = (
@@ -2695,7 +2691,7 @@ def get_Calibrate(channel):
 
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
         # 그룹핑
         meters = {k["key"]: flat_fields.get(k["key"]) for k in (
@@ -2708,7 +2704,7 @@ def get_Calibrate(channel):
                 RedisMapCalibrate.r_powers_keys +
                 RedisMapCalibrate.ap_powers_keys
         )}
-        full_data = redis_state.client.hgetall(keyname)
+        full_data = redis_state.client_db1.hgetall(keyname)
         if channel == 'Main':
             ch = 'main'
         else:
@@ -2755,9 +2751,9 @@ def get_Calibrate(channel):
 @router.get("/getOnesfromRedis/{channel}/{unbal}")
 def get_OneSecond(channel, unbal):
     try:
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
         if int(unbal) == 1:
             field_keys = (
@@ -2780,7 +2776,7 @@ def get_OneSecond(channel, unbal):
         field_keys = list(set(field_keys))
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
         # 그룹핑
         if int(unbal) == 1:
@@ -2801,7 +2797,7 @@ def get_OneSecond(channel, unbal):
                     RedisMapDetail2.unbal_keys2 +
                     RedisMapDetail2.pf_keys
             )}
-        full_data = redis_state.client.hgetall(keyname)
+        full_data = redis_state.client_db1.hgetall(keyname)
         if channel == 'Main':
             ch = 'main'
         else:
@@ -2871,10 +2867,10 @@ def get_OneSecond(channel, unbal):
 @router.get("/getonemfromRedis/{channel}")
 def get_onemfromRedis(channel):
     try:
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
 
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
         # 모든 필요한 필드 키 모으기
@@ -2887,11 +2883,11 @@ def get_onemfromRedis(channel):
         field_keys = list(set(field_keys))
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
 
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
 
-        full_data = redis_state.client.hgetall(keyname)
+        full_data = redis_state.client_db1.hgetall(keyname)
         maxmin = {
             k: try_float(v)
             for k, v in full_data.items()
@@ -2929,10 +2925,10 @@ def get_onemfromRedis(channel):
 @router.get("/getFifthMfromRedis/{channel}")
 def get_FifthMfromRedis(channel):
     try:
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
 
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
         # 모든 필요한 필드 키 모으기
@@ -2947,7 +2943,7 @@ def get_FifthMfromRedis(channel):
         field_keys = list(set(field_keys))
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
         # 그룹핑
 
@@ -2964,7 +2960,7 @@ def get_FifthMfromRedis(channel):
         )}
 
         # maxmin은 접두어 기반으로 따로 추출
-        full_data = redis_state.client.hgetall(keyname)
+        full_data = redis_state.client_db1.hgetall(keyname)
         if channel == 'Main':
             ch = 'main'
         else:
@@ -3060,10 +3056,10 @@ def get_FifthMfromRedis(channel):
 @router.get("/getOnehfromRedis/{channel}")
 def get_onehRedis(channel):
     try:
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "energy")
 
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             result = {
                 "success": False,
                 "retData": {
@@ -3084,7 +3080,7 @@ def get_onehRedis(channel):
         field_keys = list(set(field_keys))
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
 
         result = {
@@ -3112,11 +3108,11 @@ def get_onehRedis(channel):
 @router.get("/getEnergyRedis/{channel}")
 def get_consumption_energy(channel):
     try:
-        redis_state.client.select(1)
-        if not redis_state.client.exists("energy_summary"):
+        # redis_state.client.select(1)
+        if not redis_state.client_db1.exists("energy_summary"):
             return {"success": False, "error": f"No exist key"}
         else:
-            data = redis_state.client.hget("energy_summary", channel)
+            data = redis_state.client_db1.hget("energy_summary", channel)
             con_data = json.loads(data)
             retData = {
                 "today": con_data.get("consumption", {}).get("kwh_import_consumption", 0),
@@ -3137,10 +3133,10 @@ def get_consumption_energy(channel):
 @router.get("/getAllMeterRedisNew/{channel}")
 def get_all_meter_redis(channel):
     try:
-        redis_state.client.execute_command("SELECT", 1)
+        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
 
-        if not redis_state.client.exists(keyname):
+        if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
         # 모든 필요한 필드 키 모으기
@@ -3164,7 +3160,7 @@ def get_all_meter_redis(channel):
         field_keys = list(set(field_keys))
 
         # Redis에서 가져오기
-        values = redis_state.client.hmget(keyname, field_keys)
+        values = redis_state.client_db1.hmget(keyname, field_keys)
         flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
         # 그룹핑
         meters = {k["key"]: flat_fields.get(k["key"]) for k in (
@@ -3192,7 +3188,7 @@ def get_all_meter_redis(channel):
         )}
 
         # maxmin은 접두어 기반으로 따로 추출
-        full_data = redis_state.client.hgetall(keyname)
+        full_data = redis_state.client_db1.hgetall(keyname)
         maxmin = {
             k: try_float(v)
             for k, v in full_data.items()
@@ -3316,8 +3312,8 @@ def get_energy(channel):
     try:
         rdkey = get_RedisKey(channel, "meter")
 
-        redis_state.client.execute_command("SELECT", 1)
-        redis_data = redis_state.client.hget(rdkey, "export kwh")
+        # redis_state.client.execute_command("SELECT", 1)
+        redis_data = redis_state.client_db1.hget(rdkey, "export kwh")
         return {"success": True, "data": redis_data}
 
     except Exception as e:
@@ -3333,7 +3329,7 @@ def get_energy(channel):
 
 @router.get('/getSystemStatus')
 def get_service():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     setupdict = json.loads(redis_state.client.hget("System", "setup"))
     if setupdict['mode'] == 'device0':
         itemdict = {
@@ -4658,7 +4654,7 @@ def get_load_factor_calculated(channel: str, date: str = None):
     """
     try:
         # Redis에서 설정 정보 가져오기
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         setupStr = redis_state.client.hget("System", "setup")
 
         if not setupStr:
@@ -4779,7 +4775,7 @@ def get_weekly_load_factor_data(channel: str, end_date: str = None, days: int = 
     """
     try:
         # Redis에서 설정 정보 가져오기
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         setupStr = redis_state.client.hget("System", "setup")
 
         if not setupStr:

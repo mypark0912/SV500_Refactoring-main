@@ -97,7 +97,7 @@ def upload_file(file: UploadFile = File(...)):
 @router.get('/checkSetup')
 def check_setup():
     mac = get_mac_address()
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         data = redis_state.client.hget('calibration','setup')
         datalist = json.loads(data)
@@ -109,7 +109,7 @@ def check_setup():
 def getUnbal():
     file_path = os.path.join(SETTING_FOLDER, 'setup.json')
     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     if redis_state.client.hexists("System", "setup"):
         # Redis에 있으면 Redis 데이터 사용
         setting = json.loads(redis_state.client.hget("System", "setup"))
@@ -134,7 +134,7 @@ def cali_mount():
 
 @router.get('/calibrate/applySetup')
 def cali_setup():
-    redis_state.client.execute_command("SELECT", 0)
+    # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists('calibration','setup'):
         shutil.copy(backup_file, setting_file)
         data = redis_state.client.hget('calibration','setup')
@@ -151,7 +151,7 @@ def cali_setup():
 @router.post('/calibrate/saveRef')
 def set_saveref(data:CaliRef):
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         refdata = {"U": int(data.U), "I": int(data.I), "In": int(data.In), "P": int(data.P), "Error": float(data.Error)}
         redis_state.client.hset("calibration", "ref", json.dumps(refdata))
         return {'passOK': '1'}
@@ -162,7 +162,7 @@ def set_saveref(data:CaliRef):
 @router.get('/calibrate/start')
 def cali_start():
     try:
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         redis_state.client.hset('Service','calibration', 1)
         return {'passOK': '1'}
     except Exception as e:
@@ -170,7 +170,7 @@ def cali_start():
 
 @router.get('/calibrate/end')
 def cali_end():
-    redis_state.client.select(0)
+    # redis_state.client.select(0)
     redis_state.client.hset('Service', 'calibration', 0)
     if redis_state.client.hexists('calibration', 'setup') and redis_state.client.hexists('calibration','cflag'):
         if redis_state.client.hget('calibration', 'cflag') == 1:
@@ -186,7 +186,7 @@ def cali_end():
             shutil.copy(setting_file, backup_file)
             with open(setting_file, "r", encoding="utf-8") as f:
                 setting = json.load(f)
-                redis_state.client.execute_command("SELECT", 0)
+                # redis_state.client.execute_command("SELECT", 0)
                 redis_state.client.hset("System", "setup", json.dumps(setting))
             redis_state.client.hdel("calibration", "setup")
             redis_state.client.hset("Service", "save", 1)
@@ -226,7 +226,7 @@ def set_cmd(data:CaliSet):
             'ref2': val2
         }
 
-        redis_state.client.select(0)
+        # redis_state.client.select(0)
         if redis_state.client.hexists("calibration","ref"):
             refdict = json.loads(redis_state.client.hget("calibration", "ref"))
             if data.param != 'None':
