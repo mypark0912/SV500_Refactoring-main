@@ -2748,6 +2748,19 @@ def get_Calibrate(channel):
         print(str(e))
         return {"success": False, "error": str(e)}
 
+@router.get("/getInteverval/{channel}")
+def get_interval(channel):
+    if channel == 'Main' or channel == 'main':
+        chName = 'main'
+    else:
+        chName = 'sub'
+    if redis_state.client.hexists("Equipment","DemandInterval"):
+        demandData = redis_state.client.hget("Equipment","DemandInterval")
+        intervalDict = json.loads(demandData)
+        return {"success": True, "data":intervalDict[chName]}
+    else:
+        return {"success": False}
+
 @router.get("/getOnesfromRedis/{channel}/{unbal}")
 def get_OneSecond(channel, unbal):
     try:

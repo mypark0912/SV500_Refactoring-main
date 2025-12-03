@@ -111,12 +111,13 @@ export default {
     const powerThd = ref({});
     const phaseDict = ref({});
     const energyData = ref({});
-
+    
     const setupStore = useSetupStore();
     let updateInterval_ones = null;
     let updateInterval_onem = null;
     let updateInterval_fifthm = null;
     let updateInterval_oneh = null;
+    let timeout_fifthm = 15*60*1000;
     
     const assetName = computed(()=> {
       const mainName = setupStore.getAssetConfig.assetNickname_main;
@@ -158,6 +159,23 @@ export default {
         updateInterval_oneh = null
       }
     };
+
+    const fetchInterval = async (ch) => {
+      //console.log('FetchInterval')
+      try {
+        const response = await axios.get(`/api/getInteverval/${ch}`);
+        if (response.data.success) {
+          timeout_fifthm = parseInt(response.data.data);
+          //console.log(ch,'-', timeout_fifthm);
+        }
+      } catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      }
+    };
+
+    // onMounted(async()=>{
+    //   await fetchInterval(channel.value);
+    // })
     
     onUnmounted(() => {
       ReleaseInterval();
@@ -260,80 +278,9 @@ export default {
       }
     };
 
-    // 새로 추가된 Demand 데이터 가져오기 함수
-    // const fetchDemandData = async (ch) => {
-    //   try {
-    //     // 실제 API 엔드포인트에 맞게 수정 필요
-    //     // const response = await axios.get(`/api/getDemandData/${ch}`);
-    //     // if (response.data.success && response.data.retData && response.data.retData.retData) {
-    //     //   demandData.value = response.data.retData.retData;
-    //     // }
-        
-    //     // 더미 데이터로 설정 (초기값과 동일하게)
-    //     demandData.value = {
-    //       demandData: [
-    //         {
-    //           subTitle: "Active",
-    //           data: [
-    //             { id: 0, subTitle: "Imp.", value: "0.000", unit: "W", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" },
-    //             { id: 1, subTitle: "Exp.", value: "0.000", unit: "W", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         },
-    //         {
-    //           subTitle: "Reactive", 
-    //           data: [
-    //             { id: 0, subTitle: "Imp.", value: "0.000", unit: "VAR", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" },
-    //             { id: 1, subTitle: "Exp.", value: "0.000", unit: "VAR", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         },
-    //         {
-    //           subTitle: "Apparent",
-    //           data: [
-    //             { id: 0, subTitle: "Imp.", value: "0.000", unit: "VA", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" },
-    //             { id: 1, subTitle: "Exp.", value: "0.000", unit: "VA", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         }
-    //       ],
-    //       demandIData: [
-    //         {
-    //           subTitle: "L1",
-    //           data: [
-    //             { id: 0, subTitle: "", value: "0.000", unit: "A", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         },
-    //         {
-    //           subTitle: "L2", 
-    //           data: [
-    //             { id: 0, subTitle: "", value: "0.000", unit: "A", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         },
-    //         {
-    //           subTitle: "L3",
-    //           data: [
-    //             { id: 0, subTitle: "", value: "0.000", unit: "A", min: "-", max: "0.000", minTime: "-", maxTime: "1970-01-01 00:00:00" }
-    //           ]
-    //         }
-    //       ]
-    //     };
-    //   } catch (error) {
-    //     console.log("Demand 데이터 가져오기 실패:", error);
-    //     // 에러 시에도 동일한 구조 유지
-    //     demandData.value = {
-    //       demandData: [
-    //         { subTitle: "Active", data: [] },
-    //         { subTitle: "Reactive", data: [] },
-    //         { subTitle: "Apparent", data: [] }
-    //       ],
-    //       demandIData: [
-    //         { subTitle: "L1", data: [] },
-    //         { subTitle: "L2", data: [] },
-    //         { subTitle: "L3", data: [] }
-    //       ]
-    //     };
-    //   }
-    // };
+    const startFetching = async() => {
+      await fetchInterval(channel.value);
 
-    const startFetching = () => {
       if (updateInterval_ones) {
         clearInterval(updateInterval_ones);
         updateInterval_ones = null
@@ -359,7 +306,7 @@ export default {
       fetchRedisfifthmData(channel.value);
         updateInterval_fifthm = setInterval(() => {
           fetchRedisfifthmData(channel.value);
-        }, 15*60*1000);
+        }, timeout_fifthm*1000);
 
       if (updateInterval_oneh) {
         clearInterval(updateInterval_oneh);
