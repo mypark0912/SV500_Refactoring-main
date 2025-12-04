@@ -81,7 +81,7 @@
 
           <!-- Step 1: Settings Validation (Only for non-device0 mode) -->
           <div
-            v-show="currentStep === 1 && OpMode !== 'device0'"
+            v-show="currentStep === 1 "
             class="step-content"
           >
             <h2
