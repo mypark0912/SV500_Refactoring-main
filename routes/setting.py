@@ -2219,13 +2219,20 @@ async def createAsset(request: Request):
         print(str(e))
         return {"status": "0", "error": "Created Failed"}
 
-    if len(datas) > 0:
-        if assetName in datas:
+    if datas:
+        if datas["Status"] == 0:
             return {"status": "1"}
         else:
-            return {"status": "0", "error": "Create Failed"} #성공해도 리스트에는 추가안된상태로 리턴되서 여기로빠짐
+            return {"status": "0", "error": "Create Failed"}  # 성공해도 리스트에는 추가안된상태로 리턴되서 여기로빠짐
     else:
         return {"status": "0", "error": "Create Failed"}
+    # if len(datas) > 0:
+    #     if assetName in datas:
+    #         return {"status": "1"}
+    #     else:
+    #         return {"status": "0", "error": "Create Failed"} #성공해도 리스트에는 추가안된상태로 리턴되서 여기로빠짐
+    # else:
+    #     return {"status": "0", "error": "Create Failed"}
 
 @router.post('/modifyAsset')
 async def modifyAsset(request: Request):
@@ -2250,13 +2257,20 @@ async def modifyAsset(request: Request):
     except Exception as e:
         return {"status": "0", "error": "Modify Failed"}
 
-    if len(datas) > 0:     
-        if newName in datas:
+    if datas:
+        if datas["Status"] == 0:
             return {"status": "1"}
         else:
-            return {"status": "0", "error": "Modify Failed"}
+            return {"status": "0", "error": "Modify Failed"}  # 성공해도 리스트에는 추가안된상태로 리턴되서 여기로빠짐
     else:
         return {"status": "0", "error": "Modify Failed"}
+    # if len(datas) > 0:
+    #     if newName in datas:
+    #         return {"status": "1"}
+    #     else:
+    #         return {"status": "0", "error": "Modify Failed"}
+    # else:
+    #     return {"status": "0", "error": "Modify Failed"}
 
 @router.get('/deleteAsset/{asset}')
 async def deleteAsset(asset):
@@ -2269,13 +2283,21 @@ async def deleteAsset(asset):
         print(str(e))
         return {"status": "0", "error": "Delete Failed"}
 
-    if len(datas) > 0:
-        if not asset in datas:
+    if datas:
+        if datas["Status"] == 0:
             return {"status": "1"}
         else:
-            return {"status": "0", "error": "Delete Failed"}
+            return {"status": "0", "error": "Delete Failed"}  # 성공해도 리스트에는 추가안된상태로 리턴되서 여기로빠짐
     else:
-        return {"status": "1"}
+        return {"status": "0", "error": "Delete Failed"}
+
+    # if len(datas) > 0:
+    #     if not asset in datas:
+    #         return {"status": "1"}
+    #     else:
+    #         return {"status": "0", "error": "Delete Failed"}
+    # else:
+    #     return {"status": "1"}
 
 @router.get('/unregisterAsset/{channel}/{asset}')
 async def unreg_Asset(channel, asset):
@@ -2303,39 +2325,6 @@ async def unreg_Asset(channel, asset):
     else:
         return {"success":False}
 
-
-# @router.get('/registerAsset/{channel}/{assetName}/{assetType}')  # Different response format (Fail, Success, Not Exist)
-# async def reg_Asset(channel, assetName, assetType):
-#     async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#         response = await client.get(f"http://{os_spec.restip}:5000/api/registerAsset?name={assetName}")
-#         data = response.json()
-#         if isinstance(data, dict):
-#             status = data.get("Status")
-#         elif isinstance(data, list):
-#             status = 2
-#
-#     if status == 0:
-#         finflag = True
-#     else:
-#         finflag = False
-#
-#     if finflag:
-#         redis_state.client.execute_command("SELECT", 0)
-#         if redis_state.client.hexists("System", "setup"):
-#             datStr = redis_state.client.hget("System", "setup")
-#             setting = json.loads(datStr)
-#             for chInfo in setting["channel"]:
-#                 if channel == chInfo["channel"]:
-#                     chInfo["assetInfo"]["name"] = assetName
-#                     chInfo["assetInfo"]["type"] = assetType
-#                     break
-#             redis_state.client.hset("System", "setup", json.dumps(setting))
-#         return {"success": True}
-#     else:
-#         if status == 1:
-#             return {"success": False, "error": data["Messages"]}
-#         else:
-#             return {"success": False, "error": ['Asset is registered already']}
 
 @router.get('/registerAsset/{channel}/{assetName}/{assetType}')
 async def reg_Asset(channel, assetName, assetType):
