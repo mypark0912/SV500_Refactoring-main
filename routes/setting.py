@@ -2491,16 +2491,45 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
+
 def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]:
     result = {
+        "General": {"status": "no_change", "changed_fields": []},
         "Main": {"status": "disabled", "changed_fields": []},
         "Sub": {"status": "disabled", "changed_fields": []}
     }
 
+    # General 비교 - 모든 필드 체크
+    redis_general = redis_data.get("General", {})
+    post_general = post_data.get("General", {})
+
+    general_fields_to_compare = [
+        "va_type", "pf_sign", "unbalance",
+        "deviceInfo", "tcpip", "modbus",
+        "useFuction", "ftpInfo", "sntpInfo"
+    ]
+
+    general_changed_fields = []
+    for field in general_fields_to_compare:
+        redis_val = redis_general.get(field)
+        post_val = post_general.get(field)
+
+        # 딕셔너리인 경우 깊은 비교
+        if isinstance(redis_val, dict) and isinstance(post_val, dict):
+            if redis_val != post_val:
+                general_changed_fields.append(field)
+        elif redis_val != post_val:
+            general_changed_fields.append(field)
+
+    if general_changed_fields:
+        result["General"]["status"] = "config_changed"
+        result["General"]["changed_fields"] = general_changed_fields
+
+    # Channel 비교
     redis_channels = {ch["channel"]: ch for ch in redis_data.get("channel", [])}
     post_channels = {ch["channel"]: ch for ch in post_data.get("channel", [])}
 
-    fields_to_compare = [
+    channel_fields_to_compare = [
         "Enable", "PowerQuality", "ctInfo", "ptInfo", "assetInfo",
         "eventInfo", "sampling", "demand", "trendInfo", "alarm",
         "n_kva", "confStatus", "useDO", "useAI"
@@ -2513,10 +2542,17 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
         if post_ch.get("Enable") != 1:
             continue
 
-        changed_fields = [
-            field for field in fields_to_compare
-            if redis_ch.get(field) != post_ch.get(field)
-        ]
+        changed_fields = []
+        for field in channel_fields_to_compare:
+            redis_val = redis_ch.get(field)
+            post_val = post_ch.get(field)
+
+            # 딕셔너리/리스트인 경우 깊은 비교
+            if isinstance(redis_val, (dict, list)) and isinstance(post_val, (dict, list)):
+                if redis_val != post_val:
+                    changed_fields.append(field)
+            elif redis_val != post_val:
+                changed_fields.append(field)
 
         result[channel_name]["changed_fields"] = changed_fields
 
@@ -2598,7 +2634,7 @@ async def saveSetting2(request: Request):
         result = compare_channel_changes(prevData, data)
         restartAsset = False
         restartdevice = False
-        if result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
+        if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
             restartdevice = True
         elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
             restartAsset = True
