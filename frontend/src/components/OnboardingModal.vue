@@ -1759,24 +1759,12 @@ export default {
           // Load settings data
           await GetSettingData();
 
-          if (props.OpMode === "device0") {
-            currentStep.value = 4;
-          } else {
-            currentStep.value = 1;
-
-            // If validation passes and only has main test, load it immediately
-            // if (
-            //   validationResult.value.isValid &&
-            //   diagnosis_main.value &&
-            //   !diagnosis_sub.value &&
-            //   availableSteps.value.length === 3
-            // ) {
-            //   // Only settings, main, and complete steps
-            //   setTimeout(() => {
-            //     getCommision("main");
-            //   }, 100);
-            // }
-          }
+          currentStep.value = 1;
+          // if (props.OpMode === "device0") {
+          //   currentStep.value = 4;
+          // } else {
+          //   currentStep.value = 1;
+          // }
         }
       }
     );

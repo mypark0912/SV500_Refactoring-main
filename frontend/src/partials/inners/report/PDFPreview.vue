@@ -50,7 +50,11 @@
                     </div>
                     <div class="flex flex-col">
                     <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.type`) }}</span>
-                    <span class="text-xl font-bold text-gray-800">{{ channelComputed.toLowerCase() == 'main'? asset.assetType_main : asset.assetType_sub }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{assetTypeName }}</span>
+                    </div>
+                    <div v-if="!assetTypeName?.includes('Transformer')" class="flex flex-col">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t('diagnosis.info.drivetype') }}</span>
+                    <span class="text-xl font-bold text-gray-800">{{ driveType == 'DOL'? t('diagnosis.info.dr1') : t('diagnosis.info.dr2') }}</span>
                     </div>
                     <div v-if="devLocation != ''" class="flex flex-col">
                     <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ t(`diagnosis.info.location`) }}</span>
@@ -564,6 +568,7 @@ export default {
     const devLocation = computed(() => setupStore.getDevLocation);
     const channel = ref(props.channel);
     const mac = ref('');
+    const driveType = ref('');
     const assettypes = computed(()=> {
       const assetInfo = setupStore.getAssetConfig;
       if(channel.value == 'Main')
@@ -574,7 +579,9 @@ export default {
     const formattedDate = computed(() => {
       return dayjs().format('YYYY-MM-DD')
     })
-
+    const assetTypeName = computed(()=>{
+      return channelComputed.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub
+    })
     const iticDataList = ref([]);
     // useReportData에서 실제 데이터 로드 함수들 가져오기
     const { 
@@ -1710,7 +1717,7 @@ const overLoadPercentage = computed(() => {
             const infos = await loadInfoData(chName);
             datalist.value = infos.infoData;
             mac.value = infos.mac;
-            
+            driveType.value = infos.driveType;
         }else{
             console.log('There are no registered Asset.');
         }
@@ -2640,7 +2647,9 @@ async function processChartElement(pdf, element, name, options, yPosition) {
       assettypes,
       iticDataList,
       formattedDate,
-      mac
+      mac,
+      driveType,
+      assetTypeName,
     }
   }
 }

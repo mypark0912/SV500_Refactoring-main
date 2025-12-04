@@ -84,6 +84,7 @@ export function useReportData() {
               reportData.infoData = response.data.data;
               reportData.info = true;
               reportData.mac = response.data.mac;
+              reportData.driveType = response.data.driveType;
               return reportData;
             }else{
               console.log('No Data');

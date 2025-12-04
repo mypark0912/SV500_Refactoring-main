@@ -13,28 +13,37 @@
     </div>   
     <div class="flex flex-col gap-4 p-4 ml-2">
   <!-- 첫 번째 줄: 장비 정보 -->
-  <div class="flex gap-6 items-center">
-    <img :src="equipImageSrc" alt="장비 이미지"
-         class="w-14 h-14 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
-    
-    <div class="min-w-[120px] flex flex-col space-y-2">
-      <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
-        {{ channel == 'Main' ? AssetInfo.assetType_main : AssetInfo.assetType_sub }}
-      </span>
-      <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
-        {{ channel == 'Main' ? AssetInfo.assetNickname_main : AssetInfo.assetNickname_sub }}
-      </span>
-    </div>
-    
-    <div v-if="devLocation != ''" class="min-w-[120px] flex flex-col space-y-2">
-      <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
-        {{ t('report.cardTitle.installation') }}
-      </span>
-      <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
-        {{ devLocation }}
-      </span>
-    </div>
+  <div class="flex gap-6 items-start">  <!-- items-center -> items-start -->
+  <img :src="equipImageSrc" alt="장비 이미지"
+       class="w-14 h-14 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
+  
+  <div class="min-w-[120px] flex flex-col space-y-2">
+    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
+      {{ assetType }}
+    </span>
+    <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
+      {{ assetNickname }}
+    </span>
   </div>
+  
+  <div v-if="!assetType?.includes('Transformer')" class="min-w-[120px] flex flex-col space-y-2">  <!-- space-y-2 추가 -->
+    <span class="text-xs font-bold text-gray-500 dark:text-white uppercase">
+      {{ t('diagnosis.info.drivetype') }}
+    </span>
+    <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
+      {{ drType == 'DOL'? t('diagnosis.info.dr1') : t('diagnosis.info.dr2') }}
+    </span>
+  </div>
+  
+  <div v-if="devLocation != ''" class="min-w-[120px] flex flex-col space-y-2">
+    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
+      {{ t('report.cardTitle.installation') }}
+    </span>
+    <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
+      {{ devLocation }}
+    </span>
+  </div>
+</div>
 
   <!-- 두 번째 줄: 측정 데이터들 -->
   <div class="flex gap-6 overflow-x-auto">
@@ -85,6 +94,13 @@ export default {
     const setupStore = useSetupStore();
     const route = useRoute()
     const rawdata = ref([]);
+    const drType = ref('');
+    const assetType = computed(()=>{
+      return channel.value == 'Main'? AssetInfo.value.assetType_main : AssetInfo.value.assetType_sub
+    })
+    const assetNickname = computed(()=>{
+      return channel.value == 'Main'? AssetInfo.value.assetNickname_main : AssetInfo.value.assetNickname_sub;
+    })
     //const { loadInfoData } = useReportData()
 
     const AssetInfo = computed(()=>{
@@ -133,6 +149,7 @@ export default {
             const response = await axios.get(`/api/getAsset/${chName}`);
             if (response.data.success) {
               rawdata.value = response.data.data;
+              drType.value = response.data.driveType;
             }else{
               console.log('No Data');
             }
@@ -162,6 +179,9 @@ export default {
       equipImageSrc,
       fetchAsset,
       devLocation,
+      drType,
+      assetType,
+      assetNickname,
     }
   }
 }
