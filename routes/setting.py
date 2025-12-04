@@ -3557,3 +3557,21 @@ async def update_smartsystem(mode, request:Request):
             return {"success": False, "message": "Install timeout"}
 
 
+@router.post("/setDefaultIP")
+async def set_defaultIP(request:Request):
+    try:
+        data = await request.json()
+        default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+
+        with open(default_file_path, "r", encoding="utf-8") as f:
+            defaults = json.load(f)
+
+        defaults["General"]["tcpip"] = data["ip"]
+
+        with open(default_file_path, "w", encoding="utf-8") as f:
+            json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상
+
+        saveLog("Default IP Change : " + data["ip"], request)
+        return {"success": True}
+    except Exception as e:
+        return {"success" : False}

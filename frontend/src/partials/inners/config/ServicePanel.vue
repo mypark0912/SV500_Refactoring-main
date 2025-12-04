@@ -127,6 +127,32 @@
         </svg>
         Factory Default
       </button>
+      <button
+            class="btn h-9 px-5 bg-sky-900 text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white flex items-center"
+            @click.stop="feedbackModalOpen = true"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10,9 9,9 8,9" />
+            </svg>
+            &nbsp; Set Default IP
+            <!--Import-->
+          </button>
     </div>
           </div>
           <div v-if="message"
@@ -292,6 +318,58 @@
           :message="serviceLoadingMessage"
         />
     </div>
+    <ModalBasic
+      id="feedback-modal"
+      :modalOpen="feedbackModalOpen"
+      @close-modal="feedbackModalOpen = false"
+      title="IP Address Configuration"
+    >
+      <!-- Modal content -->
+      <div class="px-5 py-4">
+        <div class="text-sm">
+          <div class="font-medium text-gray-800 dark:text-gray-100 mb-3">
+            Enter IP Address
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="ipaddress"
+              >IP Address <span class="text-red-500">*</span></label
+            >
+            <input
+              id="ipaddress"
+              class="form-input w-full px-2 py-1"
+              v-model="ipAddress"
+              type="text"
+              placeholder="192.168.1.1"
+              required
+            />
+          </div>
+        </div>
+        <div class="text-sm">
+          <div class="font-medium text-gray-800 dark:text-gray-100 mb-3">
+            {{ message }}🙌
+          </div>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
+        <div class="flex flex-wrap justify-end space-x-2">
+          <button
+            class="btn-sm bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+            @click.prevent="saveIPAddress"
+          >
+            Save
+          </button>
+          <button
+            class="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-white"
+            @click.stop="feedbackModalOpen = false"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </ModalBasic>
   </template>
   
   <script>
@@ -300,6 +378,7 @@
   import ServiceDetail from './ServiceDetail.vue';
     import ServiceStatus from './ServiceStatus.vue';
     import LoadingModal from "../../../components/LoadingModal.vue";
+    import ModalBasic from "../../../pages/common/ModalBasic.vue";
   import { useRoute } from 'vue-router'
   import { onMounted, ref , watch, provide, computed} from 'vue'
   import { useSetupStore } from '@/store/setup'
@@ -314,6 +393,7 @@
         LoadingModal,
         ServiceDetail,
         ServiceCard2,
+        ModalBasic,
     },
     setup(){
       const setupStore = useSetupStore();
@@ -330,6 +410,8 @@
       const errorSmart = ref([]);
       const versionDict = ref({});
       const updateInflux = ref(false);
+      const feedbackModalOpen = ref(false);
+      const ipAddress = ref('');
       const showMessage = async(text) => {
         message.value = text
         await SysCheck();
@@ -574,6 +656,29 @@
         return `http://${hostname}:4000/setting/backup/download/${modalSelectItem.value}`        
     })
 
+    const saveIPAddress = async() =>{
+      try {
+        const data = { "ip" : ipAddress.value};
+        const resp = await axios.post(
+          "/setting/setDefaultIP",
+          data,
+          {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          }
+        );
+        feedbackModalOpen.value = false;
+          if(resp.data.success){
+
+            alert('Default IP Address Changed : ' + ipAddress.value);
+          }else{
+            alert('Failed to default IP Address Change');
+          }
+        } catch (error) {
+          console.error("Influx CLI init failed:", error);
+        }
+    }
+
 
       return {
         message,
@@ -599,6 +704,9 @@
         versionDict,
         updateInflux,
         updateInfluxBucket,
+        feedbackModalOpen,
+        ipAddress,
+        saveIPAddress,
       }
 
     }
