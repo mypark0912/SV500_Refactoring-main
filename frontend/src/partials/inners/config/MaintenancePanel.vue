@@ -383,10 +383,58 @@
               />
             </div>
 
-            <!-- Pagination -->
-            <div v-if="totalPages > 1" class="mt-6">
-              <!-- 페이지네이션 코드는 동일 -->
-            </div>
+<!-- Pagination -->
+<div v-if="totalPages > 1" class="mt-6">
+  <div class="flex justify-center">
+    <nav class="flex items-center space-x-1" role="navigation" aria-label="Pagination">
+      <!-- Previous Button -->
+      <button
+        @click="goToPage(currentPage - 1)"
+        :disabled="currentPage === 1"
+        class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+        :class="currentPage === 1 
+          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' 
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      <!-- Page Numbers -->
+      <button
+        v-for="page in visiblePages"
+        :key="page"
+        @click="goToPage(page)"
+        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        :class="page === currentPage 
+          ? 'bg-violet-500 text-white' 
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+      >
+        {{ page }}
+      </button>
+
+      <!-- Next Button -->
+      <button
+        @click="goToPage(currentPage + 1)"
+        :disabled="currentPage === totalPages"
+        class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+        :class="currentPage === totalPages 
+          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' 
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </nav>
+  </div>
+  
+  <!-- Page Info -->
+  <div class="text-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+    {{ currentPage }} / {{ totalPages }}  ( {{ contents.length }})
+  </div>
+</div>
           </div>
         </div>
       </section>
