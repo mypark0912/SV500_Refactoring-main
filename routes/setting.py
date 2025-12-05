@@ -1290,6 +1290,7 @@ def get_setting():
 
     setup_dict = {
         "mode": setting.get("mode", ""),
+        "lang": setting.get("lang",""),
         "General": setting.get("General", {}),
         "main": {},
         "sub": {}

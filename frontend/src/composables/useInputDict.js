@@ -4,6 +4,7 @@ import { ref, computed, reactive } from 'vue';
 export function useInputDict() {
   const setupDict = ref({
     "mode":'',
+    "lang":'',
     "General":{},
     "main":{},
     "sub":{}

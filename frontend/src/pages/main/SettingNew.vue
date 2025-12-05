@@ -1079,6 +1079,7 @@
   
           if (response.data.passOK == 1) {
             setupDict.value = response.data.data;
+            //console.log('GetSettingData', setupDict.value);
             Object.assign(inputDict.value, setupDict.value["General"]);
             Object.assign(channel_main.value, setupDict.value["main"]);
             Object.assign(channel_sub.value, setupDict.value["sub"]);
@@ -1179,6 +1180,7 @@
 
   return {
     mode: setupDict.value.mode,
+    lang: setupDict.value.lang,
     General: generalData,
     channel: [mainData, subData]  // 항상 둘 다 포함
   };
@@ -1559,7 +1561,7 @@
   
       // 5. 데이터 포맷 변환
       const formattedData = transFormat();
-  
+      //console.log(formattedData);
       // 6. 서버로 전송
       const response = await axios.post("/setting/savefileNew", formattedData, {
         headers: { "Content-Type": "application/json;charset=utf-8" },
@@ -1569,7 +1571,7 @@
       if (response.data && response.data.status === "1") {
         if (errorMessages.length === 0) {
           const ret  = response.data;
-          console.log(ret);
+          //console.log(ret);
           if(ret.restartDevice){
             //console.log('checkNameplateResult.value:',checkNameplateResult.value);
             if(checkNameplateResult.value){
