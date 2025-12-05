@@ -3454,16 +3454,30 @@ async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
 
     wm = pyinotify.WatchManager()
 
+    # class Handler(pyinotify.ProcessEvent):
+    #     def process_IN_CLOSE_WRITE(self, event_data):
+    #         print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
+    #         if event_data.pathname.endswith('.json'):
+    #             for path in watch_paths:
+    #                 if event_data.path == path:
+    #                     result[path] = event_data.pathname
+    #                     paths_completed.add(path)
+    #                     if len(paths_completed) == len(watch_paths):
+    #                         event.set()
+
     class Handler(pyinotify.ProcessEvent):
         def process_IN_CLOSE_WRITE(self, event_data):
             print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
             if event_data.pathname.endswith('.json'):
+                # 어느 감시 경로에서 생성됐는지 찾기
                 for path in watch_paths:
-                    if event_data.path == path:
+                    if event_data.pathname.startswith(path):  # 경로 포함 여부로 체크
                         result[path] = event_data.pathname
                         paths_completed.add(path)
+                        print(f"[DEBUG] 매칭 성공! ({len(paths_completed)}/{len(watch_paths)})")
                         if len(paths_completed) == len(watch_paths):
                             event.set()
+                        break
 
     notifier = pyinotify.ThreadedNotifier(wm, Handler())
 
