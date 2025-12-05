@@ -2902,13 +2902,13 @@ async def check_assetconfig(asset: str, request: Request):
 
         # ✅ 응답 체크
         if 'resetRequired' in result:
-            return {"success": True, "result": result['resetRequired']}
+            return {"status": "1", "success": True, "result": result['resetRequired']}
         else:
-            return {"success": False, "error": "resetRequired field not found in response"}
+            return {"status": "1","success": False, "error": "resetRequired field not found in response"}
 
     except Exception as e:
         logging.error(str(e))
-        return {"success": False, "error": str(e)}
+        return {"status": "0","success": False, "error": str(e)}
 
 # @router.post("/checkAssetConfig/{asset}")
 # async def check_assetconfig(asset:str, request:Request):
@@ -3567,7 +3567,7 @@ async def set_defaultIP(request:Request):
         with open(default_file_path, "r", encoding="utf-8") as f:
             defaults = json.load(f)
 
-        defaults["General"]["tcpip"] = data["ip"]
+        defaults["General"]["tcpip"]["ip_address"] = data["ip"]
 
         with open(default_file_path, "w", encoding="utf-8") as f:
             json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상

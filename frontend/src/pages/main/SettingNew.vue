@@ -1335,6 +1335,7 @@
             combinedData,
             channelData.assetName
           );
+          console.log(checkNameplateResult.value)
           // const nameplateFlag = await checkNameplateConfig(
           //   combinedData,
           //   channelData.assetName
@@ -1660,8 +1661,11 @@
             }
           );
   
-          if (response.data.success) {
-            return response.data.result;
+          if (response.data.status == 1) {
+            if(response.data.success)
+              return response.data.result;
+            else
+              return false;
           } else {
             console.log("Server did not respond properly");
             return false;
