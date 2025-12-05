@@ -3503,7 +3503,7 @@ async def trigger_waveform(
         cmd: int = CmdType.CMD_CAPTURE,
         item: int = ItemType.ITEM_WAVEFORM,
         target: int = 2,
-        timeout: int = 60
+        timeout: int = 90
 ):
     """웨이브폼 트리거 및 파일 생성 대기"""
     try:
