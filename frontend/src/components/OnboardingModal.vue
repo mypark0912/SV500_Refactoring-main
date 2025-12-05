@@ -1397,6 +1397,7 @@ export default {
       const assetName = isMain
         ? setupDict.value["main"]["assetInfo"]["name"]
         : setupDict.value["sub"]["assetInfo"]["name"];
+
       const showChartRef = isMain ? showMainDiagChart : showSubDiagChart;
       
       try {
@@ -1453,8 +1454,8 @@ export default {
           isMain ? setupDict.value.main : setupDict.value.sub
         );
         //console.log(`Loading ${channel} test data for asset: ${assetName}`);
-
-        const response = await axios.get(`/setting/test/${assetName}`);
+        const chName = isMain? "Main":"Sub";
+        const response = await axios.get(`/setting/test/${chName}/${assetName}`);
 
         if (response.data.success) {
           testDataRef.value = response.data.data;
@@ -1472,6 +1473,9 @@ export default {
           testLoadedRef.value = true; // ✅ 로딩 완료
 
           // Check if waveform data exists
+          if (errCount >0 || warnCount >0){
+            restartMessage.value = "Failed Commisioning"
+          }
         }
       } catch (e) {
         console.error(`Error loading ${channel} test:`, e);

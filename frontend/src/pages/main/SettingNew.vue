@@ -1575,13 +1575,14 @@
           //console.log(ret);
           if(ret.restartDevice){
             //console.log('checkNameplateResult.value:',checkNameplateResult.value);
-            if(checkNameplateResult.value){
+            if(checkNameplateResult.value || ret.restartAsset){
               applyMode.value = 2;  //restart & commisioning
             }else{
               applyMode.value = 1; //restart
             }
           }else{
-            applyMode.value = 0; //commisioning
+            if(checkNameplateResult.value || ret.restartAsset)
+              applyMode.value = 0; //commisioning
           }
           console.log('ApplyMode', applyMode.value);
           alert("✅ All settings have been saved successfully!");

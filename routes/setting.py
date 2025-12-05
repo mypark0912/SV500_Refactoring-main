@@ -2306,6 +2306,7 @@ async def unreg_Asset(channel, asset):
     #     response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
     #     data = response.json()
     data = await reset_smart(asset, 0)
+    remove_applyStatus(channel, asset)
     if isinstance(data, list) and len(data) > 0:
         finflag = True
     else:
@@ -2347,11 +2348,49 @@ async def reg_Asset(channel, assetName, assetType):
                 finflag = True
                 break
         redis_state.client.hset("System","setup", json.dumps(setting))
+
+        set_applyStatus(channel, assetName)
     if finflag:
         return {"success":True}
     else:
         return {"success":False}
 
+
+def set_applyStatus(channel, assetName):
+    if redis_state.client.hexists("Equipment","applyStatus"):
+        applyst = redis_state.client.hget("Equipment","applyStatus")
+        equipStatus = json.loads(applyst)
+    else:
+        equipStatus = {
+            "restartFW": False,
+            "commisionAsset": {
+                "Main": {
+                    "Name": '',
+                    "result": False,
+                },
+                "Sub": {
+                    "Name": '',
+                    "result": False,
+                }
+            }
+        }
+    if equipStatus["commisionAsset"][channel]["Name"] == '':
+        equipStatus["commisionAsset"][channel]["Name"] = assetName
+        equipStatus["commisionAsset"][channel]["result"] = False
+    elif equipStatus["commisionAsset"][channel]["Name"] == assetName:
+        equipStatus["commisionAsset"][channel]["result"] = False
+    redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
+
+def remove_applyStatus(channel, assetName):
+    if redis_state.client.hexists("Equipment","applyStatus"):
+        applyst = redis_state.client.hget("Equipment","applyStatus")
+        equipStatus = json.loads(applyst)
+
+        if equipStatus["commisionAsset"][channel]["Name"] == assetName:
+            equipStatus["commisionAsset"][channel]["Name"] = ''
+            equipStatus["commisionAsset"][channel]["result"] = False
+
+        redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
 
 def save_alarm_configs_to_redis(setting_dict: dict):
     dash_alarms_data = {}
@@ -2492,6 +2531,11 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
+
+def check_ApplyStatus():
+    applyStatus = redis_state.client.hget("Equipment","applyStatus")
+    equipStatus = json.loads(applyStatus)
+    return equipStatus
 
 def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]:
     result = {
@@ -2639,6 +2683,18 @@ async def saveSetting2(request: Request):
             restartdevice = True
         elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
             restartAsset = True
+
+        checkResult = check_ApplyStatus()
+
+        if not restartAsset:
+            if checkResult["commisionAsset"]["Main"]["Name"] != '' and not checkResult["commisionAsset"]["Main"]["result"]:
+                restartAsset = True
+            if checkResult["commisionAsset"]["Sub"]["Name"] != '' and not checkResult["commisionAsset"]["Sub"]["result"]:
+                restartAsset = True
+
+        if not restartdevice:
+            if not checkResult["restartFW"]:
+                restartdevice = True
 
         redis_state.client.hset("System", "setup", json.dumps(data))
         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
@@ -2790,6 +2846,14 @@ async def restartdevice(timeout: int = 30):
         if int(checkflag) == 1:
             return {"success": False, "error": "Modbus setting is activated"}
 
+    if redis_state.client.hexists("Equipment", "applyStatus"):
+        applyst = redis_state.client.hget("Equipment", "applyStatus")
+        applycontext = json.loads(applyst)
+        applycontext["restartFW"] = True
+        redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
+    else:
+        applycontext = { "restartFW":True, "commisionAsset":{}}
+        redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
     try:
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
@@ -3020,8 +3084,8 @@ async def set_assetParams(asset:str, request:Request):
     else:
         return {"status":"1", "success": False, "error": ["Save failed in setParameters API"]}
 
-@router.get("/test/{asset}")
-async def test_asset(asset):
+@router.get("/test/{channel}/{asset}")
+async def test_asset(channel, asset):
     test_timeout = httpx.Timeout(
         connect=2.0,  # 연결에는 5초
         read=60.0,  # 응답 읽기는 2초
@@ -3040,6 +3104,17 @@ async def test_asset(asset):
         result["Channel"] = data["Channel"]
         result["Commissions"] = data["Commissions"]
 
+        if redis_state.client.hexists("Equipment","applyStatus"):
+            applyst = redis_state.client.hget("Equipment","applyStatus")
+            applycontext = json.loads(applyst)
+            if applycontext["commisionAsset"][channel]["Name"] == asset:
+                if len(result["Commissions"]) > 0:
+                    applycontext["commisionAsset"][channel]["result"] = False
+                else:
+                    applycontext["commisionAsset"][channel]["result"] = True
+
+            redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
+
         if len(data) > 0:
             return {"success": True, "data": result}
         else:
@@ -3049,7 +3124,7 @@ async def test_asset(asset):
         return {"success": False, "error": "No Data"}
 
 @router.get("/testwave/{asset}")
-async def test_asset(asset, request:Request):
+async def test_wave(asset, request:Request):
     try:
         # HTTP 클라이언트 상태 확인
         # if http_state.error:
