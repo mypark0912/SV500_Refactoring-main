@@ -2355,25 +2355,28 @@ async def reg_Asset(channel, assetName, assetType):
     else:
         return {"success":False}
 
+def make_applyStatus():
+    equipStatus = {
+        "restartFW": False,
+        "commisionAsset": {
+            "Main": {
+                "Name": '',
+                "result": False,
+            },
+            "Sub": {
+                "Name": '',
+                "result": False,
+            }
+        }
+    }
+    return equipStatus
 
 def set_applyStatus(channel, assetName):
     if redis_state.client.hexists("Equipment","applyStatus"):
         applyst = redis_state.client.hget("Equipment","applyStatus")
         equipStatus = json.loads(applyst)
     else:
-        equipStatus = {
-            "restartFW": False,
-            "commisionAsset": {
-                "Main": {
-                    "Name": '',
-                    "result": False,
-                },
-                "Sub": {
-                    "Name": '',
-                    "result": False,
-                }
-            }
-        }
+        equipStatus = make_applyStatus()
     if equipStatus["commisionAsset"][channel]["Name"] == '':
         equipStatus["commisionAsset"][channel]["Name"] = assetName
         equipStatus["commisionAsset"][channel]["result"] = False
@@ -2533,8 +2536,11 @@ async def saveSetting(channel: str, request: Request):
 
 
 def check_ApplyStatus():
-    applyStatus = redis_state.client.hget("Equipment","applyStatus")
-    equipStatus = json.loads(applyStatus)
+    if redis_state.client.hexists("Equipment","applyStatus"):
+        applyStatus = redis_state.client.hget("Equipment", "applyStatus")
+        equipStatus = json.loads(applyStatus)
+    else:
+        equipStatus = make_applyStatus()
     return equipStatus
 
 def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]:
@@ -2687,10 +2693,13 @@ async def saveSetting2(request: Request):
         checkResult = check_ApplyStatus()
 
         if not restartAsset:
-            if checkResult["commisionAsset"]["Main"]["Name"] != '' and not checkResult["commisionAsset"]["Main"]["result"]:
-                restartAsset = True
-            if checkResult["commisionAsset"]["Sub"]["Name"] != '' and not checkResult["commisionAsset"]["Sub"]["result"]:
-                restartAsset = True
+            commision_asset = checkResult.get("commisionAsset", {})
+
+            for channel in ["Main", "Sub"]:
+                channel_data = commision_asset.get(channel, {})
+                if channel_data.get("Name") and not channel_data.get("result", False):
+                    restartAsset = True
+                    break  # 하나라도 해당되면 바로 종료
 
         if not restartdevice:
             if not checkResult["restartFW"]:
