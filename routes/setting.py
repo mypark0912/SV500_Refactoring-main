@@ -3482,7 +3482,6 @@ async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
     finally:
         notifier.stop()
 
-
 @router.get("/trigger")
 async def trigger_waveform(
         request: Request,
@@ -3499,7 +3498,19 @@ async def trigger_waveform(
         else:
             watch_paths = [WAVEFORM_PATHS[target]]
 
-        # 2. 감시 시작 (notifier)
+        # 2. 기존 파일 삭제
+        for path in watch_paths:
+            if os.path.exists(path):
+                for filename in os.listdir(path):
+                    file_path = os.path.join(path, filename)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                            print(f"[DEBUG] 기존 파일 삭제: {file_path}")
+                    except Exception as e:
+                        print(f"[WARNING] 파일 삭제 실패 {file_path}: {e}")
+
+        # 3. 감시 시작 (notifier)
         result = {path: None for path in watch_paths}
         paths_completed = set()
         event = threading.Event()
@@ -3523,7 +3534,7 @@ async def trigger_waveform(
         notifier.start()
 
         try:
-            # 3. 트리거 전송 (감시 시작 후!)
+            # 4. 트리거 전송 (감시 시작 후!)
             if target in [0, 2]:
                 await push_command_left(Command(type=0, cmd=cmd, item=item), request)
             if target in [1, 2]:
@@ -3531,7 +3542,7 @@ async def trigger_waveform(
 
             print(f"[DEBUG] 트리거 전송 완료 (target={target}), 파일 대기 중...")
 
-            # 4. 파일 생성 대기
+            # 5. 파일 생성 대기
             for _ in range(timeout * 10):
                 if event.is_set():
                     return {"success": True, "files": result}
@@ -3544,6 +3555,68 @@ async def trigger_waveform(
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+# @router.get("/trigger")
+# async def trigger_waveform(
+#         request: Request,
+#         cmd: int = CmdType.CMD_CAPTURE,
+#         item: int = ItemType.ITEM_WAVEFORM,
+#         target: int = 2,  # 0: Main, 1: Sub, 2: Both
+#         timeout: int = 60
+# ):
+#     """웨이브폼 트리거 및 파일 생성 대기"""
+#     try:
+#         # 1. 감시 경로 결정
+#         if target == 2:
+#             watch_paths = [WAVEFORM_PATHS[0], WAVEFORM_PATHS[1]]
+#         else:
+#             watch_paths = [WAVEFORM_PATHS[target]]
+#
+#         # 2. 감시 시작 (notifier)
+#         result = {path: None for path in watch_paths}
+#         paths_completed = set()
+#         event = threading.Event()
+#         wm = pyinotify.WatchManager()
+#
+#         class Handler(pyinotify.ProcessEvent):
+#             def process_IN_CLOSE_WRITE(self, event_data):
+#                 print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
+#                 if event_data.pathname.endswith('.json'):
+#                     for path in watch_paths:
+#                         if event_data.path == path:
+#                             result[path] = event_data.pathname
+#                             paths_completed.add(path)
+#                             if len(paths_completed) == len(watch_paths):
+#                                 event.set()
+#
+#         notifier = pyinotify.ThreadedNotifier(wm, Handler())
+#         for path in watch_paths:
+#             wm.add_watch(path, pyinotify.IN_CLOSE_WRITE)
+#
+#         notifier.start()
+#
+#         try:
+#             # 3. 트리거 전송 (감시 시작 후!)
+#             if target in [0, 2]:
+#                 await push_command_left(Command(type=0, cmd=cmd, item=item), request)
+#             if target in [1, 2]:
+#                 await push_command_left(Command(type=1, cmd=cmd, item=item), request)
+#
+#             print(f"[DEBUG] 트리거 전송 완료 (target={target}), 파일 대기 중...")
+#
+#             # 4. 파일 생성 대기
+#             for _ in range(timeout * 10):
+#                 if event.is_set():
+#                     return {"success": True, "files": result}
+#                 await asyncio.sleep(0.1)
+#
+#             return {"success": False, "message": f"타임아웃 ({timeout}초)", "files": result}
+#
+#         finally:
+#             notifier.stop()
+#
+#     except Exception as e:
+#         return {"success": False, "message": str(e)}
 
 @router.get('/getMode')
 def get_sysMode():
