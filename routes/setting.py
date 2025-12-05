@@ -3496,12 +3496,13 @@ async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
     finally:
         notifier.stop()
 
+
 @router.get("/trigger")
 async def trigger_waveform(
         request: Request,
         cmd: int = CmdType.CMD_CAPTURE,
         item: int = ItemType.ITEM_WAVEFORM,
-        target: int = 2,  # 0: Main, 1: Sub, 2: Both
+        target: int = 2,
         timeout: int = 60
 ):
     """웨이브폼 트리거 및 파일 생성 대기"""
@@ -3524,31 +3525,47 @@ async def trigger_waveform(
                     except Exception as e:
                         print(f"[WARNING] 파일 삭제 실패 {file_path}: {e}")
 
-        # 3. 감시 시작 (notifier)
+        # 3. 감시 상태 초기화
         result = {path: None for path in watch_paths}
-        paths_completed = set()
+        paths_created = {}  # 생성 감지된 파일들
+        paths_completed = set()  # 완료 감지된 경로들
         event = threading.Event()
         wm = pyinotify.WatchManager()
 
         class Handler(pyinotify.ProcessEvent):
-            def process_IN_CLOSE_WRITE(self, event_data):
-                print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
+            def process_IN_CREATE(self, event_data):
+                """파일 생성 시작 감지"""
                 if event_data.pathname.endswith('.json'):
+                    print(f"[DEBUG] 파일 생성 시작: {event_data.pathname}")
                     for path in watch_paths:
-                        if event_data.path == path:
+                        if event_data.pathname.startswith(path):
+                            paths_created[path] = event_data.pathname
+                            print(f"[DEBUG] 생성 감지 ({len(paths_created)}/{len(watch_paths)})")
+                            break
+
+            def process_IN_CLOSE_WRITE(self, event_data):
+                """파일 쓰기 완료 감지"""
+                if event_data.pathname.endswith('.json'):
+                    print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
+                    for path in watch_paths:
+                        if event_data.pathname.startswith(path):
                             result[path] = event_data.pathname
                             paths_completed.add(path)
+                            print(f"[DEBUG] 완료 감지 ({len(paths_completed)}/{len(watch_paths)})")
+
                             if len(paths_completed) == len(watch_paths):
+                                print(f"[DEBUG] 모든 파일 완료!")
                                 event.set()
+                            break
 
         notifier = pyinotify.ThreadedNotifier(wm, Handler())
         for path in watch_paths:
-            wm.add_watch(path, pyinotify.IN_CLOSE_WRITE)
+            wm.add_watch(path, pyinotify.IN_CREATE | pyinotify.IN_CLOSE_WRITE)
 
         notifier.start()
 
         try:
-            # 4. 트리거 전송 (감시 시작 후!)
+            # 4. 트리거 전송
             if target in [0, 2]:
                 await push_command_left(Command(type=0, cmd=cmd, item=item), request)
             if target in [1, 2]:
@@ -3556,13 +3573,33 @@ async def trigger_waveform(
 
             print(f"[DEBUG] 트리거 전송 완료 (target={target}), 파일 대기 중...")
 
-            # 5. 파일 생성 대기
+            # 5. 파일 생성 완료 대기
             for _ in range(timeout * 10):
                 if event.is_set():
-                    return {"success": True, "files": result}
+                    return {
+                        "success": True,
+                        "message": "정상 완료",
+                        "files": result
+                    }
                 await asyncio.sleep(0.1)
 
-            return {"success": False, "message": f"타임아웃 ({timeout}초)", "files": result}
+            # 6. 타임아웃 - 생성은 감지했는지 확인
+            if len(paths_created) > 0:
+                # 생성은 감지했는데 완료를 못 감지 = 다른 프로세스가 가져감
+                print(f"[WARNING] 생성 감지했으나 완료 미감지 - 다른 프로세스가 파일 처리한 것으로 추정")
+                return {
+                    "success": True,
+                    "message": "파일 생성 감지 (다른 프로세스가 처리)",
+                    "files": paths_created,
+                    "assumed_taken": True
+                }
+            else:
+                # 생성조차 감지 못함 = 진짜 타임아웃
+                return {
+                    "success": False,
+                    "message": f"타임아웃 ({timeout}초) - 파일 생성 감지 실패",
+                    "files": result
+                }
 
         finally:
             notifier.stop()
