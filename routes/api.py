@@ -1259,7 +1259,7 @@ def get_running(channel):
 
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
-async def get_asset(assettype, asset, request: Request):
+async def get_realtime(assettype, asset, request: Request):
     # response = await  http_state.client.get(f"/getRealTimeData?name={asset}")
     # data = response.json()
     async with httpx.AsyncClient(timeout=api_timeout) as client:
@@ -1302,7 +1302,7 @@ async def get_asset(assettype, asset, request: Request):
 
 @router.get("/getRealTimeSingle/{channel}/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
-async def get_asset(channel,assettype, asset):
+async def get_realtimesingle(channel,assettype, asset):
 
     async with httpx.AsyncClient(timeout=api_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
@@ -1338,7 +1338,7 @@ async def get_asset(channel,assettype, asset):
 
 
 @router.get("/getAsset/{asset}")  # Diagnosis, Report Vue : get Asset info
-async def get_asset(asset, request: Request):
+async def get_asset(asset):
     # response = await  http_state.client.get(f"/getNameplate?name={asset}")
     # data = response.json()
     async with httpx.AsyncClient(timeout=api_timeout) as client:

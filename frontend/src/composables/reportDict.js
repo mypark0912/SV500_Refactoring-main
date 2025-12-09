@@ -94,6 +94,22 @@ export function useReportData() {
         }
     };
 
+    const saveReportData = async (chName, chType, location) => {
+      try {
+          const data={
+            "assetName":chName,
+            "assetType":chType,
+            "location":location
+          }
+          const response = await axios.post(`/report/generate`,  data, {
+            headers: { "Content-Type": "application/json" },
+          });
+          console.log(response.data);
+      }catch (error) {
+          console.log("데이터 가져오기 실패:", error);
+      }
+  };
+
  const formatToISOString = (dateStr, endOfDay) => {
     const date = new Date(dateStr)
     if (endOfDay) {
@@ -714,5 +730,6 @@ const makeKey = (param, phase) => {
     parseMask,
     getfinValue,
     makeKey,
+    saveReportData,
   }
 }

@@ -596,7 +596,8 @@ export default {
       baseChart,
       makeKey,
       parseMask,
-      getfinValue 
+      getfinValue,
+      saveReportData, 
     } = useReportData()
 
     // Power Quality Trends Variables
@@ -1713,8 +1714,10 @@ const overLoadPercentage = computed(() => {
         if(!asset.value)
           await setupStore.checkSetting(); 
         const chName = channelComputed.value.toLowerCase() == 'main'? asset.value.assetName_main : asset.value.assetName_sub;
+        const chType = channelComputed.value.toLowerCase() == 'main'? asset.value.assetType_main : asset.value.assetType_sub;
         if(chName != ''){
             const infos = await loadInfoData(chName);
+            //const re = await saveReportData(chName, chType,devLocation.value);  //auto report save - sample
             datalist.value = infos.infoData;
             mac.value = infos.mac;
             driveType.value = infos.driveType;

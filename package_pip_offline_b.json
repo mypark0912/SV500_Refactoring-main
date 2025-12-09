@@ -24,9 +24,6 @@
     "psutil==7.0.0",
     "ujson==5.7.0",
     "httptools==0.5.0",
-    "pyinotify==0.9.6",
-    "python-docx==1.2.0",
-    "matplotlib==3.10.7",
-    "numpy==2.3.5"
+    "pyinotify==0.9.6"
   ]
 }
