@@ -47,6 +47,7 @@
                 <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
                   <!-- 콤보박스 -->
                   <div class="mt-2 mb-4 flex items-center gap-x-2">
+                    <span>DriveType : {{ driveType }}</span>
                     <label class="sr-only" :for="tab.name + '-select'">
                       Select Option
                     </label>
@@ -165,6 +166,7 @@ export default {
     const linechartData2 = ref({});
     const waveUpdate = ref(false);
     const waveInterval = ref(null);  // Waveform용 interval 추가
+    let timeout_harmonics = 5;
     const channelComputed = computed(
       () => props.channel || route.params.channel || "Default"
     );
@@ -185,6 +187,14 @@ export default {
           return "";
         }
       }
+    })
+
+    const driveType = computed(()=>{
+      console.log(channelComputed.value);
+      if (channelComputed.value == 'Main' || channelComputed.value == 'main')
+        return setupStore.getAssetConfig.assetdriveType_main;
+      else
+        return setupStore.getAssetConfig.assetdriveType_sub;
     })
 
     const scaledDataV = (waveform) => {
@@ -455,6 +465,19 @@ export default {
       }
     };
 
+    const fetchInterval = async () => {
+      //console.log('FetchInterval')
+      try {
+        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}`);
+        if (response.data.success) {
+          timeout_harmonics = parseInt(response.data.data);
+          console.log(channelComputed.value,'-', timeout_harmonics);
+        }
+      } catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+      }
+    };
+
     // 상태 관리를 위한 ref들
     const dataInterval = ref(null);
     const isComponentActive = ref(false);
@@ -472,14 +495,16 @@ export default {
     };
 
     // interval 시작 함수
-    const startInterval = () => {
+    const startInterval = async() => {
       // 기존 interval이 있다면 먼저 정리
+      if(driveType.value == 'VFD')
+        await fetchInterval();
       stopInterval();
-      
+      console.log('harmonics -', timeout_harmonics);
       if (activeTab.value === 'Harmonics' && isComponentActive.value) {
         //console.log("Harmonics 탭 활성화 - interval 시작");
         refreshData(); // 초기 데이터 로드
-        dataInterval.value = setInterval(refreshData, 5000);
+        dataInterval.value = setInterval(refreshData, timeout_harmonics*1000);
         //console.log("Interval 시작됨:", dataInterval.value);
       }
     };
@@ -490,6 +515,7 @@ export default {
         //console.log("Clearing interval:", dataInterval.value);
         clearInterval(dataInterval.value);
         dataInterval.value = null;
+        timeout_harmonics = 5;
         //console.log("Interval 정리됨");
       }
     };
@@ -785,6 +811,7 @@ export default {
       startWaveInterval,  // 추가
       stopWaveInterval,  // 추가
       stopAllIntervals,  // 추가
+      driveType,
     };
   },
 };

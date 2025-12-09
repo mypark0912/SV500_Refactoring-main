@@ -163,7 +163,7 @@ export default {
     const fetchInterval = async (ch) => {
       //console.log('FetchInterval')
       try {
-        const response = await axios.get(`/api/getInteverval/${ch}`);
+        const response = await axios.get(`/api/getInteverval/demand/${ch}`);
         if (response.data.success) {
           timeout_fifthm = parseInt(response.data.data);
           //console.log(ch,'-', timeout_fifthm);

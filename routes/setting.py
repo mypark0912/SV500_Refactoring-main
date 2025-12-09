@@ -1097,6 +1097,8 @@ def parse_settings(setting):
         "assetName_sub": "",
         "assetNickname_main": "",
         "assetNickname_sub": "",
+        "assetdriveType_main":"",
+        "assetdriveType_sub": "",
         "main_kva": -1,
         "sub_kva": -1,
         "pf_sign": -1,
@@ -1144,6 +1146,7 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
         result[f"assetType_{prefix}"] = asset_info.get("type", "")
         result[f"assetName_{prefix}"] = asset_info.get("name", "")
         result[f"assetNickname_{prefix}"] = asset_info.get("nickname", "")
+        result[f"assetdriveType_{prefix}"] = asset_info.get("driveType", "")
 
         if asset_info.get("type") == 'Transformer':
             result[f"{prefix}_kva"] = int(channel_data.get("n_kva", 0))

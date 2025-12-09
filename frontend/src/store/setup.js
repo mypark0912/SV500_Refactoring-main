@@ -12,6 +12,8 @@ export const useSetupStore = defineStore('setup', () => {
     assetName_sub: '',
     assetNickname_main: '',
     assetNickname_sub:'',
+    assetdriveType_main:'',
+    assetdriveType_sub:'',
   });
   const calib = ref(false)
   const setup = ref(false)
@@ -114,15 +116,17 @@ export const useSetupStore = defineStore('setup', () => {
     }
   }
 
-  function setAssetConfig({ channel, name, type, nick }) {
+  function setAssetConfig({ channel, name, type, nick, driveType }) {
     if (channel === 'Main') {
       assetConfig.value.assetName_main = name;
       assetConfig.value.assetType_main = type;
       assetConfig.value.assetNickname_main = nick;
+      assetConfig.value.assetdriveType_main = driveType;
     } else if (channel === 'Sub') {
       assetConfig.value.assetName_sub = name;
       assetConfig.value.assetType_sub = type;
       assetConfig.value.assetNickname_sub = nick;
+      assetConfig.value.assetdriveType_sub = driveType;
     }
   }
 
@@ -149,13 +153,15 @@ export const useSetupStore = defineStore('setup', () => {
           channel: 'Main',
           name: response.data.assetName_main,
           type: response.data.assetType_main,
-          nick : response.data.assetNickname_main
+          nick : response.data.assetNickname_main,
+          driveType: response.data.assetdriveType_main
         })
         setAssetConfig({
           channel: 'Sub',
           name: response.data.assetName_sub,
           type: response.data.assetType_sub,
-          nick : response.data.assetNickname_sub
+          nick : response.data.assetNickname_sub,
+          driveType: response.data.assetdriveType_sub
         })
         localStorage.setItem('opMode',response.data.mode);
         authStore.setOpMode(response.data.mode)
