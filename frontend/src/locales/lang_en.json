@@ -284,6 +284,8 @@
     },
 
     "report": {
+        "accordionTitle1":"Equipment",
+        "accordionTitle2":"Power Quality",
         "sitemap": {
         "title": "Report",
         "main": "Main Channel",
@@ -308,7 +310,7 @@
         "monthlyEngUsage":"Monthly Energy Usage",
         "installation": "installation place",
         
-        "Diagnosis": "Equipment",
+        "Diagnosis": "Diagnosis",
         "Energy": "Active Energy",
         "Energy2": "Energy & Load Rate Trend",
         "parameter": "Trend of Power Quality Parameters",

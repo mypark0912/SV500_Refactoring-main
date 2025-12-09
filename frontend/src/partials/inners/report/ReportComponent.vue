@@ -1,7 +1,7 @@
 <template>
       <div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 shadow-sm rounded-xl mt-4">
             <!-- Tab 1 -->
-            <Report_PQ v-if="mode" :channel="channel" />
+            <!--Report_PQ v-if="mode" :channel="channel" /-->
             <div
               class="relative col-span-full xl:col-span-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg mb-6 mt-6"
             >
