@@ -28,9 +28,6 @@
             <div v-for="(option, idx) in equipmentChartOptions" :key="idx" class="col-span-6">
               <ReportTrend :data="option" />
             </div>
-            <div v-if="equipmentEventData.length > 0" class="col-span-6">
-              <ReportEventFault :data="equipmentEventData" />
-            </div>
           </div>
         </div>
       </AccordionBasic>
@@ -61,6 +58,9 @@
           <div class="grid grid-cols-12 gap-4">
             <div v-for="(option, idx) in pqChartOptions" :key="idx" class="col-span-6">
               <ReportTrend :data="option" />
+            </div>
+            <div v-if="equipmentEventData.length > 0" class="col-span-6">
+              <ReportEventFault :data="equipmentEventData" />
             </div>
           </div>
         </div>

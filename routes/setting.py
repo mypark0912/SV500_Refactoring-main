@@ -2309,7 +2309,7 @@ async def unreg_Asset(channel, asset):
     #     response = await client.get(f"http://{os_spec.restip}:5000/api/unregisterAsset?name={asset}")
     #     data = response.json()
     data = await reset_smart(asset, 0)
-    remove_applyStatus(channel, asset)
+    # remove_applyStatus(channel, asset)
     if isinstance(data, list) and len(data) > 0:
         finflag = True
     else:
@@ -2352,51 +2352,59 @@ async def reg_Asset(channel, assetName, assetType):
                 break
         redis_state.client.hset("System","setup", json.dumps(setting))
 
-        set_applyStatus(channel, assetName)
+        # set_applyStatus(channel, assetName)
     if finflag:
         return {"success":True}
     else:
         return {"success":False}
 
-def make_applyStatus():
-    equipStatus = {
-        "restartFW": False,
-        "commisionAsset": {
-            "Main": {
-                "Name": '',
-                "result": False,
-            },
-            "Sub": {
-                "Name": '',
-                "result": False,
-            }
-        }
-    }
-    return equipStatus
+# def make_applyStatus():
+#     equipStatus = {
+#         "restartFW": False,
+#         "commisionAsset": {
+#             "Main": {
+#                 "Name": '',
+#                 "result": False,
+#             },
+#             "Sub": {
+#                 "Name": '',
+#                 "result": False,
+#             }
+#         }
+#     }
+#     return equipStatus
 
-def set_applyStatus(channel, assetName):
-    if redis_state.client.hexists("Equipment","applyStatus"):
-        applyst = redis_state.client.hget("Equipment","applyStatus")
-        equipStatus = json.loads(applyst)
-    else:
-        equipStatus = make_applyStatus()
-    if equipStatus["commisionAsset"][channel]["Name"] == '':
-        equipStatus["commisionAsset"][channel]["Name"] = assetName
-        equipStatus["commisionAsset"][channel]["result"] = False
-    elif equipStatus["commisionAsset"][channel]["Name"] == assetName:
-        equipStatus["commisionAsset"][channel]["result"] = False
-    redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
-
-def remove_applyStatus(channel, assetName):
-    if redis_state.client.hexists("Equipment","applyStatus"):
-        applyst = redis_state.client.hget("Equipment","applyStatus")
-        equipStatus = json.loads(applyst)
-
-        if equipStatus["commisionAsset"][channel]["Name"] == assetName:
-            equipStatus["commisionAsset"][channel]["Name"] = ''
-            equipStatus["commisionAsset"][channel]["result"] = False
-
-        redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
+# def set_applyStatus(channel, assetName):
+#     if redis_state.client.hexists("Equipment", "applyStatus"):
+#         applyst = redis_state.client.hget("Equipment", "applyStatus")
+#         equipStatus = json.loads(applyst)
+#     else:
+#         equipStatus = make_applyStatus()
+#     if equipStatus["commisionAsset"].get(channel):
+#         if equipStatus["commisionAsset"][channel]["Name"] == '':
+#             equipStatus["commisionAsset"][channel]["Name"] = assetName
+#             equipStatus["commisionAsset"][channel]["result"] = False
+#         elif equipStatus["commisionAsset"][channel]["Name"] == assetName:
+#             equipStatus["commisionAsset"][channel]["result"] = False
+#     else:
+#         equipStatus["commisionAsset"][channel] = {
+#             "Name": assetName,
+#             "result": False
+#         }
+#     redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
+#
+#
+# def remove_applyStatus(channel, assetName):
+#     if redis_state.client.hexists("Equipment", "applyStatus"):
+#         applyst = redis_state.client.hget("Equipment", "applyStatus")
+#         equipStatus = json.loads(applyst)
+#
+#         if equipStatus["commisionAsset"].get(channel):
+#             if equipStatus["commisionAsset"][channel]["Name"] == assetName:
+#                 equipStatus["commisionAsset"][channel]["Name"] = ''
+#                 equipStatus["commisionAsset"][channel]["result"] = False
+#
+#         redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
 
 def save_alarm_configs_to_redis(setting_dict: dict):
     dash_alarms_data = {}
@@ -2537,15 +2545,6 @@ async def saveSetting(channel: str, request: Request):
         print("Error:", e)
         return {"status": "0", "error": str(e)}
 
-
-def check_ApplyStatus():
-    if redis_state.client.hexists("Equipment","applyStatus"):
-        applyStatus = redis_state.client.hget("Equipment", "applyStatus")
-        equipStatus = json.loads(applyStatus)
-    else:
-        equipStatus = make_applyStatus()
-    return equipStatus
-
 def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]:
     result = {
         "General": {"status": "no_change", "changed_fields": []},
@@ -2620,6 +2619,112 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
     return result
 
 
+# @router.post('/savefileNew')  # ⭐ {channel} 제거
+# async def saveSetting2(request: Request):
+#     deviceMac = get_mac_address()
+#     ser = ''
+#
+#     if os_spec.os != 'Windows':
+#         mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+#         if os.path.exists(mac_file_path):
+#             ser = read_mac_plain(mac_file_path)
+#
+#     # redis_state.client.select(0)
+#     if redis_state.client.hexists("Service", "setting"):
+#         checkflag = redis_state.client.hget("Service", "setting")
+#         if int(checkflag) == 1:
+#             return {"status": "0", "error": "Modbus setting is activated"}
+#
+#     try:
+#         FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
+#
+#         # 클라이언트로부터 전체 설정 데이터 받기
+#         data = await request.json()
+#         if not data:
+#             return {"status": "0", "error": "No data provided"}
+#
+#         # 기본 구조 확인
+#         if "General" not in data:
+#             data["General"] = {}
+#         if "channel" not in data or not isinstance(data["channel"], list):
+#             data["channel"] = []
+#
+#         # MAC 주소 및 시리얼 번호 업데이트
+#         if "deviceInfo" not in data["General"]:
+#             data["General"]["deviceInfo"] = {}
+#
+#         data["General"]["deviceInfo"]["mac_address"] = deviceMac
+#
+#         if ser != '':
+#             data["General"]["deviceInfo"]["serial_number"] = ser
+#         else:
+#             data["General"]["deviceInfo"]["serial_number"] = deviceMac
+#
+#         # 각 채널의 ctInfo.inorminal 값 처리
+#
+#         for ch in data["channel"]:
+#             if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
+#                 ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
+#
+#
+#         prevSetup = redis_state.client.hget("System", "setup")
+#         prevData = json.loads(prevSetup)
+#
+#         # 파일에 저장
+#         with open(FILE_PATH, "w", encoding="utf-8") as f:
+#             json.dump(data, f, indent=4)
+#
+#         # 알람 설정 초기화
+#         if len(data["channel"]) > 0:
+#             for ch in data["channel"]:
+#                 if "channel" in ch and "alarm" in ch:
+#                     initialize_alarm_configs(ch["channel"], ch["alarm"])
+#
+#         # Redis에 저장
+#         # saveCurrent = saveStartCurrent(data)
+#         procData = save_StartCurrent_DemandInterval_SamplingPeriod(data)
+#         dash_alarms_data = save_alarm_configs_to_redis(data)
+#         result = compare_channel_changes(prevData, data)
+#         restartAsset = False
+#         restartdevice = False
+#         if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
+#             restartdevice = True
+#         elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
+#             restartAsset = True
+#
+#         checkResult = check_ApplyStatus()
+#
+#         if not restartAsset:
+#             commision_asset = checkResult.get("commisionAsset", {})
+#
+#             for channel in ["Main", "Sub"]:
+#                 channel_data = commision_asset.get(channel, {})
+#                 if channel_data.get("Name") and not channel_data.get("result", False):
+#                     restartAsset = True
+#                     break  # 하나라도 해당되면 바로 종료
+#
+#         if not restartdevice:
+#             if not checkResult["restartFW"]:
+#                 restartdevice = True
+#
+#         redis_state.client.hset("System", "setup", json.dumps(data))
+#         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
+#         redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
+#         redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
+#
+#         if dash_alarms_data:
+#             redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
+#         else:
+#             redis_state.client.hdel("Equipment", "DashAlarms")
+#
+#         return {"status": "1", "data": data, "restartDevice": restartdevice, "restartAsset": restartAsset}
+#
+#     except Exception as e:
+#         print("Error:", e)
+#         import traceback
+#         traceback.print_exc()
+#         return {"status": "0", "error": str(e)}
+
 @router.post('/savefileNew')  # ⭐ {channel} 제거
 async def saveSetting2(request: Request):
     deviceMac = get_mac_address()
@@ -2630,16 +2735,13 @@ async def saveSetting2(request: Request):
         if os.path.exists(mac_file_path):
             ser = read_mac_plain(mac_file_path)
 
-    # redis_state.client.select(0)
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
             return {"status": "0", "error": "Modbus setting is activated"}
 
     try:
-        FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
 
-        # 클라이언트로부터 전체 설정 데이터 받기
         data = await request.json()
         if not data:
             return {"status": "0", "error": "No data provided"}
@@ -2667,64 +2769,74 @@ async def saveSetting2(request: Request):
             if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
                 ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
 
-
-        prevSetup = redis_state.client.hget("System", "setup")
-        prevData = json.loads(prevSetup)
-
-        # 파일에 저장
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-
-        # 알람 설정 초기화
-        if len(data["channel"]) > 0:
-            for ch in data["channel"]:
-                if "channel" in ch and "alarm" in ch:
-                    initialize_alarm_configs(ch["channel"], ch["alarm"])
-
-        # Redis에 저장
-        # saveCurrent = saveStartCurrent(data)
-        procData = save_StartCurrent_DemandInterval_SamplingPeriod(data)
-        dash_alarms_data = save_alarm_configs_to_redis(data)
-        result = compare_channel_changes(prevData, data)
-        restartAsset = False
-        restartdevice = False
-        if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
-            restartdevice = True
-        elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
-            restartAsset = True
-
-        checkResult = check_ApplyStatus()
-
-        if not restartAsset:
-            commision_asset = checkResult.get("commisionAsset", {})
-
-            for channel in ["Main", "Sub"]:
-                channel_data = commision_asset.get(channel, {})
-                if channel_data.get("Name") and not channel_data.get("result", False):
-                    restartAsset = True
-                    break  # 하나라도 해당되면 바로 종료
-
-        if not restartdevice:
-            if not checkResult["restartFW"]:
-                restartdevice = True
-
-        redis_state.client.hset("System", "setup", json.dumps(data))
-        redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
-        redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
-        redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
-
-        if dash_alarms_data:
-            redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
-        else:
-            redis_state.client.hdel("Equipment", "DashAlarms")
-
-        return {"status": "1", "data": data, "restartDevice": restartdevice, "restartAsset": restartAsset}
-
+        redis_state.client.hset("System", "config", json.dumps(data))
+        return {"status": "1"}
     except Exception as e:
         print("Error:", e)
         import traceback
         traceback.print_exc()
         return {"status": "0", "error": str(e)}
+
+
+@router.get('/apply')
+def apply():
+    if redis_state.client.hexists("Service", "setting"):
+        checkflag = redis_state.client.hget("Service", "setting")
+        if int(checkflag) == 1:
+            return {"status": "0", "error": "Modbus setting is activated"}
+
+    saveSetup = redis_state.client.hget("System", "config")
+    saveData = json.loads(saveSetup)
+
+    prevSetup = redis_state.client.hget("System", "setup")
+    prevData = json.loads(prevSetup)
+
+    FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(saveData, f, indent=4)
+
+    if len(saveData["channel"]) > 0:
+        for ch in saveData["channel"]:
+            if "channel" in ch and "alarm" in ch:
+                initialize_alarm_configs(ch["channel"], ch["alarm"])
+
+    procData = save_StartCurrent_DemandInterval_SamplingPeriod(saveData)
+    dash_alarms_data = save_alarm_configs_to_redis(saveData)
+
+    result = compare_channel_changes(prevData, saveData)
+
+    restartdevice = False
+
+    if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"][
+        "status"] == 'config_changed':
+        restartdevice = True
+
+    redis_state.client.hset("System", "setup", json.dumps(saveData))
+    redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
+    redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
+    redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
+
+    if dash_alarms_data:
+        redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
+    else:
+        redis_state.client.hdel("Equipment", "DashAlarms")
+
+    return {"status": "1", "data": saveData, "restartDevice": restartdevice}
+
+@router.get('/checkCommision/{asset}')
+async def check_comm(asset):
+    try:
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/iscommrequired?name={asset}")
+            data = response.json()
+
+        if data:
+            return {"status": 1, "result": data["CommissioningRequired"]}
+        else:
+            return {"status": 0, "error": "Failed to call API"}
+    except Exception as e:
+        return {"status": 0, "error": str(e)}
 
 @router.get('/checkSmart')
 def check_smart():

@@ -521,7 +521,7 @@
   import { useInputDict } from "@/composables/useInputDict";
   import { useI18n } from "vue-i18n"; //
   import SettingsSidebar2 from "../../partials/inners/setting/SettingsSidebar2.vue";
-  import OnboardModal from "../../components/OnboardingModal.vue";
+  import OnboardModal from "../../components/OnBoardingModal2.vue";
   import LoadingModal from "../../components/LoadingModal.vue";
   export default {
     name: "Setting",
@@ -1572,19 +1572,19 @@
       if (response.data && response.data.status === "1") {
         if (errorMessages.length === 0) {
           const ret  = response.data;
-          //console.log(ret);
-          if(ret.restartDevice){
-            //console.log('checkNameplateResult.value:',checkNameplateResult.value);
-            if(checkNameplateResult.value || ret.restartAsset){
-              applyMode.value = 2;  //restart & commisioning
-            }else{
-              applyMode.value = 1; //restart
-            }
-          }else{
-            if(checkNameplateResult.value || ret.restartAsset)
-              applyMode.value = 0; //commisioning
-          }
-          console.log('ApplyMode', applyMode.value);
+          console.log('Save Status:', ret.status);
+          // if(ret.restartDevice){
+          //   //console.log('checkNameplateResult.value:',checkNameplateResult.value);
+          //   if(checkNameplateResult.value || ret.restartAsset){
+          //     applyMode.value = 2;  //restart & commisioning
+          //   }else{
+          //     applyMode.value = 1; //restart
+          //   }
+          // }else{
+          //   if(checkNameplateResult.value || ret.restartAsset)
+          //     applyMode.value = 0; //commisioning
+          // }
+          //console.log('ApplyMode', applyMode.value);
           alert("✅ All settings have been saved successfully!");
         } else {
           let errorMsg = "⚠️ Settings saved but with some warnings:\n";
