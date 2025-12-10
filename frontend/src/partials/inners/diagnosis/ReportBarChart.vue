@@ -1,6 +1,6 @@
 <template>
     <div 
-      class="col-span-full xl:col-span-12 mt-1 p-2"
+      class="col-span-full xl:col-span-12 mt-1 p-1"
       :class="isPdfMode ? 'bg-white' : 'bg-white dark:bg-gray-800'"
     >
         <BarChart v-if="mode == 'Status'" :data="chartData" :width="chartWidth" :height="chartHeight" />
