@@ -517,6 +517,7 @@
               }
             }
             GetDiagnosisSetting();
+            GetAdvancedProfile(); // ★ Advanced Profile도 함께 로드
           }
         }
       );
@@ -636,6 +637,24 @@
         }
       };
 
+      // ★ Advanced Profile 가져오기
+      const GetAdvancedProfile = async () => {
+        try {
+          const response = await axios.get("/setting/getDiagnosisProfile");
+          if (response.data.success) {
+            Object.assign(advancedData.value, response.data.data);
+          }
+        } catch (error) {
+          console.error("❌ Advanced Profile 가져오기 실패:", error);
+        }
+      };
+
+      // ★ Diagnosis 데이터 전체 리로드 (Cancel 시 사용)
+      const reloadDiagnosisData = async () => {
+        await GetDiagnosisSetting();
+        await GetAdvancedProfile();
+      };
+
       const GetSettingData = async () => {
         try {
           const response = await axios.get(`/setting/getSetting`);
@@ -678,21 +697,31 @@
         isSaveModalOpen.value = true;
       };
 
-      const handleSaveModalClose = () => {
+      const handleSaveModalClose = async () => {
         isSaveModalOpen.value = false;
         isSaving.value = false;
+        // ★ Cancel 시 Diagnosis 데이터 리로드
+        if (useDiagnosis.value) {
+          await reloadDiagnosisData();
+        }
       };
 
       const handleSaveComplete = async (result) => {
+        isSaveModalOpen.value = false;
+        isSaving.value = false;
         if (result.success) {
-          applyMode.value = result.applyMode;
           setupStore.setApplySetup(false);
           await setupStore.checkSetting();
         }
       };
 
-      onMounted(() => {
-        GetSettingData();
+      onMounted(async () => {
+        await GetSettingData();
+        // ★ 초기 로드 시 Diagnosis 활성화되어 있으면 Advanced Profile도 로드
+        if (useDiagnosis.value) {
+          await GetDiagnosisSetting();
+          await GetAdvancedProfile();
+        }
       });
 
       provide("inputDict", inputDict);
@@ -707,6 +736,7 @@
       provide("checkNameplateflag", checkNameplateflag);
       provide("diagnosis_detail", diagnosis_detail);
       provide("GetSettingData", GetSettingData);
+      provide("reloadDiagnosisData", reloadDiagnosisData); // ★ 리로드 함수 provide
 
       return {
         sidebarOpen,
@@ -737,6 +767,8 @@
         toggleDiagnosis,
         restart,
         GetDiagnosisSetting,
+        GetAdvancedProfile,
+        reloadDiagnosisData,
         checkNameplateflag,
         diagnosis_detail,
         showNameplateConfirm,

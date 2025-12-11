@@ -190,8 +190,7 @@ export default {
     const isProcessing = ref(false);
     const isSaving = ref(false);
     const processingMessage = ref("");
-    const applyMode = ref(-1);
-    const checkNameplateResult = ref(false);
+    const checkNameplateResult = ref({ main: false, sub: false }); // 채널별 결과 저장
 
     const steps = ref([
       { id: 1, name: "Validation", status: "current" },
@@ -249,8 +248,7 @@ export default {
       isProcessing.value = false;
       isSaving.value = false;
       processingMessage.value = "";
-      checkNameplateResult.value = false;
-      applyMode.value = -1;
+      checkNameplateResult.value = { main: false, sub: false };
       showNameplateWarning.value = false;
       nameplateWarningMessage.value = "";
       nameplateConfirmed.value = false;
@@ -291,6 +289,7 @@ export default {
     // Nameplate 변경 확인
     const checkNameplateChanges = async () => {
       let nameplateChannels = [];
+      checkNameplateResult.value = { main: false, sub: false }; // 초기화
 
       for (const channelName in diagnosis_detail.value) {
         const channelData = diagnosis_detail.value[channelName];
@@ -301,6 +300,7 @@ export default {
             const combinedData = [...channelData.tableData, ...(channelData.modalData || [])];
             const changed = await checkNameplateConfig(combinedData, channelData.assetName);
             if (changed) {
+              checkNameplateResult.value[channelName] = true;
               nameplateChannels.push(`${channelName} channel(${channelData.assetName})`);
             }
           } catch (error) {
@@ -309,14 +309,14 @@ export default {
         }
       }
 
+      console.log('checkNameplateResult:', checkNameplateResult.value);
+
       if (nameplateChannels.length > 0) {
         showNameplateWarning.value = true;
         nameplateWarningMessage.value = `Nameplate configuration has been changed for: ${nameplateChannels.join(", ")}. This will require commissioning after save.`;
-        checkNameplateResult.value = true;
       } else {
         showNameplateWarning.value = false;
         nameplateWarningMessage.value = "";
-        checkNameplateResult.value = false;
       }
     };
 
@@ -377,7 +377,6 @@ export default {
 
     const runNameplateConfig = async () => {
       const result = { id: "nameplate", name: "Nameplate Configuration", status: "success", message: "", errors: [] };
-      let hasChanges = false;
 
       try {
         for (const channelName in diagnosis_detail.value) {
@@ -386,9 +385,6 @@ export default {
 
           if (channelData?.use && isDiagEnabled && channelData.assetName && channelData.assetName !== "" && channelData.tableData?.length > 0) {
             const combinedData = [...channelData.tableData, ...(channelData.modalData || [])];
-            
-            const changed = await checkNameplateConfig(combinedData, channelData.assetName);
-            if (changed) hasChanges = true;
 
             const plainData = combinedData.map((item) => ({ ...item }));
             const response = await axios.post(`/setting/setAssetConfig/${channelData.assetName}`, plainData, { headers: { "Content-Type": "application/json" } });
@@ -400,8 +396,9 @@ export default {
             }
           }
         }
-        checkNameplateResult.value = hasChanges;
-        if (result.status !== "error") result.message = hasChanges ? "Nameplate updated" : "No changes needed";
+        // checkNameplateResult는 1단계에서 이미 채널별로 설정됨
+        const hasAnyChange = checkNameplateResult.value.main || checkNameplateResult.value.sub;
+        if (result.status !== "error") result.message = hasAnyChange ? "Nameplate updated (requires recommissioning)" : "Nameplate saved";
       } catch (error) {
         result.status = "error";
         result.errors.push(error.message);
@@ -412,9 +409,12 @@ export default {
     const checkNameplateConfig = async (tableData, assetName) => {
       try {
         if (!tableData?.length || !assetName) return false;
-        const response = await axios.post(`/setting/checkAssetConfig/${assetName}`, tableData.map((item) => ({ ...item })), { headers: { "Content-Type": "application/json" } });
+        const plainData = tableData.map((item) => ({ ...item }));
+        const response = await axios.post(`/setting/checkAssetConfig/${assetName}`, plainData, { headers: { "Content-Type": "application/json" } });
         return response.data.status == 1 && response.data.success ? response.data.result : false;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     };
 
     const runAssetParams = async () => {
@@ -477,12 +477,8 @@ export default {
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
-          const ret = response.data;
-          if (ret.restartDevice) applyMode.value = (checkNameplateResult.value || ret.restartAsset) ? 2 : 1;
-          else applyMode.value = (checkNameplateResult.value || ret.restartAsset) ? 0 : -1;
-
           alert("Configuration saved successfully!");
-          emit("save-complete", { success: true, applyMode: applyMode.value });
+          emit("save-complete", { success: true });
           emit("close-modal");
         } else {
           alert("Save failed: " + (response.data?.error || "Unknown error"));

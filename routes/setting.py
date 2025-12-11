@@ -3234,7 +3234,7 @@ async def set_assetParams(asset:str, request:Request):
     else:
         return {"status":"1", "success": False, "error": ["Save failed in setParameters API"]}
 
-@router.get("/test/{channel}/{asset}")
+@router.get("/test/{channel}/{asset}") 
 async def test_asset(channel, asset):
     test_timeout = httpx.Timeout(
         connect=2.0,  # 연결에는 5초
@@ -3254,16 +3254,16 @@ async def test_asset(channel, asset):
         result["Channel"] = data["Channel"]
         result["Commissions"] = data["Commissions"]
 
-        if redis_state.client.hexists("Equipment","applyStatus"):
-            applyst = redis_state.client.hget("Equipment","applyStatus")
-            applycontext = json.loads(applyst)
-            if applycontext["commisionAsset"][channel]["Name"] == asset:
-                if len(result["Commissions"]) > 0:
-                    applycontext["commisionAsset"][channel]["result"] = False
-                else:
-                    applycontext["commisionAsset"][channel]["result"] = True
+        # if redis_state.client.hexists("Equipment","applyStatus"):
+        #     applyst = redis_state.client.hget("Equipment","applyStatus")
+        #     applycontext = json.loads(applyst)
+        #     if applycontext["commisionAsset"][channel]["Name"] == asset:
+        #         if len(result["Commissions"]) > 0:
+        #             applycontext["commisionAsset"][channel]["result"] = False
+        #         else:
+        #             applycontext["commisionAsset"][channel]["result"] = True
 
-            redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
+        #     redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
 
         if len(data) > 0:
             return {"success": True, "data": result}
