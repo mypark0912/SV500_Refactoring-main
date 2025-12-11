@@ -223,7 +223,7 @@ async def complete_influx_setup():
             return
 
         # 버킷 생성
-        bucket_result = await create_influx_bucket()
+        bucket_result = await create_influx_bucket("ntek", 365)
 
         if not bucket_result["success"]:
             redis_state.client.hset("influx_init", "status", "P.FAIL")
@@ -236,6 +236,10 @@ async def complete_influx_setup():
         else:
             logging.info("✅ Downsampling buckets and tasks configured")
 
+        bucket_result2 = await create_influx_bucket("ntek30", 30)
+
+        if not bucket_result2["success"]:
+            logging.warning(f"⚠️ Bucket creation failed: {bucket_result2['message']}")
         # 다른 서비스 재시작
         if sysMode != 'device0':
             sysService('restart', 'SmartSystems')
@@ -251,12 +255,12 @@ async def complete_influx_setup():
         logging.error(f"❌ Background setup error: {e}")
 
 
-async def create_influx_bucket():
+async def create_influx_bucket(bucket_name:str, retention:int):
     try:
         config = aesState.getInflux()
         token = aesState.decrypt(config["cipher"])
-        bucket_name = "ntek"
-        retention_seconds = 365 * 24 * 60 * 60
+        # bucket_name = "ntek"
+        retention_seconds = retention * 24 * 60 * 60
         bucket_data = {
             "orgID": config['org_id'],
             "name": bucket_name,
@@ -279,6 +283,9 @@ async def create_influx_bucket():
                 retention_info = f"{retention_seconds // (24 * 60 * 60)} days" if retention_seconds > 0 else "infinite"
                 logging.info(f"✅ Bucket '{bucket_name}' created (retention: {retention_info})")
                 return {"success": True, "message": f"Bucket '{bucket_name}' created successfully"}
+            elif response.status_code == 422:  # ✅ 이 부분 추가 필요
+                logging.info(f"ℹ️ Bucket '{bucket_name}' already exists")
+                return {"success": True, "message": f"Bucket already exists"}
             else:
                 error_msg = response.json().get("message", response.text)
                 logging.error(f"❌ Bucket '{bucket_name}' creation failed: {error_msg}")
@@ -289,68 +296,87 @@ async def create_influx_bucket():
         return {"success": False, "message": str(e)}
 
 
+# async def create_downsampling_buckets():
+#     """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d)"""
+#     try:
+#         config = aesState.getInflux()
+#         token = aesState.decrypt(config["cipher"])
+#
+#         buckets = [
+#             {
+#                 "name": "ntek_1h",
+#                 "retention_seconds": 90 * 24 * 60 * 60,  # 90일
+#                 "description": "1시간 평균 데이터"
+#             },
+#             {
+#                 "name": "ntek_1d",
+#                 "retention_seconds": 730 * 24 * 60 * 60,  # 2년
+#                 "description": "1일 평균/합계 데이터"
+#             }
+#         ]
+#
+#         results = []
+#
+#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
+#             for bucket_info in buckets:
+#                 bucket_data = {
+#                     "orgID": config['org_id'],
+#                     "name": bucket_info["name"],
+#                     "retentionRules": []
+#                 }
+#
+#                 # retention 설정 (0이면 무제한)
+#                 if bucket_info["retention_seconds"] > 0:
+#                     bucket_data["retentionRules"] = [
+#                         {
+#                             "type": "expire",
+#                             "everySeconds": bucket_info["retention_seconds"]
+#                         }
+#                     ]
+#
+#                 response = await client.post(
+#                     f"http://127.0.0.1:8086/api/v2/buckets",
+#                     headers={"Authorization": f"Token {token}"},
+#                     json=bucket_data
+#                 )
+#
+#                 if response.status_code == 201:
+#                     retention_info = f"{bucket_info['retention_seconds'] // (24 * 60 * 60)} days" if bucket_info[
+#                                                                                                          'retention_seconds'] > 0 else "infinite"
+#                     logging.info(f"✅ Bucket '{bucket_info['name']}' created (retention: {retention_info})")
+#                     results.append({"bucket": bucket_info["name"], "success": True})
+#                 elif response.status_code == 422:
+#                     # 이미 존재하는 버킷
+#                     logging.info(f"ℹ️ Bucket '{bucket_info['name']}' already exists")
+#                     results.append({"bucket": bucket_info["name"], "success": True, "existed": True})
+#                 else:
+#                     error_msg = response.json().get("message", response.text)
+#                     logging.error(f"❌ Bucket '{bucket_info['name']}' creation failed: {error_msg}")
+#                     results.append({"bucket": bucket_info["name"], "success": False, "error": error_msg})
+#
+#         success_count = sum(1 for r in results if r["success"])
+#         return {
+#             "success": success_count > 0,
+#             "message": f"Created/verified {success_count}/{len(buckets)} buckets",
+#             "results": results
+#         }
+#
+#     except Exception as e:
+#         logging.error(f"❌ Downsampling buckets creation error: {e}")
+#         return {"success": False, "message": str(e)}
+#
 async def create_downsampling_buckets():
-    """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d)"""
+    """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d, ntek30)"""
     try:
-        config = aesState.getInflux()
-        token = aesState.decrypt(config["cipher"])
-
-        buckets = [
-            {
-                "name": "ntek_1h",
-                "retention_seconds": 90 * 24 * 60 * 60,  # 90일
-                "description": "1시간 평균 데이터"
-            },
-            {
-                "name": "ntek_1d",
-                "retention_seconds": 730 * 24 * 60 * 60,  # 2년
-                "description": "1일 평균/합계 데이터"
-            }
-        ]
-
         results = []
-
-        async with httpx.AsyncClient(timeout=setting_timeout) as client:
-            for bucket_info in buckets:
-                bucket_data = {
-                    "orgID": config['org_id'],
-                    "name": bucket_info["name"],
-                    "retentionRules": []
-                }
-
-                # retention 설정 (0이면 무제한)
-                if bucket_info["retention_seconds"] > 0:
-                    bucket_data["retentionRules"] = [
-                        {
-                            "type": "expire",
-                            "everySeconds": bucket_info["retention_seconds"]
-                        }
-                    ]
-
-                response = await client.post(
-                    f"http://127.0.0.1:8086/api/v2/buckets",
-                    headers={"Authorization": f"Token {token}"},
-                    json=bucket_data
-                )
-
-                if response.status_code == 201:
-                    retention_info = f"{bucket_info['retention_seconds'] // (24 * 60 * 60)} days" if bucket_info[
-                                                                                                         'retention_seconds'] > 0 else "infinite"
-                    logging.info(f"✅ Bucket '{bucket_info['name']}' created (retention: {retention_info})")
-                    results.append({"bucket": bucket_info["name"], "success": True})
-                elif response.status_code == 422:
-                    # 이미 존재하는 버킷
-                    logging.info(f"ℹ️ Bucket '{bucket_info['name']}' already exists")
-                    results.append({"bucket": bucket_info["name"], "success": True, "existed": True})
-                else:
-                    error_msg = response.json().get("message", response.text)
-                    logging.error(f"❌ Bucket '{bucket_info['name']}' creation failed: {error_msg}")
-                    results.append({"bucket": bucket_info["name"], "success": False, "error": error_msg})
+        results.append(await create_influx_bucket("ntek_1h", 90))
+        results.append(await create_influx_bucket("ntek_1d", 730))
+        results.append(await create_influx_bucket("ntek30", 30))  # ✅ 추가
 
         success_count = sum(1 for r in results if r["success"])
         return {
             "success": success_count > 0,
-            "message": f"Created/verified {success_count}/{len(buckets)} buckets",
+            "message": f"Created/verified {success_count}/3 buckets",
             "results": results
         }
 
@@ -600,7 +626,7 @@ async def check_downsampling_status():
 
         token = aesState.decrypt(config["cipher"])
 
-        bucket_names = ["ntek_1h", "ntek_1d"]
+        bucket_names = ["ntek_1h", "ntek_1d", "ntek30"]
         task_names = [
             "downsample_trend_to_1h",
             "downsample_trend_to_1d",
