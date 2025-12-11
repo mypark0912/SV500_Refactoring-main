@@ -301,6 +301,156 @@
       };
   
       // === 설비 진단 데이터 가져오기 ===
+
+      // const fetchLastReportData = async() =>{
+      //   const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
+      //   console.log('Asset:', chName);
+      //   try {
+      //     const response = await axios.get(`/report/lastReportData/diagnosis/${chName}`);
+      //     console.log(response.data);
+      //   }catch (error) {
+      //     console.log("설비 진단 데이터 가져오기 실패:", error);
+      //   }
+  
+      // }
+      const fetchLastReportData = async () => {
+  equipmentItems.value = [];
+  equipmentChartOptions.value = [];
+  const chName = channel.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+  
+  try {
+    const response = await axios.get(`/report/lastReportData/diagnosis/${chName}`);
+    
+    if (response.data.success) {
+      const { main, detail, timestamp } = response.data.data;
+      
+      // 1. 바 그래프용 데이터 변환
+      let itemlist = [], valuelist = [], datalist = [];
+      for (let i = 0; i < main.length; i++) {
+        const titleKey = `title_${locale.value}`;
+        const displayName = main[i][titleKey] || main[i].title || main[i].item_name;
+        
+        itemlist.push(displayName);
+        valuelist.push(main[i].status);
+        datalist.push({
+          en: main[i].title_en || main[i].item_name,
+          ko: main[i].title_ko || main[i].item_name,
+          ja: main[i].title_ja || main[i].item_name
+        });
+      }
+      equipmentChartData.value = { "Names": itemlist, "Values": valuelist, "Titles": datalist };
+
+      // main을 item_name으로 인덱싱 (공백 제거 - detail 매칭용)
+      const mainByName = {};
+      for (let i = 0; i < main.length; i++) {
+        const key = main[i].item_name.replace(/\s/g, '');
+        mainByName[key] = main[i];
+      }
+
+      // 2. 세부항목 데이터 변환 (parent_name으로 그룹핑)
+      const groupedByParent = {};
+      for (let i = 0; i < detail.length; i++) {
+        const parentName = detail[i].parent_name;
+        const parentKey = parentName.replace(/\s/g, '');
+        
+        if (!groupedByParent[parentName]) {
+          const parentInfo = mainByName[parentKey] || {};
+          
+          groupedByParent[parentName] = {
+            item_name: parentName,
+            status: 0,
+            Titles: {
+              en: parentInfo.title_en || parentName,
+              ko: parentInfo.title_ko || parentName,
+              ja: parentInfo.title_ja || parentName
+            },
+            Descriptions: {
+              en: parentInfo.description_en || '',
+              ko: parentInfo.description_ko || '',
+              ja: parentInfo.description_ja || ''
+            },
+            children: []
+          };
+        }
+        if (detail[i].status > groupedByParent[parentName].status) {
+          groupedByParent[parentName].status = detail[i].status;
+        }
+        groupedByParent[parentName].children.push(detail[i]);
+      }
+
+      // 3. equipmentItems 형식으로 변환
+      const items = [];
+      const chartList = [];
+      
+      for (const parentName in groupedByParent) {
+        const parent = groupedByParent[parentName];
+        if (parent.status > 1) {
+          const childDict = [];
+          
+          for (let j = 0; j < parent.children.length; j++) {
+            const child = parent.children[j];
+            if (child.status > 1) {
+              chartList.push({
+                Name: child.item_name,
+                AssemblyID: child.assembly_id,
+                Status: child.status,
+                Value: child.value
+              });
+              
+              const childTitle = child[`title_${locale.value}`] || child.title || child.item_name;
+              
+              childDict.push({
+                Title: childTitle,
+                Assembly: child.assembly_id,
+                Value: child.value !== undefined ? child.value : 'NaN'
+              });
+            }
+          }
+          
+          if (childDict.length > 0) {
+            items.push({
+              Item: {
+                Name: parentName,
+                Title: parent.Titles[locale.value],
+                Titles: parent.Titles,
+                Descriptions: parent.Descriptions,
+                Status: parent.status
+              },
+              Child: childDict
+            });
+          }
+        }
+      }
+      
+      equipmentItems.value = items;
+
+      // 4. 차트 옵션 설정
+      if (chartList.length > 0) {
+        const effectiveIds = await setParamIds(chName, chartList, 'diagnostic');
+        let idxList = [], idList = [];
+        for (let i = 0; i < effectiveIds.length; i++) {
+          if (idxList.includes(effectiveIds[i].idx)) {
+            continue;
+          } else {
+            idList.push(effectiveIds[i]);
+            idxList.push(effectiveIds[i].idx);
+          }
+        }
+        for (let i = 0; i < idList.length; i++) {
+          const titleName = '[' + idList[i].Assembly + ']' + idList[i].title;
+          const chartValue = await setChartData(idList[i].idx, titleName);
+          equipmentChartOptions.value.push(chartValue);
+        }
+      }
+      
+      console.log('📊 Report Data 로드 완료:', timestamp);
+    } else {
+      console.log('No Report Data');
+    }
+  } catch (error) {
+    console.log("설비 진단 데이터 가져오기 실패:", error);
+  }
+};
       const fetchEquipmentData = async () => {
         equipmentItems.value = [];
         equipmentChartOptions.value = [];
@@ -429,6 +579,7 @@
   
       onMounted(async () => {
         await Promise.all([
+          //fetchLastReportData(),
           fetchEquipmentData(),
           fetchPQData(),
           fetchEventData()
@@ -439,6 +590,7 @@
         channel.value = newChannel
         equipmentEventData.value = [];
         await Promise.all([
+          //fetchLastReportData(),
           fetchEquipmentData(),
           fetchPQData(),
           fetchEventData()
