@@ -8,7 +8,7 @@
       <div ref="modalContent" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto max-w-2xl w-full max-h-full">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Save Configuration</h2>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ t('saveModal.title') }}</h2>
           </div>
 
           <!-- Progress Steps -->
@@ -35,26 +35,30 @@
               <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full">
                 <svg class="animate-spin w-8 h-8 text-violet-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               </div>
-              <div class="text-sm text-gray-600 dark:text-gray-300">{{ isSaving ? 'Saving configuration...' : 'Validating configuration settings...' }}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                {{ isSaving ? t('saveModal.messages.saving') : t('saveModal.validation.validating') }}
+              </div>
             </div>
 
             <div v-else class="space-y-4">
               <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                 <h3 class="font-semibold mb-3 flex items-center">
                   <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Validation Summary
+                  {{ t('saveModal.validation.summary') }}
                 </h3>
                 <div class="space-y-2 text-sm">
                   <div class="flex items-center justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Overall Status:</span>
-                    <span :class="validationResult.isValid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'">{{ validationResult.isValid ? "VALID" : "INVALID" }}</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ t('saveModal.validation.overallStatus') }}:</span>
+                    <span :class="validationResult.isValid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'">
+                      {{ validationResult.isValid ? t('saveModal.validation.valid') : t('saveModal.validation.invalid') }}
+                    </span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Errors:</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ t('saveModal.validation.errors') }}:</span>
                     <span :class="validationResult.errors.length > 0 ? 'text-red-600 font-semibold' : 'text-green-600'">{{ validationResult.errors.length }}</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Warnings:</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{ t('saveModal.validation.warnings') }}:</span>
                     <span :class="validationResult.warnings.length > 0 ? 'text-yellow-600 font-semibold' : 'text-green-600'">{{ validationResult.warnings.length }}</span>
                   </div>
                 </div>
@@ -63,7 +67,7 @@
               <div v-if="validationResult.errors.length > 0" class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
                 <h3 class="font-semibold mb-3 text-red-700 dark:text-red-400 flex items-center">
                   <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
-                  Critical Errors
+                  {{ t('saveModal.validation.criticalErrors') }}
                 </h3>
                 <ul class="space-y-1 text-sm max-h-40 overflow-y-auto">
                   <li v-for="(error, idx) in validationResult.errors" :key="idx" class="text-red-700 dark:text-red-400">• {{ error }}</li>
@@ -73,7 +77,7 @@
               <div v-if="validationResult.warnings.length > 0" class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
                 <h3 class="font-semibold mb-3 text-yellow-700 dark:text-yellow-400 flex items-center">
                   <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                  Warnings
+                  {{ t('saveModal.validation.warnings') }}
                 </h3>
                 <ul class="space-y-1 text-sm max-h-40 overflow-y-auto">
                   <li v-for="(warning, idx) in validationResult.warnings" :key="idx" class="text-yellow-700 dark:text-yellow-400">• {{ warning }}</li>
@@ -83,7 +87,7 @@
               <div v-if="validationResult.isValid && validationResult.errors.length === 0" class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                 <div class="flex items-center">
                   <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                  <span class="text-green-700 dark:text-green-400 font-medium">All validations passed</span>
+                  <span class="text-green-700 dark:text-green-400 font-medium">{{ t('saveModal.validation.allPassed') }}</span>
                 </div>
               </div>
             </div>
@@ -95,27 +99,29 @@
                   <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
                 <div class="flex-1">
-                  <h4 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Nameplate Configuration Changed</h4>
+                  <h4 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">{{ t('saveModal.nameplateWarning.title') }}</h4>
                   <p class="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
                     {{ nameplateWarningMessage }}
                   </p>
                   <label class="flex items-center cursor-pointer">
                     <input type="checkbox" v-model="nameplateConfirmed" class="w-4 h-4 text-yellow-600 border-yellow-300 rounded focus:ring-yellow-500" />
-                    <span class="ml-2 text-sm text-yellow-800 dark:text-yellow-200 font-medium">I understand and want to proceed with the updates</span>
+                    <span class="ml-2 text-sm text-yellow-800 dark:text-yellow-200 font-medium">{{ t('saveModal.nameplateConfirm') }}</span>
                   </label>
                 </div>
               </div>
             </div>
 
             <div class="flex justify-between mt-6">
-              <button class="btn px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg" :disabled="isProcessing" @click="cancelAndReload">Cancel</button>
+              <button class="btn px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg" :disabled="isProcessing" @click="cancelAndReload">
+                {{ t('saveModal.buttons.cancel') }}
+              </button>
               <button v-if="!isProcessing" class="btn px-4 py-2 rounded-lg" :class="canProceedToNext ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-400 text-gray-600 cursor-not-allowed'" :disabled="!canProceedToNext" @click="handleStep1Next">
-                {{ useDiagnosis ? 'Next →' : 'Save' }}
+                {{ useDiagnosis ? t('saveModal.buttons.next') : t('saveModal.buttons.save') }}
               </button>
             </div>
           </div>
 
-          <!-- Step 2: Diagnosis Config (진단 활성화시에만 표시) -->
+          <!-- Step 2: Diagnosis Config -->
           <div v-if="currentStep === 2" class="step-content">
             <div v-if="isProcessing" class="text-center py-8">
               <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full">
@@ -125,7 +131,7 @@
             </div>
 
             <div v-else class="space-y-4">
-              <h3 class="font-semibold text-gray-800 dark:text-gray-100 mb-4">Diagnosis Configuration Results</h3>
+              <h3 class="font-semibold text-gray-800 dark:text-gray-100 mb-4">{{ t('saveModal.diagnosis.results') }}</h3>
               
               <div v-for="result in diagnosisResults" :key="result.id" class="rounded-lg p-4" :class="result.status === 'error' ? 'bg-red-50 dark:bg-red-900/20' : result.status === 'success' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/50'">
                 <div class="flex items-start">
@@ -149,16 +155,24 @@
                   <svg v-if="hasDiagnosisErrors" class="w-6 h-6 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
                   <svg v-else class="w-6 h-6 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                   <div>
-                    <div class="font-semibold" :class="hasDiagnosisErrors ? 'text-red-700' : 'text-green-700'">{{ hasDiagnosisErrors ? "Configuration Failed" : "All Configurations Successful" }}</div>
-                    <div class="text-sm" :class="hasDiagnosisErrors ? 'text-red-600' : 'text-green-600'">{{ hasDiagnosisErrors ? "Please fix the errors and try again." : "Ready to save configuration file." }}</div>
+                    <div class="font-semibold" :class="hasDiagnosisErrors ? 'text-red-700' : 'text-green-700'">
+                      {{ hasDiagnosisErrors ? t('saveModal.diagnosis.configFailed') : t('saveModal.diagnosis.configSuccess') }}
+                    </div>
+                    <div class="text-sm" :class="hasDiagnosisErrors ? 'text-red-600' : 'text-green-600'">
+                      {{ hasDiagnosisErrors ? t('saveModal.diagnosis.fixErrors') : t('saveModal.diagnosis.readyToSave') }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="flex justify-between mt-6">
-              <button class="btn px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg" :disabled="isProcessing" @click="cancelAndReload">Cancel</button>
-              <button v-if="!isProcessing && !hasDiagnosisErrors" class="btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg" @click="saveAndClose">Save</button>
+              <button class="btn px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg" :disabled="isProcessing" @click="cancelAndReload">
+                {{ t('saveModal.buttons.cancel') }}
+              </button>
+              <button v-if="!isProcessing && !hasDiagnosisErrors" class="btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg" @click="saveAndClose">
+                {{ t('saveModal.buttons.save') }}
+              </button>
             </div>
           </div>
         </div>
@@ -171,12 +185,14 @@
 import { ref, computed, watch, inject } from "vue";
 import axios from "axios";
 import { settingValidator } from "@/utils/validation.js";
+import { useI18n } from "vue-i18n";
 
 export default {
   name: "SaveProgressModal",
   props: { modalOpen: { type: Boolean, default: false } },
   emits: ["close-modal", "save-complete"],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const inputDict = inject("inputDict");
     const channel_main = inject("channel_main");
     const channel_sub = inject("channel_sub");
@@ -190,34 +206,31 @@ export default {
     const isProcessing = ref(false);
     const isSaving = ref(false);
     const processingMessage = ref("");
-    const checkNameplateResult = ref({ main: false, sub: false }); // 채널별 결과 저장
+    const checkNameplateResult = ref({ main: false, sub: false });
 
     const steps = ref([
-      { id: 1, name: "Validation", status: "current" },
-      { id: 2, name: "Diagnosis Config", status: "pending" },
+      { id: 1, name: t('saveModal.validation.title') || "Validation", status: "current" },
+      { id: 2, name: t('saveModal.diagnosis.title') || "Diagnosis Config", status: "pending" },
     ]);
 
     const validationResult = ref({ isValid: false, errors: [], warnings: [] });
     const diagnosisResults = ref([]);
 
-    // Nameplate 변경 관련 상태
     const showNameplateWarning = ref(false);
     const nameplateWarningMessage = ref("");
     const nameplateConfirmed = ref(false);
 
-    // 다음 단계로 진행 가능 여부
     const canProceedToNext = computed(() => {
       if (!validationResult.value.isValid) return false;
       if (showNameplateWarning.value && !nameplateConfirmed.value) return false;
       return true;
     });
 
-    // 진단 사용 여부에 따라 표시할 스텝 결정
     const visibleSteps = computed(() => {
       if (useDiagnosis.value) {
         return steps.value;
       }
-      return [steps.value[0]]; // Validation만 표시
+      return [steps.value[0]];
     });
 
     const hasDiagnosisErrors = computed(() => diagnosisResults.value.some((r) => r.status === "error"));
@@ -243,6 +256,12 @@ export default {
       return "bg-gray-200 dark:bg-gray-700";
     };
 
+    const getChannelLabel = (channelName) => {
+      return channelName === "main" 
+        ? t('common.mainChannel') || 'Main channel'
+        : t('common.subChannel') || 'Sub channel';
+    };
+
     const resetState = () => {
       currentStep.value = 1;
       isProcessing.value = false;
@@ -253,8 +272,8 @@ export default {
       nameplateWarningMessage.value = "";
       nameplateConfirmed.value = false;
       steps.value = [
-        { id: 1, name: "Validation", status: "current" },
-        { id: 2, name: "Diagnosis Config", status: "pending" },
+        { id: 1, name: t('saveModal.validation.title') || "Validation", status: "current" },
+        { id: 2, name: t('saveModal.diagnosis.title') || "Diagnosis Config", status: "pending" },
       ];
       validationResult.value = { isValid: false, errors: [], warnings: [] };
       diagnosisResults.value = [];
@@ -272,7 +291,6 @@ export default {
             result.isValid = false;
           }
 
-          // Nameplate 변경 확인
           await checkNameplateChanges();
         }
 
@@ -286,9 +304,8 @@ export default {
       }
     };
 
-    // Nameplate 변경 확인
     const checkNameplateChanges = async () => {
-      let changedAssets = []; // ✅ { channel, type } 객체 수집
+      let changedAssets = [];
       checkNameplateResult.value = { main: false, sub: false };
 
       for (const channelName in diagnosis_detail.value) {
@@ -306,14 +323,12 @@ export default {
             if (changed) {
               checkNameplateResult.value[channelName] = true;
               
-              // ✅ asset 타입 가져오기
               const assetType = channelName === "main" 
                 ? channel_main.value.assetInfo?.type 
                 : channel_sub.value.assetInfo?.type;
               
               if (assetType) {
-                // ✅ 채널명을 "Main channel" 또는 "Sub channel" 형식으로 저장
-                const channelLabel = channelName === "main" ? "Main channel" : "Sub channel";
+                const channelLabel = getChannelLabel(channelName);
                 changedAssets.push({ channel: channelLabel, type: assetType });
               }
             }
@@ -323,29 +338,30 @@ export default {
         }
       }
 
-      console.log('checkNameplateResult:', checkNameplateResult.value);
-
       if (changedAssets.length > 0) {
         showNameplateWarning.value = true;
         
-        // ✅ 새로운 메시지 포맷 (채널 + 타입)
         if (changedAssets.length === 1) {
           const asset = changedAssets[0];
-          nameplateWarningMessage.value = 
-            `Changes to the ${asset.channel} ${asset.type}'s nameplate parameters invalidate previous calculations. All stored data for ${asset.type} will be deleted and rebuilt from scratch.`;
+          nameplateWarningMessage.value = t('saveModal.nameplateWarning.single', {
+            channel: asset.channel,
+            type: asset.type
+          }) || `Changes to the ${asset.channel} ${asset.type}'s nameplate parameters invalidate previous calculations. All stored data for ${asset.type} will be deleted and rebuilt from scratch.`;
         } else {
-          // 2개인 경우
           const assetDescriptions = changedAssets.map(asset => 
             `"${asset.channel}'s ${asset.type}"`
-          ).join(' and ');
-          nameplateWarningMessage.value = 
-            `Changes to ${assetDescriptions} nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch.`;
+          ).join(` ${t('common.and') || 'and'} `);
+          
+          nameplateWarningMessage.value = t('saveModal.nameplateWarning.multiple', {
+            assets: assetDescriptions
+          }) || `Changes to ${assetDescriptions} nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch.`;
         }
       } else {
         showNameplateWarning.value = false;
         nameplateWarningMessage.value = "";
       }
     };
+
     const validateDiagnosisAssets = () => {
       const errors = [];
       if (!diagnosis_detail.value) return errors;
@@ -374,22 +390,22 @@ export default {
       diagnosisResults.value = [];
 
       try {
-        processingMessage.value = "Configuring nameplate settings...";
+        processingMessage.value = t('saveModal.diagnosis.configuring') || "Configuring nameplate settings...";
         const nameplateResult = await runNameplateConfig();
         diagnosisResults.value.push(nameplateResult);
         if (nameplateResult.status === "error") { steps.value[1].status = "error"; isProcessing.value = false; return; }
 
-        processingMessage.value = "Setting asset parameters...";
+        processingMessage.value = t('saveModal.diagnosis.settingParams') || "Setting asset parameters...";
         const paramsResult = await runAssetParams();
         diagnosisResults.value.push(paramsResult);
         if (paramsResult.status === "error") { steps.value[1].status = "error"; isProcessing.value = false; return; }
 
-        processingMessage.value = "Saving diagnosis settings...";
+        processingMessage.value = t('saveModal.diagnosis.savingSettings') || "Saving diagnosis settings...";
         const diagResult = await runDiagnosisSettings();
         diagnosisResults.value.push(diagResult);
         if (diagResult.status === "error") { steps.value[1].status = "error"; isProcessing.value = false; return; }
 
-        processingMessage.value = "Saving advanced profile...";
+        processingMessage.value = t('saveModal.diagnosis.savingProfile') || "Saving advanced profile...";
         const advResult = await runAdvancedProfile();
         diagnosisResults.value.push(advResult);
         steps.value[1].status = advResult.status === "error" ? "error" : "success";
@@ -402,7 +418,7 @@ export default {
     };
 
     const runNameplateConfig = async () => {
-      const result = { id: "nameplate", name: "Nameplate Configuration", status: "success", message: "", errors: [] };
+      const result = { id: "nameplate", name: t('saveModal.diagnosis.nameplate') || "Nameplate Configuration", status: "success", message: "", errors: [] };
 
       try {
         for (const channelName in diagnosis_detail.value) {
@@ -422,7 +438,6 @@ export default {
             }
           }
         }
-        // checkNameplateResult는 1단계에서 이미 채널별로 설정됨
         const hasAnyChange = checkNameplateResult.value.main || checkNameplateResult.value.sub;
         if (result.status !== "error") result.message = hasAnyChange ? "Nameplate updated (requires recommissioning)" : "Nameplate saved";
       } catch (error) {
@@ -444,7 +459,7 @@ export default {
     };
 
     const runAssetParams = async () => {
-      const result = { id: "params", name: "Asset Parameters", status: "success", message: "Parameters configured", errors: [] };
+      const result = { id: "params", name: t('saveModal.diagnosis.parameters') || "Asset Parameters", status: "success", message: "Parameters configured", errors: [] };
       try {
         for (const channelName in diagnosis_detail.value) {
           const channelData = diagnosis_detail.value[channelName];
@@ -464,7 +479,7 @@ export default {
     };
 
     const runDiagnosisSettings = async () => {
-      const result = { id: "diagSettings", name: "Diagnosis Settings", status: "success", message: "Settings saved", errors: [] };
+      const result = { id: "diagSettings", name: t('saveModal.diagnosis.settings') || "Diagnosis Settings", status: "success", message: "Settings saved", errors: [] };
       try {
         if (diagnosisData.value && Object.keys(diagnosisData.value).length > 0) {
           const response = await axios.post("/setting/setDiagnosisSetting", diagnosisData.value, { headers: { "Content-Type": "application/json" }, withCredentials: true });
@@ -479,7 +494,7 @@ export default {
     };
 
     const runAdvancedProfile = async () => {
-      const result = { id: "advanced", name: "Advanced Profile", status: "success", message: "Profile saved", errors: [] };
+      const result = { id: "advanced", name: t('saveModal.diagnosis.profile') || "Advanced Profile", status: "success", message: "Profile saved", errors: [] };
       try {
         if (advancedData.value && Object.keys(advancedData.value).length > 0) {
           const response = await axios.post("/setting/setDiagnosisProfile", advancedData.value, { headers: { "Content-Type": "application/json" }, withCredentials: true });
@@ -496,21 +511,21 @@ export default {
     const saveAndClose = async () => {
       isProcessing.value = true;
       isSaving.value = true;
-      processingMessage.value = "Saving configuration...";
+      processingMessage.value = t('saveModal.messages.saving') || "Saving configuration...";
 
       try {
         const formattedData = transFormat();
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
-          alert("Configuration saved successfully!");
+          alert(t('saveModal.messages.saveSuccess') || "Configuration saved successfully!");
           emit("save-complete", { success: true });
           emit("close-modal");
         } else {
-          alert("Save failed: " + (response.data?.error || "Unknown error"));
+          alert((t('saveModal.messages.saveFailed') || "Save failed") + ": " + (response.data?.error || "Unknown error"));
         }
       } catch (error) {
-        alert("Save failed: " + error.message);
+        alert((t('saveModal.messages.saveFailed') || "Save failed") + ": " + error.message);
       } finally {
         isProcessing.value = false;
         isSaving.value = false;
@@ -578,7 +593,8 @@ export default {
       validationResult, diagnosisResults, hasDiagnosisErrors, useDiagnosis,
       showNameplateWarning, nameplateWarningMessage, nameplateConfirmed, canProceedToNext,
       getStepClass, getStepLabelClass, getConnectorClass, 
-      handleStep1Next, saveAndClose, cancelAndReload 
+      handleStep1Next, saveAndClose, cancelAndReload,
+      t
     };
   },
 };

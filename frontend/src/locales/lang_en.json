@@ -16,8 +16,59 @@
         "over":"Over",
         "minu": "min",
         "hour":"Hour",
-        "sec" :"Sec"
+        "sec" :"Sec",
+        "mainChannel": "Main channel",
+        "subChannel": "Sub channel",
+        "and": "and"
     },
+    "saveModal": {
+    "title": "Save Configuration",
+    "nameplateWarning": {
+      "title": "Nameplate Configuration Changed",
+      "single": "Changes to the {channel} {type}'s nameplate parameters invalidate previous calculations. All stored data for {type} will be deleted and rebuilt from scratch.",
+      "multiple": "Changes to {assets} nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch."
+    },
+    "nameplateConfirm": "I understand and want to proceed with the updates",
+    "validation": {
+      "title": "Validation",
+      "summary": "Validation Summary",
+      "overallStatus": "Overall Status",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "criticalErrors": "Critical Errors",
+      "allPassed": "All validations passed",
+      "valid": "VALID",
+      "invalid": "INVALID",
+      "validating": "Validating configuration settings..."
+    },
+    "diagnosis": {
+      "title": "Diagnosis Config",
+      "results": "Diagnosis Configuration Results",
+      "nameplate": "Nameplate Configuration",
+      "parameters": "Asset Parameters",
+      "settings": "Diagnosis Settings",
+      "profile": "Advanced Profile",
+      "configSuccess": "All Configurations Successful",
+      "configFailed": "Configuration Failed",
+      "readyToSave": "Ready to save configuration file.",
+      "fixErrors": "Please fix the errors and try again.",
+      "configuring": "Configuring nameplate settings...",
+      "settingParams": "Setting asset parameters...",
+      "savingSettings": "Saving diagnosis settings...",
+      "savingProfile": "Saving advanced profile..."
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "next": "Next →",
+      "save": "Save",
+      "close": "Close"
+    },
+    "messages": {
+      "saving": "Saving configuration...",
+      "saveSuccess": "Configuration saved successfully!",
+      "saveFailed": "Save failed"
+    }
+  },
     "signin": {
         "account": "Account",
         "language": "Language",
