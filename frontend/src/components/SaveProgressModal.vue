@@ -288,20 +288,24 @@ export default {
 
     // Nameplate 변경 확인
     const checkNameplateChanges = async () => {
-      let nameplateChannels = [];
-      checkNameplateResult.value = { main: false, sub: false }; // 초기화
+      let changedAssets = []; // 변경된 asset 이름만 수집
+      checkNameplateResult.value = { main: false, sub: false };
 
       for (const channelName in diagnosis_detail.value) {
         const channelData = diagnosis_detail.value[channelName];
-        const isDiagEnabled = channelName === "main" ? inputDict.value.useFuction?.diagnosis_main : inputDict.value.useFuction?.diagnosis_sub;
+        const isDiagEnabled = channelName === "main" 
+          ? inputDict.value.useFuction?.diagnosis_main 
+          : inputDict.value.useFuction?.diagnosis_sub;
 
-        if (channelData?.use && isDiagEnabled && channelData.assetName && channelData.assetName !== "" && channelData.tableData?.length > 0) {
+        if (channelData?.use && isDiagEnabled && 
+            channelData.assetName && channelData.assetName !== "" && 
+            channelData.tableData?.length > 0) {
           try {
             const combinedData = [...channelData.tableData, ...(channelData.modalData || [])];
             const changed = await checkNameplateConfig(combinedData, channelData.assetName);
             if (changed) {
               checkNameplateResult.value[channelName] = true;
-              nameplateChannels.push(`${channelName} channel(${channelData.assetName})`);
+              changedAssets.push(channelData.assetName); // ✅ asset 이름만 추가
             }
           } catch (error) {
             console.error(`Error checking nameplate for ${channelName}:`, error);
@@ -311,15 +315,24 @@ export default {
 
       console.log('checkNameplateResult:', checkNameplateResult.value);
 
-      if (nameplateChannels.length > 0) {
+      if (changedAssets.length > 0) {
         showNameplateWarning.value = true;
-        nameplateWarningMessage.value = `Nameplate configuration has been changed for: ${nameplateChannels.join(", ")}. The changed settings will delete all previous calculations. Would you like to proceed?`;
+        
+        // ✅ 새로운 메시지 포맷
+        if (changedAssets.length === 1) {
+          nameplateWarningMessage.value = 
+            `Changes to the ${changedAssets[0]}'s nameplate parameters invalidate previous calculations. All stored data for ${changedAssets[0]} will be deleted and rebuilt from scratch.`;
+        } else {
+          // 2개 이상인 경우 따옴표로 감싸서 표시
+          const assetNames = changedAssets.map(name => `"${name}"`).join(' and ');
+          nameplateWarningMessage.value = 
+            `Changes to ${assetNames}'s nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch.`;
+        }
       } else {
         showNameplateWarning.value = false;
         nameplateWarningMessage.value = "";
       }
     };
-
     const validateDiagnosisAssets = () => {
       const errors = [];
       if (!diagnosis_detail.value) return errors;
