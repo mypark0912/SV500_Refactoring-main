@@ -21,6 +21,85 @@
         "subChannel": "Sub channel",
         "and": "and"
     },
+    "onboardingModal": {
+    "steps": {
+      "restartCheck": "Restart Check",
+      "mainTest": "Main Test",
+      "subTest": "Sub Test",
+      "complete": "Complete"
+    },
+    "restartCheck": {
+      "title": "Restart Check",
+      "checking": "Checking restart requirement...",
+      "status": "Restart Status",
+      "required": "Restart Required",
+      "checkTime": "Check Time",
+      "needsRestart": "Device restart is required. Click \"Next\" to proceed with restart.",
+      "noRestart": "No restart required. Click \"Next\" to proceed."
+    },
+    "mainTest": {
+      "title": "Main Test Result",
+      "loading": "Loading main test result...This process may take 20 seconds or longer.",
+      "report": "Main Device Report"
+    },
+    "subTest": {
+      "title": "Sub Test Result",
+      "loading": "Loading sub test result...This process may take 20 seconds or longer.",
+      "report": "Sub Device Report"
+    },
+    "test": {
+      "assetType": "Asset Type",
+      "serialNumber": "Serial Number",
+      "channel": "Channel",
+      "result": "Result: {errors} Errors, {warnings} Warnings",
+      "assemblyId": "AssemblyId",
+      "detail": "Detail",
+      "status": "Status",
+      "viewCharts": "View Charts",
+      "chartTitle": "{type} Chart",
+      "fixErrors": "Fix Errors First",
+      "statusList": {
+        "info": "Info",
+        "pass": "Pass",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "chartTypes": {
+        "timedomainvoltage": "Time Domain(Voltage)",
+        "timedomaincurrent": "Time Domain(Current)",
+        "frequencydomainvoltage": "Frequency Domain(Voltage)",
+        "frequencydomaincurrent": "Frequency Domain(Current)"
+      }
+    },
+    "complete": {
+      "title": "Complete Setup",
+      "summary": "Configuration Summary",
+      "restartCheck": "Restart Check",
+      "mainTest": "Main Test",
+      "subTest": "Sub Test",
+      "overallStatus": "Overall Status",
+      "completed": "COMPLETED",
+      "passed": "PASSED",
+      "ready": "READY",
+      "errors": "{count} Errors",
+      "confirmMessage": "By completing this setup, you confirm that all tests have been reviewed and the system is ready for operation."
+    },
+    "buttons": {
+      "nextStep": "Next Step →",
+      "restart": "Restart",
+      "finish": "Finish"
+    },
+    "messages": {
+      "restartingFirmware": "Restarting firmware...",
+      "restartFailed": "Firmware restart failed",
+      "checkingMainCommission": "Checking Main commission...",
+      "checkingSubCommission": "Checking Sub commission...",
+      "acquiringWaveform": "Acquiring waveform file...",
+      "triggerFailed": "Trigger failed",
+      "waitingRestart": "Waiting for restart firmware",
+      "commissioningFailed": "Failed Commissioning"
+    }
+  },
     "saveModal": {
     "title": "Save Configuration",
     "nameplateWarning": {
