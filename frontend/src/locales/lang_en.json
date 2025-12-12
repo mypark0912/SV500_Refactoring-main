@@ -547,7 +547,8 @@
         "options": {
             "phaseVoltage": "Phase Voltage",
             "lineVoltage": "Line-to-Line Voltage",
-            "current": "Current"
+            "current": "Current",
+            "voltage":"Voltage"
         },
         "Button": {
             "table": "Table",

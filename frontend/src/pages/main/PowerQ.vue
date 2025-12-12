@@ -167,7 +167,7 @@ export default {
     const waveUpdate = ref(false);
     const waveInterval = ref(null);  // Waveform용 interval 추가
     let timeout_harmonics = 5;
-    const w_mode = ref(0);
+    //const w_mode = ref(0);
     const channelComputed = computed(
       () => props.channel || route.params.channel || "Default"
     );
@@ -198,12 +198,12 @@ export default {
         return setupStore.getAssetConfig.assetdriveType_sub;
     })
 
-    const asset = computed(()=>{
-      if (channelComputed.value == 'Main' || channelComputed.value == 'main')
-        return setupStore.getAssetConfig.assetName_main;
-      else
-        return setupStore.getAssetConfig.assetName_sub;
-    });
+    // const asset = computed(()=>{
+    //   if (channelComputed.value == 'Main' || channelComputed.value == 'main')
+    //     return setupStore.getAssetConfig.assetName_main;
+    //   else
+    //     return setupStore.getAssetConfig.assetName_sub;
+    // });
 
     const scaledDataV = (waveform) => {
       const vscale = tbdata.value["vscale"];
@@ -476,28 +476,26 @@ export default {
     const fetchInterval = async () => {
       //console.log('FetchInterval')
       try {
-        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}/${asset.value}`);
+        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}`);
         if (response.data.success) {
           timeout_harmonics = parseInt(response.data.data);
-          w_mode.value = response.data.w_mode;
-          //console.log(channelComputed.value,'-', timeout_harmonics);
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
       }
     };
 
-    const fetchChannels = async () => {
-      try {
-        const response = await axios.get(`/api/getChData/${channelComputed.value}`);
-        if (response.data.success) {
-          w_mode.value = parseInt(response.data.data["PT_WiringMode"]);
-          console.log(channelComputed.value,'- wmode:', w_mode.value);
-        }
-      } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
-      }
-    };
+    // const fetchChannels = async () => {
+    //   try {
+    //     const response = await axios.get(`/api/getChData/${channelComputed.value}`);
+    //     if (response.data.success) {
+    //       w_mode.value = parseInt(response.data.data["PT_WiringMode"]);
+    //       console.log(channelComputed.value,'- wmode:', w_mode.value);
+    //     }
+    //   } catch (error) {
+    //     console.log("데이터 가져오기 실패:", error);
+    //   }
+    // };
 
     // 상태 관리를 위한 ref들
     const dataInterval = ref(null);
@@ -626,10 +624,10 @@ export default {
     };
 
     // 컴포넌트 마운트 시
-    onMounted(async() => {
+    onMounted(() => {
       //console.log("PowerQ 컴포넌트 마운트됨");
       isComponentActive.value = true;
-      await fetchChannels();
+      //await fetchChannels();
       startInterval();
     });
     
@@ -835,8 +833,8 @@ export default {
       stopWaveInterval,  // 추가
       stopAllIntervals,  // 추가
       driveType,
-      asset,
-      w_mode,
+      // asset,
+      // w_mode,
     };
   },
 };

@@ -541,7 +541,8 @@
     "options": {
       "phaseVoltage": "상전압",
       "lineVoltage": "선간전압",
-      "current": "전류"
+      "current": "전류",
+      "voltage":"전압"
     },
     "Button": {
       "table": "테이블",

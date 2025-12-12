@@ -1257,6 +1257,52 @@ def get_running(channel):
         return {"total": 0, "current": 0}
 
 
+@router.get("/getRealTimeHarmonics/{asset}")
+@gc_after_large_data(threshold_mb=30)
+async def get_realtime_harmonics(asset):
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
+        data = response.json()
+
+    if data and "Data" in data:
+        # 하모닉스 데이터 추출
+        voltage_harmonics = []  # harmonicsSelectedV2 ~ V63
+        current_harmonics = []  # harmonicsSelectedI2 ~ I63
+
+        for i in range(2, 64):
+            v_item = next((d for d in data["Data"] if d["Name"] == f"harmonicsSelectedV{i}"), None)
+            i_item = next((d for d in data["Data"] if d["Name"] == f"harmonicsSelectedI{i}"), None)
+
+            # Value 추출 (NaN이면 0으로)
+            if v_item:
+                try:
+                    v_val = float(v_item["Value"])
+                    voltage_harmonics.append(0 if v_val != v_val else v_val)  # NaN 체크
+                except (ValueError, TypeError):
+                    voltage_harmonics.append(0)
+            else:
+                voltage_harmonics.append(0)
+
+            if i_item:
+                try:
+                    i_val = float(i_item["Value"])
+                    current_harmonics.append(0 if i_val != i_val else i_val)  # NaN 체크
+                except (ValueError, TypeError):
+                    current_harmonics.append(0)
+            else:
+                current_harmonics.append(0)
+
+        return {
+            "success": True,
+            "data": {
+                "LastRecordDateTime": data.get("LastRecordDateTime", ""),
+                "voltage": voltage_harmonics,  # 62개 (2차~63차)
+                "current": current_harmonics  # 62개 (2차~63차)
+            }
+        }
+    else:
+        return {"success": False}
+
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
 async def get_realtime(assettype, asset, request: Request):
