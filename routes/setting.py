@@ -1279,10 +1279,18 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         else:
             main_d = 15*60
         main_s = int(main_channel_data["sampling"]["period"])*60
+        main_data = {
+            "PT_WiringMode":int(main_channel_data["ptInfo"]["wiringmode"]),
+            "RatedFrequency": int(main_channel_data["ptInfo"]["linefrequency"]),
+            "RatedVoltage": int(main_channel_data["ptInfo"]["vnorminal"]),
+            "RatedCurrent": int(main_channel_data["ctInfo"]["inorminal"]),
+            "RatedKVA": int(main_channel_data["n_kva"])
+        }
     else:
         main_c = 0
         main_d = 15*60
         main_s = 0
+        main_data = {}
     sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
     if sub_channel_data:
         sub_c = int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
@@ -1291,11 +1299,20 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         else:
             sub_d = 15 * 60
         sub_s = int(sub_channel_data["sampling"]["period"])*60
+        sub_data = {
+            "PT_WiringMode": int(sub_channel_data["ptInfo"]["wiringmode"]),
+            "RatedFrequency": int(sub_channel_data["ptInfo"]["linefrequency"]),
+            "RatedVoltage": int(sub_channel_data["ptInfo"]["vnorminal"]),
+            "RatedCurrent": int(sub_channel_data["ctInfo"]["inorminal"]),
+            "RatedKVA": int(sub_channel_data["n_kva"])
+        }
     else:
         sub_c = 0
         sub_d = 15*60
         sub_s = 0
-    return {"StartCurrent":{"main": main_c, "sub": sub_c},"Demand":{"main": main_d, "sub": sub_d},"Sampling":{"main": main_s, "sub": sub_s}}
+        sub_data = {}
+    return {"StartCurrent":{"main": main_c, "sub": sub_c},"Demand":{"main": main_d, "sub": sub_d},
+            "Sampling":{"main": main_s, "sub": sub_s}, "Channel": {"main": main_data, "sub":sub_data}}
 
 @router.get('/getSetting')
 def get_setting():
@@ -2842,6 +2859,7 @@ def apply():
     redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
     redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
     redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
+    redis_state.client.hset("Equipment", "ChannelData", json.dumps(procData["Channel"]))
 
     if dash_alarms_data:
         redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))

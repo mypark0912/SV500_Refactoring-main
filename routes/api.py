@@ -2769,6 +2769,20 @@ def get_interval(mode, channel):
         else:
             return {"success": False}
 
+@router.get("/getChData/{channel}")
+def get_Equip_ChData(channel):
+    if channel == 'Main' or channel == 'main':
+        chName = 'main'
+    else:
+        chName = 'sub'
+    if redis_state.client.hexists("Equipment", "ChannelData"):
+        chData = redis_state.client.hget("Equipment", "ChannelData")
+        chDict = json.loads(chData)
+        return {"success": True, "data": chDict[chName]}
+    else:
+        return {"success": False}
+
+
 @router.get("/getOnesfromRedis/{channel}/{unbal}")
 def get_OneSecond(channel, unbal):
     try:
