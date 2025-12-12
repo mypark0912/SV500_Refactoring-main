@@ -101,7 +101,7 @@
                   </p>
                   <label class="flex items-center cursor-pointer">
                     <input type="checkbox" v-model="nameplateConfirmed" class="w-4 h-4 text-yellow-600 border-yellow-300 rounded focus:ring-yellow-500" />
-                    <span class="ml-2 text-sm text-yellow-800 dark:text-yellow-200 font-medium">I understand and want to proceed with the changes</span>
+                    <span class="ml-2 text-sm text-yellow-800 dark:text-yellow-200 font-medium">I understand and want to proceed with the updates</span>
                   </label>
                 </div>
               </div>
@@ -288,7 +288,7 @@ export default {
 
     // Nameplate 변경 확인
     const checkNameplateChanges = async () => {
-      let changedAssets = []; // 변경된 asset 이름만 수집
+      let changedAssets = []; // ✅ { channel, type } 객체 수집
       checkNameplateResult.value = { main: false, sub: false };
 
       for (const channelName in diagnosis_detail.value) {
@@ -305,7 +305,17 @@ export default {
             const changed = await checkNameplateConfig(combinedData, channelData.assetName);
             if (changed) {
               checkNameplateResult.value[channelName] = true;
-              changedAssets.push(channelData.assetName); // ✅ asset 이름만 추가
+              
+              // ✅ asset 타입 가져오기
+              const assetType = channelName === "main" 
+                ? channel_main.value.assetInfo?.type 
+                : channel_sub.value.assetInfo?.type;
+              
+              if (assetType) {
+                // ✅ 채널명을 "Main channel" 또는 "Sub channel" 형식으로 저장
+                const channelLabel = channelName === "main" ? "Main channel" : "Sub channel";
+                changedAssets.push({ channel: channelLabel, type: assetType });
+              }
             }
           } catch (error) {
             console.error(`Error checking nameplate for ${channelName}:`, error);
@@ -318,15 +328,18 @@ export default {
       if (changedAssets.length > 0) {
         showNameplateWarning.value = true;
         
-        // ✅ 새로운 메시지 포맷
+        // ✅ 새로운 메시지 포맷 (채널 + 타입)
         if (changedAssets.length === 1) {
+          const asset = changedAssets[0];
           nameplateWarningMessage.value = 
-            `Changes to the ${changedAssets[0]}'s nameplate parameters invalidate previous calculations. All stored data for ${changedAssets[0]} will be deleted and rebuilt from scratch.`;
+            `Changes to the ${asset.channel} ${asset.type}'s nameplate parameters invalidate previous calculations. All stored data for ${asset.type} will be deleted and rebuilt from scratch.`;
         } else {
-          // 2개 이상인 경우 따옴표로 감싸서 표시
-          const assetNames = changedAssets.map(name => `"${name}"`).join(' and ');
+          // 2개인 경우
+          const assetDescriptions = changedAssets.map(asset => 
+            `"${asset.channel}'s ${asset.type}"`
+          ).join(' and ');
           nameplateWarningMessage.value = 
-            `Changes to ${assetNames}'s nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch.`;
+            `Changes to ${assetDescriptions} nameplate parameters invalidate previous calculations. All stored data for these assets will be deleted and rebuilt from scratch.`;
         }
       } else {
         showNameplateWarning.value = false;
