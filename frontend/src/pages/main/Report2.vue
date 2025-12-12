@@ -127,7 +127,7 @@
   import Report_WattHour from '../../partials/inners/report/Report_WattHour.vue';
   //import Report_Energy from '../../partials/Report_Energy.vue';
   import Report_ITIC from '../../partials/inners/report/Report_ITIC.vue';
-  import Report_Diagnosis from '../../partials/inners/report/Report_Diagnosis_accordian.vue';
+  import Report_Diagnosis from '../../partials/inners/report/Report_Diagnosis_accordion2.vue';
   //import Report_Diagnosis from '../../partials/dashboard/Report_Diagnosis_trans.vue';
   //import Report_Info from "../../partials/Report_Info.vue";
   import Report_Info from "../../partials/inners/report/Report_Info.vue";

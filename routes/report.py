@@ -4,6 +4,7 @@ EN50160 전력품질 리포트 생성 (FastAPI 연동)
 - ITIC Curve Analysis (전력품질 차트)
 """
 from fastapi import APIRouter, Request, HTTPException
+from states.global_state import influx_state, redis_state, os_spec
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -13,7 +14,7 @@ import matplotlib.font_manager as fm
 import numpy as np
 from datetime import datetime
 from .api import get_asset
-import requests
+import logging
 import os
 
 # 한글 폰트 설정 (프로젝트 폴더의 나눔고딕 사용)
@@ -419,3 +420,234 @@ async def set_report(request: Request):
     o_path = await generate_report(data["assetName"], data["assetType"], data["location"])
     print(f"\n✅ 리포트 생성 완료: {o_path}")
     return True
+
+@router.get('/lastReportData/{mode}/{asset_name}')
+async def get_last_diagnosis(mode: str, asset_name: str):
+    """마지막 진단 데이터 조회"""
+    try:
+        query_api = influx_state.query_api
+
+        logging.info(f"🔍 조회 시작: mode={mode}, asset_name={asset_name}")
+
+        # 1단계: 마지막 타임스탬프 찾기 (status 필드만)
+        timestamp_query = f'''
+        from(bucket: "ntek")
+            |> range(start: -7d)
+            |> filter(fn: (r) => r["_measurement"] == "{mode}")
+            |> filter(fn: (r) => r["asset_name"] == "{asset_name}")
+            |> filter(fn: (r) => r["data_type"] == "main")
+            |> filter(fn: (r) => r["_field"] == "status")
+            |> last()
+        '''
+
+        ts_tables = query_api.query(timestamp_query)
+
+        last_time = None
+        for table in ts_tables:
+            for record in table.records:
+                t = record.get_time()
+                if last_time is None or t > last_time:
+                    last_time = t
+
+        if not last_time:
+            logging.warning("⚠️ 데이터 없음")
+            return {"success": False, "msg": "No Data"}
+
+        logging.info(f"📅 마지막 타임스탬프: {last_time.isoformat()}")
+
+        # 2단계: 해당 타임스탬프 ±1초 범위의 모든 데이터 조회
+        from datetime import timedelta, timezone
+        start_time = (last_time - timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        end_time = (last_time + timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+        data_query = f'''
+        from(bucket: "ntek30")
+            |> range(start: {start_time}, stop: {end_time})
+            |> filter(fn: (r) => r["_measurement"] == "{mode}")
+            |> filter(fn: (r) => r["asset_name"] == "{asset_name}")
+        '''
+
+        logging.info(f"📊 데이터 쿼리 실행")
+        tables = query_api.query(data_query)
+
+        # item_name(태그) 기준으로 그룹핑
+        grouped = {"main": {}, "detail": {}}
+
+        for table in tables:
+            for record in table.records:
+                data_type = record.values.get("data_type")
+                item_name = record.values.get("item_name")
+
+                if not data_type or data_type not in ["main", "detail"]:
+                    continue
+                if not item_name:
+                    continue
+
+                # item_name을 키로 사용
+                if item_name not in grouped[data_type]:
+                    grouped[data_type][item_name] = {
+                        "item_name": item_name,
+                        "data_type": data_type,
+                        "asset_name": record.values.get("asset_name"),
+                        "channel": record.values.get("channel"),
+                    }
+                    if data_type == "detail":
+                        grouped[data_type][item_name]["parent_name"] = record.values.get("parent_name")
+
+                # 필드 값 추가
+                field_name = record.get_field()
+                field_value = record.get_value()
+                grouped[data_type][item_name][field_name] = field_value
+
+        # 딕셔너리를 리스트로 변환
+        main_data = list(grouped["main"].values())
+        detail_data = list(grouped["detail"].values())
+
+        # timestamp timezone 제거
+        if last_time.tzinfo is not None:
+            last_time_local = last_time.astimezone().replace(tzinfo=None)
+        else:
+            last_time_local = last_time
+
+        logging.info(f"✅ 최종 결과: main={len(main_data)}개, detail={len(detail_data)}개")
+
+        result = {
+            "asset_name": asset_name,
+            "mode": mode,
+            "timestamp": last_time_local.isoformat() if last_time_local else None,
+            "main": main_data,
+            "detail": detail_data
+        }
+
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        logging.error(f"❌ 마지막 진단 데이터 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "msg": str(e)}
+
+
+@router.get('/reportTimes/{date}/{asset_name}/{mode}')
+async def get_report_times(date: str, asset_name: str, mode: str):
+    """특정 날짜의 저장 시간 목록 조회 (mode별)"""
+    try:
+        query_api = influx_state.query_api
+
+        start_time = f"{date}T00:00:00Z"
+        end_time = f"{date}T23:59:59Z"
+
+        query = f'''
+        from(bucket: "ntek")
+            |> range(start: {start_time}, stop: {end_time})
+            |> filter(fn: (r) => r["_measurement"] == "{mode}")
+            |> filter(fn: (r) => r["asset_name"] == "{asset_name}")
+            |> filter(fn: (r) => r["data_type"] == "main")
+            |> filter(fn: (r) => r["_field"] == "status")
+        '''
+
+        tables = query_api.query(query)
+
+        times = set()
+        for table in tables:
+            for record in table.records:
+                t = record.get_time()
+                if t.tzinfo is not None:
+                    t_local = t.astimezone().replace(tzinfo=None)
+                else:
+                    t_local = t
+                times.add(t_local.isoformat())
+
+        sorted_times = sorted(list(times), reverse=True)
+
+        logging.info(f"📅 {mode} {date} 시간 목록: {len(sorted_times)}개")
+        return {"success": True, "data": sorted_times}
+
+    except Exception as e:
+        logging.error(f"❌ 시간 목록 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "msg": str(e)}
+
+
+@router.get('/reportDataByTime/{mode}/{asset_name}/{timestamp}')
+async def get_report_data_by_time(mode: str, asset_name: str, timestamp: str):
+    """특정 시간의 데이터 조회"""
+    try:
+        query_api = influx_state.query_api
+
+        # timestamp를 UTC로 변환
+        from datetime import datetime, timedelta, timezone
+
+        local_time = datetime.fromisoformat(timestamp)
+        if local_time.tzinfo is None:
+            # 로컬 타임존 적용 후 UTC로 변환
+            import time
+            utc_offset = -time.timezone
+            local_tz = timezone(timedelta(seconds=utc_offset))
+            local_time = local_time.replace(tzinfo=local_tz)
+
+        utc_time = local_time.astimezone(timezone.utc)
+
+        # ±1초 범위
+        start_time = (utc_time - timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        end_time = (utc_time + timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+        logging.info(f"🔍 조회: mode={mode}, asset={asset_name}, time={timestamp}")
+
+        data_query = f'''
+        from(bucket: "ntek")
+            |> range(start: {start_time}, stop: {end_time})
+            |> filter(fn: (r) => r["_measurement"] == "{mode}")
+            |> filter(fn: (r) => r["asset_name"] == "{asset_name}")
+        '''
+
+        tables = query_api.query(data_query)
+
+        # item_name 기준으로 그룹핑
+        grouped = {"main": {}, "detail": {}}
+
+        for table in tables:
+            for record in table.records:
+                data_type = record.values.get("data_type")
+                item_name = record.values.get("item_name")
+
+                if not data_type or data_type not in ["main", "detail"]:
+                    continue
+                if not item_name:
+                    continue
+
+                if item_name not in grouped[data_type]:
+                    grouped[data_type][item_name] = {
+                        "item_name": item_name,
+                        "data_type": data_type,
+                        "asset_name": record.values.get("asset_name"),
+                        "channel": record.values.get("channel"),
+                    }
+                    if data_type == "detail":
+                        grouped[data_type][item_name]["parent_name"] = record.values.get("parent_name")
+
+                field_name = record.get_field()
+                field_value = record.get_value()
+                grouped[data_type][item_name][field_name] = field_value
+
+        main_data = list(grouped["main"].values())
+        detail_data = list(grouped["detail"].values())
+
+        logging.info(f"✅ 결과: main={len(main_data)}개, detail={len(detail_data)}개")
+
+        result = {
+            "asset_name": asset_name,
+            "mode": mode,
+            "timestamp": timestamp,
+            "main": main_data,
+            "detail": detail_data
+        }
+
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        logging.error(f"❌ 데이터 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "msg": str(e)}

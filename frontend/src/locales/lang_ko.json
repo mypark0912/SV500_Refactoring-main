@@ -284,6 +284,8 @@
   "report": {
     "accordionTitle1":"설비",
     "accordionTitle2":"전력품질",
+    "accordionTitle3":"이벤트",
+    "accordionTitle4":"전기적이상",
     "sitemap": {
       "title": "리포트",
       "main": "주 채널",
