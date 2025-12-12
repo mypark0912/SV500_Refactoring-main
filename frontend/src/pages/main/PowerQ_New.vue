@@ -506,10 +506,10 @@ export default {
 
     const fetchInterval = async () => {
       try {
-        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}/${asset.value}`);
+        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}`);
         if (response.data.success) {
           timeout_harmonics = parseInt(response.data.data);
-          w_mode.value = response.data.w_mode;
+          //w_mode.value = response.data.w_mode;
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
@@ -521,7 +521,7 @@ export default {
         const response = await axios.get(`/api/getChData/${channelComputed.value}`);
         if (response.data.success) {
           w_mode.value = parseInt(response.data.data["PT_WiringMode"]);
-          console.log(channelComputed.value,'- wmode:', w_mode.value);
+          //console.log(channelComputed.value,'- wmode:', w_mode.value);
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
