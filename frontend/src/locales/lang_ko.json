@@ -16,8 +16,59 @@
     "over": "초과",
     "min": "분",
     "hour": "시",
-    "sec": "초"
+    "sec": "초",
+        "mainChannel": "메인 채널",
+    "subChannel": "서브 채널",
+    "and": "및"
 },
+  "saveModal": {
+    "title": "설정 저장",
+    "nameplateWarning": {
+      "title": "네임플레이트 설정 변경됨",
+      "single": "{channel}의 {type} 네임플레이트 파라미터 변경으로 이전 계산이 무효화됩니다. {type}의 모든 저장된 데이터가 삭제되고 처음부터 다시 구축됩니다.",
+      "multiple": "{assets}의 네임플레이트 파라미터 변경으로 이전 계산이 무효화됩니다. 해당 자산들의 모든 저장된 데이터가 삭제되고 처음부터 다시 구축됩니다."
+    },
+    "nameplateConfirm": "변경 사항을 이해했으며 업데이트를 진행하겠습니다",
+    "validation": {
+      "title": "검증",
+      "summary": "검증 요약",
+      "overallStatus": "전체 상태",
+      "errors": "오류",
+      "warnings": "경고",
+      "criticalErrors": "치명적 오류",
+      "allPassed": "모든 검증 통과",
+      "valid": "유효함",
+      "invalid": "유효하지 않음",
+      "validating": "설정을 검증하는 중..."
+    },
+    "diagnosis": {
+      "title": "진단 설정",
+      "results": "진단 설정 결과",
+      "nameplate": "네임플레이트 설정",
+      "parameters": "자산 파라미터",
+      "settings": "진단 설정",
+      "profile": "고급 프로파일",
+      "configSuccess": "모든 설정 완료",
+      "configFailed": "설정 실패",
+      "readyToSave": "설정 파일 저장 준비 완료",
+      "fixErrors": "오류를 수정한 후 다시 시도하세요.",
+      "configuring": "네임플레이트 설정 중...",
+      "settingParams": "자산 파라미터 설정 중...",
+      "savingSettings": "진단 설정 저장 중...",
+      "savingProfile": "고급 프로파일 저장 중..."
+    },
+    "buttons": {
+      "cancel": "취소",
+      "next": "다음 →",
+      "save": "저장",
+      "close": "닫기"
+    },
+    "messages": {
+      "saving": "설정 저장 중...",
+      "saveSuccess": "설정이 성공적으로 저장되었습니다!",
+      "saveFailed": "저장 실패"
+    }
+  },
   "signin": {
     "account": "계정",
     "language": "언어",
