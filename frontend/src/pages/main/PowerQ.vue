@@ -479,6 +479,7 @@ export default {
         const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}`);
         if (response.data.success) {
           timeout_harmonics = parseInt(response.data.data);
+          console.log(timeout_harmonics);
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
