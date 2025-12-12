@@ -313,7 +313,7 @@ export default {
 
       if (nameplateChannels.length > 0) {
         showNameplateWarning.value = true;
-        nameplateWarningMessage.value = `Nameplate configuration has been changed for: ${nameplateChannels.join(", ")}. This will require commissioning after save.`;
+        nameplateWarningMessage.value = `Nameplate configuration has been changed for: ${nameplateChannels.join(", ")}. The changed settings will delete all previous calculations. Would you like to proceed?`;
       } else {
         showNameplateWarning.value = false;
         nameplateWarningMessage.value = "";
