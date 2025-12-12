@@ -161,14 +161,14 @@ export default {
         style: {
           fontSize: '13px',
           fontWeight: 600,
-          colors: ['#FFFFFF']
+          colors: ['#1F2937']
         },
         formatter: function(text, op) {
           return text
         },
         offsetY: 0,
         dropShadow: {
-          enabled: true,
+          enabled: false,
           top: 1,
           left: 1,
           blur: 2,

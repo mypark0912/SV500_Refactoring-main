@@ -426,6 +426,21 @@
         "main": "Main Channel",
         "sub": "Sub Channel"
         },
+        "modal":{
+            "download": "Download",
+            "downloadReport": "Download Report",
+            "downloadDesc1": "Download the currently displayed diagnostic data as a Word document.",
+            "downloadIncludes": "Includes:",
+            "downloadItem1": "Asset Information",
+            "downloadItem2": "Diagnostic Chart",
+            "downloadItem3": "Detail Analysis",
+            "downloadItem4": "Trend Charts",
+            "downloadDate": "Report Date",
+            "downloading": "Downloading...",
+            "cancel": "Cancel",
+            "confirmDownload": "Download",
+            "downloadError": "Download failed."
+        },
         "info": {
         "ct_direction1": "CT1 Direction",
         "ct_direction2": "CT2 Direction",

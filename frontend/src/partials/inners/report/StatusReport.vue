@@ -23,7 +23,7 @@
           </div>
         </template>
       </div>
-      <span class="text-sm font-semibold"    :class="isPdfMode 
+      <span class="text-sm font-semibold" :class="isPdfMode 
       ? 'bg-white text-gray-900' 
       : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'">{{ Item.description }}</span>
   </div>
@@ -41,13 +41,16 @@ const { t, locale } = useI18n()
 const stData = ref(props.data);
 const Item = ref({});
 const childItems = ref([]);
-const stText = [        
-        t('dashboard.diagnosis.st0'),
-        t('dashboard.diagnosis.st1'),
-        t('dashboard.diagnosis.st2'),
-        t('dashboard.diagnosis.st3'),
-        t('dashboard.diagnosis.st4')
-    ];
+
+// computed로 변경 - locale 변경 시 자동 업데이트
+const stText = computed(() => [        
+  t('dashboard.diagnosis.st0'),
+  t('dashboard.diagnosis.st1'),
+  t('dashboard.diagnosis.st2'),
+  t('dashboard.diagnosis.st3'),
+  t('dashboard.diagnosis.st4')
+]);
+
 const css = [
     'bg-gray-500/20 text-gray-700 font-semibold',
     'bg-green-500/20 text-green-700 font-semibold',
@@ -71,7 +74,7 @@ watch(() => [locale.value, props.data], ([newLocale, newData]) => {
   if (newData && newData.Item) {
     Item.value = {
       title: newData.Item.Titles[newLocale],
-      status: stText[newData.Item.Status],
+      status: stText.value[newData.Item.Status],  // .value 추가
       description: newData.Item.Descriptions[newLocale],
       css: css[newData.Item.Status]
     };

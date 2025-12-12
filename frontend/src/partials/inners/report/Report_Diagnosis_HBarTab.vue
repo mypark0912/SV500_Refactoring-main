@@ -29,7 +29,7 @@
 
     <!-- 날짜/시간 선택 (좌) + 표시 중 날짜 (우) -->
     <div class="flex items-center justify-between">
-      <!-- 좌측: 날짜/시간 선택 + Load 버튼 -->
+      <!-- 좌측: 날짜/시간 선택 + Load 버튼 + Download 버튼 -->
       <div class="flex items-center gap-4">
         <input 
           type="date" 
@@ -57,12 +57,89 @@
         >
           {{ t('report.load') || 'Load' }}
         </button>
+        
+        <!-- Download 버튼 -->
+        <button 
+          @click="openDownloadModal"
+          :disabled="!displayTimestamp || isDownloading"
+          class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {{ t('report.modal.download') || 'Download' }}
+        </button>
       </div>
       
       <!-- 우측: 현재 표시 중인 데이터 날짜 -->
       <div v-if="displayTimestamp" class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md">
         <span class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">📌 {{ t('report.displaying') || '표시 중' }}:</span>
         <span class="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">{{ formatTimestamp(displayTimestamp) }}</span>
+      </div>
+    </div>
+
+    <!-- 다운로드 모달 -->
+    <div v-if="showDownloadModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <!-- 배경 오버레이 -->
+      <div class="absolute inset-0 bg-black/50" @click="closeDownloadModal"></div>
+      
+      <!-- 모달 컨텐츠 -->
+      <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <!-- 헤더 -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+            {{ t('report.modal.downloadReport') || '리포트 다운로드' }}
+          </h3>
+        </div>
+        
+        <!-- 안내 문구 -->
+        <div class="mb-6 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+          <p>{{ t('report.modal.downloadDesc1') || '현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.' }}</p>
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-1">
+            <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('report.modal.downloadIncludes') || '포함 내용:' }}</p>
+            <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-0.5">
+              <li>{{ t('report.modal.downloadItem1') || '설비 정보' }}</li>
+              <li>{{ t('report.modal.downloadItem2') || '진단 결과 차트' }}</li>
+              <li>{{ t('report.modal.downloadItem3') || '상세 분석 항목' }}</li>
+              <li>{{ t('report.modal.downloadItem4') || '트렌드 차트' }}</li>
+            </ul>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            📅 {{ t('report.modal.downloadDate') || '기준 날짜' }}: {{ formatTimestamp(displayTimestamp) }}
+          </p>
+        </div>
+        
+        <!-- 다운로드 진행 중 표시 -->
+        <div v-if="isDownloading" class="mb-4 flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+          <span class="text-sm text-blue-600 dark:text-blue-400">{{ t('report.modal.downloading') || '다운로드 중...' }}</span>
+        </div>
+        
+        <!-- 버튼 -->
+        <div class="flex justify-end gap-3">
+          <button 
+            @click="closeDownloadModal"
+            :disabled="isDownloading"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
+          >
+            {{ t('report.modal.cancel') || '취소' }}
+          </button>
+          <button 
+            @click="downloadReport"
+            :disabled="isDownloading"
+            class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+          >
+            <svg v-if="!isDownloading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {{ t('report.modal.confirmDownload') || '다운로드' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -139,7 +216,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSetupStore } from '@/store/setup';
 import axios from 'axios'
-import Diagnosis_Barchart from '../../../charts/connect/ApexTreeMap.vue'
+import Diagnosis_Barchart from '../../../charts/connect/ReportBatteryChart.vue'
 import StatusReport from './StatusReport.vue'
 import ReportTrend from './ReportTrend.vue'
 import { useI18n } from 'vue-i18n'
@@ -165,6 +242,8 @@ export default {
     // === 상태 ===
     const activeTab = ref('diagnosis');
     const isLoading = ref(false);
+    const isDownloading = ref(false);
+    const showDownloadModal = ref(false);
 
     // === 각 탭별 날짜/시간/마지막저장/현재표시 ===
     const tabState = ref({
@@ -664,6 +743,58 @@ export default {
       await initialLoad(activeTab.value);
     });
 
+    // === 다운로드 모달 ===
+    const openDownloadModal = () => {
+      showDownloadModal.value = true;
+    };
+
+    const closeDownloadModal = () => {
+      showDownloadModal.value = false;
+    };
+
+    // === 리포트 다운로드 ===
+    const downloadReport = async () => {
+      if (!displayTimestamp.value) return;
+
+      isDownloading.value = true;
+
+      try {
+        const mode = activeTab.value;
+        const chName = channel.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+        const timestamp = displayTimestamp.value;
+
+        // API 호출 (locale 파라미터 추가)
+        const response = await axios.get(
+          `/report/downloadDiagnosisReport/${mode}/${chName}/${channel.value}/${timestamp}?locale=${locale.value}`,
+          { responseType: 'blob' }
+        );
+
+        // Blob 다운로드
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        // 파일명 생성
+        const dateStr = timestamp.split('T')[0];
+        link.download = `${mode}_report_${chName}_${dateStr}.docx`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        closeDownloadModal();
+      } catch (error) {
+        console.error('리포트 다운로드 실패:', error);
+        alert(t('report.downloadError') || '다운로드에 실패했습니다.');
+      } finally {
+        isDownloading.value = false;
+      }
+    };
+
     return {
       channel,
       asset,
@@ -672,6 +803,8 @@ export default {
       // 상태
       activeTab,
       isLoading,
+      isDownloading,
+      showDownloadModal,
       // 날짜/시간
       currentDate,
       currentTime,
@@ -682,6 +815,10 @@ export default {
       onTimeChange,
       onLoadClick,
       formatTimestamp,
+      // 다운로드
+      openDownloadModal,
+      closeDownloadModal,
+      downloadReport,
       // Diagnosis
       equipmentChartData,
       equipmentItems,

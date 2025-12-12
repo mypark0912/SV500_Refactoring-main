@@ -424,6 +424,21 @@
       "main": "주 채널",
       "sub": "보조 채널"
     },
+    "modal":{
+      "download": "Download",
+      "downloadReport": "리포트 다운로드",
+      "downloadDesc1": "현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.",
+      "downloadIncludes": "포함 내용:",
+      "downloadItem1": "설비 정보",
+      "downloadItem2": "진단 결과 차트",
+      "downloadItem3": "상세 분석 항목",
+      "downloadItem4": "트렌드 차트",
+      "downloadDate": "기준 날짜",
+      "downloading": "다운로드 중...",
+      "cancel": "취소",
+      "confirmDownload": "다운로드",
+      "downloadError": "다운로드에 실패했습니다."
+    },
     "info": {
       "ct_direction1": "CT1 방향",
       "ct_direction2": "CT2 방향",
