@@ -412,25 +412,33 @@ export default {
       try {
         if (tap.value == "Diagnosis") {
           if (props.asset != "") {
-            const response = await axios.get(
-              `/api/getTrendParameters/${props.asset}/Diagnostic`
-            );
-            if (response.data.success) {
-              items.value = response.data.superlist;
-            } else {
-              console.log("No Data");
-            }
+            const response = await axios.get(`/api/getTrendTreeDiagnosis/${props.asset}`);  //getTrendTreeDiagnosis
+              if (response.data.success) {
+                items.value = response.data.data_tree;
+              }
+            // const response = await axios.get(
+            //   `/api/getTrendParameters/${props.asset}/Diagnostic`
+            // );
+            // if (response.data.success) {
+            //   items.value = response.data.superlist;
+            // } else {
+            //   console.log("No Data");
+            // }
           }
         } else if (tap.value == "PowerQuality") {
           if (props.asset != "") {
-            const response = await axios.get(
-              `/api/getTrendParameters/${props.asset}/PowerQuality`
-            );
-            if (response.data.success) {
-              items.value = response.data.superlist;
-            } else {
-              console.log("No Data");
-            }
+            const response = await axios.get(`/api/getTrendTreePQ/${props.asset}`);  //getTrendTreeDiagnosis
+              if (response.data.success) {
+                items.value = response.data.data_tree;
+              }
+            // const response = await axios.get(
+            //   `/api/getTrendParameters/${props.asset}/PowerQuality`
+            // );
+            // if (response.data.success) {
+            //   items.value = response.data.superlist;
+            // } else {
+            //   console.log("No Data");
+            // }
           }
         } else if (tap.value == "Parameters") {
           if (props.asset != "") {

@@ -771,6 +771,164 @@ async def get_params(asset, type, request: Request):
         return {"success": False}
 
 
+@router.get("/getTrendTreePQ/{asset}")
+@gc_after_large_data(threshold_mb=30)
+async def get_trend_tree_pq(asset):
+    """
+    PowerQuality 트렌드용 트리 테이블 데이터 생성
+    - getDiagPQ의 data_tree 구조 사용
+    - getParameters에서 파라미터 ID 매칭
+    """
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        # 1. 진단 데이터 가져오기 (트리 구조)
+        diag_response = await client.get(f"http://{os_spec.restip}:5000/api/getPQ?name={asset}")
+        diag_data = diag_response.json()
+
+        # 2. 파라미터 데이터 가져오기 (ID 매칭용)
+        param_response = await client.get(
+            f"http://{os_spec.restip}:5000/api/getTrendHierarchy?name={asset}&type=powerquality")
+        param_data = param_response.json()
+
+    if not diag_data or not param_data:
+        return {"success": False, "error": "No Data"}
+
+    # 파라미터 매핑 (Name + AssemblyID -> ID)
+    param_map = {}
+    for param in param_data:
+        key = f"{param['Name']}_{param['AssemblyID']}"
+        param_map[key] = {
+            "ID": param["ID"],
+            "Title": param.get("Title", param["Name"])
+        }
+
+    # 트리 구조 생성
+    tree_data = proc_trend_tree_pq(diag_data, param_map)
+
+    return {"success": True, "data_tree": tree_data}
+
+@router.get("/getTrendTreeDiagnosis/{asset}")
+@gc_after_large_data(threshold_mb=30)
+async def get_trend_tree_diagnosis(asset):
+    """
+    PowerQuality 트렌드용 트리 테이블 데이터 생성
+    - getDiagPQ의 data_tree 구조 사용
+    - getParameters에서 파라미터 ID 매칭
+    """
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        # 1. 진단 데이터 가져오기 (트리 구조)
+        diag_response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
+        diag_data = diag_response.json()
+
+        # 2. 파라미터 데이터 가져오기 (ID 매칭용)
+        param_response = await client.get(
+            f"http://{os_spec.restip}:5000/api/getTrendHierarchy?name={asset}&type=diagnostic")
+        param_data = param_response.json()
+
+    if not diag_data or not param_data:
+        return {"success": False, "error": "No Data"}
+
+    # 파라미터 매핑 (Name + AssemblyID -> ID)
+    param_map = {}
+    for param in param_data:
+        key = f"{param['Name']}_{param['AssemblyID']}"
+        param_map[key] = {
+            "ID": param["ID"],
+            "Title": param.get("Title", param["Name"])
+        }
+
+    # 트리 구조 생성
+    tree_data = proc_trend_tree_pq(diag_data, param_map)
+
+    return {"success": True, "data_tree": tree_data}
+
+
+def proc_trend_tree_pq(diag_data, param_map):
+    """
+    진단 데이터에서 트렌드용 트리 구조 생성
+    - param_map에서 ID와 Title을 가져옴
+    """
+    # NodeType 집합 (부모 노드)
+    super_nodes = {item["NodeType"] for item in diag_data.get("BarGraph", [])}
+
+    # ParentID로 인덱싱
+    children_by_parent = {}
+    for item in diag_data.get("TreeList", []):
+        parent_id = item["ParentID"]
+        if parent_id not in children_by_parent:
+            children_by_parent[parent_id] = []
+        children_by_parent[parent_id].append(item)
+
+    # 트리 구조 생성
+    tree_list = []
+
+    for item in diag_data.get("TreeList", []):
+        if item["NodeType"] not in super_nodes:
+            continue
+
+        # 파라미터 정보 찾기
+        param_key = f"{item['Name']}_{item['AssemblyID']}"
+        param_info = param_map.get(param_key, {})
+        param_id = param_info.get("ID")
+        param_title = param_info.get("Title") or item["Name"]
+
+        parent_node = {
+            "ID": param_id,
+            "Name": item["Name"],
+            "Title": param_title,
+            "AssemblyID": item["AssemblyID"],
+            "isParent": True
+        }
+
+        # 자식 노드 처리
+        if item["ID"] in children_by_parent:
+            children = []
+            for child in children_by_parent[item["ID"]]:
+                child_param_key = f"{child['Name']}_{child['AssemblyID']}"
+                child_param_info = param_map.get(child_param_key, {})
+                child_param_id = child_param_info.get("ID")
+                child_param_title = child_param_info.get("Title") or child["Name"]
+
+                # 파라미터 ID가 있는 자식만 추가
+                if child_param_id:
+                    child_node = {
+                        "ID": child_param_id,
+                        "Name": child["Name"],
+                        "Title": child_param_title,
+                        "AssemblyID": child["AssemblyID"]
+                    }
+
+                    # NodeType 10의 자식들 (NodeType 11) 처리
+                    if child["NodeType"] == 10 and child["ID"] in children_by_parent:
+                        sub_children = []
+                        for subchild in children_by_parent[child["ID"]]:
+                            if subchild["NodeType"] == 11:
+                                sub_param_key = f"{subchild['Name']}_{subchild['AssemblyID']}"
+                                sub_param_info = param_map.get(sub_param_key, {})
+                                sub_param_id = sub_param_info.get("ID")
+                                sub_param_title = sub_param_info.get("Title") or subchild["Name"]
+
+                                if sub_param_id:
+                                    sub_children.append({
+                                        "ID": sub_param_id,
+                                        "Name": subchild["Name"],
+                                        "Title": sub_param_title,
+                                        "AssemblyID": subchild["AssemblyID"]
+                                    })
+
+                        if sub_children:
+                            child_node["children"] = sub_children
+
+                    children.append(child_node)
+
+            if children:
+                parent_node["children"] = children
+
+        # 자식이 있거나 파라미터 ID가 있는 경우만 추가
+        if parent_node.get("children") or parent_node.get("ID"):
+            tree_list.append(parent_node)
+
+    return tree_list
+
 @router.get("/getTrendParameters/{asset}/{type}")  # Diagnosis Vue : get diagnosis PQ
 @gc_after_large_data(threshold_mb=30)
 async def get_trendParams(asset, type, request: Request):
