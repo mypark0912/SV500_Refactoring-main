@@ -21,6 +21,85 @@
     "subChannel": "서브 채널",
     "and": "및"
 },
+  "onboardingModal": {
+    "steps": {
+      "restartCheck": "재시작 확인",
+      "mainTest": "메인 테스트",
+      "subTest": "서브 테스트",
+      "complete": "완료"
+    },
+    "restartCheck": {
+      "title": "재시작 확인",
+      "checking": "재시작 필요 여부 확인 중...",
+      "status": "재시작 상태",
+      "required": "재시작 필요",
+      "checkTime": "확인 시각",
+      "needsRestart": "장치 재시작이 필요합니다. \"다음\"을 클릭하여 재시작을 진행하세요.",
+      "noRestart": "재시작이 필요하지 않습니다. \"다음\"을 클릭하여 진행하세요."
+    },
+    "mainTest": {
+      "title": "메인 테스트 결과",
+      "loading": "메인 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
+      "report": "메인 장치 리포트"
+    },
+    "subTest": {
+      "title": "서브 테스트 결과",
+      "loading": "서브 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
+      "report": "서브 장치 리포트"
+    },
+    "test": {
+      "assetType": "자산 유형",
+      "serialNumber": "시리얼 번호",
+      "channel": "채널",
+      "result": "결과: {errors}개 오류, {warnings}개 경고",
+      "assemblyId": "어셈블리ID",
+      "detail": "상세",
+      "status": "상태",
+      "viewCharts": "차트 보기",
+      "chartTitle": "{type} 차트",
+      "fixErrors": "오류를 먼저 수정하세요",
+      "statusList": {
+        "info": "정보",
+        "pass": "통과",
+        "warning": "경고",
+        "error": "오류"
+      },
+      "chartTypes": {
+        "timedomainvoltage": "시간 영역(전압)",
+        "timedomaincurrent": "시간 영역(전류)",
+        "frequencydomainvoltage": "주파수 영역(전압)",
+        "frequencydomaincurrent": "주파수 영역(전류)"
+      }
+    },
+    "complete": {
+      "title": "설정 완료",
+      "summary": "설정 요약",
+      "restartCheck": "재시작 확인",
+      "mainTest": "메인 테스트",
+      "subTest": "서브 테스트",
+      "overallStatus": "전체 상태",
+      "completed": "완료됨",
+      "passed": "통과",
+      "ready": "준비됨",
+      "errors": "{count}개 오류",
+      "confirmMessage": "이 설정을 완료함으로써 모든 테스트를 검토했으며 시스템이 작동할 준비가 되었음을 확인합니다."
+    },
+    "buttons": {
+      "nextStep": "다음 단계 →",
+      "restart": "재시작",
+      "finish": "완료"
+    },
+    "messages": {
+      "restartingFirmware": "펌웨어 재시작 중...",
+      "restartFailed": "펌웨어 재시작 실패",
+      "checkingMainCommission": "메인 커미셔닝 확인 중...",
+      "checkingSubCommission": "서브 커미셔닝 확인 중...",
+      "acquiringWaveform": "파형 파일 획득 중...",
+      "triggerFailed": "트리거 실패",
+      "waitingRestart": "펌웨어 재시작 대기 중",
+      "commissioningFailed": "커미셔닝 실패"
+    }
+  },
   "saveModal": {
     "title": "설정 저장",
     "nameplateWarning": {

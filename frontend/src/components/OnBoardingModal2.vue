@@ -40,7 +40,7 @@
               class="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400"
               @click.stop="closeModal"
             >
-              <div class="sr-only">Close</div>
+              <div class="sr-only">{{ t('common.close') }}</div>
               <svg
                 class="fill-current"
                 width="16"
@@ -79,12 +79,12 @@
               </div>
             </div>
   
-            <!-- Step 1: Restart Check (새로운 첫 단계) -->
+            <!-- Step 1: Restart Check -->
             <div v-show="currentStep === 1" class="step-content">
               <h2
                 class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
               >
-                Restart Check
+                {{ t('onboardingModal.restartCheck.title') }}
               </h2>
   
               <div v-if="isCheckingRestart" class="text-center py-10">
@@ -113,7 +113,7 @@
                   </svg>
                 </div>
                 <div class="text-sm text-gray-500">
-                  Checking restart requirement...
+                  {{ t('onboardingModal.restartCheck.checking') }}
                 </div>
               </div>
   
@@ -134,13 +134,11 @@
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Restart Status
+                    {{ t('onboardingModal.restartCheck.status') }}
                   </h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Restart Required:</span
-                      >
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.restartCheck.required') }}:</span>
                       <span
                         :class="
                           needsRestart
@@ -148,13 +146,11 @@
                             : 'text-green-600 font-semibold'
                         "
                       >
-                        {{ needsRestart ? "YES" : "NO" }}
+                        {{ needsRestart ? t('common.yes') : t('common.no') }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Check Time:</span
-                      >
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.restartCheck.checkTime') }}:</span>
                       <span class="text-gray-700 dark:text-gray-300">{{
                         new Date().toLocaleString()
                       }}</span>
@@ -179,9 +175,7 @@
                         clip-rule="evenodd"
                       />
                     </svg>
-                    <span class="text-yellow-700 dark:text-yellow-400 font-medium"
-                      >Device restart is required. Click "Next" to proceed with restart.</span
-                    >
+                    <span class="text-yellow-700 dark:text-yellow-400 font-medium">{{ t('onboardingModal.restartCheck.needsRestart') }}</span>
                   </div>
                 </div>
   
@@ -202,9 +196,7 @@
                         clip-rule="evenodd"
                       />
                     </svg>
-                    <span class="text-green-700 dark:text-green-400 font-medium"
-                      >No restart required. Click "Next" to proceed.</span
-                    >
+                    <span class="text-green-700 dark:text-green-400 font-medium">{{ t('onboardingModal.restartCheck.noRestart') }}</span>
                   </div>
                 </div>
               </div>
@@ -215,7 +207,7 @@
                   class="btn bg-gray-500 text-white hover:bg-gray-600"
                   @click="closeModal"
                 >
-                  Cancel
+                  {{ t('common.cancel') }}
                 </button>
                 <div
                   v-if="isRestarting"
@@ -249,21 +241,20 @@
                   @click="nextStep"
                   :disabled="isCheckingRestart"
                 >
-                  Next Step →
+                  {{ t('onboardingModal.buttons.nextStep') }}
                 </button>
               </div>
             </div>
   
-            <!-- Step 2: Main Test Result (When Diagnosis_main is true) -->
+            <!-- Step 2: Main Test Result -->
             <div
               v-show="currentStep === 2 && diagnosis_main"
               class="step-content"
             >
-              <!-- 기존 Main Test 코드 유지 -->
               <h2
                 class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
               >
-                Main Test Result
+                {{ t('onboardingModal.mainTest.title') }}
               </h2>
   
               <div v-if="isLoadingMain" class="text-center py-10">
@@ -292,8 +283,7 @@
                   </svg>
                 </div>
                 <div class="text-sm text-gray-500">
-                  Loading main test result...This process may take 20 seconds or
-                  longer.
+                  {{ t('onboardingModal.mainTest.loading') }}
                 </div>
               </div>
   
@@ -302,25 +292,22 @@
                 class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
               >
                 <div class="text-sm font-semibold uppercase">
-                  Main Device Report
+                  {{ t('onboardingModal.mainTest.report') }}
                 </div>
                 <div class="flex flex-wrap justify-between gap-4">
-                  <div>Asset Type: {{ mainTestData.AssetName || "N/A" }}</div>
-                  <div>
-                    Serial Number: {{ mainTestData.SerialNumber || "N/A" }}
-                  </div>
-                  <div>Channel: {{ mainTestData.Channel || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.assetType') }}: {{ mainTestData.AssetName || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.serialNumber') }}: {{ mainTestData.SerialNumber || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.channel') }}: {{ mainTestData.Channel || "N/A" }}</div>
                 </div>
                 <div class="font-semibold mb-4 mt-2">
-                  Result: {{ mainTestResult.err || 0 }} Errors,
-                  {{ mainTestResult.warn || 0 }} Warnings
+                  {{ t('onboardingModal.test.result', { errors: mainTestResult.err || 0, warnings: mainTestResult.warn || 0 }) }}
                 </div>
                 <div
                   class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 border-b border-gray-200 pb-1"
                 >
-                  <div class="text-left">AssemblyId</div>
-                  <div class="text-center">Detail</div>
-                  <div class="text-center">Status</div>
+                  <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
+                  <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
+                  <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
                 </div>
                 <div class="space-y-1">
                   <div
@@ -342,7 +329,7 @@
                         'text-yellow-500': item.Status === 2,
                       }"
                     >
-                      {{ stList[item.Status] }}
+                      {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
                     </div>
                   </div>
                 </div>
@@ -366,7 +353,7 @@
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    View Charts
+                    {{ t('onboardingModal.test.viewCharts') }}
                   </button>
                 </div>
   
@@ -387,14 +374,14 @@
                           : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
                       ]"
                     >
-                      {{ option }}
+                      {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
                     </button>
                   </div>
   
                   <div
                     class="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-4"
                   >
-                    {{ selectedMainChart }} Chart
+                    {{ t('onboardingModal.test.chartTitle', { type: selectedMainChart }) }}
                   </div>
   
                   <!-- Chart Components -->
@@ -445,7 +432,7 @@
                   class="btn bg-gray-500 text-white hover:bg-gray-600"
                   @click="closeModal"
                 >
-                  Cancel
+                  {{ t('common.cancel') }}
                 </button>
                 <button
                   type="button"
@@ -458,20 +445,17 @@
                   @click="handleMainTestNext"
                   :disabled="!canProceedFromMain"
                 >
-                  {{
-                    mainTestResult.err > 0 ? "Fix Errors First" : "Next Step →"
-                  }}
+                  {{ mainTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
                 </button>
               </div>
             </div>
   
-            <!-- Step 3: Sub Test Result (When Diagnosis_sub is true) -->
+            <!-- Step 3: Sub Test Result -->
             <div v-show="currentStep === 3 && diagnosis_sub" class="step-content">
-              <!-- 기존 Sub Test 코드 유지 -->
               <h2
                 class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
               >
-                Sub Test Result
+                {{ t('onboardingModal.subTest.title') }}
               </h2>
   
               <div v-if="isLoadingSub" class="text-center py-10">
@@ -500,8 +484,7 @@
                   </svg>
                 </div>
                 <div class="text-sm text-gray-500">
-                  Loading sub test result...This process may take 20 seconds or
-                  longer.
+                  {{ t('onboardingModal.subTest.loading') }}
                 </div>
               </div>
   
@@ -510,25 +493,22 @@
                 class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
               >
                 <div class="text-sm font-semibold uppercase">
-                  Sub Device Report
+                  {{ t('onboardingModal.subTest.report') }}
                 </div>
                 <div class="flex flex-wrap justify-between gap-4">
-                  <div>Asset Type: {{ subTestData.AssetName || "N/A" }}</div>
-                  <div>
-                    Serial Number: {{ subTestData.SerialNumber || "N/A" }}
-                  </div>
-                  <div>Channel: {{ subTestData.Channel || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.assetType') }}: {{ subTestData.AssetName || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.serialNumber') }}: {{ subTestData.SerialNumber || "N/A" }}</div>
+                  <div>{{ t('onboardingModal.test.channel') }}: {{ subTestData.Channel || "N/A" }}</div>
                 </div>
                 <div class="font-semibold mb-4 mt-2">
-                  Result: {{ subTestResult.err || 0 }} Errors,
-                  {{ subTestResult.warn || 0 }} Warnings
+                  {{ t('onboardingModal.test.result', { errors: subTestResult.err || 0, warnings: subTestResult.warn || 0 }) }}
                 </div>
                 <div
                   class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 border-b border-gray-200 pb-1"
                 >
-                  <div class="text-left">AssemblyId</div>
-                  <div class="text-center">Detail</div>
-                  <div class="text-center">Status</div>
+                  <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
+                  <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
+                  <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
                 </div>
                 <div class="space-y-1">
                   <div
@@ -550,7 +530,7 @@
                         'text-yellow-500': item.Status === 2,
                       }"
                     >
-                      {{ stList[item.Status] }}
+                      {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
                     </div>
                   </div>
                 </div>
@@ -574,7 +554,7 @@
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    View Charts
+                    {{ t('onboardingModal.test.viewCharts') }}
                   </button>
                 </div>
   
@@ -595,14 +575,14 @@
                           : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
                       ]"
                     >
-                      {{ option }}
+                      {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
                     </button>
                   </div>
   
                   <div
                     class="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-4"
                   >
-                    {{ selectedSubChart }} Chart
+                    {{ t('onboardingModal.test.chartTitle', { type: selectedSubChart }) }}
                   </div>
   
                   <!-- Sub Chart Components -->
@@ -653,7 +633,7 @@
                   class="btn bg-gray-500 text-white hover:bg-gray-600"
                   @click="closeModal"
                 >
-                  Cancel
+                  {{ t('common.cancel') }}
                 </button>
                 <button
                   type="button"
@@ -666,36 +646,32 @@
                   @click="nextStep"
                   :disabled="!canProceedFromSub"
                 >
-                  {{ subTestResult.err > 0 ? "Fix Errors First" : "Next Step →" }}
+                  {{ subTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
                 </button>
               </div>
             </div>
   
-            <!-- Step 4: Complete (Final step) -->
+            <!-- Step 4: Complete -->
             <div v-show="currentStep === 4" class="step-content">
               <h2
                 class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
               >
-                Complete Setup
+                {{ t('onboardingModal.complete.title') }}
               </h2>
   
               <div class="space-y-4">
                 <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                  <h3 class="font-semibold mb-3">Configuration Summary</h3>
+                  <h3 class="font-semibold mb-3">{{ t('onboardingModal.complete.summary') }}</h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Restart Check:</span
-                      >
-                      <span class="text-green-600 font-semibold">COMPLETED</span>
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.restartCheck') }}:</span>
+                      <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.completed') }}</span>
                     </div>
                     <div
                       v-if="diagnosis_main"
                       class="flex items-center justify-between"
                     >
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Main Test:</span
-                      >
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.mainTest') }}:</span>
                       <span
                         :class="
                           mainTestResult.err > 0
@@ -706,8 +682,8 @@
                       >
                         {{
                           mainTestResult.err > 0
-                            ? `${mainTestResult.err} Errors`
-                            : "PASSED"
+                            ? t('onboardingModal.complete.errors', { count: mainTestResult.err })
+                            : t('onboardingModal.complete.passed')
                         }}
                       </span>
                     </div>
@@ -715,9 +691,7 @@
                       v-if="diagnosis_sub"
                       class="flex items-center justify-between"
                     >
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Sub Test:</span
-                      >
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.subTest') }}:</span>
                       <span
                         :class="
                           subTestResult.err > 0
@@ -728,23 +702,20 @@
                       >
                         {{
                           subTestResult.err > 0
-                            ? `${subTestResult.err} Errors`
-                            : "PASSED"
+                            ? t('onboardingModal.complete.errors', { count: subTestResult.err })
+                            : t('onboardingModal.complete.passed')
                         }}
                       </span>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400"
-                        >Overall Status:</span
-                      >
-                      <span class="text-green-600 font-semibold">READY</span>
+                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.overallStatus') }}:</span>
+                      <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.ready') }}</span>
                     </div>
                   </div>
                 </div>
   
                 <div class="text-xs text-gray-500">
-                  By completing this setup, you confirm that all tests
-                  have been reviewed and the system is ready for operation.
+                  {{ t('onboardingModal.complete.confirmMessage') }}
                 </div>
               </div>
   
@@ -756,7 +727,7 @@
                   class="btn bg-gray-500 text-white hover:bg-gray-600"
                   @click="closeModal"
                 >
-                  Cancel
+                  {{ t('common.cancel') }}
                 </button>
                 <div class="ml-auto flex space-x-3">
                   <button
@@ -764,14 +735,14 @@
                     class="btn bg-violet-500 text-white hover:bg-violet-600"
                     @click="restartValidation"
                   >
-                    Restart
+                    {{ t('onboardingModal.buttons.restart') }}
                   </button>
                   <button
                     v-else
                     class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
                     @click="closeModal"
                   >
-                    Finish
+                    {{ t('onboardingModal.buttons.finish') }}
                   </button>
                 </div>
               </div>
@@ -786,6 +757,7 @@
     import { ref, onMounted, onUnmounted, watch, computed, inject } from "vue";
     import LineChart from "../charts/connect/LineChart01_Echart2.vue";
     import axios from "axios";
+    import { useI18n } from "vue-i18n";
     
     export default {
       name: "OnboardingModal",
@@ -809,6 +781,7 @@
       },
       emits: ["close-modal", "complete-setup", "restart-validation"],
       setup(props, { emit }) {
+        const { t } = useI18n();
         const modalContent = ref(null);
         const currentStep = ref(1);
         const setupDict = ref({});
@@ -903,7 +876,6 @@
           "Frequency Domain(Current)",
         ]);
     
-        // ===== checkRestart 함수 =====
         const checkRestart = async () => {
           try {
             isCheckingRestart.value = true;
@@ -922,7 +894,6 @@
           }
         };
     
-        // ===== checkCommission 함수 =====
         const checkCommission = async (chName) => {
           try {
             const assetName = chName === 'Main' 
@@ -937,7 +908,6 @@
     
             const needsComm = response.data.result || false;
     
-            // 각 채널별로 저장
             if (chName === 'Main') {
               needsComm_main.value = needsComm;
             } else {
@@ -951,7 +921,6 @@
           }
         };
     
-        // Load settings data
         const GetSettingData = async () => {
           try {
             const response = await axios.get(`/setting/getSetting`);
@@ -1043,7 +1012,7 @@
               testLoadedRef.value = true;
     
               if (errCount > 0 || warnCount > 0) {
-                restartMessage.value = "Failed Commisioning";
+                restartMessage.value = t('onboardingModal.messages.commissioningFailed');
               }
             }
           } catch (e) {
@@ -1141,20 +1110,20 @@
     
         const availableSteps = computed(() => {
           if (props.OpMode === "device0") {
-            return [{ id: 4, name: "Complete" }];
+            return [{ id: 4, name: t('onboardingModal.steps.complete') }];
           }
     
-          const steps = [{ id: 1, name: "Restart Check" }];
+          const steps = [{ id: 1, name: t('onboardingModal.steps.restartCheck') }];
     
           if (diagnosis_main.value) {
-            steps.push({ id: 2, name: "Main Test" });
+            steps.push({ id: 2, name: t('onboardingModal.steps.mainTest') });
           }
     
           if (diagnosis_sub.value) {
-            steps.push({ id: 3, name: "Sub Test" });
+            steps.push({ id: 3, name: t('onboardingModal.steps.subTest') });
           }
     
-          steps.push({ id: 4, name: "Complete" });
+          steps.push({ id: 4, name: t('onboardingModal.steps.complete') });
     
           return steps;
         });
@@ -1167,166 +1136,149 @@
     
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     
-        // ===== nextStep: 수정됨 =====
-const nextStep = async () => {
-  if (isProcessing.value) {
-    console.log("[DEBUG] 이미 처리 중, 무시");
-    return;
-  }
-  isProcessing.value = true;
-
-  try {
-    // ===== Step 1: Restart Check =====
-    if (currentStep.value === 1) {
-      console.log("[DEBUG] Step 1: 펌웨어 재시작 처리");
-
-      // 1. 펌웨어 재시작 필요 시
-      if (needsRestart.value) {
-        console.log("[DEBUG] 펌웨어 재시작 필요 - restartDevice 실행");
-        isRestarting.value = true;
-        restartMessage.value = "Restarting firmware...";
-
-        const restartSuccess = await restartDevice();
-
-        if (!restartSuccess) {
-          restartMessage.value = "Firmware restart failed";
-          isRestarting.value = false;
-          return;
-        }
-
-        console.log("[DEBUG] 펌웨어 재시작 완료");
-        isRestarting.value = false;
-      } else {
-        console.log("[DEBUG] 펌웨어 재시작 불필요");
-      }
-
-      // 2. Main 진단 사용 시 checkCommission
-      if (diagnosis_main.value) {
-        console.log("[DEBUG] Main 진단 활성화 - checkCommission('Main') 실행");
-        isRestarting.value = true;
-        restartMessage.value = "Checking Main commission...";
-        
-        await checkCommission('Main');
-        
-        console.log(`[DEBUG] Main checkCommission 결과: ${needsComm_main.value}`);
-        isRestarting.value = false;
-      }
-
-      // 3. Sub 진단 사용 시 checkCommission
-      if (diagnosis_sub.value) {
-        console.log("[DEBUG] Sub 진단 활성화 - checkCommission('Sub') 실행");
-        isRestarting.value = true;
-        restartMessage.value = "Checking Sub commission...";
-        
-        await checkCommission('Sub');
-        
-        console.log(`[DEBUG] Sub checkCommission 결과: ${needsComm_sub.value}`);
-        isRestarting.value = false;
-      }
-
-      // 4. trigger 실행 (한 번만, target 결정)
-      // 두 채널 모두 commission 불필요하면 Complete로
-      if (!needsComm_main.value && !needsComm_sub.value) {
-        console.log("[DEBUG] 두 채널 모두 commission 불필요 - Complete로");
-        currentStep.value = 4;
-        return;
-      }
-
-      // commission 필요한 채널이 있으면 trigger 실행
-      let triggerTarget = -1;
-      
-      if (needsComm_main.value && needsComm_sub.value) {
-        triggerTarget = 2; // 둘 다
-        console.log("[DEBUG] Main, Sub 둘 다 commission 필요");
-      } else if (needsComm_main.value) {
-        triggerTarget = 0; // Main만
-        console.log("[DEBUG] Main만 commission 필요");
-      } else if (needsComm_sub.value) {
-        triggerTarget = 1; // Sub만
-        console.log("[DEBUG] Sub만 commission 필요");
-      }
-
-      console.log(`[DEBUG] trigger 실행 - target: ${triggerTarget}`);
-      isRestarting.value = true;
-      restartMessage.value = "Acquiring waveform file...";
-
-      const response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
-      console.log("[DEBUG] trigger 응답:", response.data);
-
-      isRestarting.value = false;
-
-      if (!response.data.success) {
-        restartMessage.value = response.data.message || "Trigger failed";
-        return;
-      }
-
-      // 5. Step 1 완료 후 다음 단계 결정
-      console.log("[DEBUG] Step 1 완료 - 다음 단계 결정");
-      
-      // Main commission 필요 → Main Test (Sub도 필요하면 나중에 진행)
-      if (needsComm_main.value) {
-        console.log("[DEBUG] Main Test로 이동");
-        isLoadingMain.value = true;
-        mainTestLoaded.value = false;
-        currentStep.value = 2;
-        await getCommision("main");
-      }
-      // Main 불필요, Sub commission 필요 → Sub Test
-      else if (needsComm_sub.value) {
-        console.log("[DEBUG] Sub Test로 이동");
-        isLoadingSub.value = true;
-        subTestLoaded.value = false;
-        currentStep.value = 3;
-        await getCommision("sub");
-      }
-      
-      return; // Step 1에서는 여기서 종료
-    }
-
-    // ===== Step 2: Main Test (에러 있으면 진행 불가) =====
-    if (currentStep.value === 2 && mainTestResult.value.err > 0) {
-      console.log("[DEBUG] Main Test에 에러 있음 - 진행 불가");
-      return;
-    }
-
-    // ===== Step 3: Sub Test (에러 있으면 진행 불가) =====
-    if (currentStep.value === 3 && subTestResult.value.err > 0) {
-      console.log("[DEBUG] Sub Test에 에러 있음 - 진행 불가");
-      return;
-    }
-
-    // ===== Step 2 또는 3에서 다음으로 =====
-    if (currentStep.value === 2 || currentStep.value === 3) {
-      const currentIndex = currentStepIndex.value;
-      if (currentIndex < availableSteps.value.length - 1) {
-        currentStep.value = availableSteps.value[currentIndex + 1].id;
-      }
-    }
-  } finally {
-    isProcessing.value = false;
-  }
-};
-
-// ===== handleMainTestNext: Sub commission 필요 여부 확인 =====
-const handleMainTestNext = async () => {
-  if (mainTestResult.value.err > 0) {
-    console.log("[DEBUG] Main Test 에러 - 진행 불가");
-    return;
-  }
-
-  // Sub commission 필요한 경우 Sub Test로
-  if (needsComm_sub.value) {
-    console.log("[DEBUG] Sub commission 필요 - Sub Test로 이동");
-    isLoadingSub.value = true;
-    subTestLoaded.value = false;
-    currentStep.value = 3;
-    await getCommision("sub");
-  } else {
-    // Sub commission 불필요하면 바로 Complete
-    console.log("[DEBUG] Sub commission 불필요 - Complete로 이동");
-    currentStep.value = 4;
-  }
-};
+        const nextStep = async () => {
+          if (isProcessing.value) {
+            console.log("[DEBUG] 이미 처리 중, 무시");
+            return;
+          }
+          isProcessing.value = true;
+    
+          try {
+            if (currentStep.value === 1) {
+              console.log("[DEBUG] Step 1: 펌웨어 재시작 처리");
+    
+              if (needsRestart.value) {
+                console.log("[DEBUG] 펌웨어 재시작 필요 - restartDevice 실행");
+                isRestarting.value = true;
+                restartMessage.value = t('onboardingModal.messages.restartingFirmware');
+    
+                const restartSuccess = await restartDevice();
+    
+                if (!restartSuccess) {
+                  restartMessage.value = t('onboardingModal.messages.restartFailed');
+                  isRestarting.value = false;
+                  return;
+                }
+    
+                console.log("[DEBUG] 펌웨어 재시작 완료");
+                isRestarting.value = false;
+              } else {
+                console.log("[DEBUG] 펌웨어 재시작 불필요");
+              }
+    
+              if (diagnosis_main.value) {
+                console.log("[DEBUG] Main 진단 활성화 - checkCommission('Main') 실행");
+                isRestarting.value = true;
+                restartMessage.value = t('onboardingModal.messages.checkingMainCommission');
+                
+                await checkCommission('Main');
+                
+                console.log(`[DEBUG] Main checkCommission 결과: ${needsComm_main.value}`);
+                isRestarting.value = false;
+              }
+    
+              if (diagnosis_sub.value) {
+                console.log("[DEBUG] Sub 진단 활성화 - checkCommission('Sub') 실행");
+                isRestarting.value = true;
+                restartMessage.value = t('onboardingModal.messages.checkingSubCommission');
+                
+                await checkCommission('Sub');
+                
+                console.log(`[DEBUG] Sub checkCommission 결과: ${needsComm_sub.value}`);
+                isRestarting.value = false;
+              }
+    
+              if (!needsComm_main.value && !needsComm_sub.value) {
+                console.log("[DEBUG] 두 채널 모두 commission 불필요 - Complete로");
+                currentStep.value = 4;
+                return;
+              }
+    
+              let triggerTarget = -1;
+              
+              if (needsComm_main.value && needsComm_sub.value) {
+                triggerTarget = 2;
+                console.log("[DEBUG] Main, Sub 둘 다 commission 필요");
+              } else if (needsComm_main.value) {
+                triggerTarget = 0;
+                console.log("[DEBUG] Main만 commission 필요");
+              } else if (needsComm_sub.value) {
+                triggerTarget = 1;
+                console.log("[DEBUG] Sub만 commission 필요");
+              }
+    
+              console.log(`[DEBUG] trigger 실행 - target: ${triggerTarget}`);
+              isRestarting.value = true;
+              restartMessage.value = t('onboardingModal.messages.acquiringWaveform');
+    
+              const response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
+              console.log("[DEBUG] trigger 응답:", response.data);
+    
+              isRestarting.value = false;
+    
+              if (!response.data.success) {
+                restartMessage.value = response.data.message || t('onboardingModal.messages.triggerFailed');
+                return;
+              }
+    
+              console.log("[DEBUG] Step 1 완료 - 다음 단계 결정");
+              
+              if (needsComm_main.value) {
+                console.log("[DEBUG] Main Test로 이동");
+                isLoadingMain.value = true;
+                mainTestLoaded.value = false;
+                currentStep.value = 2;
+                await getCommision("main");
+              }
+              else if (needsComm_sub.value) {
+                console.log("[DEBUG] Sub Test로 이동");
+                isLoadingSub.value = true;
+                subTestLoaded.value = false;
+                currentStep.value = 3;
+                await getCommision("sub");
+              }
+              
+              return;
+            }
+    
+            if (currentStep.value === 2 && mainTestResult.value.err > 0) {
+              console.log("[DEBUG] Main Test에 에러 있음 - 진행 불가");
+              return;
+            }
+    
+            if (currentStep.value === 3 && subTestResult.value.err > 0) {
+              console.log("[DEBUG] Sub Test에 에러 있음 - 진행 불가");
+              return;
+            }
+    
+            if (currentStep.value === 2 || currentStep.value === 3) {
+              const currentIndex = currentStepIndex.value;
+              if (currentIndex < availableSteps.value.length - 1) {
+                currentStep.value = availableSteps.value[currentIndex + 1].id;
+              }
+            }
+          } finally {
+            isProcessing.value = false;
+          }
+        };
+    
+        const handleMainTestNext = async () => {
+          if (mainTestResult.value.err > 0) {
+            console.log("[DEBUG] Main Test 에러 - 진행 불가");
+            return;
+          }
+    
+          if (needsComm_sub.value) {
+            console.log("[DEBUG] Sub commission 필요 - Sub Test로 이동");
+            isLoadingSub.value = true;
+            subTestLoaded.value = false;
+            currentStep.value = 3;
+            await getCommision("sub");
+          } else {
+            console.log("[DEBUG] Sub commission 불필요 - Complete로 이동");
+            currentStep.value = 4;
+          }
+        };
     
         const prevStep = () => {
           const currentIndex = currentStepIndex.value;
@@ -1338,7 +1290,7 @@ const handleMainTestNext = async () => {
         const restartDevice = async () => {
           try {
             isRestarting.value = true;
-            restartMessage.value = "Waiting for restart firmware";
+            restartMessage.value = t('onboardingModal.messages.waitingRestart');
     
             const response = await axios.get(`/setting/restartdevice`);
             if (response.data.success) {
@@ -1364,15 +1316,12 @@ const handleMainTestNext = async () => {
           emit("restart-validation");
         };
     
-        // ===== 모달 열릴 때 checkRestart 자동 실행 =====
         watch(
           () => props.modalOpen,
           async (newValue) => {
             if (newValue) {
               await GetSettingData();
               currentStep.value = 1;
-    
-              // Step 1에서 자동으로 checkRestart 실행
               await checkRestart();
             }
           }
@@ -1459,6 +1408,7 @@ const handleMainTestNext = async () => {
           isProcessing,
           needsComm_main,
           needsComm_sub,
+          t
         };
       },
     };
