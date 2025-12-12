@@ -286,6 +286,9 @@
     "accordionTitle2":"전력품질",
     "accordionTitle3":"이벤트",
     "accordionTitle4":"전기적이상",
+    "displaying": "마지막 저장 시간",
+    "load": "불러오기",
+    "noData":"데이터 없음",
     "sitemap": {
       "title": "리포트",
       "main": "주 채널",

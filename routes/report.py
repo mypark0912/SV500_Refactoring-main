@@ -461,7 +461,7 @@ async def get_last_diagnosis(mode: str, asset_name: str):
         end_time = (last_time + timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
         data_query = f'''
-        from(bucket: "ntek30")
+        from(bucket: "ntek")
             |> range(start: {start_time}, stop: {end_time})
             |> filter(fn: (r) => r["_measurement"] == "{mode}")
             |> filter(fn: (r) => r["asset_name"] == "{asset_name}")

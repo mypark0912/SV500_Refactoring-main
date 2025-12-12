@@ -288,6 +288,9 @@
         "accordionTitle2":"Power Quality",
         "accordionTitle3":"Event",
         "accordionTitle4":"Fault",
+        "displaying": "Last saved datetime",
+        "load": "Load",
+        "noData":"No Data",
         "sitemap": {
         "title": "Report",
         "main": "Main Channel",

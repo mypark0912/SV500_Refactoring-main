@@ -1,35 +1,33 @@
 <template>
   <div class="col-span-full xl:col-span-12 space-y-4">
     
-    <!-- 버튼 그룹 -->
-    <div class="flex justify-start">
-      <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-        <button 
-          @click="activeTab = 'diagnosis'"
-          :class="[
-            'px-6 py-2 text-sm font-medium transition-colors',
-            activeTab === 'diagnosis' 
-              ? 'bg-indigo-500 text-white' 
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-          ]"
-        >
-          📊 {{ t('report.accordionTitle1') }}
-        </button>
-        <button 
-          @click="activeTab = 'powerquality'"
-          :class="[
-            'px-6 py-2 text-sm font-medium transition-colors border-l border-gray-200 dark:border-gray-600',
-            activeTab === 'powerquality' 
-              ? 'bg-indigo-500 text-white' 
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-          ]"
-        >
-          ⚡ {{ t('report.accordionTitle2') }}
-        </button>
-      </div>
+    <!-- 탭 버튼 (꽉 차게) -->
+    <div class="grid grid-cols-2 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+      <button 
+        @click="activeTab = 'diagnosis'"
+        :class="[
+          'px-6 py-3 text-sm font-medium transition-colors text-center',
+          activeTab === 'diagnosis' 
+            ? 'bg-indigo-500 text-white' 
+            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+        ]"
+      >
+        📊 {{ t('report.accordionTitle1') }}
+      </button>
+      <button 
+        @click="activeTab = 'powerquality'"
+        :class="[
+          'px-6 py-3 text-sm font-medium transition-colors text-center border-l border-gray-200 dark:border-gray-600',
+          activeTab === 'powerquality' 
+            ? 'bg-indigo-500 text-white' 
+            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+        ]"
+      >
+        ⚡ {{ t('report.accordionTitle2') }}
+      </button>
     </div>
 
-    <!-- 날짜/시간 선택 (좌) + 마지막 저장 날짜 (우) -->
+    <!-- 날짜/시간 선택 (좌) + 표시 중 날짜 (우) -->
     <div class="flex items-center justify-between">
       <!-- 좌측: 날짜/시간 선택 + Load 버튼 -->
       <div class="flex items-center gap-4">
@@ -61,10 +59,10 @@
         </button>
       </div>
       
-      <!-- 우측: 마지막 저장 날짜 표시 -->
-      <div v-if="lastSavedTimestamp" class="text-sm text-gray-500 dark:text-gray-400">
-        <span class="font-medium">{{ t('report.lastSaved') || '마지막 저장' }}:</span>
-        <span class="ml-1">{{ formatTimestamp(lastSavedTimestamp) }}</span>
+      <!-- 우측: 현재 표시 중인 데이터 날짜 -->
+      <div v-if="displayTimestamp" class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md">
+        <span class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">📌 {{ t('report.displaying') || '표시 중' }}:</span>
+        <span class="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">{{ formatTimestamp(displayTimestamp) }}</span>
       </div>
     </div>
 
@@ -141,7 +139,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSetupStore } from '@/store/setup';
 import axios from 'axios'
-import Diagnosis_Barchart from '../diagnosis/ReportBarChart.vue'
+import Diagnosis_Barchart from '../../../charts/connect/ApexTreeMap.vue'
 import StatusReport from './StatusReport.vue'
 import ReportTrend from './ReportTrend.vue'
 import { useI18n } from 'vue-i18n'
@@ -168,10 +166,10 @@ export default {
     const activeTab = ref('diagnosis');
     const isLoading = ref(false);
 
-    // === 각 탭별 날짜/시간/마지막저장 ===
+    // === 각 탭별 날짜/시간/마지막저장/현재표시 ===
     const tabState = ref({
-      diagnosis: { date: todayStr, time: '', timeOptions: [], lastSaved: null },
-      powerquality: { date: todayStr, time: '', timeOptions: [], lastSaved: null },
+      diagnosis: { date: todayStr, time: '', timeOptions: [], lastSaved: null, displayTime: null },
+      powerquality: { date: todayStr, time: '', timeOptions: [], lastSaved: null, displayTime: null },
     });
 
     // === 현재 탭의 날짜/시간 ===
@@ -185,6 +183,7 @@ export default {
     });
     const currentTimeOptions = computed(() => tabState.value[activeTab.value].timeOptions);
     const lastSavedTimestamp = computed(() => tabState.value[activeTab.value].lastSaved);
+    const displayTimestamp = computed(() => tabState.value[activeTab.value].displayTime);
 
     // === 데이터 ===
     const equipmentChartData = ref(null);
@@ -198,6 +197,9 @@ export default {
     // === 선택된 날짜 기준 트렌드 범위 ===
     const selectedDate = computed(() => {
       const state = tabState.value[activeTab.value];
+      if (state.displayTime) {
+        return new Date(state.displayTime);
+      }
       if (state.time) {
         return new Date(state.time);
       }
@@ -279,12 +281,12 @@ export default {
       const state = tabState.value[mode];
       
       if (!state.time) {
-        // 선택한 날짜에 데이터 없음
         return;
       }
       
       isLoading.value = true;
       await fetchReportData(mode, state.time);
+      state.displayTime = state.time;
       isLoading.value = false;
     };
 
@@ -301,14 +303,15 @@ export default {
         // 오늘 데이터 있으면 첫 번째 시간 데이터 로드
         state.time = state.timeOptions[0].value;
         await fetchReportData(mode, state.time);
+        state.displayTime = state.time;
         state.lastSaved = null;
       } else {
         // 오늘 데이터 없으면 마지막 저장 데이터 로드
         state.time = '';
         const lastData = await fetchLastSavedData(mode);
-        console.log('lastData:', lastData);  // 이거 추가해서 확인
         if (lastData && lastData.timestamp) {
           state.lastSaved = lastData.timestamp;
+          state.displayTime = lastData.timestamp;
           // 마지막 데이터로 화면 출력 (캘린더는 오늘 그대로)
           const { main, detail } = lastData;
           const { chartData, items, chartList } = transformInfluxData(main, detail);
@@ -384,7 +387,6 @@ export default {
 
     // === 탭 변경 시 ===
     watch(activeTab, async (newTab) => {
-      const state = tabState.value[newTab];
       // 해당 탭 데이터가 없으면 초기 로드
       if (newTab === 'diagnosis' && equipmentChartData.value === null) {
         await initialLoad(newTab);
@@ -655,6 +657,7 @@ export default {
         tabState.value[key].timeOptions = [];
         tabState.value[key].time = '';
         tabState.value[key].lastSaved = null;
+        tabState.value[key].displayTime = null;
       }
       clearData('diagnosis');
       clearData('powerquality');
@@ -674,6 +677,7 @@ export default {
       currentTime,
       currentTimeOptions,
       lastSavedTimestamp,
+      displayTimestamp,
       onDateChange,
       onTimeChange,
       onLoadClick,
