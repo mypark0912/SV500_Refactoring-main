@@ -1,8 +1,3 @@
-"""
-EN50160 전력품질 리포트 생성 (FastAPI 연동)
-- Channel Information (설비 정보)
-- ITIC Curve Analysis (전력품질 차트)
-"""
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse
 from states.global_state import influx_state, redis_state, os_spec
@@ -15,15 +10,11 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import numpy as np
 from datetime import datetime
-import logging
-import os
-import tempfile
-import uuid
-
+import logging, os, json, tempfile, uuid
+from .en50160_dataMap import EN50160ReportProcessor
 from .api import get_asset, get_params, get_trendData, Trend
 
 router = APIRouter()
-
 
 # ============================================
 # 한글 폰트 설정
@@ -54,6 +45,7 @@ def setup_korean_font():
 # 모듈 로드 시 폰트 초기 설정
 setup_korean_font()
 
+processor = EN50160ReportProcessor()
 
 # ============================================
 # 유틸리티 함수
@@ -1298,3 +1290,7 @@ async def download_diagnosis_report(mode: str, asset_name: str, channel: str, ti
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/week/frequency/{filename}")
+async def get_frequency(filename: str):
+    return processor.get_frequency_chart_data(filename=filename)

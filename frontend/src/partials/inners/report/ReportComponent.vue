@@ -102,6 +102,7 @@
                     </tr>
                   </tbody>
                 </table>
+                <EN50160FrequencyChart :data="frequencyData" />
               </div>
             </div>
             <!-- ITIC Section -->
@@ -172,6 +173,7 @@
   import LineChart from '../../../charts/connect/LineChart_ITIC.vue'
   import Report_PQ from './Report_PQ.vue'
   import Report_PQ_detail from './Report_PQ_detail.vue'
+  import EN_Frequency from './EN_Frequency.vue'
   import axios from 'axios'
   import { useI18n } from 'vue-i18n'
   import { useReportData } from '@/composables/reportDict'
@@ -181,6 +183,7 @@
         LineChart,
         Report_PQ,
         Report_PQ_detail,
+        EN_Frequency,
     },
     props: {
       data: {
@@ -202,6 +205,7 @@
       const mode = computed(()=>props.mode );
       //const selectedX = ref(null);
       const iticDataList = ref([]);
+      const frequencyData = ref(null);
       //const selectedOption2 = ref('voltage_sag')
 
       const options2 = ref([
@@ -233,6 +237,7 @@
 
       onMounted(()=>{
         fetchData();
+        fetchEnData_Freq();
         fetchITICData();
       });
 
@@ -295,6 +300,15 @@
         return base
       })
 
+      const fetchEnData_Freq = async () => {
+        try {
+          const response = await axios.get(`/report/week/frequency/pq_weekly_2025-W49_all.parquet`);
+          frequencyData.value = response.data;
+        } catch (error) {
+          console.log("데이터 가져오기 실패:", error);
+        }
+      };
+
       
       const getComp = (param) => {
         if (!tbdata.value || !tbdata.value["status&compliance"]) return "-"
@@ -317,6 +331,7 @@
         getComp,
         t,
         iticDataList,
+        frequencyData,
       }
     }
   }
