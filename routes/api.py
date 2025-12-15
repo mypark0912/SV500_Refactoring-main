@@ -4,7 +4,7 @@ import os, httpx, re, logging, gc, psutil, csv
 import ujson as json
 from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from states.global_state import influx_state, redis_state, os_spec
 from collections import defaultdict
 from .redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
@@ -15,7 +15,6 @@ from .util import is_service_active
 from. diagnosis_map import AlarmStatusMatcher
 from concurrent.futures import ThreadPoolExecutor
 import asyncio, math
-from typing import Dict, List, Any
 
 EN_FILES = 'en50160_info.json'
 
@@ -141,13 +140,12 @@ class TrendData(BaseModel):
     AssetName: str
     StartDate: str
     EndDate: str
-    ParametersIds: List[int]
+    Parameters: List[Dict]
 
 class AlarmSearch(BaseModel):
     param: int
     StartDate: str
     EndDate: str
-
 
 class EventSearch(BaseModel):
     param: str
@@ -620,6 +618,33 @@ async def get_diagnosis_cached(channel, asset):
     else:
         return {"success": False, "error": "No Data"}
 
+
+def determine_data_state(last_record_datetime_str, stale_period_hours):
+    # DateTime.MinValue 체크 (빈 문자열이나 None)
+    if not last_record_datetime_str or last_record_datetime_str == "":
+        return "NO_DATA"
+
+    try:
+        # ISO 8601 문자열을 datetime 객체로 변환
+        last_record_datetime = datetime.fromisoformat(last_record_datetime_str)
+
+        # 현재 로컬 시간 (timezone aware)
+        now = datetime.now(last_record_datetime.tzinfo)
+
+        # 시간 차이 계산
+        time_difference = now - last_record_datetime
+        hours_difference = time_difference.total_seconds() / 3600
+
+        # Stale Period 체크
+        if hours_difference > stale_period_hours:
+            return "STALE_DATA"
+        else:
+            return "CURRENT_DATA"
+
+    except (ValueError, TypeError) as e:
+        print(f"Error parsing datetime: {e}")
+        return "NO_DATA"
+
 @router.get("/getDiagnosisDetail/{asset}")
 @gc_after_large_data(threshold_mb=30)  # Diagnosis Vue : get diagnosis
 async def get_diagnosis(asset, request: Request):
@@ -629,7 +654,8 @@ async def get_diagnosis(asset, request: Request):
 
     if datas:
         ret = proc_DiagnosisData_optimized(datas)
-        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
+        data_state = determine_data_state(datas["LastRecordDateTime"],datas["StalePeriod"])
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree'], "data_state":data_state, "data_recordtime":datas["LastRecordDateTime"]}
     else:
         return {"success": False, "error": "No Data"}
 
