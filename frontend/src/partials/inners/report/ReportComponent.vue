@@ -102,7 +102,53 @@
                     </tr>
                   </tbody>
                 </table>
-                <EN50160FrequencyChart :data="frequencyData" />
+                <EN50160Chart
+                  title="Frequency"
+                  :timeseries="frequencyTimeseries"
+                  :yAxis="frequencyYAxis"
+                  :limitLines="frequencyLimits"
+                  :markAreas="frequencyAreas"
+                  :tableColumns="frequencyTableColumns"
+                  :tableData="frequencyTableData"
+                  :legendItems="frequencyLegend"
+                  chartHeight="300px"
+                />
+
+                <!-- 전압 차트 (3상) -->
+                <EN50160Chart
+                  title="Supply Voltage Variations"
+                  :timeseries="voltageTimeseries"
+                  :yAxis="voltageYAxis"
+                  :limitLines="voltageLimits"
+                  :markAreas="voltageAreas"
+                  :tableColumns="voltageTableColumns"
+                  :tableData="voltageTableData"
+                  :legendItems="voltageLegend"
+                  chartHeight="320px"
+                />
+
+                <!-- THD 차트 -->
+                <EN50160Chart
+                  title="Voltage THD"
+                  :timeseries="thdTimeseries"
+                  :yAxis="thdYAxis"
+                  :limitLines="thdLimits"
+                  :tableColumns="thdTableColumns"
+                  :tableData="thdTableData"
+                  :legendItems="thdLegend"
+                  chartHeight="280px"
+                />
+
+                <!-- 불평형 차트 -->
+                <EN50160Chart
+                  title="Voltage Unbalance"
+                  :timeseries="unbalanceTimeseries"
+                  :yAxis="unbalanceYAxis"
+                  :limitLines="unbalanceLimits"
+                  :tableColumns="unbalanceTableColumns"
+                  :tableData="unbalanceTableData"
+                  chartHeight="250px"
+                />
               </div>
             </div>
             <!-- ITIC Section -->
@@ -173,7 +219,7 @@
   import LineChart from '../../../charts/connect/LineChart_ITIC.vue'
   import Report_PQ from './Report_PQ.vue'
   import Report_PQ_detail from './Report_PQ_detail.vue'
-  import EN_Frequency from './EN_Frequency.vue'
+  import EN50160Chart from './EN_Frequency.vue'
   import axios from 'axios'
   import { useI18n } from 'vue-i18n'
   import { useReportData } from '@/composables/reportDict'
@@ -183,7 +229,7 @@
         LineChart,
         Report_PQ,
         Report_PQ_detail,
-        EN_Frequency,
+        EN50160Chart,
     },
     props: {
       data: {
@@ -205,7 +251,279 @@
       const mode = computed(()=>props.mode );
       //const selectedX = ref(null);
       const iticDataList = ref([]);
-      const frequencyData = ref(null);
+      const filename = 'pq_weekly_2025-W49_all.parquet'
+
+// ============================================================
+// 주파수 (Frequency)
+// ============================================================
+const enReport_data = ref(null)
+const loading = ref(true)
+
+// ============================================================
+// 주파수 (Frequency)
+// ============================================================
+const frequencyTimeseries = computed(() => {
+  const freq = enReport_data.value?.frequency
+  if (!freq?.timeseries) return { labels: [], datasets: [] }
+  return {
+    labels: freq.timeseries.labels,
+    datasets: [{
+      name: 'Frequency',
+      data: freq.timeseries.data,
+      color: '#008080'
+    }]
+  }
+})
+
+const frequencyYAxis = { name: '[Hz]', min: 56, max: 63 }
+
+const frequencyLimits = computed(() => {
+  const limits = enReport_data.value?.frequency?.limits || {}
+  return [
+    { value: limits.limit_100?.max || 62.4, color: '#f44336' },
+    { value: limits.limit_100?.min || 56.4, color: '#f44336' },
+    { value: limits.limit_99_5?.max || 60.6, color: '#ffc107' },
+    { value: limits.limit_99_5?.min || 59.4, color: '#ffc107' }
+  ]
+})
+
+const frequencyAreas = computed(() => {
+  const limits = enReport_data.value?.frequency?.limits || {}
+  return [{
+    from: limits.limit_99_5?.min || 59.4,
+    to: limits.limit_99_5?.max || 60.6,
+    color: 'rgba(255, 255, 200, 0.3)'
+  }]
+})
+
+const frequencyTableColumns = [
+  { key: 'requirement', label: 'EN50160 Requirement' },
+  { key: 'measured', label: 'Measured Frequency' },
+  { key: 'result', label: 'Result' }
+]
+
+const frequencyTableData = computed(() => {
+  const freq = enReport_data.value?.frequency
+  if (!freq) return []
+  const stats = freq.statistics || {}
+  const limits = freq.limits || {}
+  return [
+    {
+      requirement: `99.5% of the week: ${limits.limit_99_5?.min}Hz - ${limits.limit_99_5?.max}Hz`,
+      measured: `${stats.min}Hz ~ ${stats.max}Hz`,
+      result: stats.result_99_5,
+      rowClass: 'row-99-5'
+    },
+    {
+      requirement: `100% of the week: ${limits.limit_100?.min}Hz - ${limits.limit_100?.max}Hz`,
+      measured: `${stats.min}Hz ~ ${stats.max}Hz`,
+      result: stats.result_100,
+      rowClass: 'row-100'
+    }
+  ]
+})
+
+const frequencyLegend = [
+  { name: 'Flagged Data', color: 'rgba(255, 255, 200, 0.8)' },
+  { name: 'Frequency', color: '#008080' }
+]
+
+// ============================================================
+// 전압 (Voltage)
+// ============================================================
+const voltageTimeseries = computed(() => {
+  const volt = enReport_data.value?.voltage
+  if (!volt?.phases) return { labels: [], datasets: [] }
+  
+  const phases = volt.phases
+  const firstPhase = Object.values(phases)[0]
+  
+  return {
+    labels: firstPhase?.timeseries?.labels || [],
+    datasets: [
+      { name: 'L1', data: phases.L1?.timeseries?.data || [], color: '#e53935', areaStyle: false },
+      { name: 'L2', data: phases.L2?.timeseries?.data || [], color: '#43a047', areaStyle: false },
+      { name: 'L3', data: phases.L3?.timeseries?.data || [], color: '#1e88e5', areaStyle: false }
+    ]
+  }
+})
+
+const voltageYAxis = computed(() => {
+  const nominal = enReport_data.value?.voltage?.limits?.nominal || 22900
+  return {
+    name: '[V]',
+    min: nominal * 0.8,
+    max: nominal * 1.2,
+    formatter: (value) => (value / 1000).toFixed(1) + 'k'
+  }
+})
+
+const voltageLimits = computed(() => {
+  const limits = enReport_data.value?.voltage?.limits || {}
+  return [
+    { value: limits.limit_100?.max, color: '#f44336' },
+    { value: limits.limit_100?.min, color: '#f44336' },
+    { value: limits.limit_95?.max, color: '#ffc107' },
+    { value: limits.limit_95?.min, color: '#ffc107' }
+  ]
+})
+
+const voltageAreas = computed(() => {
+  const limits = enReport_data.value?.voltage?.limits || {}
+  return [{
+    from: limits.limit_95?.min,
+    to: limits.limit_95?.max,
+    color: 'rgba(255, 255, 200, 0.3)'
+  }]
+})
+
+const voltageTableColumns = [
+  { key: 'requirement', label: 'EN50160 Requirement' },
+  { key: 'phase', label: 'Phase' },
+  { key: 'measured', label: 'Measured Voltage' },
+  { key: 'inRange', label: 'In Range %' },
+  { key: 'result', label: 'Result' }
+]
+
+const voltageTableData = computed(() => {
+  const volt = enReport_data.value?.voltage
+  if (!volt?.phases) return []
+  
+  const phases = volt.phases
+  const limits = volt.limits || {}
+  const rows = []
+  
+  // 95% 기준
+  Object.entries(phases).forEach(([key, phase], index) => {
+    rows.push({
+      requirement: index === 0 ? `95% of the week: ${limits.limit_95?.min?.toFixed(0)}V - ${limits.limit_95?.max?.toFixed(0)}V (±10%)` : '',
+      phase: key,
+      measured: `${phase.statistics?.min?.toFixed(0)}V ~ ${phase.statistics?.max?.toFixed(0)}V`,
+      inRange: `${phase.statistics?.in_range_95_percent}%`,
+      result: phase.statistics?.result_95,
+      rowClass: 'row-95'
+    })
+  })
+  
+  // 100% 기준
+  Object.entries(phases).forEach(([key, phase], index) => {
+    rows.push({
+      requirement: index === 0 ? `100% of the week: ${limits.limit_100?.min?.toFixed(0)}V - ${limits.limit_100?.max?.toFixed(0)}V (-15%/+10%)` : '',
+      phase: key,
+      measured: `${phase.statistics?.min?.toFixed(0)}V ~ ${phase.statistics?.max?.toFixed(0)}V`,
+      inRange: `${phase.statistics?.in_range_100_percent}%`,
+      result: phase.statistics?.result_100,
+      rowClass: 'row-100'
+    })
+  })
+  
+  return rows
+})
+
+const voltageLegend = [
+  { name: 'L1', color: '#e53935' },
+  { name: 'L2', color: '#43a047' },
+  { name: 'L3', color: '#1e88e5' }
+]
+
+// ============================================================
+// THD
+// ============================================================
+const thdTimeseries = computed(() => {
+  const thd = enReport_data.value?.thd
+  if (!thd?.phases) return { labels: [], datasets: [] }
+  
+  const phases = thd.phases
+  const firstPhase = Object.values(phases)[0]
+  
+  return {
+    labels: firstPhase?.timeseries?.labels || [],
+    datasets: [
+      { name: 'L1', data: phases.L1?.timeseries?.data || [], color: '#e53935', areaStyle: false },
+      { name: 'L2', data: phases.L2?.timeseries?.data || [], color: '#43a047', areaStyle: false },
+      { name: 'L3', data: phases.L3?.timeseries?.data || [], color: '#1e88e5', areaStyle: false }
+    ]
+  }
+})
+
+const thdYAxis = { name: '[%]', min: 0, max: 15 }
+
+const thdLimits = computed(() => {
+  const limit = enReport_data.value?.thd?.limits?.limit_95 || 8
+  return [{ value: limit, color: '#f44336' }]
+})
+
+const thdTableColumns = [
+  { key: 'phase', label: 'Phase' },
+  { key: 'max', label: 'Max' },
+  { key: 'avg', label: 'Avg' },
+  { key: 'inRange', label: 'In Range %' },
+  { key: 'result', label: 'Result' }
+]
+
+const thdTableData = computed(() => {
+  const thd = enReport_data.value?.thd
+  if (!thd?.phases) return []
+  
+  return Object.entries(thd.phases).map(([key, phase]) => ({
+    phase: key,
+    max: `${phase.statistics?.max?.toFixed(2)}%`,
+    avg: `${phase.statistics?.avg?.toFixed(2)}%`,
+    inRange: `${phase.statistics?.in_range_95_percent}%`,
+    result: phase.statistics?.result
+  }))
+})
+
+const thdLegend = [
+  { name: 'L1', color: '#e53935' },
+  { name: 'L2', color: '#43a047' },
+  { name: 'L3', color: '#1e88e5' }
+]
+
+// ============================================================
+// 불평형 (Unbalance)
+// ============================================================
+const unbalanceTimeseries = computed(() => {
+  const unbal = enReport_data.value?.unbalance
+  if (!unbal?.timeseries) return { labels: [], datasets: [] }
+  return {
+    labels: unbal.timeseries.labels,
+    datasets: [{
+      name: 'Unbalance',
+      data: unbal.timeseries.data,
+      color: '#9c27b0'
+    }]
+  }
+})
+
+const unbalanceYAxis = { name: '[%]', min: 0, max: 5 }
+
+const unbalanceLimits = computed(() => {
+  const limit = enReport_data.value?.unbalance?.limits?.limit_95 || 2
+  return [{ value: limit, color: '#f44336' }]
+})
+
+const unbalanceTableColumns = [
+  { key: 'label', label: 'Parameter' },
+  { key: 'max', label: 'Max' },
+  { key: 'avg', label: 'Avg' },
+  { key: 'inRange', label: 'In Range %' },
+  { key: 'result', label: 'Result' }
+]
+
+const unbalanceTableData = computed(() => {
+  const unbal = enReport_data.value?.unbalance
+  if (!unbal?.statistics) return []
+  
+  const stats = unbal.statistics
+  return [{
+    label: 'Voltage Unbalance',
+    max: `${stats.max?.toFixed(3)}%`,
+    avg: `${stats.avg?.toFixed(3)}%`,
+    inRange: `${stats.in_range_95_percent}%`,
+    result: stats.result
+  }]
+})
       //const selectedOption2 = ref('voltage_sag')
 
       const options2 = ref([
@@ -237,7 +555,7 @@
 
       onMounted(()=>{
         fetchData();
-        fetchEnData_Freq();
+        fetchReportData();
         fetchITICData();
       });
 
@@ -300,12 +618,17 @@
         return base
       })
 
-      const fetchEnData_Freq = async () => {
+      const fetchReportData = async () => {
+        loading.value = true
         try {
-          const response = await axios.get(`/report/week/frequency/pq_weekly_2025-W49_all.parquet`);
-          frequencyData.value = response.data;
+          const response = await axios.get(`/report/week/${filename}`)
+          enReport_data.value = response.data
+          console.log('Report data loaded:', enReport_data.value)
         } catch (error) {
-          console.log("데이터 가져오기 실패:", error);
+          console.error('데이터 로드 실패:', error)
+          enReport_data.value = null
+        } finally {
+          loading.value = false
         }
       };
 
@@ -331,7 +654,32 @@
         getComp,
         t,
         iticDataList,
-        frequencyData,
+        enReport_data,
+        thdLegend,
+        thdLimits,
+        thdTableColumns,
+        thdTableData,
+        thdTimeseries,
+        thdYAxis,
+        unbalanceLimits,
+        unbalanceTableColumns,
+        unbalanceTableData,
+        unbalanceTimeseries,
+        unbalanceYAxis,
+        voltageAreas,
+        voltageLegend,
+        voltageLimits,
+        voltageTableColumns,
+        voltageTableData,
+        voltageTimeseries,
+        voltageYAxis,
+        frequencyAreas,
+        frequencyLegend,
+        frequencyLimits,
+        frequencyTableColumns,
+        frequencyTableData,
+        frequencyTimeseries,
+        frequencyYAxis
       }
     }
   }

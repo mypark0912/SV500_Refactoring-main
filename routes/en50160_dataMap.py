@@ -143,24 +143,56 @@ class EN50160ReportProcessor:
         return df.to_dict(orient='records')
 
     # =========================================================================
-    # 주파수 (Frequency)
+    # 전체 리포트 데이터 (단일 API용)
     # =========================================================================
-    def get_frequency_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_all_chart_data(self, filepath: str = None, filename: str = None,
+                           nominal_voltage: float = 22900.0) -> Optional[Dict]:
         """
-        주파수 Chart.js용 데이터 반환
+        전체 차트 데이터 반환 (파일 1번만 읽기)
 
         Returns:
             {
-                "timeseries": { "labels": [...], "data": [...] },
-                "histogram": { "labels": [...], "data": [...] },
-                "statistics": { "min": ..., "max": ..., "avg": ..., "result": ... },
-                "limits": { "nominal": ..., "limit_99_5": {...}, "limit_100": {...} }
+                "frequency": {...},
+                "voltage": {...},
+                "thd": {...},
+                "unbalance": {...},
+                "flicker": {...},
+                "summary": {...}
             }
         """
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
 
+        return {
+            "frequency": self._get_frequency_from_df(df),
+            "voltage": self._get_voltage_from_df(df, nominal_voltage),
+            "thd": self._get_thd_from_df(df),
+            "unbalance": self._get_unbalance_from_df(df),
+            "flicker": self._get_flicker_from_df(df),
+        }
+
+    # =========================================================================
+    # 주파수 (Frequency)
+    # =========================================================================
+    def get_frequency_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+        """주파수 Chart.js용 데이터 반환 (파일 경로 지정)"""
+        df = self.read_parquet(filepath, filename)
+        if df is None:
+            return None
+        return self._get_frequency_from_df(df)
+
+    def _get_frequency_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
+        """
+        주파수 Chart.js용 데이터 반환 (DataFrame 직접 전달)
+
+        Returns:
+            {
+                "timeseries": { "labels": [...], "data": [...] },
+                "statistics": { "min": ..., "max": ..., "avg": ..., "result": ... },
+                "limits": { "nominal": ..., "limit_99_5": {...}, "limit_100": {...} }
+            }
+        """
         freq_col = "frequency_avg"
         if freq_col not in df.columns:
             logger.error(f"컬럼 없음: {freq_col}")
@@ -174,9 +206,6 @@ class EN50160ReportProcessor:
             "labels": timestamps,
             "data": [round(float(v), 3) for v in df[freq_col].values]
         }
-
-        # 히스토그램 (분포)
-        histogram = self._calculate_histogram(values, bin_min=59.0, bin_max=61.0, bin_count=40)
 
         # 통계
         limits = self.limits["frequency"]
@@ -212,7 +241,6 @@ class EN50160ReportProcessor:
 
         return {
             "timeseries": timeseries,
-            "histogram": histogram,
             "statistics": statistics,
             "limits": limits
         }
@@ -222,19 +250,23 @@ class EN50160ReportProcessor:
     # =========================================================================
     def get_voltage_chart_data(self, filepath: str = None, filename: str = None,
                                 nominal_voltage: float = 22900.0) -> Optional[Dict]:
-        """
-        전압 변동 Chart.js용 데이터 반환
-
-        Args:
-            nominal_voltage: 정격전압 (V), 기본값 22.9kV
-
-        Returns:
-            3상 각각의 시계열, 히스토그램, 통계 데이터
-        """
+        """전압 변동 Chart.js용 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
+        return self._get_voltage_from_df(df, nominal_voltage)
 
+    def _get_voltage_from_df(self, df: pd.DataFrame, nominal_voltage: float = 22900.0) -> Optional[Dict]:
+        """
+        전압 변동 Chart.js용 데이터 반환 (DataFrame 직접 전달)
+
+        Args:
+            df: DataFrame
+            nominal_voltage: 정격전압 (V), 기본값 22.9kV
+
+        Returns:
+            3상 각각의 시계열, 통계 데이터
+        """
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
         limits = self.limits["voltage"]
 
@@ -258,14 +290,6 @@ class EN50160ReportProcessor:
                 "data": [round(float(v), 1) for v in df[col].values]
             }
 
-            # 히스토그램
-            histogram = self._calculate_histogram(
-                values,
-                bin_min=nominal_voltage * 0.85,
-                bin_max=nominal_voltage * 1.15,
-                bin_count=30
-            )
-
             # 통계
             measured_min = float(np.min(values))
             measured_max = float(np.max(values))
@@ -285,7 +309,6 @@ class EN50160ReportProcessor:
 
             phases_data[f"L{phase}"] = {
                 "timeseries": timeseries,
-                "histogram": histogram,
                 "statistics": {
                     "min": round(measured_min, 1),
                     "max": round(measured_max, 1),
@@ -311,11 +334,14 @@ class EN50160ReportProcessor:
     # 전압 불평형 (Voltage Unbalance)
     # =========================================================================
     def get_unbalance_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
-        """전압 불평형 Chart.js용 데이터 반환"""
+        """전압 불평형 Chart.js용 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
+        return self._get_unbalance_from_df(df)
 
+    def _get_unbalance_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
+        """전압 불평형 Chart.js용 데이터 반환 (DataFrame 직접 전달)"""
         col = "voltage_unbalance_0"  # 역상 불평형
         if col not in df.columns:
             logger.error(f"컬럼 없음: {col}")
@@ -330,9 +356,6 @@ class EN50160ReportProcessor:
             "labels": timestamps,
             "data": [round(float(v), 3) for v in df[col].values]
         }
-
-        # 히스토그램
-        histogram = self._calculate_histogram(values, bin_min=0, bin_max=5, bin_count=25)
 
         # 통계
         measured_max = float(np.max(values))
@@ -349,7 +372,6 @@ class EN50160ReportProcessor:
 
         return {
             "timeseries": timeseries,
-            "histogram": histogram,
             "statistics": statistics,
             "limits": {"limit_95": limit}
         }
@@ -358,11 +380,14 @@ class EN50160ReportProcessor:
     # 전압 THD
     # =========================================================================
     def get_thd_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
-        """전압 THD Chart.js용 데이터 반환"""
+        """전압 THD Chart.js용 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
+        return self._get_thd_from_df(df)
 
+    def _get_thd_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
+        """전압 THD Chart.js용 데이터 반환 (DataFrame 직접 전달)"""
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
         limit = self.limits["thd"]["limit_95"]
 
@@ -379,15 +404,12 @@ class EN50160ReportProcessor:
                 "data": [round(float(v), 2) for v in df[col].values]
             }
 
-            histogram = self._calculate_histogram(values, bin_min=0, bin_max=15, bin_count=30)
-
             measured_max = float(np.max(values))
             in_range_95 = np.sum(values <= limit) / len(values) * 100
             result = "PASS" if in_range_95 >= 95.0 else "FAIL"
 
             phases_data[f"L{phase}"] = {
                 "timeseries": timeseries,
-                "histogram": histogram,
                 "statistics": {
                     "max": round(measured_max, 2),
                     "avg": round(float(np.mean(values)), 2),
@@ -407,11 +429,14 @@ class EN50160ReportProcessor:
     # Flicker (Pst, Plt)
     # =========================================================================
     def get_flicker_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
-        """Flicker (Pst, Plt) Chart.js용 데이터 반환"""
+        """Flicker (Pst, Plt) Chart.js용 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
+        return self._get_flicker_from_df(df)
 
+    def _get_flicker_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
+        """Flicker (Pst, Plt) Chart.js용 데이터 반환 (DataFrame 직접 전달)"""
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
         pst_limit = self.limits["flicker"]["pst_limit"]
         plt_limit = self.limits["flicker"]["plt_limit_95"]
@@ -464,11 +489,14 @@ class EN50160ReportProcessor:
     # 고조파 (Harmonics)
     # =========================================================================
     def get_harmonics_table_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
-        """고조파 테이블 데이터 반환 (H2~H25)"""
+        """고조파 테이블 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
+        return self._get_harmonics_from_df(df)
 
+    def _get_harmonics_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
+        """고조파 테이블 데이터 반환 (DataFrame 직접 전달)"""
         harmonics_limits = self.limits["harmonics"]
         result = {"phases": {}, "limits": harmonics_limits}
 
@@ -503,120 +531,8 @@ class EN50160ReportProcessor:
         return result
 
     # =========================================================================
-    # 전체 요약 (Summary)
-    # =========================================================================
-    def get_summary_data(self, filepath: str = None, filename: str = None,
-                         nominal_voltage: float = 22900.0) -> Optional[Dict]:
-        """EN50160 전체 요약 테이블 데이터"""
-        df = self.read_parquet(filepath, filename)
-        if df is None:
-            return None
-
-        summary = {
-            "period": {
-                "start": df['timestamp'].min().strftime("%Y-%m-%d %H:%M"),
-                "end": df['timestamp'].max().strftime("%Y-%m-%d %H:%M")
-            },
-            "total_samples": len(df),
-            "parameters": []
-        }
-
-        # 주파수
-        freq_data = self.get_frequency_chart_data(filepath, filename)
-        if freq_data:
-            summary["parameters"].append({
-                "name": "Frequency Variation 1",
-                "L1": freq_data["statistics"]["in_range_99_5_percent"],
-                "L2": None,
-                "L3": None,
-                "compliance": freq_data["statistics"]["result_99_5"],
-                "requirement": "(±1%), 99.5%/Week"
-            })
-            summary["parameters"].append({
-                "name": "Frequency Variation 2",
-                "L1": freq_data["statistics"]["in_range_100_percent"],
-                "L2": None,
-                "L3": None,
-                "compliance": freq_data["statistics"]["result_100"],
-                "requirement": "(+4%/-6%), 100%/Week"
-            })
-
-        # 전압
-        volt_data = self.get_voltage_chart_data(filepath, filename, nominal_voltage)
-        if volt_data:
-            summary["parameters"].append({
-                "name": "Voltage Variation 1",
-                "L1": volt_data["phases"].get("L1", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L2": volt_data["phases"].get("L2", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L3": volt_data["phases"].get("L3", {}).get("statistics", {}).get("in_range_95_percent"),
-                "compliance": self._get_worst_result([
-                    volt_data["phases"].get(f"L{i}", {}).get("statistics", {}).get("result_95", "N/A")
-                    for i in range(1, 4)
-                ]),
-                "requirement": "(±10%), 95%/Week"
-            })
-
-        # THD
-        thd_data = self.get_thd_chart_data(filepath, filename)
-        if thd_data:
-            summary["parameters"].append({
-                "name": "THD",
-                "L1": thd_data["phases"].get("L1", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L2": thd_data["phases"].get("L2", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L3": thd_data["phases"].get("L3", {}).get("statistics", {}).get("in_range_95_percent"),
-                "compliance": self._get_worst_result([
-                    thd_data["phases"].get(f"L{i}", {}).get("statistics", {}).get("result", "N/A")
-                    for i in range(1, 4)
-                ]),
-                "requirement": "(<8%), 95%/Week"
-            })
-
-        # 불평형
-        unbal_data = self.get_unbalance_chart_data(filepath, filename)
-        if unbal_data:
-            summary["parameters"].append({
-                "name": "Voltage Unbalance",
-                "L1": unbal_data["statistics"]["in_range_95_percent"],
-                "L2": None,
-                "L3": None,
-                "compliance": unbal_data["statistics"]["result"],
-                "requirement": "(<2%), 95%/Week"
-            })
-
-        # Flicker
-        flicker_data = self.get_flicker_chart_data(filepath, filename)
-        if flicker_data:
-            summary["parameters"].append({
-                "name": "Plt",
-                "L1": flicker_data["plt"].get("L1", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L2": flicker_data["plt"].get("L2", {}).get("statistics", {}).get("in_range_95_percent"),
-                "L3": flicker_data["plt"].get("L3", {}).get("statistics", {}).get("in_range_95_percent"),
-                "compliance": self._get_worst_result([
-                    flicker_data["plt"].get(f"L{i}", {}).get("statistics", {}).get("result", "N/A")
-                    for i in range(1, 4)
-                ]),
-                "requirement": "(≤1), 95%/Week"
-            })
-
-        return summary
-
-    # =========================================================================
     # 유틸리티 함수
     # =========================================================================
-    def _calculate_histogram(self, values: np.ndarray, bin_min: float, bin_max: float,
-                              bin_count: int = 20) -> Dict:
-        """히스토그램 계산"""
-        counts, bin_edges = np.histogram(values, bins=bin_count, range=(bin_min, bin_max))
-
-        # 라벨은 각 빈의 중간값
-        labels = [f"{(bin_edges[i] + bin_edges[i+1])/2:.2f}" for i in range(len(counts))]
-
-        return {
-            "labels": labels,
-            "data": [int(c) for c in counts],
-            "bin_edges": [round(float(e), 2) for e in bin_edges]
-        }
-
     def _get_worst_result(self, results: List[str]) -> str:
         """결과 중 가장 나쁜 것 반환"""
         if "FAIL" in results:

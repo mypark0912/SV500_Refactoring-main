@@ -1291,6 +1291,8 @@ async def download_diagnosis_report(mode: str, asset_name: str, channel: str, ti
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/week/frequency/{filename}")
-async def get_frequency(filename: str):
-    return processor.get_frequency_chart_data(filename=filename)
+
+@router.get("/week/{filename}")
+async def get_weekly_report(filename: str, nominal_voltage: float = 22900.0):
+    # get_all_chart_data 사용 (내부에서 파일 1번만 읽음)
+    return processor.get_all_chart_data(filename=filename, nominal_voltage=nominal_voltage)
