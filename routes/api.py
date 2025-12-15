@@ -137,6 +137,11 @@ class Trend(BaseModel):
     StartDate: str
     EndDate: str
 
+class TrendData(BaseModel):
+    AssetName: str
+    StartDate: str
+    EndDate: str
+    ParametersIds: List[int]
 
 class AlarmSearch(BaseModel):
     param: int
@@ -1011,6 +1016,34 @@ async def get_trendData(data: Trend, request: Request):
                         # if not result["Parameters"][j]["UID"]["Name"] in datDict.keys():
                         #     datDict[result["Parameters"][j]["UID"]["Name"]] = {
                         #         "Title": result["Parameters"][j]["UID"]["Title"], "data": result["Parameters"][j]["Data"]}
+                if result["Thresholds"] and len(result["Thresholds"]) > 0:
+                    datDict["Thresholds"] = result["Thresholds"]
+                else:
+                    datDict["Thresholds"] = []
+            return {"success": True, "data": datDict, "date":result["LastRecordDateTime"]}
+        else:
+            return {"success": False, "error": "No Data", "date":""}
+    else:
+        return {"success": False, "error": "No Data", "date":""}
+
+@router.post("/getTrendbyName")
+@gc_after_large_data(threshold_mb=30)
+async def get_trend_byName(data: TrendData):
+
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        response = await client.post(f"http://{os_spec.restip}:5000/api/getTrendDatabyName", json=data.dict())
+        result = response.json()
+
+    if len(result) > 0:
+        datDict = dict()
+        if "Parameters" in result:
+            for i in range(0, len(result)):
+                if len(result["Parameters"]) > 0:
+                    for j in range(0, len(result["Parameters"])):
+                        if not result["Parameters"][j]["Title"] in datDict.keys():
+                            datDict[result["Parameters"][j]["Title"]] = {
+                                "Title": result["Parameters"][j]["Title"],
+                                "data": result["Parameters"][j]["Data"]}
                 if result["Thresholds"] and len(result["Thresholds"]) > 0:
                     datDict["Thresholds"] = result["Thresholds"]
                 else:
