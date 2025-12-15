@@ -59,8 +59,15 @@ export default {
   setup(props) {
     // ✅ PDF 모드 inject
     const isPdfMode = inject('isPdfMode', false)
-    const data_recordtime = inject('data_recordtime');
-    const data_state = inject('data_state');
+
+    const data_recordtime_raw = inject('data_recordtime', ref(''));
+    const data_state_raw = inject('data_state', ref(''));
+
+    const data_state = computed(() => data_state_raw.value || '-');
+    const data_recordtime = computed(() => data_recordtime_raw.value || '-');
+
+
+    
     const { t, locale } = useI18n()
     const canvas = ref(null)
     const legend = ref(null)

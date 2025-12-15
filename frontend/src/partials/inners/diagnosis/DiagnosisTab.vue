@@ -103,6 +103,7 @@ export default {
         //const ch = 'Fan';
         //const response = await axios.get(`/api/getDiagPQ/${chName}`);
         const response = await axios.get(`/api/getDiagPQ/${chName}`);
+
         if (response.data.success) {
           let itemlist = [], valuelist=[], datalist=[];
           for(let i = 0; i < response.data.data_status.length;i++){
@@ -178,6 +179,7 @@ export default {
 
 
     onMounted(async () => {
+     
         if(mode.value == 'Status')
           await fetchDetailData();
         else if(mode.value == 'PowerQuality')
@@ -202,8 +204,8 @@ export default {
       }
     });
 
-    provide('data_recordtime',data_recordtime);
-    provide('data_state',data_state);
+    provide('data_recordtime', computed(() => data_recordtime.value));
+    provide('data_state', computed(() => data_state.value));
 
     return {
       channel,
