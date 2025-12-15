@@ -669,8 +669,9 @@ async def get_diagPQ(asset, request: Request):
 
     if datas:
         ret = proc_DiagnosisData_optimized(datas)
+        data_state = determine_data_state(datas["LastRecordDateTime"], datas["StalePeriod"])
         # harmonics_data = await get_harmonics_data(ret)
-        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree']}
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree'], "data_state":data_state, "data_recordtime":datas["LastRecordDateTime"]}
     else:
         return {"success": False, "error": "No Data"}
 

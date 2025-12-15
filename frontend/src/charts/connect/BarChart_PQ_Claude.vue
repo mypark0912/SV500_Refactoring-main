@@ -15,12 +15,7 @@
         >
           {{ chartTitle }}
         </h3>
-        <span 
-          class="update-time"
-          :class="isPdfMode ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'"
-        >
-          <!-- {{ getUpdateTime() }} -->
-        </span>
+        <span class="update-time"> {{data_state }} / {{ data_recordtime }}</span>
       </div>
     </div>
 
@@ -64,7 +59,8 @@ export default {
   setup(props) {
     // ✅ PDF 모드 inject
     const isPdfMode = inject('isPdfMode', false)
-    
+    const data_recordtime = inject('data_recordtime');
+    const data_state = inject('data_state');
     const { t, locale } = useI18n()
     const canvas = ref(null)
     const legend = ref(null)
@@ -362,7 +358,9 @@ export default {
       getUpdateTime,
       t,
       locale,
-      chartTitle,  
+      chartTitle,
+      data_state,
+      data_recordtime,
     }
   }
 }

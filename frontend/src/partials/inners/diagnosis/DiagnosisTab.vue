@@ -114,6 +114,8 @@ export default {
           }
           chartdata.value = {"Names" : itemlist, "Values" : valuelist, "Titles": datalist};
           items.value = response.data.data_tree;
+          data_recordtime.value = response.data.data_recordtime;
+          data_state.value = response.data.data_state;
         }else{
           console.log('No Data');
         }
