@@ -4,7 +4,7 @@
     <div class="chart-header">
       <div class="header-content">
         <h3 class="chart-title">{{t('diagnosis.tabTitle.detailTitle')}}</h3>
-        <!-- <span class="update-time">{{ getUpdateTime() }}</span> -->
+        <span class="update-time"> {{data_state }} / {{ data_recordtime }}</span>
       </div>
     </div>
 
@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useDark } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 
@@ -104,7 +104,8 @@ export default {
     const { t, locale } = useI18n()
     const isLoading = ref(false)
     const darkMode = useDark()
-    
+    const data_state = inject('data_state');
+    const data_recordtime = inject('data_recordtime');
     // 툴팁 상태
     const tooltip = ref({
       show: false,
@@ -250,6 +251,8 @@ export default {
       updateTooltipPosition,
       t,
       locale,
+      data_state,
+      data_recordtime,
     }
   }
 }

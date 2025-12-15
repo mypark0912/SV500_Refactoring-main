@@ -23,7 +23,7 @@
 </div>
 </template>
 <script>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, provide } from 'vue'
 import { useI18n } from 'vue-i18n'  // ✅ 추가
 //import { useRoute } from 'vue-router'
 //import { useAuthStore } from '@/store'; // ✅ Pinia Store 사용
@@ -60,6 +60,8 @@ export default {
     //const authStore = useAuthStore();
     const asset = ref(props.asset);
     const chartdata = ref(null);
+    const data_recordtime = ref('');
+    const data_state = ref('');
     const items = ref([]);
     const mode=ref(props.mode);
 
@@ -84,6 +86,8 @@ export default {
           }
           chartdata.value = {"Names" : itemlist, "Values" : valuelist, "Titles": datalist};
           items.value = response.data.data_tree;
+          data_recordtime.value = response.data.data_recordtime;
+          data_state.value = response.data.data_state;
         }else{
           console.log('No Data');
         }
@@ -196,6 +200,9 @@ export default {
       }
     });
 
+    provide('data_recordtime',data_recordtime);
+    provide('data_state',data_state);
+
     return {
       channel,
       //langset,
@@ -204,6 +211,8 @@ export default {
       asset,
       fetchDetailData,
       mode,
+      data_recordtime,
+      data_state,
     }  
   }
 
