@@ -6,7 +6,6 @@
           class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400"
         >
           <div class="flex flex-col w-full gap-3">
-            <!--div class="flex w-full justify-between items-start"-->
             <div class="flex items-start">
               <svg
                 class="shrink-0 fill-current text-violet-500 mt-[3px] mr-3"
@@ -64,6 +63,19 @@
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
               @click.prevent="drawEnergyChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
+            <a
+              v-else-if="tap == `PowerQuality` || tap == `Diagnosis`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawDiagnosisChartByName"
             >
               {{
                 isLoading
@@ -170,7 +182,8 @@ import Trend_treetable from "./Trend_treetable.vue";
 import LineChart from "../../../charts/connect/LineChart01_Echart.vue";
 import Notification_origin from "./Notification_origin.vue";
 import { useI18n } from "vue-i18n";
-import { useAuthStore } from '@/store/auth'; // ✅ Pinia Store 사용
+import { useAuthStore } from '@/store/auth';
+
 export default {
   name: "TrendTab",
   props: {
@@ -205,7 +218,7 @@ export default {
     const channel = ref(props.channel);
     const tap = ref(props.tap);
     const items = ref([]);
-    const authStore = useAuthStore(); // ✅ Pinia Store 사용
+    const authStore = useAuthStore();
     const saveCsv = ref(0);
     const option = ref({
       lineLabels: [],
@@ -216,8 +229,9 @@ export default {
     const pqOption = ref({ lineLabels: [], lineData: [] });
     const checkedIds = ref([]);
     const checkedNames = ref([]);
-    const isLoading = ref(false); // ✅ 로딩 상태 추가
+    const isLoading = ref(false);
     const lastDate = ref("");
+
     // Meter 탭용 트리 데이터 (Energy 제외)
     const trendTreeData = [
       {
@@ -380,13 +394,13 @@ export default {
       "TDD Iavg": ["tdd_i_avg"],
     };
 
-    const isNtek = computed(()=>{
-        const userName = authStore.getUser;
-        if (userName == 'ntek')
-          return true;
-        else
-          return false;
-      })
+    const isNtek = computed(() => {
+      const userName = authStore.getUser;
+      if (userName == 'ntek')
+        return true;
+      else
+        return false;
+    });
 
     const expandEnabledNames = (enabledParams, paramMap) => {
       const paramNames = enabledParams.flatMap(
@@ -397,13 +411,30 @@ export default {
 
       const treeData = tap.value === "Energy" ? energyTreeData : trendTreeData;
 
-      treeData.forEach((node) => {
-        if (node.children && paramNames.includes(node.Name)) {
-          node.children.forEach((child) => {
-            expanded.add(child.Name);
-          });
-        }
-      });
+      // 3단계 트리 지원: 재귀적으로 자식 노드 확장
+      const expandChildren = (nodes) => {
+        nodes.forEach((node) => {
+          if (paramNames.includes(node.Name)) {
+            if (node.children) {
+              node.children.forEach((child) => {
+                expanded.add(child.Name);
+                // 손자 노드도 확장
+                if (child.children) {
+                  child.children.forEach((grandchild) => {
+                    expanded.add(grandchild.Name);
+                  });
+                }
+              });
+            }
+          }
+          // 재귀적으로 자식 노드 처리
+          if (node.children) {
+            expandChildren(node.children);
+          }
+        });
+      };
+
+      expandChildren(treeData);
 
       return Array.from(expanded);
     };
@@ -412,33 +443,17 @@ export default {
       try {
         if (tap.value == "Diagnosis") {
           if (props.asset != "") {
-            const response = await axios.get(`/api/getTrendTreeDiagnosis/${props.asset}`);  //getTrendTreeDiagnosis
-              if (response.data.success) {
-                items.value = response.data.data_tree;
-              }
-            // const response = await axios.get(
-            //   `/api/getTrendParameters/${props.asset}/Diagnostic`
-            // );
-            // if (response.data.success) {
-            //   items.value = response.data.superlist;
-            // } else {
-            //   console.log("No Data");
-            // }
+            const response = await axios.get(`/api/getDiagnosisDetail/${props.asset}`);
+            if (response.data.success) {
+              items.value = response.data.data_tree;
+            }
           }
         } else if (tap.value == "PowerQuality") {
           if (props.asset != "") {
-            const response = await axios.get(`/api/getTrendTreePQ/${props.asset}`);  //getTrendTreeDiagnosis
-              if (response.data.success) {
-                items.value = response.data.data_tree;
-              }
-            // const response = await axios.get(
-            //   `/api/getTrendParameters/${props.asset}/PowerQuality`
-            // );
-            // if (response.data.success) {
-            //   items.value = response.data.superlist;
-            // } else {
-            //   console.log("No Data");
-            // }
+            const response = await axios.get(`/api/getDiagPQ/${props.asset}`);
+            if (response.data.success) {
+              items.value = response.data.data_tree;
+            }
           }
         } else if (tap.value == "Parameters") {
           if (props.asset != "") {
@@ -448,7 +463,7 @@ export default {
             if (response.data.success) {
               items.value = response.data.superlist;
             } else {
-              console.log("No Data");
+              // No Data
             }
           }
         } else if (tap.value === "Meter") {
@@ -457,7 +472,7 @@ export default {
           );
           if (response.data.success) {
             const enabledParams = response.data.data.params;
-            console.log("enabledParams", enabledParams);
+            // enabledParams loaded
             const filteredParams = enabledParams.filter(
               (param) =>
                 ![
@@ -473,19 +488,20 @@ export default {
               meterParamMap
             );
 
+            // 3단계 트리를 지원하는 deepFilterTree
             const deepFilterTree = (nodes) => {
               return nodes
                 .map((node) => {
                   const isNodeEnabled = enabledNames.includes(node.Name);
 
                   if (node.children) {
-                    const filteredChildren = node.children.filter((child) =>
-                      enabledNames.includes(child.Name)
-                    );
+                    // 재귀적으로 자식 노드 필터링 (3단계 지원)
+                    const filteredChildren = deepFilterTree(node.children);
+
                     if (filteredChildren.length > 0 || isNodeEnabled) {
                       return {
                         ...node,
-                        children: filteredChildren,
+                        children: filteredChildren.length > 0 ? filteredChildren : undefined,
                       };
                     } else {
                       return null;
@@ -502,57 +518,163 @@ export default {
         } else if (tap.value === "Energy") {
           items.value = energyTreeData;
         }
+        // items loaded
       } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
+        // 데이터 가져오기 실패
       }
     };
 
-function onCheckChange({
+    // 3단계 트리 지원: 모든 자손 ID와 이름 수집 헬퍼 함수
+    function getAllDescendantIds(node) {
+      const ids = [];
+      if (node.children) {
+        node.children.forEach((child) => {
+          ids.push(child.ID);
+          ids.push(...getAllDescendantIds(child));
+        });
+      }
+      return ids;
+    }
+
+    function getAllDescendantNames(node) {
+      const names = [];
+      if (node.children) {
+        node.children.forEach((child) => {
+          names.push(child.Name);
+          names.push(...getAllDescendantNames(child));
+        });
+      }
+      return names;
+    }
+
+    // 리프 노드만 수집 (실제 데이터를 가진 노드)
+    function getLeafDescendants(node, maxCount = 4) {
+      const leaves = [];
+
+      const collectLeaves = (n) => {
+        if (leaves.length >= maxCount) return;
+
+        if (!n.children || n.children.length === 0) {
+          leaves.push({ id: n.ID, name: n.Name });
+        } else {
+          for (const child of n.children) {
+            if (leaves.length >= maxCount) break;
+            collectLeaves(child);
+          }
+        }
+      };
+
+      collectLeaves(node);
+      return leaves;
+    }
+
+    function onCheckChange({
       id,
       checked,
       name,
       children = [],
       childrenNames = [],
     }) {
+      // 현재 노드 찾기 (3단계 지원)
+      const findNode = (nodes, targetId) => {
+        for (const node of nodes) {
+          if (node.ID === targetId) return node;
+          if (node.children) {
+            const found = findNode(node.children, targetId);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const currentNode = findNode(items.value, id);
+
       if (checked) {
         if (!checkedIds.value.includes(id)) checkedIds.value.push(id);
-        // 자식 상위 3개만 체크
-        children.slice(0, 3).forEach((cid) => {
-          if (!checkedIds.value.includes(cid)) checkedIds.value.push(cid);
-        });
         if (!checkedNames.value.includes(name)) checkedNames.value.push(name);
-        // 자식 이름도 상위 3개만
-        childrenNames.slice(0, 3).forEach((cname) => {
-          if (!checkedNames.value.includes(cname))
-            checkedNames.value.push(cname);
-        });
+
+        if (currentNode) {
+          // 리프 노드만 최대 3개 체크 (3단계 트리에서 실제 데이터 노드)
+          const leafNodes = getLeafDescendants(currentNode, 4);
+          leafNodes.forEach(({ id: leafId, name: leafName }) => {
+            if (!checkedIds.value.includes(leafId)) checkedIds.value.push(leafId);
+            if (!checkedNames.value.includes(leafName)) checkedNames.value.push(leafName);
+          });
+
+          // 중간 노드들도 체크 (부모-자식 관계 유지)
+          const allDescendantIds = getAllDescendantIds(currentNode);
+          const allDescendantNames = getAllDescendantNames(currentNode);
+
+          // 리프 노드의 부모들도 체크 상태 유지
+          allDescendantIds.forEach((descId) => {
+            const descNode = findNode(items.value, descId);
+            if (descNode && descNode.children) {
+              // 중간 노드: 자식 중 하나라도 체크되어 있으면 체크
+              const hasCheckedChild = descNode.children.some((child) =>
+                checkedIds.value.includes(child.ID)
+              );
+              if (hasCheckedChild && !checkedIds.value.includes(descId)) {
+                checkedIds.value.push(descId);
+              }
+            }
+          });
+        } else {
+          // 기존 로직 유지 (children, childrenNames가 전달된 경우)
+          children.slice(0, 4).forEach((cid) => {
+            if (!checkedIds.value.includes(cid)) checkedIds.value.push(cid);
+          });
+          childrenNames.slice(0, 4).forEach((cname) => {
+            if (!checkedNames.value.includes(cname)) checkedNames.value.push(cname);
+          });
+        }
       } else {
+        // 체크 해제: 현재 노드와 모든 자손 노드 체크 해제
+        const allDescendantIds = currentNode ? getAllDescendantIds(currentNode) : children;
+        const allDescendantNames = currentNode ? getAllDescendantNames(currentNode) : childrenNames;
+
         checkedIds.value = checkedIds.value.filter(
-          (item) => item !== id && !children.includes(item)
+          (item) => item !== id && !allDescendantIds.includes(item)
         );
         checkedNames.value = checkedNames.value.filter(
-          (item) => item !== name && !childrenNames.includes(item)
+          (item) => item !== name && !allDescendantNames.includes(item)
         );
       }
+
       syncParentCheck();
     }
 
+    // 3단계 트리 지원: 부모 체크 상태 동기화
     function syncParentCheck() {
       const traverse = (node) => {
         if (node.children) {
+          // 먼저 자식 노드들을 재귀적으로 처리
           node.children.forEach(traverse);
+
+          // 모든 자식이 체크되었는지 확인
           const allChildrenChecked = node.children.every((child) =>
             checkedIds.value.includes(child.ID)
           );
+
+          // 자식 중 일부라도 체크되었는지 확인
+          const someChildrenChecked = node.children.some((child) =>
+            checkedIds.value.includes(child.ID)
+          );
+
           if (allChildrenChecked) {
             if (!checkedIds.value.includes(node.ID)) {
               checkedIds.value.push(node.ID);
             }
-          } else {
+            if (!checkedNames.value.includes(node.Name)) {
+              checkedNames.value.push(node.Name);
+            }
+          } else if (!someChildrenChecked) {
+            // 자식이 하나도 체크되지 않으면 부모도 체크 해제
             checkedIds.value = checkedIds.value.filter((id) => id !== node.ID);
+            checkedNames.value = checkedNames.value.filter((name) => name !== node.Name);
           }
         }
       };
+
       items.value.forEach(traverse);
     }
 
@@ -594,7 +716,8 @@ function onCheckChange({
       const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
       const offsetMinutes = pad(Math.abs(timezoneOffset % 60));
 
-      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
+      const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
 
     const drawMeterChart = async () => {
@@ -649,25 +772,24 @@ function onCheckChange({
         const keys = paramMap[param];
         if (keys) {
           actualParamCount += keys.length;
-          selectedFields = selectedFields.concat(keys); // 필드 수집
+          selectedFields = selectedFields.concat(keys);
         }
       });
 
-      if (actualParamCount > 3) {
+      if (actualParamCount > 4) {
         alert(t("trend.Linechart.metercount"));
         return;
       }
 
-      isLoading.value = true; // ✅ 로딩 시작
+      isLoading.value = true;
 
       try {
         const url = `/api/getMeterTrend/${channel.value}/${saveCsv.value}`;
 
-        // POST 요청으로 변경하고 body에 파라미터 전송
         const response = await axios.post(url, {
           startDate: formatToISOString(props.startdate, 2),
           endDate: formatToISOString(props.enddate, 3),
-          fields: selectedFields, // 선택된 필드 배열 전송
+          fields: selectedFields,
         });
 
         const responseData = response.data.data;
@@ -677,9 +799,6 @@ function onCheckChange({
         const selectedParams = checkedNames.value;
 
         labels.push(...responseData.map((row) => row._time));
-
-        // console.log("selectedParams", selectedParams);
-        // console.log("selectedFields sent to API:", selectedFields);
 
         selectedParams.forEach((param) => {
           const keys = paramMap[param];
@@ -699,27 +818,23 @@ function onCheckChange({
           lineLabels: labels,
           lineData: datasets,
         };
-
-        // console.log(
-        //   `📊 받은 데이터 수: ${responseData.length}, 필드 수: ${selectedFields.length}`
-        // );
       } catch (error) {
-        console.error("데이터 가져오기 실패:", error);
-        // 에러 메시지 표시 (optional)
+        // 데이터 가져오기 실패
         if (error.response?.data?.error) {
           alert(`Error: ${error.response.data.error}`);
         }
       } finally {
-        isLoading.value = false; // ✅ 로딩 종료
+        isLoading.value = false;
       }
     };
+
     const drawEnergyChart = async () => {
       if (!checkedNames.value || checkedNames.value.length === 0) {
         energyOption.value = { lineLabels: [], lineData: [] };
         return;
       }
 
-      isLoading.value = true; // ✅ 로딩 시작
+      isLoading.value = true;
 
       try {
         let url = `/api/getEnergyTrend/${channel.value}`;
@@ -734,16 +849,13 @@ function onCheckChange({
           const responseData = response.data.data;
           lastDate.value = response.data.date;
           if (!Array.isArray(responseData)) {
-            console.error(
-              "Energy 응답 데이터가 배열이 아닙니다:",
-              responseData
-            );
+            // Energy 응답 데이터가 배열이 아님
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
 
           if (responseData.length === 0) {
-            console.warn("Energy 데이터가 비어있습니다");
+            // Energy 데이터가 비어있음
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
@@ -755,7 +867,7 @@ function onCheckChange({
           try {
             labels.push(...responseData.map((row) => row._time));
           } catch (timeError) {
-            console.error("시간 라벨 생성 실패:", timeError);
+            // 시간 라벨 생성 실패
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
@@ -769,7 +881,7 @@ function onCheckChange({
           selectedParams.forEach((param) => {
             const keys = energyParamMap[param];
             if (!keys) {
-              console.warn("Energy 파라미터 매핑을 찾을 수 없음:", param);
+              // Energy 파라미터 매핑을 찾을 수 없음
               return;
             }
 
@@ -782,7 +894,7 @@ function onCheckChange({
                   isThreshold: false,
                 });
               } catch (dataError) {
-                console.error(`Energy 데이터 생성 실패 (${key}):`, dataError);
+                // Energy 데이터 생성 실패
               }
             });
           });
@@ -792,22 +904,27 @@ function onCheckChange({
             lineData: datasets,
           };
         } else {
-          console.error("Energy API 응답 실패:", response.data);
+          // Energy API 응답 실패
           energyOption.value = { lineLabels: [], lineData: [] };
         }
       } catch (error) {
-        console.error("Energy 데이터 가져오기 실패:", error);
+        // Energy 데이터 가져오기 실패
         energyOption.value = { lineLabels: [], lineData: [] };
       } finally {
-        isLoading.value = false; // ✅ 로딩 종료
+        isLoading.value = false;
       }
     };
+
+    // 3단계 트리 지원: 노드가 부모인지 확인 (자식이 있는지)
+    function isParentNode(node) {
+      return node && node.children && node.children.length > 0;
+    }
 
     function isParentId(id) {
       const findNode = (nodes) => {
         for (const node of nodes) {
           if (node.ID === id) {
-            return node.isParent === true;
+            return isParentNode(node);
           }
           if (node.children) {
             const found = findNode(node.children);
@@ -819,31 +936,50 @@ function onCheckChange({
       return findNode(items.value) || false;
     }
 
+    // 3단계 트리 지원: 리프 노드의 ID만 수집
     function getEffectiveParameterIds() {
       const result = [];
 
-      items.value.forEach((node) => {
-        if (node.children && node.children.length > 0) {
-          const childIds = node.children.map((c) => c.ID);
-          const allChildrenChecked = childIds.every((cid) =>
-            checkedIds.value.includes(cid)
-          );
-          if (allChildrenChecked) {
-            result.push(...childIds);
+      const collectLeafIds = (nodes) => {
+        nodes.forEach((node) => {
+          if (node.children && node.children.length > 0) {
+            // 자식이 있으면 재귀적으로 처리
+            collectLeafIds(node.children);
           } else {
-            node.children.forEach((c) => {
-              if (checkedIds.value.includes(c.ID)) {
-                result.push(c.ID);
-              }
-            });
+            // 리프 노드이고 체크되어 있으면 추가
+            if (checkedIds.value.includes(node.ID)) {
+              result.push(node.ID);
+            }
           }
-        } else {
-          if (checkedIds.value.includes(node.ID)) {
-            result.push(node.ID);
-          }
-        }
-      });
+        });
+      };
 
+      collectLeafIds(items.value);
+      return result;
+    }
+
+    // 3단계 트리 지원: 리프 노드의 AssemblyID와 Name 수집
+    function getEffectiveParameters() {
+      const result = [];
+
+      const collectLeafParams = (nodes) => {
+        nodes.forEach((node) => {
+          if (node.children && node.children.length > 0) {
+            // 자식이 있으면 재귀적으로 처리
+            collectLeafParams(node.children);
+          } else {
+            // 리프 노드이고 체크되어 있으면 추가
+            if (checkedIds.value.includes(node.ID)) {
+              result.push({
+                AssemblyID: node.AssemblyID || "",
+                Name: node.Name || ""
+              });
+            }
+          }
+        });
+      };
+
+      collectLeafParams(items.value);
       return result;
     }
 
@@ -858,19 +994,19 @@ function onCheckChange({
         return;
       }
 
-      if (effectiveIds.length > 3) {
+      if (effectiveIds.length > 4) {
         alert(t("trend.Linechart.parametercount"));
         return;
       }
 
-      isLoading.value = true; // ✅ 로딩 시작
+      isLoading.value = true;
 
       const trendDataRequest = {
         ParametersIds: effectiveIds,
         StartDate: formatToISOString(props.startdate, 0),
         EndDate: formatToISOString(props.enddate, 1),
       };
-
+      // 트렌드 데이터 요청
       try {
         const url = `/api/getTrendData`;
         const response = await axios.post(url, trendDataRequest, {
@@ -878,7 +1014,6 @@ function onCheckChange({
         });
 
         if (response.data.success) {
-          console.log("서버 응답 데이터:", response.data.data);
           const resData = response.data.data;
           lastDate.value = response.data.date;
           let datasets = [];
@@ -979,31 +1114,229 @@ function onCheckChange({
             lineData: datasets,
           };
         } else {
-          console.error("서버 오류:", response.data.error);
+          // 서버 오류
           option.value = {
             lineLabels: [],
             lineData: [],
           };
         }
       } catch (error) {
-        console.error("요청 실패:", error);
+        // 요청 실패
       } finally {
-        isLoading.value = false; // ✅ 로딩 종료
+        isLoading.value = false;
+      }
+    };
+
+    /**
+     * drawDiagnosisChartByName - API 형식에 맞춰 수정
+     * 요청 형식:
+     * {
+     *   "AssetName": "fan",
+     *   "StartDate": "2025-12-01T21:28:41.9779368-05:00",
+     *   "EndDate": "2025-12-24T21:28:41.9779445-04:00",
+     *   "Parameters": [
+     *     { "AssemblyID": "PWS", "Name": "Load" },
+     *     { "AssemblyID": "PWS", "Name": "LoadFLA" }
+     *   ]
+     * }
+     */
+    const drawDiagnosisChartByName = async () => {
+      // 리프 노드에서 AssemblyID와 Name 수집
+      const effectiveParams = getEffectiveParameters();
+
+      // 선택된 파라미터
+      // 현재 items
+      // 체크된 IDs
+
+      if (!effectiveParams || effectiveParams.length === 0) {
+        option.value = {
+          lineLabels: [],
+          lineData: [],
+        };
+        return;
+      }
+
+      if (effectiveParams.length > 4) {
+        alert(t("trend.Linechart.parametercount"));
+        return;
+      }
+
+      isLoading.value = true;
+
+      // API 요청 형식에 맞게 구성
+      const trendDataRequest = {
+        AssetName: props.asset,
+        StartDate: formatToISOString(props.startdate, 0),
+        EndDate: formatToISOString(props.enddate, 1),
+        Parameters: effectiveParams,
+        ParametersIds: []  // 기존 TrendData 모델 호환을 위한 더미 필드
+      };
+
+      // 트렌드 데이터 요청 ByName
+
+      try {
+        const url = `/api/getTrendbyName`;
+        const response = await axios.post(url, trendDataRequest, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (response.data.success) {
+          // 서버 응답 수신
+          const resData = response.data.data;
+          
+          // lastDate 형식 변환 (ISO 형식 → YYYY-MM-DD HH:MM:SS)
+          if (response.data.date) {
+            const dateStr = response.data.date;
+            try {
+              const dateObj = new Date(dateStr);
+              if (!isNaN(dateObj.getTime())) {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                lastDate.value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+              } else {
+                lastDate.value = dateStr;
+              }
+            } catch (e) {
+              lastDate.value = dateStr;
+            }
+          } else {
+            lastDate.value = "";
+          }
+          
+          let datasets = [];
+          let labels = [];
+
+          Object.keys(resData).forEach((key) => {
+            if (key !== "Thresholds") {
+              const dataPoints = resData[key].data;
+              if (dataPoints && dataPoints.length > 0) {
+                if (labels.length === 0) {
+                  labels = dataPoints.map((point) => point.XAxis);
+                }
+                datasets.push({
+                  name: resData[key].Title,
+                  data: dataPoints.map((point) => point.YAxis),
+                  isThreshold: false,
+                });
+              }
+            }
+          });
+
+          // Threshold 처리
+          if (
+            resData.Thresholds &&
+            resData.Thresholds.length > 0 &&
+            labels.length > 0
+          ) {
+            const ThresholdString = [
+              "Out of Range(Down side)",
+              "Repair",
+              "Inspect",
+              "Warning",
+              "Warning",
+              "Inspect",
+              "Repair",
+              "Out of Range(Upper side)",
+            ];
+
+            if (resData.Thresholds[0].Thresholds != null) {
+              const thresholdCount = resData.Thresholds[0].Thresholds.length;
+
+              for (let idx = 0; idx < thresholdCount; idx++) {
+                const hasValidValue = resData.Thresholds.some((t) => {
+                  const value = t.Thresholds[idx];
+                  return (
+                    value !== "NaN" &&
+                    value !== null &&
+                    value !== undefined &&
+                    typeof value === "number"
+                  );
+                });
+
+                if (!hasValidValue) continue;
+
+                const timeList = resData.Thresholds.filter((t) => {
+                  const value = t.Thresholds[idx];
+                  return (
+                    value !== "NaN" &&
+                    value !== null &&
+                    value !== undefined &&
+                    typeof value === "number"
+                  );
+                })
+                  .map((t) => ({
+                    time: new Date(t.XAxis),
+                    value: t.Thresholds[idx],
+                  }))
+                  .sort((a, b) => a.time - b.time);
+
+                if (timeList.length === 0) continue;
+
+                const thresholdData = labels.map((lbl) => {
+                  const labelTime = new Date(lbl);
+                  let applicableThreshold = timeList[0].value;
+
+                  for (let i = 0; i < timeList.length; i++) {
+                    if (labelTime >= timeList[i].time) {
+                      applicableThreshold = timeList[i].value;
+                    } else {
+                      break;
+                    }
+                  }
+
+                  return applicableThreshold;
+                });
+
+                datasets.push({
+                  name: ThresholdString[idx],
+                  data: thresholdData,
+                  isThreshold: true,
+                });
+              }
+            }
+          }
+
+          option.value = {
+            lineLabels: labels,
+            lineData: datasets,
+          };
+        } else {
+          // 서버 오류
+          option.value = {
+            lineLabels: [],
+            lineData: [],
+          };
+        }
+      } catch (error) {
+        // 요청 실패
+        // 에러 상세
+        // 에러 상태
+        option.value = {
+          lineLabels: [],
+          lineData: [],
+        };
+      } finally {
+        isLoading.value = false;
       }
     };
 
     const nameToTitleMap = {};
 
+    // 3단계 트리 지원: 재귀적으로 Name-Title 맵 생성
     function buildNameToTitleMap(tree) {
-      tree.forEach((node) => {
-        if (node.children) {
-          node.children.forEach((child) => {
-            nameToTitleMap[child.Name] = child.Title;
-          });
-        } else {
+      const build = (nodes) => {
+        nodes.forEach((node) => {
           nameToTitleMap[node.Name] = node.Title;
-        }
-      });
+          if (node.children) {
+            build(node.children);
+          }
+        });
+      };
+      build(tree);
     }
 
     onMounted(() => {
@@ -1023,11 +1356,12 @@ function onCheckChange({
       items,
       checkedIds,
       checkedNames,
-      isLoading, // ✅ 추가
+      isLoading,
       onCheckChange,
       drawMeterChart,
       drawEnergyChart,
       drawDiagnosisChart,
+      drawDiagnosisChartByName,
       trendTreeData,
       lastDate,
       saveCsv,
