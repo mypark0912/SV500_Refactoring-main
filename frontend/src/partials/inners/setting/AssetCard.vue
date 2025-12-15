@@ -303,7 +303,7 @@ const assetTypeList = ref([
             "Fan",
             "Compressor"
         ]);
-const assetDriveType = inject('assetDriveType', ref('DOL'));
+const assetDriveType = inject('assetDriveType');
 //const driveType = ref('DOL');  // 'DOL' 또는 'VFD'
 
 
