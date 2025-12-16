@@ -359,9 +359,9 @@ watch(() => assetMode.value.type, (newType) => {
     }
 });
 
-watch(assetDriveType, (newValue) => {
-  inputDict.value.assetInfo.driveType = newValue;
-},{ immediate: true });
+// watch(assetDriveType, (newValue) => {
+//   inputDict.value.assetInfo.driveType = newValue;
+// },{ immediate: true });
 
 const m_kva = computed(() => setupStore.getMkva);
 const s_kva = computed(() => setupStore.getSkva);

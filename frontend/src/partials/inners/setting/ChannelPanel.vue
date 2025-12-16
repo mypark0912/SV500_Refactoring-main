@@ -1325,6 +1325,7 @@ export default {
           if (driveTypeParam) {
             const index = parseInt(driveTypeParam.Value || "0");
             assetDriveType.value = driveTypeParam.DataInfo?.[index] || 'DOL';
+            getInputDict().assetInfo.driveType = driveTypeParam.DataInfo?.[index] || 'DOL';
           }
           if (Array.isArray(allData)) {
          
