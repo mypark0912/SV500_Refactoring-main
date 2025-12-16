@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isUseAIEnabled"
-    class="relative col-span-full xl:col-span-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
+    class="relative col-span-full xl:col-span-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
   >
     <div
       class="absolute top-0 left-0 right-0 h-0.5 bg-orange-500"
@@ -42,7 +42,7 @@
     </div>
 
     <div class="px-4 py-3 space-y-4">
-      <!-- 버튼 영역 - 탭처럼 패널 밖에 배치 -->
+      <!-- 버튼 영역 -->
       <div class="flex space-x-2">
         <button
           @click="addRow"
@@ -74,7 +74,37 @@
                 <th
                   class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
                 >
-                  Address
+                  Enable
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Dev ID
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Start<br />Address
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Count
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Data<br />Type
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Destination
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Period<br />(ms)
                 </th>
                 <th
                   class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
@@ -84,27 +114,7 @@
                 <th
                   class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
                 >
-                  Start Addr.
-                </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
-                  Read<br />Count
-                </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
-                  Dest. ID
-                </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
-                  Dest. Src
-                </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
-                  Period<br />(ms)
+                  Scale
                 </th>
                 <th
                   class="px-2 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 w-20"
@@ -119,20 +129,83 @@
                 :key="row.id"
                 class="border-b border-gray-200 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
+                <!-- Index -->
                 <td
                   class="px-2 py-2 text-center text-xs text-gray-800 dark:text-gray-200 font-medium"
                 >
                   {{ idx + 1 }}
                 </td>
+                <!-- Enable -->
+                <td class="px-2 py-2 text-center">
+                  <input
+                    type="checkbox"
+                    :checked="row.enable === 1"
+                    @change="row.enable = $event.target.checked ? 1 : 0"
+                    class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+                  />
+                </td>
+                <!-- Dev ID -->
                 <td class="px-2 py-2 text-center">
                   <input
                     type="number"
-                    v-model.number="row.address"
+                    v-model.number="row.devId"
                     class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
                     min="0"
                     max="255"
                   />
                 </td>
+                <!-- Start Address -->
+                <td class="px-2 py-2 text-center">
+                  <input
+                    type="number"
+                    v-model.number="row.startAddr"
+                    class="w-20 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                    min="0"
+                  />
+                </td>
+                <!-- Count -->
+                <td class="px-2 py-2 text-center">
+                  <input
+                    type="number"
+                    v-model.number="row.count"
+                    class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                    min="0"
+                  />
+                </td>
+                <!-- Data Type -->
+                <td class="px-2 py-2 text-center">
+                  <select
+                    v-model.number="row.dataType"
+                    class="w-20 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option :value="0">UINT16</option>
+                    <option :value="1">UINT32</option>
+                    <option :value="2">Float</option>
+                    <option :value="3">F002</option>
+                  </select>
+                </td>
+                <!-- Destination -->
+                <td class="px-2 py-2 text-center">
+                  <select
+                    v-model.number="row.destination"
+                    class="w-24 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option :value="0">온도 R상</option>
+                    <option :value="1">온도 S상</option>
+                    <option :value="2">온도 T상</option>
+                  </select>
+                </td>
+                <!-- Period (ms) -->
+                <td class="px-2 py-2 text-center">
+                  <input
+                    type="number"
+                    v-model.number="row.period"
+                    class="w-20 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                    min="0"
+                    step="100"
+                  />
+                </td>
+                <!-- FC -->
                 <td class="px-2 py-2 text-center">
                   <select
                     v-model.number="row.fc"
@@ -149,47 +222,16 @@
                     <option :value="16">16</option>
                   </select>
                 </td>
+                <!-- Scale -->
                 <td class="px-2 py-2 text-center">
                   <input
                     type="number"
-                    v-model.number="row.startAddr"
+                    v-model.number="row.scale"
                     class="w-20 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
+                    step="0.01"
                   />
                 </td>
-                <td class="px-2 py-2 text-center">
-                  <input
-                    type="number"
-                    v-model.number="row.readCount"
-                    class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
-                  />
-                </td>
-                <td class="px-2 py-2 text-center">
-                  <input
-                    type="number"
-                    v-model.number="row.destId"
-                    class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
-                  />
-                </td>
-                <td class="px-2 py-2 text-center">
-                  <input
-                    type="number"
-                    v-model.number="row.destSrc"
-                    class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
-                  />
-                </td>
-                <td class="px-2 py-2 text-center">
-                  <input
-                    type="number"
-                    v-model.number="row.period"
-                    class="w-20 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
-                    step="100"
-                  />
-                </td>
+                <!-- Action -->
                 <td class="px-2 py-2 text-center">
                   <button
                     @click="removeRow(idx)"
@@ -211,13 +253,13 @@
         >
           <p class="text-xs text-blue-800 dark:text-blue-200">
             <strong>Note:</strong>
-            • FC: Function Code (03=Read Holding Registers, 04=Read Input
-            Registers, 16=Write Multiple Registers, etc.)
+            • FC: Function Code (03=Read Holding Registers, 04=Read Input Registers, 16=Write Multiple Registers)
             <br />
-            • Dest. ID: Destination device ID for write operations
+            • Data Type: UINT16, UINT32, Float, F002 (F002=Float value/100)
             <br />
-            • Dest. Src: Starting address in destination memory for write
-            operations
+            • Destination: 목적지 주소 (온도 R상, 온도 S상, 온도 T상)
+            <br />
+            • Scale: 스케일 값 (예: 0.01, 0.1, 1.0, 100.0)
           </p>
         </div>
 
@@ -234,54 +276,118 @@
 </template>
 
 <script setup>
-import { ref,inject, computed } from "vue";
+import { ref, inject, computed, watch, onMounted } from "vue";
 
 // 고유 ID 생성용 카운터
-let nextId = 3;
+let nextId = 1;
+
 const props = defineProps({
   channel: { type: String, default: '' }
 });
 
 const mainData = inject('channel_main');
 const subData = inject('channel_sub');
-const channel = ref(props.channel);
 
-// Modbus 설정 데이터 (초기 2개)
-const modbusConfig = ref([
+// 현재 채널 데이터 computed
+const currentChannelData = computed(() => {
+  return props.channel === 'Main' ? mainData.value : subData.value;
+});
+
+// Modbus 설정 데이터
+const modbusConfig = ref([]);
+
+// 기본 행 생성 함수
+const createDefaultRow = (id) => ({
+  id: id,
+  enable: 0,
+  devId: 0,
+  startAddr: 0,
+  count: 0,
+  dataType: 0,
+  destination: 0,
+  period: 1000,
+  fc: 0,
+  scale: 1.0,
+});
+
+// 초기 기본값
+const defaultConfig = [
   {
     id: 1,
-    address: 100,
-    fc: 3,
+    enable: 1,
+    devId: 100,
     startAddr: 14,
-    readCount: 28,
-    destId: 3,
-    destSrc: 0,
+    count: 28,
+    dataType: 2,
+    destination: 0,
     period: 1000,
+    fc: 3,
+    scale: 1.0,
   },
   {
     id: 2,
-    address: 100,
-    fc: 3,
+    enable: 1,
+    devId: 100,
     startAddr: 90,
-    readCount: 12,
-    destId: 3,
-    destSrc: 28,
+    count: 12,
+    dataType: 2,
+    destination: 1,
     period: 1000,
+    fc: 3,
+    scale: 1.0,
   },
-]);
+];
+
+// ai_modbus에서 데이터 로드
+const loadFromChannel = () => {
+  const aiModbus = currentChannelData.value?.ai_modbus;
+  if (aiModbus && Array.isArray(aiModbus) && aiModbus.length > 0) {
+    // 기존 데이터가 있으면 로드
+    modbusConfig.value = aiModbus.map((item, idx) => ({
+      id: item.id || idx + 1,
+      enable: item.enable ?? 0,
+      devId: item.devId ?? 0,
+      startAddr: item.startAddr ?? 0,
+      count: item.count ?? 0,
+      dataType: item.dataType ?? 0,
+      destination: item.destination ?? 0,
+      period: item.period ?? 1000,
+      fc: item.fc ?? 0,
+      scale: item.scale ?? 1.0,
+    }));
+    nextId = Math.max(...modbusConfig.value.map(r => r.id)) + 1;
+  } else {
+    // 없으면 기본값 사용
+    modbusConfig.value = JSON.parse(JSON.stringify(defaultConfig));
+    nextId = 3;
+  }
+};
+
+// modbusConfig 변경 시 ai_modbus에 동기화
+const syncToChannel = () => {
+  if (currentChannelData.value) {
+    currentChannelData.value.ai_modbus = JSON.parse(JSON.stringify(modbusConfig.value));
+  }
+};
+
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  loadFromChannel();
+});
+
+// 채널 변경 시 데이터 다시 로드
+watch(() => props.channel, () => {
+  loadFromChannel();
+});
+
+// modbusConfig 변경 감지하여 동기화
+watch(modbusConfig, () => {
+  syncToChannel();
+}, { deep: true });
 
 // 행 추가
 const addRow = () => {
-  modbusConfig.value.push({
-    id: nextId++,
-    address: 0,
-    fc: 0,
-    startAddr: 0,
-    readCount: 0,
-    destId: 0,
-    destSrc: 0,
-    period: 1000,
-  });
+  modbusConfig.value.push(createDefaultRow(nextId++));
 };
 
 // 행 삭제
@@ -295,68 +401,16 @@ const removeRow = (index) => {
 const handleReset = () => {
   if (confirm("Are you sure you want to reset to default configuration?")) {
     nextId = 3;
-    modbusConfig.value = [
-      {
-        id: 1,
-        address: 100,
-        fc: 3,
-        startAddr: 14,
-        readCount: 28,
-        destId: 3,
-        destSrc: 0,
-        period: 1000,
-      },
-      {
-        id: 2,
-        address: 100,
-        fc: 3,
-        startAddr: 90,
-        readCount: 12,
-        destId: 3,
-        destSrc: 28,
-        period: 1000,
-      },
-    ];
-    console.log("Configuration reset to default values");
+    modbusConfig.value = JSON.parse(JSON.stringify(defaultConfig));
   }
 };
-// useDO 상태 확인을 위한 computed property 추가
-const isUseAIEnabled = computed(() => {
-  const currentChannelData =
-    channel.value === "Main" ? mainData.value : subData.value;
-  const channelUseAI =
-    currentChannelData?.useAI === 1 || currentChannelData?.useAI === true;
 
-  // 채널 레벨에서 useAI가 활성화되어 있으면 카드 표시
+// useAI 상태 확인
+const isUseAIEnabled = computed(() => {
+  const channelUseAI =
+    currentChannelData.value?.useAI === 1 || currentChannelData.value?.useAI === true;
   return channelUseAI;
 });
-// 저장
-const handleSave = () => {
-  // 유효성 검사
-  const invalidRows = modbusConfig.value.filter((row, idx) => {
-    if (
-      row.fc > 0 &&
-      (row.address === 0 || row.startAddr < 0 || row.readCount <= 0)
-    ) {
-      return true;
-    }
-    return false;
-  });
-
-  if (invalidRows.length > 0) {
-    alert(
-      "Please check invalid configurations. Address, Start Address and Read Count must be valid when FC is set."
-    );
-    return;
-  }
-
-  console.log("Saving configuration:", modbusConfig.value);
-
-  // API 호출 예시
-  // await saveModbusConfig(modbusConfig.value);
-
-  alert("Configuration saved successfully!");
-};
 </script>
 
 <style scoped>
@@ -365,7 +419,6 @@ select:focus {
   outline: none;
 }
 
-/* 숫자 입력 필드의 스피너 제거 */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
