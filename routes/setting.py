@@ -1426,64 +1426,6 @@ def reset():
     else:
         return {"success": True, "msg": msg}
 
-# async def reset_asset():
-#     try:
-#         mainAsset = ''
-#         subAsset = ''
-#         redis_state.client.select(0)
-#         if redis_state.client.hexists("System", "setup"):
-#             setupflag = True
-#             datStr = redis_state.client.hget("System", "setup")
-#             setting = json.loads(datStr)
-#             mainAsset = ''
-#             subAsset = ''
-#             if setting["General"]["useFunction"]["diagnosis_main"]:
-#                 for chInfo in setting["channel"]:
-#                     if chInfo["channel"] == 'Main':
-#                         mainAsset = chInfo["assetInfo"]["name"]
-#                         break
-#             if setting["General"]["useFunction"]["diagnosis_sub"]:
-#                 for chInfo in setting["channel"]:
-#                     if chInfo["channel"] == 'Sub':
-#                         subAsset = chInfo["assetInfo"]["name"]
-#                         break
-#             if mainAsset != '':
-#                 data = await reset_smart(mainAsset, 0)
-#                 if len(data) > 0:
-#                     datas = await  reset_smart(mainAsset, 1)
-#                     if len(datas) > 0:
-#                         resetmain = 0
-#                     else:
-#                         resetmain = 1
-#                 else:
-#                     resetmain = 2
-#             else:
-#                 resetmain = -1
-#             if subAsset != '':
-#                 data = await reset_smart(subAsset, 0)
-#                 if len(data) > 0:
-#                     datas = await  reset_smart(subAsset, 1)
-#                     if len(datas) > 0:
-#                         resetsub = 0
-#                     else:
-#                         resetsub = 1
-#                 else:
-#                     resetsub = 2
-#             else:
-#                 resetsub = -1
-#         else:
-#             setupflag = False
-#
-#         if not setupflag:
-#             return {"success": False, "msg": 'setup is not exist'}
-#         else:
-#             if resetmain > 1 or resetsub > 1:
-#                 return {"success": False, "msg": "Unregistering asset is failed"}
-#             else:
-#                 return {"success": True, "main":{"status":resetmain, "asset":mainAsset}, "sub":{"status":resetsub, "asset":subAsset}}
-#     except Exception as e:
-#         print(str(e))
-#         return {"success": False, "msg": str(e)}
 
 async def reset_count(request:Request):
     # redis_state.client.select(0)
@@ -1584,7 +1526,7 @@ async def reinstall_smartsystem():
     """SmartSystem 재설치로 완전 초기화"""
     try:
         # 설치 스크립트 경로 (실제 경로에 맞게 수정 필요)
-        install_script = "/home/root/iss/install.sh"  # 예시
+        install_script = "/usr/local/sv500/iss/install.sh"  # 예시
 
         if not os.path.exists(install_script):
             # 또는 reinstall 명령어가 있다면
@@ -1721,18 +1663,10 @@ async def resetAll(request:Request):
 
 @router.get('/getDiagnosisSetting')
 async def get_diagnosissetting(request:Request):
-    # response = await  http_state.client.get(f"/getSettings")
-    # data = response.json()
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getSettings")
         data = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getSettings")
-    #             data = response.json()
+
     if data:
         # print(data)
         return {"success": True, "data": data}
@@ -1741,18 +1675,11 @@ async def get_diagnosissetting(request:Request):
 
 @router.get('/getDiagnosisProfile')
 async def get_diagnosisprofile(request:Request):
-    # response = await  http_state.client.get(f"/getProfile")
-    # data = response.json()
+
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getProfile")
         data = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getProfile")
-    #             data = response.json()
+
     if data:
         return {"success": True, "data": data}
     else:
@@ -1765,18 +1692,11 @@ async def set_diagnosissetting(request: Request):
     if not data:
         return {"status": "1", "success": False, "error": ["No data provided"]}
     try:
-        # response = await  http_state.client.post(f"/setSettings", json=data)
-        # data = response.json()
+
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setSettings", json=data)
             data = response.json()
-        #     if response.status_code in [400, 401, 500]:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.post(f"http://{os_spec.restip}:5000/api/setSettings", json=data)
-        #             data = response.json()
+
     except Exception as e:
         print("Error:", e)
         return {"status": "0", "success": False, "error": [str(e)]}
@@ -1795,18 +1715,11 @@ async def set_diagnosisprofile(request: Request):
     if not data:
         return {"status": "1", "success": False, "error": ["No data provided"]}
     try:
-        # response = await  http_state.client.post(f"/setProfile", json=data)
-        # data = response.json()
+
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setProfile", json=data)
             data = response.json()
-        #     if response.status_code in [400, 401, 500]:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.post(f"http://{os_spec.restip}:5000/api/setProfile",json=data)
-        #             data = response.json()
+
     except Exception as e:
         print("Error:", e)
         return {"status": "0", "success": False, "error": [str(e)]}
@@ -1821,18 +1734,11 @@ async def set_diagnosisprofile(request: Request):
 
 @router.get("/getAssetTypes")  # Diagnosis, Report Vue : get Asset info
 async def get_assetTypes(request: Request):
-    # response = await  http_state.client.get(f"/getAssetTypes")
-    # data = response.json()
+
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getAssetTypes")
         data = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getAssetTypes")
-    #             data = response.json()
+
     if data:
         return {"success": True, "data": data}
     else:
@@ -1840,19 +1746,11 @@ async def get_assetTypes(request: Request):
 
 @router.get('/getAssetList')
 async def get_assetlist(request: Request):
-    # response = await  http_state.client.get(f"/getAssetHierarchy")
-    # datas = response.json()
+
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getAssetHierarchy")
         datas = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getAssetHierarchy")
-    #             datas = response.json()
-    
+
 
     if len(datas) > 0:
         grouped = defaultdict(list)
@@ -3574,45 +3472,6 @@ async def push_command_left(command: Command, request:Request):
             "message": str(e)
         }
 
-# @router.get("/trigger")
-# async def push_both_channels(
-#         request: Request,
-#         cmd: int = CmdType.CMD_CAPTURE,  # 기본값: 2 (캡처)
-#         item: int = ItemType.ITEM_WAVEFORM  # 기본값: 7 (웨이브폼)
-# ):
-#     try:
-#         # 채널 0에 푸시
-#         channel_0_command = Command(
-#             type=0,  # 채널 0
-#             cmd=cmd,
-#             item=item
-#         )
-#         result_0 = await push_command_left(channel_0_command, request)
-#
-#         # 채널 1에 푸시
-#         channel_1_command = Command(
-#             type=1,  # 채널 1
-#             cmd=cmd,
-#             item=item
-#         )
-#         result_1 = await push_command_left(channel_1_command, request)
-#
-#         return {
-#             "success": True,
-#             "message": "Command pushed to both channels (0 and 1)",
-#             "commands": {
-#                 "channel_0": channel_0_command.dict(),
-#                 "channel_1": channel_1_command.dict()
-#             },
-#             "results": {
-#                 "channel_0": result_0,
-#                 "channel_1": result_1
-#             }
-#         }
-#     except Exception as e:
-#         print(str(e))
-#         return {"success": False}
-
 
 async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
     """파일 생성 대기 (IN_CLOSE_WRITE 이벤트 감시)"""
@@ -3622,16 +3481,6 @@ async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
 
     wm = pyinotify.WatchManager()
 
-    # class Handler(pyinotify.ProcessEvent):
-    #     def process_IN_CLOSE_WRITE(self, event_data):
-    #         print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
-    #         if event_data.pathname.endswith('.json'):
-    #             for path in watch_paths:
-    #                 if event_data.path == path:
-    #                     result[path] = event_data.pathname
-    #                     paths_completed.add(path)
-    #                     if len(paths_completed) == len(watch_paths):
-    #                         event.set()
 
     class Handler(pyinotify.ProcessEvent):
         def process_IN_CLOSE_WRITE(self, event_data):
@@ -3775,67 +3624,6 @@ async def trigger_waveform(
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-# @router.get("/trigger")
-# async def trigger_waveform(
-#         request: Request,
-#         cmd: int = CmdType.CMD_CAPTURE,
-#         item: int = ItemType.ITEM_WAVEFORM,
-#         target: int = 2,  # 0: Main, 1: Sub, 2: Both
-#         timeout: int = 60
-# ):
-#     """웨이브폼 트리거 및 파일 생성 대기"""
-#     try:
-#         # 1. 감시 경로 결정
-#         if target == 2:
-#             watch_paths = [WAVEFORM_PATHS[0], WAVEFORM_PATHS[1]]
-#         else:
-#             watch_paths = [WAVEFORM_PATHS[target]]
-#
-#         # 2. 감시 시작 (notifier)
-#         result = {path: None for path in watch_paths}
-#         paths_completed = set()
-#         event = threading.Event()
-#         wm = pyinotify.WatchManager()
-#
-#         class Handler(pyinotify.ProcessEvent):
-#             def process_IN_CLOSE_WRITE(self, event_data):
-#                 print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
-#                 if event_data.pathname.endswith('.json'):
-#                     for path in watch_paths:
-#                         if event_data.path == path:
-#                             result[path] = event_data.pathname
-#                             paths_completed.add(path)
-#                             if len(paths_completed) == len(watch_paths):
-#                                 event.set()
-#
-#         notifier = pyinotify.ThreadedNotifier(wm, Handler())
-#         for path in watch_paths:
-#             wm.add_watch(path, pyinotify.IN_CLOSE_WRITE)
-#
-#         notifier.start()
-#
-#         try:
-#             # 3. 트리거 전송 (감시 시작 후!)
-#             if target in [0, 2]:
-#                 await push_command_left(Command(type=0, cmd=cmd, item=item), request)
-#             if target in [1, 2]:
-#                 await push_command_left(Command(type=1, cmd=cmd, item=item), request)
-#
-#             print(f"[DEBUG] 트리거 전송 완료 (target={target}), 파일 대기 중...")
-#
-#             # 4. 파일 생성 대기
-#             for _ in range(timeout * 10):
-#                 if event.is_set():
-#                     return {"success": True, "files": result}
-#                 await asyncio.sleep(0.1)
-#
-#             return {"success": False, "message": f"타임아웃 ({timeout}초)", "files": result}
-#
-#         finally:
-#             notifier.stop()
-#
-#     except Exception as e:
-#         return {"success": False, "message": str(e)}
 
 @router.get('/getMode')
 def get_sysMode():
@@ -3895,7 +3683,7 @@ async def update_smartsystem(mode, request:Request):
         redis_state.client.hset("System","setup", json.dumps(setting))
         try:
             result = subprocess.run(
-                ['sh', '/home/root/iss/install.sh', '--fresh'],
+                ['sh', '/usr/local/sv500/iss/install.sh', '--fresh'],
                 capture_output=True,
                 text=True,
                 check=True
@@ -3913,7 +3701,7 @@ async def update_smartsystem(mode, request:Request):
             reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
         try:
             result = subprocess.run(
-                ['sh', '/home/root/iss/install.sh'],
+                ['sh', '/usr/local/sv500/iss/install.sh'],
                 capture_output=True,
                 text=True,
                 check=True
