@@ -18,7 +18,7 @@
           />
         </button>
         <span v-else class="w-5 flex-shrink-0"></span>
-        <span class="truncate">{{ item.Title }}</span>
+        <span class="truncate">{{ localizedTitle }}</span>
       </div>
     </td>
     
@@ -57,6 +57,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/20/solid'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -68,6 +69,16 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['check-change']);
+const { locale } = useI18n();
+
+// 현재 언어에 맞는 Title 반환
+const localizedTitle = computed(() => {
+  if (props.item.Titles && props.item.Titles[locale.value]) {
+    return props.item.Titles[locale.value];
+  }
+  return props.item.Title;
+});
+
 const isChecked = computed(() => props.checkedIds.includes(props.item.ID));
 const checked = ref(false)
 
