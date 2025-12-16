@@ -526,49 +526,79 @@ export class SettingValidator {
     
     return this.errors.length === currentErrors;
   }
-
-  // Channel 설정 검증 (내부용)
-  validateChannelSettingsInternal(inputDict) {
-    if (!inputDict) return false;
-    
-    const currentErrors = this.errors.length;
-
-    // 채널이 Enable되어 있을 때만 세부 설정 검증
-    if (inputDict.Enable == 1) {
-      this.validateCTSettings(inputDict.ctInfo);
-      this.validatePTSettings(inputDict.ptInfo);
-      this.validateSamplingSettings(inputDict.sampling);
-      this.validateDemandSettings(inputDict.demand);
-      
-      // Asset 정보가 있을 때만 검증
-      if (inputDict.assetInfo && inputDict.assetInfo.name) {
-        this.validateAssetSettings(inputDict.assetInfo);
-      }
-      
-      // Power Quality가 활성화되어 있을 때 추가 검증
-      if (inputDict.PowerQuality == 1) {
-        this.validatePowerQualitySettings(inputDict);
-      }
-      
-      // Trend 설정 검증
-      if (inputDict.trendInfo) {
-        this.validateTrendSettings(inputDict.trendInfo);
-      }
-      
-      // Event 설정 검증
-      if (inputDict.eventInfo) {
-        this.validateEventSettings(inputDict.eventInfo);
-      }
-
-      // Alarm 설정 검증
-      if (inputDict.alarm) {
-        
-        this.validateAlarmSettings(inputDict.alarm);
+// AI Modbus 설정 검증
+validateAIModbusSettings(aiModbus) {
+  if (!aiModbus || !Array.isArray(aiModbus)) return true;
+  
+  // Enable된 항목들의 count 합계 계산
+  let totalCount = 0;
+  const enabledItems = aiModbus.filter(item => item.enable === 1);
+  
+  enabledItems.forEach((item, index) => {
+    if (item.count !== undefined) {
+      const count = Number(item.count);
+      if (isNaN(count) || count < 1) {
+        this.errors.push(`AI Modbus ${item.id || index + 1}: Count must be at least 1`);
+      } else {
+        totalCount += count;
       }
     }
-    
-    return this.errors.length === currentErrors;
+  });
+  
+  // 총 count가 6을 초과하는지 확인
+  if (totalCount > 6) {
+    this.errors.push(`AI Modbus: Total count (${totalCount}) exceeds maximum limit of 6`);
   }
+  
+  return this.errors.length === 0;
+}
+
+// Channel 설정 검증 (내부용)
+validateChannelSettingsInternal(inputDict) {
+  if (!inputDict) return false;
+  
+  const currentErrors = this.errors.length;
+
+  // 채널이 Enable되어 있을 때만 세부 설정 검증
+  if (inputDict.Enable == 1) {
+    this.validateCTSettings(inputDict.ctInfo);
+    this.validatePTSettings(inputDict.ptInfo);
+    this.validateSamplingSettings(inputDict.sampling);
+    this.validateDemandSettings(inputDict.demand);
+    
+    // Asset 정보가 있을 때만 검증
+    if (inputDict.assetInfo && inputDict.assetInfo.name) {
+      this.validateAssetSettings(inputDict.assetInfo);
+    }
+    
+    // Power Quality가 활성화되어 있을 때 추가 검증
+    if (inputDict.PowerQuality == 1) {
+      this.validatePowerQualitySettings(inputDict);
+    }
+    
+    // Trend 설정 검증
+    if (inputDict.trendInfo) {
+      this.validateTrendSettings(inputDict.trendInfo);
+    }
+    
+    // Event 설정 검증
+    if (inputDict.eventInfo) {
+      this.validateEventSettings(inputDict.eventInfo);
+    }
+
+    // Alarm 설정 검증
+    if (inputDict.alarm) {
+      this.validateAlarmSettings(inputDict.alarm);
+    }
+    
+    // AI Modbus 설정 검증 (useAI가 활성화되어 있을 때)
+    if (inputDict.useAI === 1 && inputDict.ai_modbus) {
+      this.validateAIModbusSettings(inputDict.ai_modbus);
+    }
+  }
+  
+  return this.errors.length === currentErrors;
+}
 
   // General과 Channel 간의 크로스 검증
   validateCrossSettings(generalDict, mainChannelDict, subChannelDict) {
