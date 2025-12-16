@@ -1104,6 +1104,58 @@ async def get_report_data_by_time(mode: str, asset_name: str, timestamp: str):
         return {"success": False, "msg": str(e)}
 
 
+@router.get('/status_trend/{mode}/{asset_name}/{item_name}')
+async def get_item_trend(mode: str, asset_name: str, item_name: str):
+    """특정 항목의 2주치 트렌드 조회"""
+    try:
+        query_api = influx_state.query_api
+
+        logging.info(f"🔍 트렌드 조회: mode={mode}, asset_name={asset_name}, item={item_name}")
+
+        query = f'''
+        from(bucket: "ntek")
+            |> range(start: -14d)
+            |> filter(fn: (r) => r["_measurement"] == "{mode}")
+            |> filter(fn: (r) => r["asset_name"] == "{asset_name}")
+            |> filter(fn: (r) => r["data_type"] == "main")
+            |> filter(fn: (r) => r["item_name"] == "{item_name}")
+            |> filter(fn: (r) => r["_field"] == "status")
+            |> sort(columns: ["_time"])
+        '''
+
+        tables = query_api.query(query)
+
+        trend = []
+        for table in tables:
+            for record in table.records:
+                t = record.get_time()
+                if t.tzinfo is not None:
+                    t = t.astimezone().replace(tzinfo=None)
+
+                trend.append({
+                    "timestamp": t.isoformat(),
+                    "status": record.get_value()
+                })
+
+        logging.info(f"✅ 트렌드 결과: {len(trend)}개")
+
+        return {
+            "success": True,
+            "data": {
+                "asset_name": asset_name,
+                "mode": mode,
+                "item_name": item_name,
+                "count": len(trend),
+                "trend": trend
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"❌ 트렌드 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "msg": str(e)}
+
 # ============================================
 # 진단 리포트 워드 다운로드 API
 # ============================================

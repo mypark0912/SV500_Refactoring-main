@@ -8,12 +8,19 @@
       class="chart-header"
       :class="isPdfMode ? 'bg-blue-50 border-blue-100' : 'bg-blue-50 dark:bg-gray-900 border-blue-100 dark:border-gray-700'"
     >
-      <h3 
-        class="chart-title"
-        :class="isPdfMode ? 'text-gray-800' : 'text-gray-800 dark:text-gray-100'"
-      >
-        {{ chartTitle }}
-      </h3>
+      <div class="flex justify-between items-center">
+        <h3 
+          class="chart-title"
+          :class="isPdfMode ? 'text-gray-800' : 'text-gray-800 dark:text-gray-100'"
+        >
+          {{ chartTitle }}
+        </h3>
+        <!-- 타임스탬프 표시 -->
+        <div v-if="timestamp" class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md">
+          <span class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">📌 {{ t('report.lastSaved') || 'Last saved datetime' }}:</span>
+          <span class="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">{{ formatTimestamp(timestamp) }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- 배터리 그리드 -->
@@ -97,6 +104,10 @@ export default {
     height: {
       type: Number,
       default: 350
+    },
+    timestamp: {
+      type: String,
+      default: null
     }
   },
   setup(props) {
@@ -112,6 +123,20 @@ export default {
       x: 0,
       y: 0
     })
+
+    // 타임스탬프 포맷
+    const formatTimestamp = (timestamp) => {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    };
 
     // 모드에 따른 타이틀
     const chartTitle = computed(() => {
@@ -255,6 +280,9 @@ export default {
       }
     })
 
+    // timestamp computed로 변경 (reactive)
+    const timestampValue = computed(() => props.timestamp)
+
     return {
       isPdfMode,
       t,
@@ -270,6 +298,8 @@ export default {
       showTooltip,
       hideTooltip,
       updateTooltipPosition,
+      formatTimestamp,
+      timestamp: timestampValue,
     }
   }
 }

@@ -35,7 +35,7 @@ class NumpyEncoder(json.JSONEncoder):
 @dataclass
 class WeeklyReportConfig:
     """주간 리포트 설정"""
-    output_dir: str = "/usr/local/sv500/reports"
+    output_dir: str = "/usr/local/sv500/reports/weekly"
     bucket: str = "ntek30"
     measurement: str = "en10min"
     channels: List[str] = field(default_factory=lambda: ["Main", "Sub"])
@@ -82,6 +82,28 @@ class EN50160ReportProcessor:
     def __init__(self, config: WeeklyReportConfig = None):
         self.config = config or WeeklyReportConfig()
         self.limits = EN50160_LIMITS
+        self.nominal_voltage = 22900.0
+        self.nominal_current = 100.0
+        self.nominal_frequency = 60.0
+
+    def set_limits(self, nominal_voltage: float = None, nominal_current: float = None, nominal_frequency: float = None):
+        """정격값 설정"""
+        if nominal_voltage is not None:
+            self.nominal_voltage = nominal_voltage
+        if nominal_current is not None:
+            self.nominal_current = nominal_current
+        if nominal_frequency is not None:
+            self.nominal_frequency = nominal_frequency
+            # 주파수 리미트 재계산
+            self.limits["frequency"]["nominal"] = nominal_frequency
+            self.limits["frequency"]["limit_99_5"] = {
+                "min": nominal_frequency * 0.99,
+                "max": nominal_frequency * 1.01
+            }
+            self.limits["frequency"]["limit_100"] = {
+                "min": nominal_frequency * 0.94,
+                "max": nominal_frequency * 1.04
+            }
 
     def list_files(self) -> List[Dict[str, Any]]:
         """저장된 Parquet 파일 목록 조회"""
