@@ -164,7 +164,8 @@ export function useInputDict() {
       "pq":[],
       "faults": [],
       "events": []
-    }
+    },
+    ai_modbus:[]
   });
 
   const channel_sub = ref({
@@ -241,7 +242,8 @@ export function useInputDict() {
       "pq":[],
       "faults": [],
       "events": []
-    }
+    },
+    ai_modbus:[]
   });
 
   const useDiagnosis = computed(() => {
