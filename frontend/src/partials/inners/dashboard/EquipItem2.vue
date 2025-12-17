@@ -3,8 +3,8 @@
     <div class="card-content">
       <!-- 12 컬럼 그리드로 변경 -->
       <div class="grid grid-cols-12 gap-4 items-center">
-        <!-- 장비 정보 섹션 - 6 컬럼 -->
-        <div class="col-span-9">
+        <!-- 장비 정보 섹션 - Temp 유무에 따라 비율 변경 -->
+        <div :class="hasTempData ? 'col-span-6' : 'col-span-3'">
           <div class="flex items-center gap-3 justify-between">
             <div class="flex items-center gap-3">
               <div class="equipment-avatar">
@@ -12,7 +12,6 @@
               </div>
               <div class="equipment-info">
                 <h3 class="equipment-name">{{ stData.devNickname }}</h3>
-                <!-- <div class="equipment-type">{{ stData.devType }}</div> -->
               </div>
             </div>
             <div class="equipment-status">
@@ -29,43 +28,40 @@
           </div>
         </div>
  
-        <!-- 메트릭 섹션 - 6 컬럼 -->
-        <div class="col-span-3">
+        <!-- 메트릭 섹션 - Temp 유무에 따라 비율 변경 -->
+        <div :class="hasTempData ? 'col-span-6' : 'col-span-9'">
           <div class="metrics-section">
             <!-- Transformer -->
             <template v-if="stData.devType.includes('Transformer')">
-              <!--div class="metric-box temperature">
-                <div class="metric-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">℃</span>
+              <template v-if="hasTempData">
+                <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="metric-box temperature">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ transData.Temp?.[index]?.toFixed(2) ?? '-' }}</span>
+                    <span class="metric-unit">℃</span>
+                  </div>
+                  <div class="metric-label">Temp {{ label }}</div>
                 </div>
-              </div-->
+              </template>
               <div class="metric-box load">
-                <div class="metric-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
                 <div class="metric-main">
                   <span class="metric-value">{{ LoadRate }}</span>
                   <span class="metric-unit">%</span>
                 </div>
+                <div class="metric-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
               </div>
-              <!--div class="metric-box current">
-                <div class="metric-label">{{ t('dashboard.transDiag.Ig') }}</div>
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Ig?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">A</span>
-                </div>
-              </div-->
             </template>
  
             <!-- VFD -->
             <template v-else-if="stData.devType=='VFD'">
-              <div class="metric-box temperature">
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">℃</span>
+              <template v-if="hasTempData">
+                <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="metric-box temperature">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ transData.Temp?.[index]?.toFixed(2) ?? '-' }}</span>
+                    <span class="metric-unit">℃</span>
+                  </div>
+                  <div class="metric-label">Temp {{ label }}</div>
                 </div>
-                <div class="metric-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-              </div>
+              </template>
               <div class="metric-box load">
                 <div class="metric-main">
                   <span class="metric-value">56.9</span>
@@ -132,9 +128,9 @@
       </div>
     </div>
   </div>
- </template>
+</template>
  
- <script>
+<script>
 import motorImg from '@/images/motor_m.png'
 import fanImg from '@/images/fan_m.png'
 import pumpImg from '@/images/pump_m.png'
@@ -142,12 +138,12 @@ import compImg from '@/images/comp_m.png'
 import powerImg from '@/images/power_m.png'
 import defaultImg from '@/images/cleaned_logo.png'
 import transImg from '@/images/trans.png'
- import { ref, watch, computed, onMounted } from 'vue';
- import { useI18n } from 'vue-i18n'
- import { useSetupStore } from '@/store/setup'
- import { useRouter } from 'vue-router'
- 
- export default {
+import { ref, watch, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n'
+import { useSetupStore } from '@/store/setup'
+import { useRouter } from 'vue-router'
+
+export default {
   name: 'CompactStatusCard',
   props: {
     data: Object,
@@ -177,11 +173,16 @@ import transImg from '@/images/trans.png'
     const transData = ref(props.transData);
     const LoadRate = ref(0);
 
+    // Temp 데이터 유무 체크
+    const hasTempData = computed(() => {
+      return transData.value?.Temp?.length > 0
+    })
+
     // Transformer 타입 체크
     const isTransformer = computed(() => {
       return stData.value.devType?.includes('Transformer') || false;
     });
- 
+
     const strList = computed(() => {
       return [
         { "text": t('dashboard.diagnosis.st0'), "css": 'bg-gray-500/20 text-gray-700 font-semibold' },
@@ -199,28 +200,28 @@ import transImg from '@/images/trans.png'
         case 'MotorFeed':
           return motorImg;          
         case 'Pump':
-          return pumpImg;//'/images/motor_pump.png';
+          return pumpImg;
         case 'Fan':
           return fanImg;
         case 'Compressor':
-          return compImg;//'/images/fan_m.png';
+          return compImg;
         case 'PSupply':
-          return powerImg;//'/images/power.png';
+          return powerImg;
         case 'PowerSupply':
-          return powerImg;//'/images/power.png';  
+          return powerImg;
         case 'PrimaryTransformer':
-          return transImg;//'/images/trans.png';       
+          return transImg;
         case 'Transformer':
-          return transImg;//'/images/trans.png';                  
+          return transImg;
         default:
-          return defaultImg;//'@/images/cleaned_logo.png'
+          return defaultImg;
       }
     });
- 
+
     const goToEquipmentDetail = () => {
       route.push(`/diagnosis/${computedChannel.value}`)
     }
- 
+
     const statusClass = computed(() => {
       switch (stData.value.devStatus) {
         case 1:
@@ -235,7 +236,7 @@ import transImg from '@/images/trans.png'
           return 'status-no-data';
       }
     });
- 
+
     const LoadFactor = computed(() => {
       let kva = -1;
       if (computedChannel.value == 'Main' && stData.value.devType?.includes('Transformer')) {
@@ -246,7 +247,7 @@ import transImg from '@/images/trans.png'
       }
       return kva;
     })
- 
+
     watch(
       () => LoadFactor.value,
       (newVal) => {
@@ -256,7 +257,7 @@ import transImg from '@/images/trans.png'
       },
       { immediate: true }
     );
- 
+
     const statusStr = computed(() => {
       switch (stData.value.devStatus) {
         case 1:
@@ -271,7 +272,7 @@ import transImg from '@/images/trans.png'
           return t('dashboard.diagnosis.st0');
       }
     });
- 
+
     return {
       stData,
       motorImageSrc,
@@ -280,6 +281,7 @@ import transImg from '@/images/trans.png'
       transData,
       isRunning,
       isTransformer,
+      hasTempData,
       t,
       strList,
       LoadFactor,
@@ -289,232 +291,226 @@ import transImg from '@/images/trans.png'
       computedChannel,
     }
   }
- }
- </script>
- 
- <style scoped>
- .status-card {
-   @apply col-span-full sm:col-span-12 xl:col-span-12;
-   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
-   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
-   @apply backdrop-blur-sm;
-   @apply transition-all duration-300 hover:shadow-xl;
- }
- 
- .card-content {
-   @apply p-3;
- }
- 
- /* 장비 정보 스타일 */
- .equipment-avatar {
-   @apply relative flex-shrink-0;
- }
- 
- .avatar-image {
-   @apply w-10 h-10 rounded-lg object-cover;
-   @apply shadow-sm border border-gray-200 dark:border-gray-600;
- }
- 
- .equipment-info {
-   @apply flex flex-col justify-center;
- }
- 
- .equipment-name {
-   @apply text-base font-bold text-gray-800 dark:text-gray-100;
-   @apply cursor-pointer hover:text-blue-600 dark:hover:text-blue-400;
-   @apply transition-colors duration-200 leading-tight;
-   @apply whitespace-nowrap;
- }
- 
- .equipment-type {
-   @apply text-xs font-semibold text-blue-500 dark:text-blue-400;
-   @apply bg-blue-100 dark:bg-blue-700 px-2 py-0.5 rounded;
-   @apply inline-block w-fit mt-0.5;
- }
+}
+</script>
 
- /* 상태 배지 */
- .equipment-status {
-   @apply flex items-center;
-   @apply flex-shrink-0;
- }
+<style scoped>
+.status-card {
+  @apply col-span-full sm:col-span-12 xl:col-span-12;
+  @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
+  @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
+  @apply backdrop-blur-sm;
+  @apply transition-all duration-300 hover:shadow-xl;
+}
 
- .status-badge {
-   @apply flex items-center gap-1.5 px-2.5 py-1;
-   @apply rounded-full font-semibold text-xs;
-   @apply border-2 transition-all duration-300;
-   @apply shadow-sm;
-   @apply whitespace-nowrap;
- }
+.card-content {
+  @apply p-3;
+}
 
- .status-indicator {
-   @apply w-1.5 h-1.5 rounded-full;
-   @apply animate-pulse;
- }
+/* 장비 정보 스타일 */
+.equipment-avatar {
+  @apply relative flex-shrink-0;
+}
 
- .status-running {
-   @apply bg-green-50 dark:bg-green-900/30;
-   @apply border-green-500 dark:border-green-600;
-   @apply text-green-700 dark:text-green-300;
- }
+.avatar-image {
+  @apply w-10 h-10 rounded-lg object-cover;
+  @apply shadow-sm border border-gray-200 dark:border-gray-600;
+}
 
- .status-running .status-indicator {
-   @apply bg-green-500;
- }
+.equipment-info {
+  @apply flex flex-col justify-center;
+}
 
- .status-stopped {
-   @apply bg-gray-50 dark:bg-gray-700/30;
-   @apply border-gray-400 dark:border-gray-500;
-   @apply text-gray-700 dark:text-gray-300;
- }
+.equipment-name {
+  @apply text-base font-bold text-gray-800 dark:text-gray-100;
+  @apply cursor-pointer hover:text-blue-600 dark:hover:text-blue-400;
+  @apply transition-colors duration-200 leading-tight;
+  @apply whitespace-nowrap;
+}
 
- .status-stopped .status-indicator {
-   @apply bg-gray-400;
-   @apply animate-none;
- }
- 
- /* 메트릭 섹션 - 6 컬럼 내에서 flex 사용 */
- .metrics-section {
-   @apply flex items-center gap-3;
-   @apply w-full justify-end;
- }
- 
- .metric-box {
-   @apply flex flex-row items-center justify-between px-4 py-2 rounded-lg; /* flex-col을 flex-row로, items-center를 justify-between으로 변경 */
-   @apply bg-gray-50 dark:bg-gray-700/50;
-   @apply border border-gray-200 dark:border-gray-600;
-   @apply flex-1;
-   @apply h-14;
-   @apply transition-all duration-200 hover:shadow-sm;
- }
- 
- /* 메트릭 박스 컬러 */
- .metric-box.temperature {
-   @apply border-violet-300 bg-violet-50/50 dark:bg-violet-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-box.load {
-   @apply border-blue-300 bg-blue-50/50 dark:bg-blue-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-box.current {
-   @apply border-green-300 bg-green-50/50 dark:bg-green-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-box.hours {
-   @apply border-purple-300 bg-purple-50/50 dark:bg-purple-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-box.primary {
-   @apply border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-box.secondary {
-   @apply border-pink-300 bg-pink-50/50 dark:bg-pink-900/20;
-   @apply hover:shadow-sm hover:scale-105;
- }
- 
- .metric-main {
-   @apply flex items-baseline gap-1; /* justify-center 제거 */
-   @apply leading-none;
- }
- 
- .metric-value {
-   @apply text-sm font-bold text-gray-900 dark:text-white;
-   @apply leading-none;
- }
- 
- .metric-unit {
-   @apply text-xs font-medium text-gray-500 dark:text-white;
-   @apply leading-none;
- }
- 
- .metric-label {
-   @apply text-sm font-semibold text-gray-600 dark:text-white;
-   @apply leading-tight whitespace-nowrap;
-   /* mt-1 제거 */
- }
- 
- /* 반응형 */
- @media (max-width: 1024px) {
-   .grid {
-     @apply gap-3;
-   }
-   
-   .metric-box {
-     @apply px-3;
-   }
- }
- 
- @media (max-width: 768px) {
-   /* 태블릿에서는 5:7 비율 */
-   .grid > div:first-child {
-     @apply col-span-5;
-   }
-   
-   .grid > div:last-child {
-     @apply col-span-7;
-   }
+.equipment-type {
+  @apply text-xs font-semibold text-blue-500 dark:text-blue-400;
+  @apply bg-blue-100 dark:bg-blue-700 px-2 py-0.5 rounded;
+  @apply inline-block w-fit mt-0.5;
+}
 
-   .status-badge {
-     @apply px-2 py-0.5 text-[10px] gap-1;
-   }
+/* 상태 배지 */
+.equipment-status {
+  @apply flex items-center;
+  @apply flex-shrink-0;
+}
 
-   .status-indicator {
-     @apply w-1 h-1;
-   }
-   
-   .metric-box {
-     @apply h-12 px-2 py-1; /* max-w-[100px] 제거 */
-   }
-   
-   .metric-value {
-     @apply text-xs;
-   }
-   
-   .metric-label {
-     @apply text-xs;
-   }
- }
- 
- @media (max-width: 640px) {
-   /* 모바일에서는 세로 배치 */
-   .grid {
-     @apply grid-cols-1;
-   }
-   
-   .grid > div {
-     @apply col-span-full;
-   }
+.status-badge {
+  @apply flex items-center gap-1.5 px-2.5 py-1;
+  @apply rounded-full font-semibold text-xs;
+  @apply border-2 transition-all duration-300;
+  @apply shadow-sm;
+  @apply whitespace-nowrap;
+}
 
-   .equipment-status {
-     @apply ml-auto;
-   }
-   
-   .metrics-section {
-     @apply justify-start overflow-x-auto;
-     scrollbar-width: thin;
-   }
-   
-   .metrics-section::-webkit-scrollbar {
-     height: 4px;
-   }
-   
-   .metrics-section::-webkit-scrollbar-thumb {
-     @apply bg-gray-300 dark:bg-gray-600 rounded;
-   }
-   
-   .metric-box {
-     @apply flex-shrink-0 min-w-[80px];
-     @apply flex-col items-center justify-center; /* 모바일에서는 다시 세로 정렬 */
-   }
-   
-   .metric-label {
-     @apply mt-1; /* 모바일에서만 상단 마진 추가 */
-   }
- }
- </style>
+.status-indicator {
+  @apply w-1.5 h-1.5 rounded-full;
+  @apply animate-pulse;
+}
+
+.status-running {
+  @apply bg-green-50 dark:bg-green-900/30;
+  @apply border-green-500 dark:border-green-600;
+  @apply text-green-700 dark:text-green-300;
+}
+
+.status-running .status-indicator {
+  @apply bg-green-500;
+}
+
+.status-stopped {
+  @apply bg-gray-50 dark:bg-gray-700/30;
+  @apply border-gray-400 dark:border-gray-500;
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.status-stopped .status-indicator {
+  @apply bg-gray-400;
+  @apply animate-none;
+}
+
+/* 메트릭 섹션 */
+.metrics-section {
+  @apply flex items-center gap-3;
+  @apply w-full justify-end;
+}
+
+.metric-box {
+  @apply flex flex-col items-center justify-center px-4 py-2 rounded-lg;
+  @apply bg-gray-50 dark:bg-gray-700/50;
+  @apply border border-gray-200 dark:border-gray-600;
+  @apply flex-1;
+  @apply h-14;
+  @apply transition-all duration-200 hover:shadow-sm;
+}
+
+/* 메트릭 박스 컬러 */
+.metric-box.temperature {
+  @apply border-violet-300 bg-violet-50/50 dark:bg-violet-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-box.load {
+  @apply border-blue-300 bg-blue-50/50 dark:bg-blue-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-box.current {
+  @apply border-green-300 bg-green-50/50 dark:bg-green-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-box.hours {
+  @apply border-purple-300 bg-purple-50/50 dark:bg-purple-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-box.primary {
+  @apply border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-box.secondary {
+  @apply border-pink-300 bg-pink-50/50 dark:bg-pink-900/20;
+  @apply hover:shadow-sm hover:scale-105;
+}
+
+.metric-main {
+  @apply flex items-baseline gap-1;
+  @apply leading-none;
+}
+
+.metric-value {
+  @apply text-sm font-bold text-gray-900 dark:text-white;
+  @apply leading-none;
+}
+
+.metric-unit {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply leading-none;
+}
+
+.metric-label {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply leading-tight whitespace-nowrap mt-1;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .grid {
+    @apply gap-3;
+  }
+  
+  .metric-box {
+    @apply px-3;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 태블릿에서는 5:7 비율 */
+  .grid > div:first-child {
+    @apply col-span-5;
+  }
+  
+  .grid > div:last-child {
+    @apply col-span-7;
+  }
+
+  .status-badge {
+    @apply px-2 py-0.5 text-[10px] gap-1;
+  }
+
+  .status-indicator {
+    @apply w-1 h-1;
+  }
+  
+  .metric-box {
+    @apply h-12 px-2 py-1;
+  }
+  
+  .metric-value {
+    @apply text-xs;
+  }
+  
+  .metric-label {
+    @apply text-xs;
+  }
+}
+
+@media (max-width: 640px) {
+  /* 모바일에서는 세로 배치 */
+  .grid {
+    @apply grid-cols-1;
+  }
+  
+  .grid > div {
+    @apply col-span-full;
+  }
+
+  .equipment-status {
+    @apply ml-auto;
+  }
+  
+  .metrics-section {
+    @apply justify-start overflow-x-auto;
+    scrollbar-width: thin;
+  }
+  
+  .metrics-section::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .metrics-section::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded;
+  }
+  
+  .metric-box {
+    @apply flex-shrink-0 min-w-[80px];
+  }
+}
+</style>

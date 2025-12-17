@@ -365,7 +365,7 @@
 
       const devMode = computed(() => authStore.getOpMode);
       const channel = computed(() => props.channel || route.params.channel);
-
+      const devLang = ref('');
       const isFTPEnabled = computed(() => {
         return inputDict.value.useFuction?.ftp === 1 || inputDict.value.useFuction?.ftp === true;
       });
@@ -663,6 +663,7 @@
             Object.assign(inputDict.value, setupDict.value["General"]);
             Object.assign(channel_main.value, setupDict.value["main"]);
             Object.assign(channel_sub.value, setupDict.value["sub"]);
+            devLang.value = setupDict.value["lang"];
             setupStore.setsetupFromFile(true);
           }
         } catch (error) {
@@ -732,6 +733,7 @@
       provide("advancedData", advancedData);
       provide("currentDiagnosis", currentDiagnosis);
       provide("devMode", devMode);
+      provide("devLang", devLang);
       provide("changeDiagnosis", changeDiagnosis);
       provide("checkNameplateflag", checkNameplateflag);
       provide("diagnosis_detail", diagnosis_detail);
@@ -784,6 +786,7 @@
         openSaveModal,
         handleSaveModalClose,
         handleSaveComplete,
+        devLang,
       };
     },
   };

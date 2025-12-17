@@ -15,11 +15,21 @@
         <div class="w-12 h-12 shrink-0">
         <img class="w-12 h-12 rounded-full" :src="motorImageSrc" />
         </div>
-        <div class="mr-5 ml-2">
+        <!--div class="mr-5 ml-2">
             <div class="flex items-center">
                 <div class="text-xl font-bold text-gray-800 mr-2 dark:text-gray-200">{{ transData.Temp.toFixed(2) }} ℃ </div>
             </div>
             <div class="text-sm text-gray-500 dark:text-gray-200">Temperature</div>
+        </div-->
+        <div class="mr-5 ml-2">
+            <div class="flex items-center gap-4">
+                <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="text-center">
+                    <div class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                        {{ transData.Temp?.[index]?.toFixed(2) ?? '-' }} ℃
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-200">Temp {{ label }}</div>
+                </div>
+            </div>
         </div>
         <div class="hidden md:block w-px h-8 bg-gray-200 mr-5" aria-hidden="true"></div>
         <div class="mr-5">
@@ -42,10 +52,14 @@
         <img class="w-12 h-12 rounded-full" :src="motorImageSrc" />
         </div>
         <div class="mr-5 ml-2">
-            <div class="flex items-center">
-                <div class="text-xl font-bold text-gray-800 mr-2">{{ transData.Temp.toFixed(2) }} ℃ </div>
+            <div class="flex items-center gap-4">
+                <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="text-center">
+                    <div class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                        {{ transData.Temp?.[index]?.toFixed(2) ?? '-' }} ℃
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-200">Temp {{ label }}</div>
+                </div>
             </div>
-            <div class="text-sm text-gray-500">Temperature</div>
         </div>
         <div class="hidden md:block w-px h-8 bg-gray-200 mr-5" aria-hidden="true"></div>
         <div class="mr-5">

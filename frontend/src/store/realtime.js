@@ -86,6 +86,46 @@ export const useRealtimeStore = defineStore('realtime', () => {
     }
   }
 
+  const fetchTempData = async (channel) => {
+    try {
+      const response = await axios.get(`/api/getAIdata/${channel}`)
+      
+      if (response.data.success) {
+        const newData = response.data.data  // 리스트
+        
+        if (channel === 'Main') {
+          meterDictMain.value = {
+            ...meterDictMain.value,
+            Temp: newData
+          }
+        } else {
+          meterDictSub.value = {
+            ...meterDictSub.value,
+            Temp: newData
+          }
+        }
+        
+        return true
+      } else {
+        // 실패 시 빈 리스트
+        if (channel === 'Main') {
+          meterDictMain.value = { ...meterDictMain.value, Temp: [] }
+        } else {
+          meterDictSub.value = { ...meterDictSub.value, Temp: [] }
+        }
+        return false
+      }
+    } catch (err) {
+      console.error(`❌ ${channel} 온도 데이터 실패:`, err)
+      if (channel === 'Main') {
+        meterDictMain.value = { ...meterDictMain.value, Temp: [] }
+      } else {
+        meterDictSub.value = { ...meterDictSub.value, Temp: [] }
+      }
+      return false
+    }
+  }
+
   const loadInitialData = async (opMode, channelState) => {
     if (!opMode || opMode === '') {
       console.log('❌ 초기 조건 불만족으로 데이터 로딩 중단')
@@ -106,10 +146,13 @@ export const useRealtimeStore = defineStore('realtime', () => {
         //console.log('✅ Sub 활성화됨 - 병렬 로딩 시작')
         await Promise.all([
           fetchChannelData('Main', opMode, channelState),
-          fetchChannelData('Sub', opMode, channelState)
+          fetchChannelData('Sub', opMode, channelState),
+          fetchTempData('Main'),
+          fetchTempData('Sub')
         ])
       } else {
         await fetchChannelData('Main', opMode, channelState)
+        await fetchTempData('Main');
         isSubDataLoaded.value = true
       }
       // if (opMode === 'device2') {
@@ -135,10 +178,13 @@ export const useRealtimeStore = defineStore('realtime', () => {
       if (channelState?.SubEnable) {
         await Promise.all([
           fetchChannelData('Main', opMode, channelState),
-          fetchChannelData('Sub', opMode, channelState)
+          fetchChannelData('Sub', opMode, channelState),
+          fetchTempData('Main'),
+          fetchTempData('Sub')
         ])
       } else {
-        await fetchChannelData('Main', opMode, channelState)
+        await fetchChannelData('Main', opMode, channelState);
+        await fetchTempData('Main');
       }
     }, interval)
   }

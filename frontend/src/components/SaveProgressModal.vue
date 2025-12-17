@@ -201,7 +201,7 @@ export default {
     const advancedData = inject("advancedData");
     const diagnosis_detail = inject("diagnosis_detail");
     const devMode = inject("devMode");
-
+    const devLang = inject("devLang");
     const currentStep = ref(1);
     const isProcessing = ref(false);
     const isSaving = ref(false);
@@ -515,6 +515,7 @@ export default {
 
       try {
         const formattedData = transFormat();
+
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
@@ -553,7 +554,7 @@ export default {
         subData.trendInfo.params = [...params];
       }
 
-      return { mode: "device", lang: "en", General: generalData, channel: [mainData, subData] };
+      return { mode: devMode.value, lang: devLang.value, General: generalData, channel: [mainData, subData] };
     };
 
     const transNumber = (channelData) => {
@@ -593,7 +594,7 @@ export default {
       validationResult, diagnosisResults, hasDiagnosisErrors, useDiagnosis,
       showNameplateWarning, nameplateWarningMessage, nameplateConfirmed, canProceedToNext,
       getStepClass, getStepLabelClass, getConnectorClass, 
-      handleStep1Next, saveAndClose, cancelAndReload,
+      handleStep1Next, saveAndClose, cancelAndReload,devLang,
       t
     };
   },

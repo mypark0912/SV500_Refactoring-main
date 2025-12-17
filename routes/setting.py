@@ -2375,6 +2375,26 @@ def save_alarm_configs_to_redis(setting_dict: dict):
 
     return dash_alarms_data
 
+def save_ai_configs_to_redis(setting_dict: dict):
+    ai_data = {}
+
+    # 각 채널 순회
+    for channel_config in setting_dict.get("channel", []):
+        channel_name = channel_config.get("channel")
+        status_info = channel_config.get("ai_modbus", [])
+        # use_do = channel_config.get("useDO", 0)  # 채널별 useDO
+        confStatus = channel_config.get("useAI", 0)  # 채널별 useDO
+        if not channel_name:
+            continue
+
+        # useDO가 0이면 해당 채널은 저장하지 않음 (기존 로직 사용)
+        if confStatus == 0:
+            continue
+
+        # 채널별 DashAlarms 데이터
+        ai_data[channel_name] = [item for item in status_info if item.get("enable") == 1]
+
+    return ai_data
 
 
 def initialize_alarm_configs(channel, alams):
@@ -2744,7 +2764,7 @@ def apply():
 
     procData = save_StartCurrent_DemandInterval_SamplingPeriod(saveData)
     dash_alarms_data = save_alarm_configs_to_redis(saveData)
-
+    ai_data = save_ai_configs_to_redis(saveData)
     result = compare_channel_changes(prevData, saveData)
 
     restartdevice = False
@@ -2763,6 +2783,11 @@ def apply():
         redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
     else:
         redis_state.client.hdel("Equipment", "DashAlarms")
+
+    if ai_data:
+        redis_state.client.hset("Equipment", "AIConfig", json.dumps(ai_data))
+    else:
+        redis_state.client.hdel("Equipment", "AIConfig")
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
