@@ -96,35 +96,73 @@ export default {
       }
     };
 
-    const fetchPQData = async () => {
+const fetchPQData = async () => {
+  const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
+  
+  // 원하는 순서 정의 (Name 기준)
+  const pqDisplayOrder = [
+    // 전압 관련
+    'VoltagePhaseAngle',
+    'VoltageRMS',
+    'DC',
+    // 전류 관련
+    'CurrentRMS',
+    'CurrentPhaseAngle',
+    'CrestFactor',
+    // 파형, 왜곡 관련
+    'Unbalance',
+    'Harmonics',
+    'ZeroSequence',
+    'NegativeSequence',
+    // 전력, 효율 관련
+    'Power',
+    'PowerFactor',
+    'TotalDemandDistortion',
+    // 기타
+    'PhaseAngle',
+    'Events',
+  ];
 
-      const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
-      try {
-        //const ch = 'Fan';
-        //const response = await axios.get(`/api/getDiagPQ/${chName}`);
-        const response = await axios.get(`/api/getDiagPQ/${chName}`);
+  try {
+    const response = await axios.get(`/api/getDiagPQ/${chName}`);
 
-        if (response.data.success) {
-          let itemlist = [], valuelist=[], datalist=[];
-          for(let i = 0; i < response.data.data_status.length;i++){
-            itemlist.push(response.data.data_status[i]["Titles"][locale.value]);
-            valuelist.push(response.data.data_status[i]["Status"]);
-            datalist.push(response.data.data_status[i]["Titles"])
-            // datalist.push({"Item" : response.data.data_status[i]["Titles"][locale.value], "Status" : response.data.data_status[i]["Status"], 
-            // "Description" : response.data.data_status[i]["Description"], "Descriptions" : response.data.data_status[i]["Descriptions"]})
-          }
-          chartdata.value = {"Names" : itemlist, "Values" : valuelist, "Titles": datalist};
-          items.value = response.data.data_tree;
-          data_recordtime.value = response.data.data_recordtime;
-          data_state.value = response.data.data_state;
-        }else{
-          console.log('No Data');
-        }
-      }catch (error) {
-        console.log("데이터 가져오기 실패:", error);
+    if (response.data.success) {
+      // data_status 정렬
+      const sortedStatus = [...response.data.data_status].sort((a, b) => {
+        const indexA = pqDisplayOrder.indexOf(a.Name);
+        const indexB = pqDisplayOrder.indexOf(b.Name);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+      // data_tree도 같은 순서로 정렬
+      const sortedTree = [...response.data.data_tree].sort((a, b) => {
+        const indexA = pqDisplayOrder.indexOf(a.Name);
+        const indexB = pqDisplayOrder.indexOf(b.Name);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+      let itemlist = [], valuelist = [], datalist = [];
+      for (let i = 0; i < sortedStatus.length; i++) {
+        itemlist.push(sortedStatus[i]["Titles"][locale.value]);
+        valuelist.push(sortedStatus[i]["Status"]);
+        datalist.push(sortedStatus[i]["Titles"]);
       }
-    };
-
+      
+      chartdata.value = { "Names": itemlist, "Values": valuelist, "Titles": datalist };
+      items.value = sortedTree;  // 정렬된 tree 사용
+      data_recordtime.value = response.data.data_recordtime;
+      data_state.value = response.data.data_state;
+    } else {
+      console.log('No Data');
+    }
+  } catch (error) {
+    console.log("데이터 가져오기 실패:", error);
+  }
+};
     const fetchFaultData = async () => {
 
       const chName = channel.value == 'Main'? asset.value.assetName_main : asset.value.assetName_sub;
