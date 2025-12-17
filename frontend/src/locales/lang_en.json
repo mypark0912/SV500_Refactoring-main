@@ -459,7 +459,7 @@
         "dailyEngUsage":"Daily Energy Usage",
         "monthlyEngUsage":"Monthly Energy Usage",
         "installation": "installation place",
-        
+        "EN50160": "EN50160 Report",
         "Diagnosis": "Diagnosis",
         "Energy": "Active Energy",
         "Energy2": "Energy & Load Rate Trend",

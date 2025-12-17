@@ -453,7 +453,7 @@
       "PowerQuality": "전력품질",
       "reportdate": "보고서 날짜",
         "installation": "설치 장소",
-              
+        "EN50160": "EN50160 리포트",
         "iticCurAnalysis": "ITIC 분석",
         "hourlyEngUsage":"시간당 사용 추이",
         "dailyEngUsage":"일간 사용 추이",
