@@ -1371,7 +1371,7 @@ def set_limit(channel):
 @router.get("/list/{channel}")
 def get_filelist(channel):
     filelist = processor.list_files()
-    return {"data" : filelist}
+    return {"success": True, "data" : filelist}
 
 
 @router.get('/getReportDiagnosis/{mode}/{asset}/{channel}/{date}')

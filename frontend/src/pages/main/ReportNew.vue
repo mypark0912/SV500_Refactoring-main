@@ -199,6 +199,9 @@
           class="w-48 px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">{{ t('report.selectReport') || '선택하세요' }}</option>
+          <option v-for="date in reportDates" :key="date" :value="date">
+            {{ formatDateStr(date) }}
+          </option>
         </select>
         
         <!-- Load 버튼 -->
@@ -254,11 +257,12 @@
       
       <!-- EN50160 보고서 -->
       <ReportComponent 
-        v-if="activeTab === 'EN50160' && tbdata.length > 0" 
+        v-if="activeTab === 'EN50160'" 
         :data="tbdata" 
         :channel="channelComputed" 
-        :mode="mode" 
-        :key="`component-${channelComputed}`" 
+        :mode="mode"
+        :reportData="en50160ReportData"
+        :key="`component-${channelComputed}-${selectedReport}`" 
       />
       
       <!-- 전력량 -->
@@ -318,6 +322,7 @@ export default {
     );
     const asset = computed(() => setupStore.getAssetConfig);
     const selectedReport = ref("");
+    const reportDates = ref([]);
     const todayStr = new Date().toISOString().split("T")[0];
 
     // === 상태 ===
@@ -366,8 +371,9 @@ export default {
     );
 
     // === 리포트 데이터 (탭별 분리) ===
-    const diagnosisReportData = ref({ main: [], detail: [], timestamp: null });
-    const pqReportData = ref({ main: [], detail: [], timestamp: null });
+    const diagnosisReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
+    const pqReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
+    const en50160ReportData = ref(null);  // EN50160 데이터 추가
 
     // === Refs ===
     const diagnosisRef = ref(null);
@@ -396,7 +402,6 @@ export default {
         ];
       } else {
         return [
-          { name: "PowerQuality", label: "PowerQuality" },
           { name: "EN50160", label: "EN50160" },
           { name: "Energy", label: "Energy" },
         ];
@@ -415,6 +420,12 @@ export default {
         minute: "2-digit",
         second: "2-digit",
       });
+    };
+
+    // === 날짜 문자열 포맷 (20251217 → 2025-12-17) ===
+    const formatDateStr = (dateStr) => {
+      if (!dateStr || dateStr.length !== 8) return dateStr;
+      return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
     };
 
     // === 현재 모드 반환 ===
@@ -479,14 +490,78 @@ export default {
       }
     };
 
-    // === Load 버튼 클릭 ===
+    // === Load 버튼 클릭 (Parquet 파일에서 전체 로드) ===
     const onLoadClick = async () => {
-      const state = tabState.value[activeTab.value];
-      if (!state.time) return;
+      if (!selectedReport.value) return;
 
       isLoading.value = true;
-      await fetchReportData(state.time);
-      state.displayTime = state.time;
+      
+      const chName = channelComputed.value == "Main"
+        ? asset.value.assetName_main
+        : asset.value.assetName_sub;
+
+      try {
+        if (mode.value){
+                    // 1. Diagnosis 데이터 조회
+          try {
+            const diagResponse = await axios.get(
+              `/report/getReportDiagnosis/diagnosis/${chName}/${channelComputed.value}/${selectedReport.value}`
+            );
+            
+            if (diagResponse.data.success) {
+              diagnosisReportData.value = {
+                main: diagResponse.data.data.main,
+                detail: diagResponse.data.data.detail,
+                trends: diagResponse.data.data.trends,
+                timestamp: diagResponse.data.data.timestamp,
+              };
+              tabState.value.Equipment.displayTime = diagResponse.data.data.timestamp;
+            }
+          } catch (diagError) {
+            console.warn("Diagnosis 데이터 조회 실패:", diagError);
+          }
+
+          // 2. PowerQuality 데이터 조회
+          try {
+            const pqResponse = await axios.get(
+              `/report/getReportDiagnosis/powerquality/${chName}/${channelComputed.value}/${selectedReport.value}`
+            );
+            
+            if (pqResponse.data.success) {
+              pqReportData.value = {
+                main: pqResponse.data.data.main,
+                detail: pqResponse.data.data.detail,
+                trends: pqResponse.data.data.trends,
+                timestamp: pqResponse.data.data.timestamp,
+              };
+              tabState.value.PowerQuality.displayTime = pqResponse.data.data.timestamp;
+            }
+          } catch (pqError) {
+            console.warn("PowerQuality 데이터 조회 실패:", pqError);
+          }
+        }
+
+        // 3. EN50160 데이터 조회
+        try {
+          const filename = `en50160_weekly__${channelComputed.value}_${selectedReport.value}.parquet`;
+          const en50160Response = await axios.get(`/report/week/${channelComputed.value}/${filename}`);
+          
+          if (en50160Response.data) {
+            en50160ReportData.value = en50160Response.data;
+            console.log("EN50160 데이터 로드 완료:", en50160ReportData.value);
+          }
+        } catch (en50160Error) {
+          console.warn("EN50160 데이터 조회 실패:", en50160Error);
+          en50160ReportData.value = null;
+        }
+
+      } catch (error) {
+        console.error("데이터 조회 실패:", error);
+        
+        // 파일 없으면 기존 마지막 데이터 로드
+        //await initialLoad();
+      }
+      
       isLoading.value = false;
     };
 
@@ -565,13 +640,15 @@ export default {
       activeTab.value = tabName;
 
       // 진단 탭으로 변경 시 해당 탭 데이터가 없으면 로드
-      if (tabName === "Equipment" || tabName === "PowerQuality") {
-        const targetData =
-          tabName === "Equipment"
-            ? diagnosisReportData.value
-            : pqReportData.value;
-        if (!targetData.main || targetData.main.length === 0) {
-          await initialLoad();
+      if(mode.value){
+          if (tabName === "Equipment" || tabName === "PowerQuality") {
+          const targetData =
+            tabName === "Equipment"
+              ? diagnosisReportData.value
+              : pqReportData.value;
+          if (!targetData.main || targetData.main.length === 0) {
+            await initialLoad();
+          }
         }
       }
     };
@@ -640,6 +717,26 @@ export default {
       }
     };
 
+    // === 파일 목록 조회 ===
+    const fetchDates = async () => {
+      try {
+        const response = await axios.get(`/report/list/${channelComputed.value}`);
+        if (response.data.success) {
+          reportDates.value = response.data.data;
+          // 목록이 있으면 첫 번째 선택
+          if (reportDates.value.length > 0) {
+            selectedReport.value = reportDates.value[0];
+          }
+        } else {
+          console.warn("서버 응답이 success: false 입니다.");
+          reportDates.value = [];
+        }
+      } catch (error) {
+        console.log("데이터 가져오기 실패:", error);
+        reportDates.value = [];
+      }
+    };
+
     // === Watch ===
     watch(
       () => route.params.channel,
@@ -660,9 +757,14 @@ export default {
             displayTime: null,
           },
         };
-        diagnosisReportData.value = { main: [], detail: [], timestamp: null };
-        pqReportData.value = { main: [], detail: [], timestamp: null };
-        await initialLoad();
+        diagnosisReportData.value = { main: [], detail: [], trends: null, timestamp: null };
+        pqReportData.value = { main: [], detail: [], trends: null, timestamp: null };
+        en50160ReportData.value = null;
+        
+        // 채널 변경 시 파일 목록 다시 조회
+        await fetchDates();
+        if(mode.value)
+          await initialLoad();
       }
     );
 
@@ -684,8 +786,10 @@ export default {
 
     // === Mounted ===
     onMounted(async () => {
+      await fetchDates();
       await fetchEN50160Data();
-      await initialLoad();
+      if (mode.value)
+        await initialLoad();
     });
 
     return {
@@ -706,6 +810,7 @@ export default {
       onDateChange,
       onLoadClick,
       formatTimestamp,
+      formatDateStr,
       // 로딩
       isLoading,
       isDownloading,
@@ -717,10 +822,12 @@ export default {
       // 데이터 (탭별 분리)
       diagnosisReportData,
       pqReportData,
+      en50160ReportData,
       diagnosisRef,
       pqDiagnosisRef,
       asset,
       selectedReport,
+      reportDates,
     };
   },
 };
