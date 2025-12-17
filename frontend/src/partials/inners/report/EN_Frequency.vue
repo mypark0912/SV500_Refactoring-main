@@ -1,347 +1,434 @@
 <template>
-  <div class="en50160-chart">
-    <!-- 타이틀 -->
-    <div class="chart-title" v-if="title">
-      <h2>{{ title }}</h2>
+  <div class="en50160-section bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+    <!-- 섹션 헤더 -->
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-base font-semibold text-gray-800 dark:text-gray-100">
+        {{ title }}
+      </h4>
+      <div v-if="statistics" class="flex items-center gap-2">
+        <span 
+          :class="[
+            'px-2 py-1 text-xs font-medium rounded',
+            overallResult === 'PASS' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+          ]"
+        >
+          {{ overallResult }}
+        </span>
+      </div>
     </div>
 
-    <!-- 요약 테이블 -->
-    <div class="summary-table" v-if="tableData && tableData.length">
-      <table>
-        <thead>
+    <!-- 라인 차트 -->
+    <div class="mb-4">
+      <div ref="lineChartRef" :style="{ height: chartHeight, width: '100%' }"></div>
+    </div>
+
+    <!-- 범례 -->
+    <div v-if="legendItems && legendItems.length > 0" class="flex items-center gap-4 mb-4 px-2">
+      <div v-for="item in legendItems" :key="item.name" class="flex items-center gap-1.5">
+        <span 
+          class="w-3 h-3 rounded-sm" 
+          :style="{ backgroundColor: item.color }"
+        ></span>
+        <span class="text-xs text-gray-600 dark:text-gray-400">{{ item.name }}</span>
+      </div>
+    </div>
+
+    <!-- 히스토그램 -->
+    <div v-if="showHistogram && histogramData" class="mb-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+      <EN50160Histogram
+        :title="`${title} Distribution`"
+        :histogramData="histogramData"
+        :unit="histogramUnit"
+        :barColor="histogramColor"
+        :limitMin="histogramLimitMin"
+        :limitMax="histogramLimitMax"
+        :limitValue="histogramLimitValue"
+        :chartHeight="histogramHeight"
+      />
+    </div>
+
+    <!-- 3상 히스토그램 (Voltage, THD 등) -->
+    <div v-if="showPhaseHistograms && phaseHistograms" class="mb-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <EN50160Histogram
+          v-for="(phaseData, phaseKey) in phaseHistograms"
+          :key="phaseKey"
+          :title="`${phaseKey} Distribution`"
+          :histogramData="phaseData"
+          :unit="histogramUnit"
+          :barColor="phaseColors[phaseKey] || '#5470c6'"
+          :limitMin="histogramLimitMin"
+          :limitMax="histogramLimitMax"
+          :limitValue="histogramLimitValue"
+          chartHeight="180px"
+        />
+      </div>
+    </div>
+
+    <!-- 테이블 -->
+    <div v-if="tableData && tableData.length > 0" class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th v-for="col in tableColumns" :key="col.key">{{ col.label }}</th>
+            <th 
+              v-for="col in tableColumns" 
+              :key="col.key"
+              class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            >
+              {{ col.label }}
+            </th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="(row, index) in tableData" :key="index" :class="row.rowClass">
-            <td v-for="col in tableColumns" :key="col.key" :class="getCellClass(row, col.key)">
-              {{ formatCell(row[col.key], col.format) }}
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+          <tr 
+            v-for="(row, idx) in tableData" 
+            :key="idx"
+            :class="row.rowClass || ''"
+          >
+            <td 
+              v-for="col in tableColumns" 
+              :key="col.key"
+              class="px-3 py-2 text-gray-700 dark:text-gray-300"
+            >
+              <template v-if="col.key === 'result'">
+                <span 
+                  :class="[
+                    'px-2 py-0.5 text-xs font-medium rounded',
+                    row[col.key] === 'PASS' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  ]"
+                >
+                  {{ row[col.key] }}
+                </span>
+              </template>
+              <template v-else>
+                {{ row[col.key] }}
+              </template>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <!-- 시계열 차트 -->
-    <div class="chart-section">
-      <v-chart class="timeseries-chart" :option="chartOption" autoresize />
-      <div class="chart-legend" v-if="legendItems && legendItems.length">
-        <span 
-          v-for="item in legendItems" 
-          :key="item.name" 
-          class="legend-item"
-        >
-          <span class="color-box" :style="{ background: item.color }"></span>
-          {{ item.name }}
-        </span>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
-import { computed, watch, ref } from 'vue'
-import VChart from 'vue-echarts'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  MarkAreaComponent
-} from 'echarts/components'
-
-use([
-  CanvasRenderer,
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  LegendComponent,
-  MarkLineComponent,
-  MarkAreaComponent
-])
+import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
+import * as echarts from 'echarts'
+import EN50160Histogram from './EN50160Histogram.vue'
 
 export default {
-  name: 'EN50160Chart',
-  components: { VChart },
+  name: 'EN50160ChartWithHistogram',
+  components: {
+    EN50160Histogram
+  },
   props: {
-    // 차트 타이틀
-    title: {
-      type: String,
-      default: ''
-    },
-    // 시계열 데이터 { labels: [], datasets: [{ name, data, color }] }
+    // 기본 정보
+    title: { type: String, default: '' },
+    
+    // 라인 차트 데이터
     timeseries: {
       type: Object,
       default: () => ({ labels: [], datasets: [] })
     },
-    // Y축 설정 { name, min, max, formatter }
     yAxis: {
       type: Object,
       default: () => ({ name: '', min: null, max: null })
     },
-    // 한계선 [{ value, color, label }]
     limitLines: {
       type: Array,
       default: () => []
     },
-    // 영역 표시 [{ from, to, color }]
     markAreas: {
       type: Array,
       default: () => []
     },
-    // 테이블 컬럼 [{ key, label, format }]
-    tableColumns: {
-      type: Array,
-      default: () => []
-    },
-    // 테이블 데이터 [{ ...row, rowClass }]
-    tableData: {
-      type: Array,
-      default: () => []
-    },
-    // 범례 아이템 [{ name, color }]
     legendItems: {
       type: Array,
       default: () => []
     },
-    // 툴팁 포맷터
-    tooltipFormatter: {
-      type: Function,
-      default: null
-    },
-    // 차트 높이
     chartHeight: {
       type: String,
-      default: '300px'
+      default: '280px'
+    },
+    
+    // 히스토그램 관련
+    showHistogram: {
+      type: Boolean,
+      default: false
+    },
+    histogramData: {
+      type: Object,
+      default: null
+    },
+    showPhaseHistograms: {
+      type: Boolean,
+      default: false
+    },
+    phaseHistograms: {
+      type: Object,
+      default: null
+    },
+    histogramUnit: {
+      type: String,
+      default: ''
+    },
+    histogramColor: {
+      type: String,
+      default: '#5470c6'
+    },
+    histogramLimitMin: {
+      type: Number,
+      default: null
+    },
+    histogramLimitMax: {
+      type: Number,
+      default: null
+    },
+    histogramLimitValue: {
+      type: Number,
+      default: null
+    },
+    histogramHeight: {
+      type: String,
+      default: '200px'
+    },
+    
+    // 테이블 데이터
+    tableColumns: {
+      type: Array,
+      default: () => []
+    },
+    tableData: {
+      type: Array,
+      default: () => []
+    },
+    
+    // 통계 (결과 판정용)
+    statistics: {
+      type: Object,
+      default: null
     }
   },
   setup(props) {
-    // 차트 옵션 생성
-    const chartOption = computed(() => {
-      const labels = props.timeseries?.labels || []
+    const lineChartRef = ref(null)
+    let chartInstance = null
+
+    // 3상 색상
+    const phaseColors = {
+      'L1': '#e53935',
+      'L2': '#43a047',
+      'L3': '#1e88e5'
+    }
+
+    // 전체 결과 계산
+    const overallResult = computed(() => {
+      if (!props.statistics) return null
       
-      // 데이터셋 생성
-      const series = (props.timeseries?.datasets || []).map((ds, index) => {
-        const seriesConfig = {
-          name: ds.name || `Series ${index + 1}`,
-          type: 'line',
-          data: ds.data || [],
-          symbol: 'none',
-          lineStyle: {
-            color: ds.color || '#008080',
-            width: ds.lineWidth || 1.5
-          }
+      // 단일 result
+      if (props.statistics.result) return props.statistics.result
+      
+      // 99.5% / 100% 결과
+      if (props.statistics.result_99_5 === 'FAIL' || props.statistics.result_100 === 'FAIL') {
+        return 'FAIL'
+      }
+      if (props.statistics.result_95 === 'FAIL') {
+        return 'FAIL'
+      }
+      
+      return 'PASS'
+    })
+
+    const initLineChart = () => {
+      if (!lineChartRef.value) return
+
+      const { labels, datasets } = props.timeseries || {}
+      
+      if (!labels || labels.length === 0) {
+        if (chartInstance) {
+          chartInstance.dispose()
+          chartInstance = null
         }
-
-        // 영역 채우기
-        if (ds.areaStyle !== false) {
-          seriesConfig.areaStyle = {
-            color: ds.areaColor || (ds.color ? `${ds.color}1A` : 'rgba(0, 128, 128, 0.1)')
-          }
-        }
-
-        // 첫 번째 시리즈에 markLine, markArea 추가
-        if (index === 0) {
-          // 한계선
-          if (props.limitLines && props.limitLines.length) {
-            seriesConfig.markLine = {
-              silent: true,
-              symbol: 'none',
-              lineStyle: { width: 2 },
-              data: props.limitLines.map(line => ({
-                yAxis: line.value,
-                lineStyle: { 
-                  color: line.color || '#f44336',
-                  type: line.type || 'solid'
-                },
-                label: { show: false }
-              }))
-            }
-          }
-
-          // 영역 표시
-          if (props.markAreas && props.markAreas.length) {
-            seriesConfig.markArea = {
-              silent: true,
-              data: props.markAreas.map(area => ([
-                {
-                  yAxis: area.from,
-                  itemStyle: { color: area.color || 'rgba(255, 255, 200, 0.3)' }
-                },
-                { yAxis: area.to }
-              ]))
-            }
-          }
-        }
-
-        return seriesConfig
-      })
-
-      // 기본 툴팁 포맷터
-      const defaultTooltipFormatter = (params) => {
-        if (!Array.isArray(params)) params = [params]
-        let result = `${params[0]?.name || ''}<br/>`
-        params.forEach(p => {
-          const value = typeof p.value === 'number' ? p.value.toFixed(3) : p.value
-          result += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${value}</b><br/>`
-        })
-        return result
+        return
       }
 
-      return {
+      if (chartInstance) {
+        chartInstance.dispose()
+      }
+
+      chartInstance = echarts.init(lineChartRef.value)
+
+      // 시리즈 생성
+      const series = (datasets || []).map(ds => ({
+        name: ds.name,
+        type: 'line',
+        data: ds.data,
+        symbol: 'none',
+        lineStyle: {
+          color: ds.color,
+          width: 1.5
+        },
+        itemStyle: {
+          color: ds.color
+        },
+        areaStyle: ds.areaStyle ? {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: ds.color + '40' },
+            { offset: 1, color: ds.color + '05' }
+          ])
+        } : undefined
+      }))
+
+      // 한계선 추가
+      const markLineData = (props.limitLines || []).map(line => ({
+        yAxis: line.value,
+        lineStyle: {
+          color: line.color || '#f44336',
+          type: 'dashed',
+          width: 1.5
+        },
+        label: {
+          show: false
+        }
+      }))
+
+      if (markLineData.length > 0 && series.length > 0) {
+        series[0].markLine = {
+          silent: true,
+          symbol: 'none',
+          data: markLineData
+        }
+      }
+
+      // 영역 표시
+      if (props.markAreas && props.markAreas.length > 0 && series.length > 0) {
+        series[0].markArea = {
+          silent: true,
+          data: props.markAreas.map(area => [
+            {
+              yAxis: area.from,
+              itemStyle: { color: area.color }
+            },
+            {
+              yAxis: area.to
+            }
+          ])
+        }
+      }
+
+      const option = {
         grid: {
-          left: 70,
-          right: 20,
-          top: 30,
-          bottom: 40
+          left: '8%',
+          right: '3%',
+          bottom: '12%',
+          top: '8%',
+          containLabel: true
         },
         tooltip: {
           trigger: 'axis',
-          formatter: props.tooltipFormatter || defaultTooltipFormatter
+          axisPointer: {
+            type: 'cross'
+          },
+          formatter: (params) => {
+            let html = `<div style="font-size: 12px;"><b>${params[0].axisValue}</b><br/>`
+            params.forEach(p => {
+              html += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${p.value}</b><br/>`
+            })
+            html += '</div>'
+            return html
+          }
         },
         xAxis: {
           type: 'category',
           data: labels,
           axisLabel: {
+            fontSize: 10,
+            color: '#6b7280',
             rotate: 0,
-            interval: Math.floor(labels.length / 7) || 1
+            interval: Math.floor(labels.length / 7)
+          },
+          axisLine: {
+            lineStyle: { color: '#e5e7eb' }
           }
         },
         yAxis: {
           type: 'value',
           name: props.yAxis?.name || '',
-          nameLocation: 'middle',
-          nameGap: 45,
-          min: props.yAxis?.min ?? undefined,
-          max: props.yAxis?.max ?? undefined,
+          nameTextStyle: {
+            fontSize: 11,
+            color: '#6b7280'
+          },
+          min: props.yAxis?.min,
+          max: props.yAxis?.max,
           axisLabel: {
-            formatter: props.yAxis?.formatter || '{value}'
+            fontSize: 10,
+            color: '#6b7280',
+            formatter: props.yAxis?.formatter
+          },
+          axisLine: {
+            show: true,
+            lineStyle: { color: '#e5e7eb' }
+          },
+          splitLine: {
+            lineStyle: {
+              color: '#f3f4f6',
+              type: 'dashed'
+            }
           }
         },
         series: series
       }
+
+      chartInstance.setOption(option)
+    }
+
+    const handleResize = () => {
+      chartInstance?.resize()
+    }
+
+    onMounted(() => {
+      initLineChart()
+      window.addEventListener('resize', handleResize)
     })
 
-    // 셀 클래스 결정
-    const getCellClass = (row, key) => {
-      const value = row[key]
-      if (value === 'PASS') return 'result-pass'
-      if (value === 'FAIL') return 'result-fail'
-      return ''
-    }
+    watch(
+      () => props.timeseries,
+      () => initLineChart(),
+      { deep: true }
+    )
 
-    // 셀 포맷팅
-    const formatCell = (value, format) => {
-      if (value === null || value === undefined) return '-'
-      if (format === 'percent') return `${value}%`
-      if (format === 'hz') return `${value} Hz`
-      if (format === 'volt') return `${value} V`
-      return value
-    }
+    watch(
+      () => [props.limitLines, props.markAreas],
+      () => initLineChart(),
+      { deep: true }
+    )
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', handleResize)
+      if (chartInstance) {
+        chartInstance.dispose()
+        chartInstance = null
+      }
+    })
 
     return {
-      chartOption,
-      getCellClass,
-      formatCell
+      lineChartRef,
+      phaseColors,
+      overallResult
     }
   }
 }
 </script>
 
 <style scoped>
-.en50160-chart {
-  padding: 16px;
-  background: #fff;
+.en50160-section {
+  transition: box-shadow 0.2s ease;
 }
 
-.chart-title {
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.chart-title h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.summary-table {
-  margin-bottom: 20px;
-  overflow-x: auto;
-}
-
-.summary-table table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.summary-table th,
-.summary-table td {
-  border: 1px solid #ddd;
-  padding: 10px 12px;
-  text-align: center;
-}
-
-.summary-table th {
-  background: #f5f5f5;
-  font-weight: 600;
-}
-
-.summary-table .row-99-5,
-.summary-table .row-warning {
-  background: #fffde7;
-}
-
-.summary-table .row-100,
-.summary-table .row-critical {
-  background: #fff8e1;
-}
-
-.result-pass {
-  color: #2e7d32;
-  font-weight: bold;
-}
-
-.result-fail {
-  color: #c62828;
-  font-weight: bold;
-}
-
-.chart-section {
-  margin-bottom: 16px;
-}
-
-.timeseries-chart {
-  width: 100%;
-  height: v-bind(chartHeight);
-}
-
-.chart-legend {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 8px;
-  font-size: 12px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.color-box {
-  width: 20px;
-  height: 12px;
-  display: inline-block;
-  border: 1px solid #ddd;
+.en50160-section:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 </style>

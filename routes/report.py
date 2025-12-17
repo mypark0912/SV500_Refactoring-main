@@ -1344,7 +1344,26 @@ async def download_diagnosis_report(mode: str, asset_name: str, channel: str, ti
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/week/{filename}")
-async def get_weekly_report(filename: str, nominal_voltage: float = 22900.0):
+@router.get("/week/{channel}/{filename}")
+async def get_weekly_report(channel:str, filename: str):
     # get_all_chart_data 사용 (내부에서 파일 1번만 읽음)
-    return processor.get_all_chart_data(filename=filename, nominal_voltage=nominal_voltage)
+    set_limit(channel)
+    return processor.get_all_chart_data(filename=filename)
+
+
+def set_limit(channel):
+    if redis_state.client.hexists("Equipment","ChannelData"):
+        chDict = json.loads(redis_state.client.hget("Equipment","ChannelData"))
+        if channel == 'Main' or channel == 'main':
+            chName = 'main'
+        else:
+            chName = 'sub'
+        processor.set_limits(float(chDict[chName]["RatedVoltage"]), float(chDict[chName]["RatedCurrent"]),float(chDict[chName]["RatedFrequency"]))
+    else:
+        setting = json.loads(redis_state.client.hget("System","setup"))
+        for ch in setting.get("channel", []):
+            name = ch.get("channel", "")
+            if name == "Main":
+                processor.set_limits(float(ch[name]["ptInfo"]["vnorminal"]), float(ch[channel]["ctInfo"]["inorminal"]),float(ch[channel]["ptInfo"]["linefrequency"]))
+            elif name == "Sub":
+                processor.set_limits(float(ch[name]["ptInfo"]["vnorminal"]), float(ch[channel]["ctInfo"]["inorminal"]),float(ch[channel]["ptInfo"]["linefrequency"]))

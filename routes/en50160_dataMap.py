@@ -105,6 +105,57 @@ class EN50160ReportProcessor:
                 "max": nominal_frequency * 1.04
             }
 
+    # =========================================================================
+    # 히스토그램 계산 유틸리티
+    # =========================================================================
+    def _calculate_histogram(self, values: np.ndarray, bins: int = 30,
+                             range_min: float = None, range_max: float = None) -> Dict:
+        """
+        히스토그램 데이터 계산
+
+        Args:
+            values: 데이터 배열
+            bins: 구간 개수 (기본 30)
+            range_min: 최소 범위 (None이면 데이터 최소값)
+            range_max: 최대 범위 (None이면 데이터 최대값)
+
+        Returns:
+            {
+                "bins": [경계값들 (bins+1개)],
+                "counts": [빈도수 (bins개)],
+                "percentages": [백분율 (bins개)],
+                "bin_labels": ["59.40-59.44", ...],
+                "bin_centers": [구간 중심값들]
+            }
+        """
+        if len(values) == 0:
+            return {
+                "bins": [],
+                "counts": [],
+                "percentages": [],
+                "bin_labels": [],
+                "bin_centers": []
+            }
+
+        if range_min is None:
+            range_min = float(np.min(values))
+        if range_max is None:
+            range_max = float(np.max(values))
+
+        counts, bin_edges = np.histogram(values, bins=bins, range=(range_min, range_max))
+        total = len(values)
+
+        # 구간 중심값 계산
+        bin_centers = [(bin_edges[i] + bin_edges[i+1]) / 2 for i in range(len(counts))]
+
+        return {
+            "bins": [round(float(b), 4) for b in bin_edges],
+            "counts": [int(c) for c in counts],
+            "percentages": [round(c / total * 100, 2) for c in counts],
+            "bin_labels": [f"{bin_edges[i]:.2f}-{bin_edges[i+1]:.2f}" for i in range(len(counts))],
+            "bin_centers": [round(float(c), 4) for c in bin_centers]
+        }
+
     def list_files(self) -> List[Dict[str, Any]]:
         """저장된 Parquet 파일 목록 조회"""
         import pyarrow.parquet as pq
@@ -167,8 +218,7 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전체 리포트 데이터 (단일 API용)
     # =========================================================================
-    def get_all_chart_data(self, filepath: str = None, filename: str = None,
-                           nominal_voltage: float = 22900.0) -> Optional[Dict]:
+    def get_all_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
         """
         전체 차트 데이터 반환 (파일 1번만 읽기)
 
@@ -192,6 +242,7 @@ class EN50160ReportProcessor:
             "thd": self._get_thd_from_df(df),
             "unbalance": self._get_unbalance_from_df(df),
             "flicker": self._get_flicker_from_df(df),
+            "harmonics": self._get_harmonics_from_df(df),
         }
 
     # =========================================================================
@@ -211,6 +262,7 @@ class EN50160ReportProcessor:
         Returns:
             {
                 "timeseries": { "labels": [...], "data": [...] },
+                "histogram": { "bins": [...], "counts": [...], ... },
                 "statistics": { "min": ..., "max": ..., "avg": ..., "result": ... },
                 "limits": { "nominal": ..., "limit_99_5": {...}, "limit_100": {...} }
             }
@@ -229,8 +281,16 @@ class EN50160ReportProcessor:
             "data": [round(float(v), 3) for v in df[freq_col].values]
         }
 
-        # 통계
+        # 히스토그램 데이터
         limits = self.limits["frequency"]
+        histogram = self._calculate_histogram(
+            values,
+            bins=30,
+            range_min=limits["limit_99_5"]["min"],  # 59.4Hz
+            range_max=limits["limit_99_5"]["max"]   # 60.6Hz
+        )
+
+        # 통계
         measured_min = float(np.min(values))
         measured_max = float(np.max(values))
         measured_avg = float(np.mean(values))
@@ -263,6 +323,7 @@ class EN50160ReportProcessor:
 
         return {
             "timeseries": timeseries,
+            "histogram": histogram,
             "statistics": statistics,
             "limits": limits
         }
@@ -287,7 +348,7 @@ class EN50160ReportProcessor:
             nominal_voltage: 정격전압 (V), 기본값 22.9kV
 
         Returns:
-            3상 각각의 시계열, 통계 데이터
+            3상 각각의 시계열, 히스토그램, 통계 데이터
         """
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
         limits = self.limits["voltage"]
@@ -312,6 +373,14 @@ class EN50160ReportProcessor:
                 "data": [round(float(v), 1) for v in df[col].values]
             }
 
+            # 히스토그램 (95% 범위 기준)
+            histogram = self._calculate_histogram(
+                values,
+                bins=30,
+                range_min=limit_95_min,
+                range_max=limit_95_max
+            )
+
             # 통계
             measured_min = float(np.min(values))
             measured_max = float(np.max(values))
@@ -331,6 +400,7 @@ class EN50160ReportProcessor:
 
             phases_data[f"L{phase}"] = {
                 "timeseries": timeseries,
+                "histogram": histogram,
                 "statistics": {
                     "min": round(measured_min, 1),
                     "max": round(measured_max, 1),
@@ -379,6 +449,14 @@ class EN50160ReportProcessor:
             "data": [round(float(v), 3) for v in df[col].values]
         }
 
+        # 히스토그램 (0% ~ limit*1.5 범위)
+        histogram = self._calculate_histogram(
+            values,
+            bins=25,
+            range_min=0.0,
+            range_max=limit * 1.5  # 3.0%
+        )
+
         # 통계
         measured_max = float(np.max(values))
         in_range_95 = np.sum(values <= limit) / len(values) * 100
@@ -394,6 +472,7 @@ class EN50160ReportProcessor:
 
         return {
             "timeseries": timeseries,
+            "histogram": histogram,
             "statistics": statistics,
             "limits": {"limit_95": limit}
         }
@@ -421,10 +500,19 @@ class EN50160ReportProcessor:
 
             values = df[col].dropna().values
 
+            # 시계열
             timeseries = {
                 "labels": timestamps,
                 "data": [round(float(v), 2) for v in df[col].values]
             }
+
+            # 히스토그램 (0% ~ limit*1.25 범위)
+            histogram = self._calculate_histogram(
+                values,
+                bins=25,
+                range_min=0.0,
+                range_max=limit * 1.25  # 10%
+            )
 
             measured_max = float(np.max(values))
             in_range_95 = np.sum(values <= limit) / len(values) * 100
@@ -432,6 +520,7 @@ class EN50160ReportProcessor:
 
             phases_data[f"L{phase}"] = {
                 "timeseries": timeseries,
+                "histogram": histogram,
                 "statistics": {
                     "max": round(measured_max, 2),
                     "avg": round(float(np.mean(values)), 2),
@@ -470,14 +559,25 @@ class EN50160ReportProcessor:
             pst_col = f"pst_l{phase}"
             if pst_col in df.columns:
                 pst_values = df[pst_col].dropna().values
+
+                # Pst 히스토그램
+                pst_histogram = self._calculate_histogram(
+                    pst_values,
+                    bins=25,
+                    range_min=0.0,
+                    range_max=pst_limit * 2.0
+                )
+
                 result["pst"][f"L{phase}"] = {
                     "timeseries": {
                         "labels": timestamps,
                         "data": [round(float(v), 3) for v in df[pst_col].values]
                     },
+                    "histogram": pst_histogram,
                     "statistics": {
                         "max": round(float(np.max(pst_values)), 3),
-                        "avg": round(float(np.mean(pst_values)), 3)
+                        "avg": round(float(np.mean(pst_values)), 3),
+                        "percentile_95": round(float(np.percentile(pst_values, 95)), 3)
                     }
                 }
 
@@ -486,14 +586,25 @@ class EN50160ReportProcessor:
             if plt_col in df.columns:
                 plt_values = df[plt_col].dropna().values
                 in_range = np.sum(plt_values <= plt_limit) / len(plt_values) * 100
+
+                # Plt 히스토그램
+                plt_histogram = self._calculate_histogram(
+                    plt_values,
+                    bins=25,
+                    range_min=0.0,
+                    range_max=plt_limit * 2.0
+                )
+
                 result["plt"][f"L{phase}"] = {
                     "timeseries": {
                         "labels": timestamps,
                         "data": [round(float(v), 3) for v in df[plt_col].values]
                     },
+                    "histogram": plt_histogram,
                     "statistics": {
                         "max": round(float(np.max(plt_values)), 3),
                         "avg": round(float(np.mean(plt_values)), 3),
+                        "percentile_95": round(float(np.percentile(plt_values, 95)), 3),
                         "in_range_95_percent": round(in_range, 2),
                         "result": "PASS" if in_range >= 95.0 else "FAIL"
                     }
@@ -540,13 +651,22 @@ class EN50160ReportProcessor:
 
                     in_range = np.sum(h_values <= limit) / len(h_values) * 100
 
+                    # 각 고조파별 히스토그램
+                    histogram = self._calculate_histogram(
+                        h_values,
+                        bins=20,
+                        range_min=0.0,
+                        range_max=limit * 1.5
+                    )
+
                     result["phases"][phase_key][h_key] = {
                         "max": round(float(np.max(h_values)), 3),
                         "avg": round(float(np.mean(h_values)), 3),
                         "percentile_95": round(float(np.percentile(h_values, 95)), 3),
                         "limit": limit,
                         "in_range_95_percent": round(in_range, 2),
-                        "result": "PASS" if in_range >= 95.0 else "FAIL"
+                        "result": "PASS" if in_range >= 95.0 else "FAIL",
+                        "histogram": histogram
                     }
 
         result["total_samples"] = len(df)
