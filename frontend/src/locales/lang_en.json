@@ -421,10 +421,14 @@
         "displaying": "Last saved datetime",
         "load": "Load",
         "noData":"No Data",
+        "searchReport" : "Report Search",
+        "selectReport" : "Select Report",
+        "lastSaved" : "Last Saved DateTime",
         "sitemap": {
         "title": "Report",
         "main": "Main Channel",
         "sub": "Sub Channel"
+
         },
         "modal":{
             "download": "Download",
@@ -460,7 +464,7 @@
         "monthlyEngUsage":"Monthly Energy Usage",
         "installation": "installation place",
         "EN50160": "EN50160 Report",
-        "Diagnosis": "Diagnosis",
+        "Diagnosis": "Equipment",
         "Energy": "Active Energy",
         "Energy2": "Energy & Load Rate Trend",
         "parameter": "Trend of Power Quality Parameters",
@@ -468,7 +472,8 @@
         "weeklyLoadDistribution": "Weekly Load Rate Distribution Statistics",
         "THD1": "Voltage THD",
         "THD2": "Current THD",
-        "distortionRate": "Distortion Rate"
+        "distortionRate": "Distortion Rate",
+        "reportData": "Report Data"
         },
         "cardContext": {
         "th_title": "Item",
