@@ -141,21 +141,38 @@
                   </div>
                 </div>
   
-                <!-- Tab Navigation -->
-                <div class="px-4">
-                  <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar w-full">
-                    <li v-for="(tab, index) in tabs" :key="index" class="mr-4 last:mr-0 relative">
-                      <button
-                        @click="changeTab(tab.name)"
-                        class="px-4 py-2 whitespace-nowrap transition duration-200 ease-in-out"
-                        :class="activeTab === tab.name
-                          ? 'text-violet-500 border-b-2 border-violet-500'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'">
-                        {{ t(`report.cardTitle.${tab.label}`) }}
-                      </button>
-                    </li>
-                  </ul>
-                </div>
+<!-- Tab Navigation - 버튼 스타일 + 아이콘 -->
+<div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-t-lg">
+  <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar w-full gap-2">
+    <li v-for="(tab, index) in tabs" :key="index">
+      <button
+        @click="changeTab(tab.name)"
+        class="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap transition-all duration-200 ease-in-out rounded-lg font-medium"
+        :class="activeTab === tab.name
+          ? 'text-white bg-violet-500 shadow-md shadow-violet-500/30'
+          : 'text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer'">
+        <!-- 설비 진단 아이콘 -->
+        <svg v-if="tab.name === 'Equipment'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+        </svg>
+        <!-- 전력품질 아이콘 -->
+        <svg v-else-if="tab.name === 'PowerQuality'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <!-- EN50160 아이콘 -->
+        <svg v-else-if="tab.name === 'EN50160'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <!-- 전력량 아이콘 -->
+        <svg v-else-if="tab.name === 'Energy'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+        </svg>
+        {{ t(`report.cardTitle.${tab.label}`) }}
+      </button>
+    </li>
+  </ul>
+</div>
   
                 <!-- Tab Content -->
                 <div class="text-gray-700 dark:text-white text-left pt-3 px-4">

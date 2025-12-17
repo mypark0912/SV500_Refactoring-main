@@ -81,40 +81,60 @@
       const items = ref([]);
       const chartOptions = ref([]);
   
-      // === 트렌드 차트 데이터 조회 ===
-      const setChartData = async (itemName, title) => {
-        let option = {};
-        const chName = props.channel == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
-  
-        try {
-          const response = await axios.get(`/report/status_trend/${props.mode}/${chName}/${itemName}`);
-  
-          if (response.data.success) {
-            const trendData = response.data.data.trend;
-            
-            if (trendData && trendData.length > 0) {
-              const labels = trendData.map(item => item.timestamp);
-              const data = trendData.map(item => item.status);
-  
-              const datasets = [{
-                name: title,
-                data: data,
-                isThreshold: false,
-              }];
-  
-              option = { lineLabels: labels, lineData: datasets, lineTitle: title };
-            } else {
-              option = { lineLabels: [], lineData: [], lineTitle: title };
-            }
-          } else {
-            option = { lineLabels: [], lineData: [], lineTitle: title };
-          }
-        } catch (error) {
-          console.error("트렌드 데이터 요청 실패:", error);
-          option = { lineLabels: [], lineData: [], lineTitle: title };
-        }
-        return option;
+// === 트렌드 차트 데이터 조회 ===
+const setChartData = async (itemName, title) => {
+  let option = {};
+  const chName = props.channel == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+
+  try {
+    const response = await axios.get(`/report/status_trend/${props.mode}/${chName}/${itemName}`);
+
+    if (response.data.success) {
+      const trendData = response.data.data.trend;
+      
+      if (trendData && trendData.length > 0) {
+        const labels = trendData.map(item => item.timestamp);
+        const data = trendData.map(item => item.status);
+
+        const datasets = [{
+          name: title,
+          data: data,
+          isThreshold: false,
+        }];
+
+        option = { 
+          lineLabels: labels, 
+          lineData: datasets, 
+          lineTitle: title,
+          mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality'  // ✅ mode 추가
+        };
+      } else {
+        option = { 
+          lineLabels: [], 
+          lineData: [], 
+          lineTitle: title,
+          mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality'  // ✅ mode 추가
+        };
+      }
+    } else {
+      option = { 
+        lineLabels: [], 
+        lineData: [], 
+        lineTitle: title,
+        mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality'  // ✅ mode 추가
       };
+    }
+  } catch (error) {
+    console.error("트렌드 데이터 요청 실패:", error);
+    option = { 
+      lineLabels: [], 
+      lineData: [], 
+      lineTitle: title,
+      mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality'  // ✅ mode 추가
+    };
+  }
+  return option;
+};
   
       // === 트렌드 차트 로드 ===
       const loadTrendCharts = async (chartList) => {

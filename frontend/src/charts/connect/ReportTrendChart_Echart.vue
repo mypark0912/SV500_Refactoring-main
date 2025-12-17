@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { onMounted, onBeforeUnmount, ref, watch, inject } from "vue";  // ✅ inject 추가
+import { onMounted, onBeforeUnmount, ref, watch, inject, computed } from "vue";
 import * as echarts from "echarts";
 import { useDark } from "@vueuse/core";
 import { chartColors } from "../ChartjsConfig";
@@ -20,10 +20,13 @@ export default {
       type: Array,
       required: true,
     },
-    title:String,
+    title: String,
+    mode: {
+      type: String,
+      default: 'DiagnosisDetail'
+    }
   },
   setup(props) {
-    // ✅ PDF 모드 inject
     const isPdfMode = inject('isPdfMode', false)
     
     const { t, locale } = useI18n();
@@ -33,11 +36,38 @@ export default {
     const darkMode = useDark();
     const { textColor, gridColor } = chartColors;
     
-    // ✅ 텍스트 색상 계산 (PDF 모드일 때는 항상 검정)
     const getTextColor = () => {
       if (isPdfMode) return '#000000'
       return darkMode.value ? textColor.dark : textColor.light
     }
+    
+    // 상태 라벨 computed로 생성 (언어 변경 시 자동 업데이트)
+    const statusLabels = computed(() => {
+      if (props.mode === 'PowerQuality') {
+        return [
+          t('diagnosis.tabContext.pqfe0'),
+          t('diagnosis.tabContext.pqfe1'),
+          t('diagnosis.tabContext.pqfe2'),
+          t('diagnosis.tabContext.pqfe3'),
+          t('diagnosis.tabContext.pqfe4'),
+        ];
+      } else {
+        return [
+          t('diagnosis.tabContext.st0'),
+          t('diagnosis.tabContext.st1'),
+          t('diagnosis.tabContext.st2'),
+          t('diagnosis.tabContext.st3'),
+          t('diagnosis.tabContext.st4'),
+        ];
+      }
+    });
+    
+    // 상태 텍스트 반환
+    const getStatusText = (value) => {
+      const statusValue = Math.floor(value);
+      const labels = statusLabels.value;
+      return labels[statusValue] || labels[0];
+    };
     
     const thresholdColorMap = {
       warning: "#ffff00",
@@ -118,25 +148,12 @@ export default {
           data: normalLegendNames,
           bottom: 15,
           textStyle: {
-            color: getTextColor(),  // ✅ 동적 텍스트 색상
+            color: getTextColor(),
           },
         },
       ];
 
       return { allSeries, legends };
-    };
-
-    const getYAxisRange = (seriesList) => {
-      const allValues = seriesList.flatMap(s =>
-        s.data.filter(v => typeof v === "number" && !isNaN(v))
-      );
-
-      if (allValues.length === 0) return [0, 1];
-
-      const min = Math.min(...allValues);
-      const max = Math.max(...allValues);
-
-      return [Math.floor(Math.min(min, 0)), Math.ceil(max)];
     };
 
     const initChart = () => {
@@ -145,11 +162,12 @@ export default {
 
         const { allSeries, legends } = buildSeriesAndLegends();
 
-        const [minY, maxY] = getYAxisRange(allSeries);
-
         const isEmpty =
           props.chartData.length === 0 ||
           allSeries.every((s) => s.data.length === 0);
+
+        // 현재 상태 라벨 캡처 (클로저용)
+        const currentLabels = statusLabels.value;
 
         chartInstance.setOption({
           title: {
@@ -159,21 +177,20 @@ export default {
             textStyle: {
               fontSize: 16,
               fontWeight: "bold",
-              color: getTextColor(),  // ✅ 동적 텍스트 색상
+              color: getTextColor(),
             },
           },
           tooltip: {
             trigger: "axis",
-            // ✅ PDF 모드일 때 툴팁 배경/텍스트 색상
             backgroundColor: isPdfMode ? 'rgba(255, 255, 255, 0.95)' : darkMode.value 
-                  ? '#000000'  // 다크모드: 기본값 (흰색)
-                  : 'rgba(255, 255, 255, 0.95)', // 라이트모드: 흰색,
+                  ? '#000000'
+                  : 'rgba(255, 255, 255, 0.95)',
             textStyle: {
               color: isPdfMode 
                 ? '#000000' 
                 : darkMode.value 
-                  ? undefined  // 다크모드: 기본값 (흰색)
-                  : '#000000', // 라이트모드: 검정색
+                  ? undefined
+                  : '#000000',
             },
             formatter: function (params) {
               const rawDate = new Date(params[0].axisValue);
@@ -195,8 +212,11 @@ export default {
               sorted.forEach((item) => {
                 const rawValue =
                   typeof item.data === "number" ? item.data : item.value;
-                const formatted =
-                  typeof rawValue === "number" ? rawValue.toFixed(2) : rawValue;
+                // Y축 값을 상태 텍스트로 변환 (캡처된 라벨 사용)
+                const statusValue = Math.floor(rawValue);
+                const formatted = typeof rawValue === "number" 
+                  ? (currentLabels[statusValue] || currentLabels[0])
+                  : rawValue;
                 result += `${item.marker} ${item.seriesName}: ${formatted}<br/>`;
               });
 
@@ -218,11 +238,11 @@ export default {
             data: props.chartLabels,
             axisLine: { 
               lineStyle: { 
-                color: isPdfMode ? '#cccccc' : '#ccc'  // ✅ 축 라인 색상
+                color: isPdfMode ? '#cccccc' : '#ccc'
               } 
             },
             axisLabel: {
-              color: getTextColor(),  // ✅ 동적 텍스트 색상
+              color: getTextColor(),
               formatter: function (value) {
                 const date = new Date(value);
                 const yyyy = date.getFullYear();
@@ -237,20 +257,26 @@ export default {
           },
           yAxis: {
             type: "value",
-            min: minY,
-            max: maxY,
+            min: 0,
+            max: 4,
+            interval: 1,
             axisLine: { 
               lineStyle: { 
-                color: isPdfMode ? '#cccccc' : '#ccc'  // ✅ 축 라인 색상
+                color: isPdfMode ? '#cccccc' : '#ccc'
               } 
             },
             splitLine: { 
               lineStyle: { 
-                color: isPdfMode ? '#e5e5e5' : '#eee'  // ✅ 그리드 라인 색상
+                color: isPdfMode ? '#e5e5e5' : '#eee'
               } 
             },
             axisLabel: {
-              color: getTextColor(),  // ✅ 동적 텍스트 색상
+              color: getTextColor(),
+              formatter: function (value) {
+                // Y축 라벨을 상태 텍스트로 변환 (캡처된 라벨 사용)
+                const statusValue = Math.floor(value);
+                return currentLabels[statusValue] || currentLabels[0];
+              },
             },
           },
           series: allSeries,
@@ -263,7 +289,7 @@ export default {
                   style: {
                     text: t("trend.Linechart.nodata"),
                     fontSize: 20,
-                    fill: isPdfMode ? '#000000' : '#999',  // ✅ No Data 텍스트 색상
+                    fill: isPdfMode ? '#000000' : '#999',
                   },
                 },
               ]
@@ -306,6 +332,17 @@ export default {
       { deep: true }
     );
 
+    // mode 변경 시에도 차트 다시 그리기
+    watch(
+      () => props.mode,
+      () => {
+        disposeChart();
+        setTimeout(() => {
+          initChart();
+        }, 0);
+      }
+    );
+
     watch(locale, () => {
       disposeChart();
       setTimeout(() => {
@@ -313,11 +350,10 @@ export default {
       }, 0);
     });
 
-    // ✅ PDF 모드나 다크모드 변경 시 차트 다시 그리기 (PDF 모드일 때는 다크모드 변화 무시)
     watch(
       () => [darkMode.value, isPdfMode],
       () => {
-        if (!isPdfMode) {  // PDF 모드가 아닐 때만 다크모드 반응
+        if (!isPdfMode) {
           disposeChart();
           setTimeout(() => {
             initChart();

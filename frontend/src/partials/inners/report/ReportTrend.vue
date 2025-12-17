@@ -6,21 +6,21 @@
     <LineChart
         :chart-data="option.lineData"
         :chart-labels="option.lineLabels"
-        :title = "option.lineTitle"
+        :title="option.lineTitle"
+        :mode="option.mode || 'DiagnosisDetail'"
     />
   </div>
 </template>
 
 <script setup>
 import LineChart from "../../../charts/connect/ReportTrendChart_Echart.vue";
-import { ref, inject } from 'vue'  // ✅ inject 추가
+import { ref, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   data: Object,
 })
 
-// ✅ PDF 모드 inject
 const isPdfMode = inject('isPdfMode', false)
 
 const option = ref(props.data);
