@@ -252,7 +252,8 @@ export default {
       () => LoadFactor.value,
       (newVal) => {
         if (newVal > 0 && transData.value?.Stotal) {
-          LoadRate.value = (((transData.value.Stotal/1000) / newVal) * 100).toFixed(1);
+          //console.log((((transData.value.Stotal/1000) / newVal) * 100));
+          LoadRate.value = (((transData.value.Stotal/1000) / newVal) * 100).toFixed(2);
         }
       },
       { immediate: true }
