@@ -1367,3 +1367,70 @@ def set_limit(channel):
                 processor.set_limits(float(ch[name]["ptInfo"]["vnorminal"]), float(ch[channel]["ctInfo"]["inorminal"]),float(ch[channel]["ptInfo"]["linefrequency"]))
             elif name == "Sub":
                 processor.set_limits(float(ch[name]["ptInfo"]["vnorminal"]), float(ch[channel]["ctInfo"]["inorminal"]),float(ch[channel]["ptInfo"]["linefrequency"]))
+
+@router.get("/list/{channel}")
+def get_filelist(channel):
+    filelist = processor.list_files()
+    return {"data" : filelist}
+
+
+@router.get('/getReportDiagnosis/{mode}/{asset}/{channel}/{date}')
+async def get_report_diagnosis_data(mode: str, asset:str, channel: str, date: str):
+    """
+    저장된 Parquet 파일에서 진단 데이터 + 트렌드 한꺼번에 조회
+
+    Args:
+        mode: diagnosis 또는 powerquality
+        channel: Main 또는 Sub
+        date: 날짜 (20251217 형식)
+    """
+    try:
+        import pandas as pd
+        import json
+        from pathlib import Path
+
+        # 파일 경로 구성
+        output_dir = Path("/usr/local/sv500/reports/weekly")
+        pattern = f"diagnosis_report_{asset}_{channel}_{date}.parquet"
+        files = list(output_dir.glob(pattern))
+
+        if not files:
+            return {"success": False, "msg": f"파일 없음: {pattern}"}
+
+        filepath = files[0]
+        logging.info(f"📂 파일 로드: {filepath.name}")
+
+        # Parquet 읽기
+        df = pd.read_parquet(filepath)
+        record = df.iloc[0].to_dict()
+
+        # mode에 해당하는 데이터 추출
+        mode_data = record.get(mode)
+
+        if mode_data is None:
+            return {"success": False, "msg": f"{mode} 데이터 없음"}
+
+        # JSON 문자열이면 파싱
+        if isinstance(mode_data, str):
+            mode_data = json.loads(mode_data)
+
+        # main, detail, trends 한꺼번에 리턴
+        result = {
+            "asset_name": record.get("asset_name"),
+            "mode": mode,
+            "timestamp": mode_data.get("timestamp") if mode_data else None,
+            "main": mode_data.get("main", []) if mode_data else [],
+            "detail": mode_data.get("detail", []) if mode_data else [],
+            "trends": mode_data.get("trends") if mode_data else None
+        }
+
+        trends_count = len(result['trends']) if result['trends'] else 0
+        logging.info(f"✅ 결과: main={len(result['main'])}개, detail={len(result['detail'])}개, trends={trends_count}개 항목")
+
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        logging.error(f"❌ 데이터 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "msg": str(e)}
