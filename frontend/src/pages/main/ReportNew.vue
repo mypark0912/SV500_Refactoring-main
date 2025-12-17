@@ -164,119 +164,119 @@
               :key="`info-${channelComputed}`"
             />
 
-<!-- 탭 영역 -->
-<div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
-  
-  <!-- Tab Navigation + 툴바 -->
-  <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-      <!-- 왼쪽: 탭 버튼들 -->
-      <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar -mb-px">
-        <li v-for="(tab, index) in tabs" :key="index" class="mr-1 last:mr-0">
-          <button
-            @click="changeTab(tab.name)"
-            class="relative px-5 py-3 whitespace-nowrap transition-all duration-200 ease-in-out rounded-t-lg border-b-2"
-            :class="activeTab === tab.name
-              ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 border-violet-500 font-semibold'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-transparent cursor-pointer'">
-            {{ t(`report.cardTitle.${tab.label}`) }}
-            <span 
-              v-if="activeTab === tab.name" 
-              class="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full"
-            ></span>
-          </button>
-        </li>
-      </ul>
-      
-      <!-- 오른쪽: 보고서 조회 툴바 -->
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {{ t('report.searchReport') || '보고서 조회' }}
-        </span>
-        
-        <select 
-          v-model="selectedReport"
-          class="w-48 px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        >
-          <option value="">{{ t('report.selectReport') || '선택하세요' }}</option>
-          <option v-for="date in reportDates" :key="date" :value="date">
-            {{ formatDateStr(date) }}
-          </option>
-        </select>
-        
-        <!-- Load 버튼 -->
-        <button 
-          @click="onLoadClick"
-          :disabled="!selectedReport || isLoading"
-          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          {{ t('report.load') || 'Load' }}
-        </button>
-        
-        <!-- Download 버튼 -->
-        <button 
-          @click="openDownloadModal"
-          :disabled="!displayTimestamp || isDownloading"
-          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          {{ t('report.modal.download') || 'Download' }}
-        </button>
-      </div>
-    </div>
-  </div>
+            <!-- 탭 영역 -->
+            <div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
+              
+              <!-- Tab Navigation + 툴바 -->
+              <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                  <!-- 왼쪽: 탭 버튼들 -->
+                  <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar -mb-px">
+                    <li v-for="(tab, index) in tabs" :key="index" class="mr-1 last:mr-0">
+                      <button
+                        @click="changeTab(tab.name)"
+                        class="relative px-5 py-3 whitespace-nowrap transition-all duration-200 ease-in-out rounded-t-lg border-b-2"
+                        :class="activeTab === tab.name
+                          ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 border-violet-500 font-semibold'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-transparent cursor-pointer'">
+                        {{ t(`report.cardTitle.${tab.label}`) }}
+                        <span 
+                          v-if="activeTab === tab.name" 
+                          class="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full"
+                        ></span>
+                      </button>
+                    </li>
+                  </ul>
+                  
+                  <!-- 오른쪽: 보고서 조회 툴바 -->
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {{ t('report.searchReport') || '보고서 조회' }}
+                    </span>
+                    
+                    <select 
+                      v-model="selectedReport"
+                      class="w-48 px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                      <option value="">{{ t('report.selectReport') || '선택하세요' }}</option>
+                      <option v-for="date in reportDates" :key="date" :value="date">
+                        {{ formatDateStr(date) }}
+                      </option>
+                    </select>
+                    
+                    <!-- Load 버튼 -->
+                    <button 
+                      @click="onLoadClick"
+                      :disabled="!selectedReport || isLoading"
+                      class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {{ t('report.load') || 'Load' }}
+                    </button>
+                    
+                    <!-- Download 버튼 -->
+                    <button 
+                      @click="openDownloadModal"
+                      :disabled="!displayTimestamp || isDownloading"
+                      class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {{ t('report.modal.download') || 'Download' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-  <!-- Tab Content -->
-  <div class="text-gray-700 dark:text-white text-left pt-3 px-4 pb-4">
-    <div class="flex flex-col space-y-2">
-      
-      <!-- 설비 진단 -->
-      <Report_Diagnosis 
-        v-if="activeTab === 'Equipment' && mode" 
-        ref="diagnosisRef"
-        :channel="channelComputed" 
-        :mode="'diagnosis'"
-        :reportData="diagnosisReportData"
-        :key="`diag-${channelComputed}`" 
-      />
-      
-      <!-- 전력품질 진단 -->
-      <Report_Diagnosis 
-        v-if="activeTab === 'PowerQuality'" 
-        ref="pqDiagnosisRef"
-        :channel="channelComputed" 
-        :mode="'powerquality'"
-        :reportData="pqReportData"
-        :key="`pq-diag-${channelComputed}`" 
-      />
-      
-      <!-- EN50160 보고서 -->
-      <ReportComponent 
-        v-if="activeTab === 'EN50160'" 
-        :data="tbdata" 
-        :channel="channelComputed" 
-        :mode="mode"
-        :reportData="en50160ReportData"
-        :key="`component-${channelComputed}-${selectedReport}`" 
-      />
-      
-      <!-- 전력량 -->
-      <Report_WattHour 
-        v-if="activeTab === 'Energy'" 
-        :mode="mode" 
-        :channel="channelComputed" 
-        :key="`wh-${channelComputed}`" 
-      />
-      
-    </div>
-  </div>
+              <!-- Tab Content -->
+              <div class="text-gray-700 dark:text-white text-left pt-3 px-4 pb-4">
+                <div class="flex flex-col space-y-2">
+                  
+                  <!-- 설비 진단 -->
+                  <Report_Diagnosis 
+                    v-if="activeTab === 'Equipment' && mode" 
+                    ref="diagnosisRef"
+                    :channel="channelComputed" 
+                    :mode="'diagnosis'"
+                    :reportData="diagnosisReportData"
+                    :key="`diag-${channelComputed}`" 
+                  />
+                  
+                  <!-- 전력품질 진단 -->
+                  <Report_Diagnosis 
+                    v-if="activeTab === 'PowerQuality'" 
+                    ref="pqDiagnosisRef"
+                    :channel="channelComputed" 
+                    :mode="'powerquality'"
+                    :reportData="pqReportData"
+                    :key="`pq-diag-${channelComputed}`" 
+                  />
+                  
+                  <!-- EN50160 보고서 -->
+                  <ReportComponent 
+                    v-if="activeTab === 'EN50160'" 
+                    :data="tbdata" 
+                    :channel="channelComputed" 
+                    :mode="mode"
+                    :reportData="en50160ReportData"
+                    :key="`component-${channelComputed}-${selectedReport}`" 
+                  />
+                  
+                  <!-- 전력량 -->
+                  <Report_WattHour 
+                    v-if="activeTab === 'Energy'" 
+                    :mode="mode" 
+                    :channel="channelComputed" 
+                    :key="`wh-${channelComputed}`" 
+                  />
+                  
+                </div>
+              </div>
 
-</div>
+            </div>
           </div>
         </div>
       </main>
@@ -332,6 +332,47 @@ export default {
     const isDownloading = ref(false);
     const showDownloadModal = ref(false);
 
+    // === PQ 정렬 순서 정의 ===
+    const pqDisplayOrder = [
+      // 전압 관련
+      'VoltagePhaseAngle',
+      'VoltageRMS',
+      'DC',
+      // 전류 관련
+      'CurrentRMS',
+      'CurrentPhaseAngle',
+      'CrestFactor',
+      // 파형, 왜곡 관련
+      'Unbalance',
+      'Harmonics',
+      'ZeroSequence',
+      'NegativeSequence',
+      // 전력, 효율 관련
+      'Power',
+      'PowerFactor',
+      'TotalDemandDistortion',
+      // 기타
+      'PhaseAngle',
+      'Events',
+    ];
+
+// === 정렬 함수 (item_name 또는 Name 둘 다 지원) ===
+const sortByOrder = (arr, orderList) => {
+  if (!arr || !Array.isArray(arr)) return arr;
+  return [...arr].sort((a, b) => {
+    // item_name 또는 Name 필드 사용
+    const nameA = a.item_name || a.Name || '';
+    const nameB = b.item_name || b.Name || '';
+    
+    const indexA = orderList.indexOf(nameA);
+    const indexB = orderList.indexOf(nameB);
+    
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+};
+
     // === 날짜/시간 상태 (탭별 분리) ===
     const tabState = ref({
       Equipment: {
@@ -373,7 +414,7 @@ export default {
     // === 리포트 데이터 (탭별 분리) ===
     const diagnosisReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
     const pqReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
-    const en50160ReportData = ref(null);  // EN50160 데이터 추가
+    const en50160ReportData = ref(null);
 
     // === Refs ===
     const diagnosisRef = ref(null);
@@ -468,7 +509,16 @@ export default {
           `/report/lastReportData/${modeType}/${chName}`
         );
         if (response.data.success) {
-          return response.data.data;
+          let data = response.data.data;
+          
+          // PowerQuality일 경우 정렬 적용
+          if (modeType === 'powerquality' && data) {
+            data.main = sortByOrder(data.main, pqDisplayOrder);
+            data.detail = sortByOrder(data.detail, pqDisplayOrder);
+            console.log("=== fetchLastSavedData PQ 정렬 후 main ===", data.main);
+          }
+          
+          return data;
         }
       } catch (error) {
         console.error("마지막 저장 데이터 조회 실패:", error);
@@ -502,7 +552,7 @@ export default {
 
       try {
         if (mode.value){
-                    // 1. Diagnosis 데이터 조회
+          // 1. Diagnosis 데이터 조회
           try {
             const diagResponse = await axios.get(
               `/report/getReportDiagnosis/diagnosis/${chName}/${channelComputed.value}/${selectedReport.value}`
@@ -527,10 +577,18 @@ export default {
               `/report/getReportDiagnosis/powerquality/${chName}/${channelComputed.value}/${selectedReport.value}`
             );
             
+            console.log("=== PQ 원본 main ===", pqResponse.data.data?.main);
+            
             if (pqResponse.data.success) {
+              // main과 detail 정렬 적용
+              const sortedMain = sortByOrder(pqResponse.data.data.main || [], pqDisplayOrder);
+              const sortedDetail = sortByOrder(pqResponse.data.data.detail || [], pqDisplayOrder);
+              
+              console.log("=== PQ 정렬 후 main ===", sortedMain);
+              
               pqReportData.value = {
-                main: pqResponse.data.data.main,
-                detail: pqResponse.data.data.detail,
+                main: sortedMain,
+                detail: sortedDetail,
                 trends: pqResponse.data.data.trends,
                 timestamp: pqResponse.data.data.timestamp,
               };
@@ -557,9 +615,6 @@ export default {
 
       } catch (error) {
         console.error("데이터 조회 실패:", error);
-        
-        // 파일 없으면 기존 마지막 데이터 로드
-        //await initialLoad();
       }
       
       isLoading.value = false;
@@ -579,9 +634,19 @@ export default {
         );
 
         if (response.data.success) {
+          let mainData = response.data.data.main;
+          let detailData = response.data.data.detail;
+
+          // PowerQuality일 경우 정렬 적용
+          if (modeType === 'powerquality') {
+            mainData = sortByOrder(mainData, pqDisplayOrder);
+            detailData = sortByOrder(detailData, pqDisplayOrder);
+            console.log("=== fetchReportData PQ 정렬 후 main ===", mainData);
+          }
+
           const data = {
-            main: response.data.data.main,
-            detail: response.data.data.detail,
+            main: mainData,
+            detail: detailData,
             timestamp: timestamp,
           };
 
@@ -641,7 +706,7 @@ export default {
 
       // 진단 탭으로 변경 시 해당 탭 데이터가 없으면 로드
       if(mode.value){
-          if (tabName === "Equipment" || tabName === "PowerQuality") {
+        if (tabName === "Equipment" || tabName === "PowerQuality") {
           const targetData =
             tabName === "Equipment"
               ? diagnosisReportData.value
