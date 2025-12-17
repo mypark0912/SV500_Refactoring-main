@@ -2799,9 +2799,9 @@ def get_ai(channel):
             readcount.append(int(aidict[channel][i]["count"])/readType)
 
         datalist = []
-        for i in range(len(readcount)):
-            for j in range(readcount[i]):
-                datalist.append(float(redis_state.client_db1.hget(f"meter_{chName}", f"aim{j+1}")))
+        total_count = sum(readcount)
+        for i in range(1, total_count + 1):
+            datalist.append(float(redis_state.client_db1.hget(f"meter_{chName}", f"aim{i}")))
 
         return {"success": True, "data":datalist}
     else:
