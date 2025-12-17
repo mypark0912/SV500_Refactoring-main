@@ -423,7 +423,7 @@
         "noData":"No Data",
         "searchReport" : "Report Search",
         "selectReport" : "Select Report",
-
+        "lastSaved" : "Last Saved DateTime",
         "sitemap": {
         "title": "Report",
         "main": "Main Channel",

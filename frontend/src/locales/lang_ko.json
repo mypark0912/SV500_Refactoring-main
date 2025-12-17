@@ -421,6 +421,7 @@
     "noData":"데이터 없음",
     "searchReport" : "보고서 조회",
     "selectReport" : "보고서 선택",
+    "lastSaved" : "마지막 저장 시간",
     "sitemap": {
       "title": "리포트",
       "main": "주 채널",
