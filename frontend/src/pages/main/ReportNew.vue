@@ -1,614 +1,622 @@
 <template>
-    <div class="flex h-[100dvh] overflow-hidden">
-  
-      <!-- Sidebar -->
-      <Sidebar :sidebarOpen="sidebarOpen" @close-sidebar="sidebarOpen = true" :channel="channel"/>
-  
-      <!-- Content area -->
-      <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-        
-        <!-- Site header -->
-        <Header :sidebarOpen="sidebarOpen" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-  
-        <main class="grow">
-          <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
-            
-            <!-- Dashboard actions -->
-            <div class="sm:flex sm:justify-between sm:items-center mb-4">
-  
-              <!-- Left: Title -->
-              <div class="mb-4 sm:mb-0">
-                <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"> 
-                  {{ t('report.sitemap.title') }} > {{ channelComputed == 'Main' ? t('report.sitemap.main') : t('report.sitemap.sub') }} 
-                </h2>
-              </div>
-  
-            </div>
-  
-            <!-- 다운로드 모달 -->
-            <div v-if="showDownloadModal" class="fixed inset-0 z-50 flex items-center justify-center">
-              <div class="absolute inset-0 bg-black/50" @click="closeDownloadModal"></div>
-              <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
-                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                    {{ t('report.modal.downloadReport') || '리포트 다운로드' }}
-                  </h3>
-                </div>
-                
-                <div class="mb-6 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                  <p>{{ t('report.modal.downloadDesc1') || '현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.' }}</p>
-                  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-1">
-                    <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('report.modal.downloadIncludes') || '포함 내용:' }}</p>
-                    <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-0.5">
-                      <li>{{ t('report.modal.downloadItem1') || '설비 정보' }}</li>
-                      <li>{{ t('report.modal.downloadItem2') || '진단 결과 차트' }}</li>
-                      <li>{{ t('report.modal.downloadItem3') || '상세 분석 항목' }}</li>
-                      <li>{{ t('report.modal.downloadItem4') || '트렌드 차트' }}</li>
-                    </ul>
-                  </div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    📅 {{ t('report.modal.downloadDate') || '기준 날짜' }}: {{ formatTimestamp(displayTimestamp) }}
-                  </p>
-                </div>
-                
-                <div v-if="isDownloading" class="mb-4 flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                  <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                  <span class="text-sm text-blue-600 dark:text-blue-400">{{ t('report.modal.downloading') || '다운로드 중...' }}</span>
-                </div>
-                
-                <div class="flex justify-end gap-3">
-                  <button 
-                    @click="closeDownloadModal"
-                    :disabled="isDownloading"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
-                  >
-                    {{ t('report.modal.cancel') || '취소' }}
-                  </button>
-                  <button 
-                    @click="downloadReport"
-                    :disabled="isDownloading"
-                    class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2"
-                  >
-                    <svg v-if="!isDownloading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    {{ t('report.modal.confirmDownload') || '다운로드' }}
-                  </button>
-                </div>
-              </div>
-            </div>
-  
-            <!-- Cards -->
-            <div class="grid grid-cols-12 gap-6">
-              <Report_Info v-if="mode" :channel="channelComputed" :mode="mode" :key="`info-${channelComputed}`" />
-              
-              <div class="md:col-span-12 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 w-full">
-  
-                <!-- 날짜/시간 선택 + Load + Download (진단 탭에서만 표시) - 탭 바로 위 -->
-                <div v-if="activeTab === 'Equipment' || activeTab === 'PowerQuality'" class="px-4 mb-4">
-                  <div class="flex items-center justify-between">
-                    <!-- 좌측: 날짜/시간 선택 + Load 버튼 + Download 버튼 -->
-                    <div class="flex items-center gap-4">
-                      <input 
-                        type="date" 
-                        v-model="currentDate" 
-                        class="px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        @change="onDateChange"
-                      />
-                      <select 
-                        v-model="currentTime" 
-                        class="w-48 px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        :disabled="currentTimeOptions.length === 0"
-                      >
-                        <option v-if="currentTimeOptions.length === 0" value="">{{ t('report.noData') || '데이터 없음' }}</option>
-                        <option v-for="time in currentTimeOptions" :key="time.value" :value="time.value">
-                          {{ time.label }}
-                        </option>
-                      </select>
-                      
-                      <!-- Load 버튼 -->
-                      <button 
-                        @click="onLoadClick"
-                        :disabled="!currentTime || isLoading"
-                        class="px-4 py-2 text-sm font-medium bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {{ t('report.load') || 'Load' }}
-                      </button>
-                      
-                      <!-- Download 버튼 -->
-                      <button 
-                        @click="openDownloadModal"
-                        :disabled="!displayTimestamp || isDownloading"
-                        class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                      >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {{ t('report.modal.download') || 'Download' }}
-                      </button>
-                    </div>
-                    
-                    <!-- 우측: 현재 표시 중인 데이터 날짜 -->
-                    <!--div v-if="displayTimestamp" class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md">
-                      <span class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">📌 {{ t('report.displaying') || '표시 중' }}:</span>
-                      <span class="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">{{ formatTimestamp(displayTimestamp) }}</span>
-                    </div-->
-                  </div>
-                </div>
-  
-<!-- Tab Navigation - 버튼 스타일 + 아이콘 -->
-<div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-t-lg">
-  <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar w-full gap-2">
-    <li v-for="(tab, index) in tabs" :key="index">
-      <button
-        @click="changeTab(tab.name)"
-        class="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap transition-all duration-200 ease-in-out rounded-lg font-medium"
-        :class="activeTab === tab.name
-          ? 'text-white bg-violet-500 shadow-md shadow-violet-500/30'
-          : 'text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer'">
-        <!-- 설비 진단 아이콘 -->
-        <svg v-if="tab.name === 'Equipment'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-        </svg>
-        <!-- 전력품질 아이콘 -->
-        <svg v-else-if="tab.name === 'PowerQuality'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        <!-- EN50160 아이콘 -->
-        <svg v-else-if="tab.name === 'EN50160'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <!-- 전력량 아이콘 -->
-        <svg v-else-if="tab.name === 'Energy'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-        </svg>
-        {{ t(`report.cardTitle.${tab.label}`) }}
-      </button>
-    </li>
-  </ul>
-</div>
-  
-                <!-- Tab Content -->
-                <div class="text-gray-700 dark:text-white text-left pt-3 px-4">
-                  <div class="flex flex-col space-y-2">
-                    
-                    <!-- 설비 진단 -->
-                    <Report_Diagnosis 
-                      v-if="activeTab === 'Equipment' && mode" 
-                      ref="diagnosisRef"
-                      :channel="channelComputed" 
-                      :mode="'diagnosis'"
-                      :reportData="diagnosisReportData"
-                      :key="`diag-${channelComputed}`" 
-                    />
-                    
-                    <!-- 전력품질 진단 -->
-                    <Report_Diagnosis 
-                      v-if="activeTab === 'PowerQuality'" 
-                      ref="pqDiagnosisRef"
-                      :channel="channelComputed" 
-                      :mode="'powerquality'"
-                      :reportData="pqReportData"
-                      :key="`pq-diag-${channelComputed}`" 
-                    />
-                    
-                    <!-- EN50160 보고서 -->
-                    <ReportComponent 
-                      v-if="activeTab === 'EN50160' && tbdata.length > 0" 
-                      :data="tbdata" 
-                      :channel="channelComputed" 
-                      :mode="mode" 
-                      :key="`component-${channelComputed}`" 
-                    />
-                    
-                    <!-- 전력량 -->
-                    <Report_WattHour 
-                      v-if="activeTab === 'Energy'" 
-                      :mode="mode" 
-                      :channel="channelComputed" 
-                      :key="`wh-${channelComputed}`" 
-                    />
-                    
-                  </div>
-                </div>
-  
-              </div>    
-  
-            </div>
-  
-          </div>
-        </main>
-        <Footer />
-      </div> 
-  
-    </div>
-  </template>
-  
-  <script>
-  import { ref, watch, computed, onMounted, nextTick } from 'vue'
-  import { useRoute } from 'vue-router'
-  import { useSetupStore } from '@/store/setup';
-  import axios from 'axios'
-  import Sidebar from '../common/SideBar3.vue'
-  import Header from '../common/Header.vue'
-  import Footer from "../common/Footer.vue";
-  import ReportComponent from '../../partials/inners/report/ReportComponent.vue';
-  import Report_WattHour from '../../partials/inners/report/Report_WattHour.vue';
-  import Report_Diagnosis from '../../partials/inners/report/Report_Diagnosis_New.vue';
-  import Report_Info from "../../partials/inners/report/Report_Info.vue";
-  import { useI18n } from 'vue-i18n'
-  
-  export default {
-    name: 'Report',
-    props: ['channel'],
-    components: {
-      Sidebar,
-      Header,
-      Footer,
-      ReportComponent,
-      Report_WattHour,
-      Report_Diagnosis,
-      Report_Info,
-    },
-    setup(props) {
-      const { t, locale } = useI18n();
-      const route = useRoute()
-      const sidebarOpen = ref(true)
-      const channel = ref(props.channel)
-      const setupStore = useSetupStore();
-      const channelComputed = computed(() => props.channel || route.params.channel || 'Default')
-      const asset = computed(() => setupStore.getAssetConfig);
-  
-      const todayStr = new Date().toISOString().split('T')[0];
-  
-      // === 상태 ===
-      const tbdata = ref([]);
-      const activeTab = ref('Equipment');
-      const isLoading = ref(false);
-      const isDownloading = ref(false);
-      const showDownloadModal = ref(false);
-  
-      // === 날짜/시간 상태 (탭별 분리) ===
-      const tabState = ref({
-        Equipment: { date: todayStr, time: '', timeOptions: [], displayTime: null },
-        PowerQuality: { date: todayStr, time: '', timeOptions: [], displayTime: null }
-      });
-  
-      // === 현재 탭의 날짜/시간 (computed) ===
-      const currentDate = computed({
-        get: () => tabState.value[activeTab.value]?.date || todayStr,
-        set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].date = val; }
-      });
-      const currentTime = computed({
-        get: () => tabState.value[activeTab.value]?.time || '',
-        set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].time = val; }
-      });
-      const currentTimeOptions = computed(() => tabState.value[activeTab.value]?.timeOptions || []);
-      const displayTimestamp = computed(() => tabState.value[activeTab.value]?.displayTime || null);
-  
-      // === 리포트 데이터 (탭별 분리) ===
-      const diagnosisReportData = ref({ main: [], detail: [], timestamp: null });
-      const pqReportData = ref({ main: [], detail: [], timestamp: null });
-  
-      // === Refs ===
-      const diagnosisRef = ref(null);
-      const pqDiagnosisRef = ref(null);
-  
-      const channelStatus = computed(() => setupStore.getChannelSetting);
-      const setupMenu = ref({});
+  <div class="flex h-[100dvh] overflow-hidden">
+
+    <!-- Sidebar -->
+    <Sidebar :sidebarOpen="sidebarOpen" @close-sidebar="sidebarOpen = true" :channel="channel"/>
+
+    <!-- Content area -->
+    <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
       
-      const mode = computed(() => {
-        if (channelComputed.value === 'Main')
-          return channelComputed.value === 'Main' && setupMenu.value.MainDiagnosis;
-        else
-          return channelComputed.value === 'Sub' && setupMenu.value.SubDiagnosis;
+      <!-- Site header -->
+      <Header :sidebarOpen="sidebarOpen" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+
+      <main class="grow">
+        <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
+          
+          <!-- Dashboard actions -->
+          <div class="sm:flex sm:justify-between sm:items-center mb-4">
+            <!-- Left: Title -->
+            <div class="mb-4 sm:mb-0">
+              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"> 
+                {{ t('report.sitemap.title') }} > {{ channelComputed == 'Main' ? t('report.sitemap.main') : t('report.sitemap.sub') }} 
+              </h2>
+            </div>
+          </div>
+
+          <!-- 다운로드 모달 -->
+          <div v-if="showDownloadModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/50" @click="closeDownloadModal"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                  {{ t('report.modal.downloadReport') || '리포트 다운로드' }}
+                </h3>
+              </div>
+              
+              <div class="mb-6 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                <p>{{ t('report.modal.downloadDesc1') || '현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.' }}</p>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-1">
+                  <p class="font-medium text-gray-800 dark:text-gray-200">{{ t('report.modal.downloadIncludes') || '포함 내용:' }}</p>
+                  <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-0.5">
+                    <li>{{ t('report.modal.downloadItem1') || '설비 정보' }}</li>
+                    <li>{{ t('report.modal.downloadItem2') || '진단 결과 차트' }}</li>
+                    <li>{{ t('report.modal.downloadItem3') || '상세 분석 항목' }}</li>
+                    <li>{{ t('report.modal.downloadItem4') || '트렌드 차트' }}</li>
+                  </ul>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  📅 {{ t('report.modal.downloadDate') || '기준 날짜' }}: {{ formatTimestamp(displayTimestamp) }}
+                </p>
+              </div>
+              
+              <div v-if="isDownloading" class="mb-4 flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                <span class="text-sm text-blue-600 dark:text-blue-400">{{ t('report.modal.downloading') || '다운로드 중...' }}</span>
+              </div>
+              
+              <div class="flex justify-end gap-3">
+                <button 
+                  @click="closeDownloadModal"
+                  :disabled="isDownloading"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                >
+                  {{ t('report.modal.cancel') || '취소' }}
+                </button>
+                <button 
+                  @click="downloadReport"
+                  :disabled="isDownloading"
+                  class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  <svg v-if="!isDownloading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  {{ t('report.modal.confirmDownload') || '다운로드' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards -->
+          <div class="grid grid-cols-12 gap-6">
+            
+            <!-- 설비 정보 카드 -->
+            <Report_Info 
+              v-if="mode" 
+              :channel="channelComputed" 
+              :mode="mode" 
+              :key="`info-${channelComputed}`"
+            />
+            
+            <!-- 탭 영역 -->
+            <div class="col-span-full xl:col-span-12 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
+              
+<!-- 헤더: 타이틀 + 툴바 -->
+<div class="premium-card-header">
+  <div class="header-content flex items-center justify-between w-full flex-wrap gap-4">
+    <!-- 왼쪽: 타이틀 -->
+    <h2 class="card-title">
+      {{ t('report.cardTitle.reportData') || '리포트 데이터' }}
+    </h2>
+    
+<!-- 오른쪽: 툴바 -->
+<div class="flex items-center gap-3 flex-wrap">
+  <!-- 보고서 조회 라벨 -->
+  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
+    {{ t('report.searchReport') || '보고서 조회' }}
+  </span>
+  
+  <!-- 새 콤보박스 (연결 안됨) -->
+  <select 
+    v-model="selectedReport"
+    class="w-48 px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  >
+    <option value="">{{ t('report.selectReport') || '선택하세요' }}</option>
+  </select>
+  
+  <!-- Load 버튼 -->
+  <button 
+    @click="onLoadClick"
+    :disabled="!selectedReport || isLoading"
+    class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    {{ t('report.load') || 'Load' }}
+  </button>
+  
+  <!-- Download 버튼 -->
+  <button 
+    @click="openDownloadModal"
+    :disabled="!displayTimestamp || isDownloading"
+    class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    {{ t('report.modal.download') || 'Download' }}
+  </button>
+</div>
+  </div>
+</div>
+
+              <!-- Tab Navigation -->
+              <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/50">
+                <ul class="text-sm font-medium flex flex-nowrap overflow-x-auto no-scrollbar w-full gap-2">
+                  <li v-for="(tab, index) in tabs" :key="index">
+                    <button
+                      @click="changeTab(tab.name)"
+                      class="flex items-center gap-2 px-4 py-2.5 whitespace-nowrap transition-all duration-200 ease-in-out rounded-lg font-medium"
+                      :class="activeTab === tab.name
+                        ? 'text-white bg-violet-500 shadow-md shadow-violet-500/30'
+                        : 'text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer'">
+                      <!-- 설비 진단 아이콘 -->
+                      <svg v-if="tab.name === 'Equipment'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                      </svg>
+                      <!-- 전력품질 아이콘 -->
+                      <svg v-else-if="tab.name === 'PowerQuality'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <!-- EN50160 아이콘 -->
+                      <svg v-else-if="tab.name === 'EN50160'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <!-- 전력량 아이콘 -->
+                      <svg v-else-if="tab.name === 'Energy'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                      </svg>
+                      {{ t(`report.cardTitle.${tab.label}`) }}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Tab Content -->
+              <div class="text-gray-700 dark:text-white text-left pt-3 px-4 pb-4">
+                <div class="flex flex-col space-y-2">
+                  
+                  <!-- 설비 진단 -->
+                  <Report_Diagnosis 
+                    v-if="activeTab === 'Equipment' && mode" 
+                    ref="diagnosisRef"
+                    :channel="channelComputed" 
+                    :mode="'diagnosis'"
+                    :reportData="diagnosisReportData"
+                    :key="`diag-${channelComputed}`" 
+                  />
+                  
+                  <!-- 전력품질 진단 -->
+                  <Report_Diagnosis 
+                    v-if="activeTab === 'PowerQuality'" 
+                    ref="pqDiagnosisRef"
+                    :channel="channelComputed" 
+                    :mode="'powerquality'"
+                    :reportData="pqReportData"
+                    :key="`pq-diag-${channelComputed}`" 
+                  />
+                  
+                  <!-- EN50160 보고서 -->
+                  <ReportComponent 
+                    v-if="activeTab === 'EN50160' && tbdata.length > 0" 
+                    :data="tbdata" 
+                    :channel="channelComputed" 
+                    :mode="mode" 
+                    :key="`component-${channelComputed}`" 
+                  />
+                  
+                  <!-- 전력량 -->
+                  <Report_WattHour 
+                    v-if="activeTab === 'Energy'" 
+                    :mode="mode" 
+                    :channel="channelComputed" 
+                    :key="`wh-${channelComputed}`" 
+                  />
+                  
+                </div>
+              </div>
+
+            </div>    
+
+          </div>
+
+        </div>
+      </main>
+      <Footer />
+    </div> 
+
+  </div>
+</template>
+
+<script>
+import { ref, watch, computed, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+import { useSetupStore } from '@/store/setup';
+import axios from 'axios'
+import Sidebar from '../common/SideBar3.vue'
+import Header from '../common/Header.vue'
+import Footer from "../common/Footer.vue";
+import ReportComponent from '../../partials/inners/report/ReportComponent.vue';
+import Report_WattHour from '../../partials/inners/report/Report_WattHour.vue';
+import Report_Diagnosis from '../../partials/inners/report/Report_Diagnosis_New.vue';
+import Report_Info from "../../partials/inners/report/Report_Info.vue";
+import { useI18n } from 'vue-i18n'
+
+export default {
+  name: 'Report',
+  props: ['channel'],
+  components: {
+    Sidebar,
+    Header,
+    Footer,
+    ReportComponent,
+    Report_WattHour,
+    Report_Diagnosis,
+    Report_Info,
+  },
+  setup(props) {
+    const { t, locale } = useI18n();
+    const route = useRoute()
+    const sidebarOpen = ref(true)
+    const channel = ref(props.channel)
+    const setupStore = useSetupStore();
+    const channelComputed = computed(() => props.channel || route.params.channel || 'Default')
+    const asset = computed(() => setupStore.getAssetConfig);
+    const selectedReport = ref('');
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // === 상태 ===
+    const tbdata = ref([]);
+    const activeTab = ref('Equipment');
+    const isLoading = ref(false);
+    const isDownloading = ref(false);
+    const showDownloadModal = ref(false);
+
+    // === 날짜/시간 상태 (탭별 분리) ===
+    const tabState = ref({
+      Equipment: { date: todayStr, time: '', timeOptions: [], displayTime: null },
+      PowerQuality: { date: todayStr, time: '', timeOptions: [], displayTime: null }
+    });
+
+    // === 현재 탭의 날짜/시간 (computed) ===
+    const currentDate = computed({
+      get: () => tabState.value[activeTab.value]?.date || todayStr,
+      set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].date = val; }
+    });
+    const currentTime = computed({
+      get: () => tabState.value[activeTab.value]?.time || '',
+      set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].time = val; }
+    });
+    const currentTimeOptions = computed(() => tabState.value[activeTab.value]?.timeOptions || []);
+    const displayTimestamp = computed(() => tabState.value[activeTab.value]?.displayTime || null);
+
+    // === 리포트 데이터 (탭별 분리) ===
+    const diagnosisReportData = ref({ main: [], detail: [], timestamp: null });
+    const pqReportData = ref({ main: [], detail: [], timestamp: null });
+
+    // === Refs ===
+    const diagnosisRef = ref(null);
+    const pqDiagnosisRef = ref(null);
+
+    const channelStatus = computed(() => setupStore.getChannelSetting);
+    const setupMenu = ref({});
+    
+    const mode = computed(() => {
+      if (channelComputed.value === 'Main')
+        return channelComputed.value === 'Main' && setupMenu.value.MainDiagnosis;
+      else
+        return channelComputed.value === 'Sub' && setupMenu.value.SubDiagnosis;
+    });
+
+    // 탭 목록
+    const tabs = computed(() => {
+      if (mode.value) {
+        return [
+          { name: "Equipment", label: "Diagnosis" },
+          { name: "PowerQuality", label: "PowerQuality" },
+          { name: "EN50160", label: "EN50160" },
+          { name: "Energy", label: "Energy" }
+        ]
+      } else {
+        return [
+          { name: "PowerQuality", label: "PowerQuality" },
+          { name: "EN50160", label: "EN50160" },
+          { name: "Energy", label: "Energy" }
+        ]
+      }
+    });
+
+    // === 타임스탬프 포맷 ===
+    const formatTimestamp = (timestamp) => {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
       });
-  
-      // 탭 목록
-      const tabs = computed(() => {
-        if (mode.value) {
-          return [
-            { name: "Equipment", label: "Diagnosis" },
-            { name: "PowerQuality", label: "PowerQuality" },
-            { name: "EN50160", label: "EN50160" },
-            { name: "Energy", label: "Energy" }
-          ]
-        } else {
-          return [
-            { name: "PowerQuality", label: "PowerQuality" },
-            { name: "EN50160", label: "EN50160" },
-            { name: "Energy", label: "Energy" }
-          ]
+    };
+
+    // === 현재 모드 반환 ===
+    const getCurrentMode = () => {
+      return activeTab.value === 'Equipment' ? 'diagnosis' : 'powerquality';
+    };
+
+    // === 시간 목록 조회 ===
+    const fetchTimeOptions = async (date, modeType) => {
+      const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+      
+      try {
+        const response = await axios.get(`/report/reportTimes/${date}/${chName}/${modeType}`);
+        if (response.data.success) {
+          return response.data.data.map(time => ({
+            value: time,
+            label: time.split('T')[1]?.substring(0, 8) || time
+          }));
         }
-      });
-  
-      // === 타임스탬프 포맷 ===
-      const formatTimestamp = (timestamp) => {
-        if (!timestamp) return '';
-        const date = new Date(timestamp);
-        return date.toLocaleString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-      };
-  
-      // === 현재 모드 반환 ===
-      const getCurrentMode = () => {
-        return activeTab.value === 'Equipment' ? 'diagnosis' : 'powerquality';
-      };
-  
-      // === 시간 목록 조회 ===
-      const fetchTimeOptions = async (date, modeType) => {
-        const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+      } catch (error) {
+        console.error('시간 목록 조회 실패:', error);
+      }
+      return [];
+    };
+
+    // === 마지막 저장 데이터 조회 ===
+    const fetchLastSavedData = async (modeType) => {
+      const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+      
+      try {
+        const response = await axios.get(`/report/lastReportData/${modeType}/${chName}`);
+        if (response.data.success) {
+          return response.data.data;
+        }
+      } catch (error) {
+        console.error('마지막 저장 데이터 조회 실패:', error);
+      }
+      return null;
+    };
+
+    // === 날짜 변경 ===
+    const onDateChange = async () => {
+      const modeType = getCurrentMode();
+      const state = tabState.value[activeTab.value];
+      
+      state.timeOptions = await fetchTimeOptions(state.date, modeType);
+      
+      if (state.timeOptions.length > 0) {
+        state.time = state.timeOptions[0].value;
+      } else {
+        state.time = '';
+      }
+    };
+
+    // === Load 버튼 클릭 ===
+    const onLoadClick = async () => {
+      const state = tabState.value[activeTab.value];
+      if (!state.time) return;
+      
+      isLoading.value = true;
+      await fetchReportData(state.time);
+      state.displayTime = state.time;
+      isLoading.value = false;
+    };
+
+    // === 리포트 데이터 조회 ===
+    const fetchReportData = async (timestamp) => {
+      const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+      const modeType = getCurrentMode();
+      
+      try {
+        const response = await axios.get(`/report/reportDataByTime/${modeType}/${chName}/${timestamp}`);
         
-        try {
-          const response = await axios.get(`/report/reportTimes/${date}/${chName}/${modeType}`);
-          if (response.data.success) {
-            return response.data.data.map(time => ({
-              value: time,
-              label: time.split('T')[1]?.substring(0, 8) || time
-            }));
+        if (response.data.success) {
+          const data = {
+            main: response.data.data.main,
+            detail: response.data.data.detail,
+            timestamp: timestamp
+          };
+          
+          // 탭에 따라 다른 데이터에 저장
+          if (activeTab.value === 'Equipment') {
+            diagnosisReportData.value = data;
+          } else {
+            pqReportData.value = data;
           }
-        } catch (error) {
-          console.error('시간 목록 조회 실패:', error);
         }
-        return [];
-      };
-  
-      // === 마지막 저장 데이터 조회 ===
-      const fetchLastSavedData = async (modeType) => {
-        const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
-        
-        try {
-          const response = await axios.get(`/report/lastReportData/${modeType}/${chName}`);
-          if (response.data.success) {
-            return response.data.data;
-          }
-        } catch (error) {
-          console.error('마지막 저장 데이터 조회 실패:', error);
-        }
-        return null;
-      };
-  
-      // === 날짜 변경 ===
-      const onDateChange = async () => {
-        const modeType = getCurrentMode();
-        const state = tabState.value[activeTab.value];
-        
-        state.timeOptions = await fetchTimeOptions(state.date, modeType);
-        
-        if (state.timeOptions.length > 0) {
-          state.time = state.timeOptions[0].value;
-        } else {
-          state.time = '';
-        }
-      };
-  
-      // === Load 버튼 클릭 ===
-      const onLoadClick = async () => {
-        const state = tabState.value[activeTab.value];
-        if (!state.time) return;
-        
-        isLoading.value = true;
+      } catch (error) {
+        console.error('데이터 조회 실패:', error);
+      }
+    };
+
+    // === 초기 로드 (탭별) ===
+    const initialLoad = async () => {
+      const modeType = getCurrentMode();
+      const state = tabState.value[activeTab.value];
+      
+      isLoading.value = true;
+      
+      // 오늘 날짜 시간 목록 조회
+      state.timeOptions = await fetchTimeOptions(state.date, modeType);
+      
+      if (state.timeOptions.length > 0) {
+        state.time = state.timeOptions[0].value;
         await fetchReportData(state.time);
         state.displayTime = state.time;
-        isLoading.value = false;
-      };
-  
-      // === 리포트 데이터 조회 ===
-      const fetchReportData = async (timestamp) => {
-        const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
-        const modeType = getCurrentMode();
-        
-        try {
-          const response = await axios.get(`/report/reportDataByTime/${modeType}/${chName}/${timestamp}`);
+      } else {
+        // 오늘 데이터 없으면 마지막 저장 데이터 로드
+        state.time = '';
+        const lastData = await fetchLastSavedData(modeType);
+        if (lastData && lastData.timestamp) {
+          state.displayTime = lastData.timestamp;
           
-          if (response.data.success) {
-            const data = {
-              main: response.data.data.main,
-              detail: response.data.data.detail,
-              timestamp: timestamp
-            };
-            
-            // 탭에 따라 다른 데이터에 저장
-            if (activeTab.value === 'Equipment') {
-              diagnosisReportData.value = data;
-            } else {
-              pqReportData.value = data;
-            }
-          }
-        } catch (error) {
-          console.error('데이터 조회 실패:', error);
-        }
-      };
-  
-      // === 초기 로드 (탭별) ===
-      const initialLoad = async () => {
-        const modeType = getCurrentMode();
-        const state = tabState.value[activeTab.value];
-        
-        isLoading.value = true;
-        
-        // 오늘 날짜 시간 목록 조회
-        state.timeOptions = await fetchTimeOptions(state.date, modeType);
-        
-        if (state.timeOptions.length > 0) {
-          state.time = state.timeOptions[0].value;
-          await fetchReportData(state.time);
-          state.displayTime = state.time;
-        } else {
-          // 오늘 데이터 없으면 마지막 저장 데이터 로드
-          state.time = '';
-          const lastData = await fetchLastSavedData(modeType);
-          if (lastData && lastData.timestamp) {
-            state.displayTime = lastData.timestamp;
-            
-            const data = {
-              main: lastData.main,
-              detail: lastData.detail,
-              timestamp: lastData.timestamp
-            };
-            
-            if (activeTab.value === 'Equipment') {
-              diagnosisReportData.value = data;
-            } else {
-              pqReportData.value = data;
-            }
+          const data = {
+            main: lastData.main,
+            detail: lastData.detail,
+            timestamp: lastData.timestamp
+          };
+          
+          if (activeTab.value === 'Equipment') {
+            diagnosisReportData.value = data;
+          } else {
+            pqReportData.value = data;
           }
         }
-        
-        isLoading.value = false;
-      };
-  
-      // === 탭 변경 ===
-      const changeTab = async (tabName) => {
-        activeTab.value = tabName;
-        
-        // 진단 탭으로 변경 시 해당 탭 데이터가 없으면 로드
-        if (tabName === 'Equipment' || tabName === 'PowerQuality') {
-          const targetData = tabName === 'Equipment' ? diagnosisReportData.value : pqReportData.value;
-          if (!targetData.main || targetData.main.length === 0) {
-            await initialLoad();
-          }
-        }
-      };
-  
-      // === 다운로드 모달 ===
-      const openDownloadModal = () => {
-        showDownloadModal.value = true;
-      };
-  
-      const closeDownloadModal = () => {
-        showDownloadModal.value = false;
-      };
-  
-      // === 리포트 다운로드 ===
-      const downloadReport = async () => {
-        const state = tabState.value[activeTab.value];
-        if (!state.displayTime) return;
-  
-        isDownloading.value = true;
-  
-        try {
-          const modeType = getCurrentMode();
-          const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
-          const timestamp = state.displayTime;
-  
-          const response = await axios.get(
-            `/report/downloadDiagnosisReport/${modeType}/${chName}/${channelComputed.value}/${timestamp}?locale=${locale.value}`,
-            { responseType: 'blob' }
-          );
-  
-          const blob = new Blob([response.data], {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-  
-          const dateStr = timestamp.split('T')[0];
-          link.download = `${modeType}_report_${chName}_${dateStr}.docx`;
-  
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-  
-          closeDownloadModal();
-        } catch (error) {
-          console.error('리포트 다운로드 실패:', error);
-          alert(t('report.downloadError') || '다운로드에 실패했습니다.');
-        } finally {
-          isDownloading.value = false;
-        }
-      };
-  
-      // === EN50160 데이터 로드 ===
-      const fetchEN50160Data = async () => {
-        try {
-          const res = await fetch('/en50160_info.json')
-          const data = await res.json()
-          tbdata.value = [...data.tbdata]
-        } catch (error) {
-          console.log("EN50160 데이터 가져오기 실패:", error);
-        }
-      };
-  
-      // === Watch ===
-      watch(() => route.params.channel, async (newChannel) => {
-        channel.value = newChannel;
-        // 탭 상태 초기화
-        tabState.value = {
-          Equipment: { date: todayStr, time: '', timeOptions: [], displayTime: null },
-          PowerQuality: { date: todayStr, time: '', timeOptions: [], displayTime: null }
-        };
-        diagnosisReportData.value = { main: [], detail: [], timestamp: null };
-        pqReportData.value = { main: [], detail: [], timestamp: null };
-        await initialLoad();
-      });
-  
-      watch(channelStatus, (newVal) => {
-        setupMenu.value = newVal;
-      }, { immediate: true });
-  
-      watch(mode, (newVal) => {
-        if (newVal) {
-          activeTab.value = 'Equipment';
-        } else {
-          activeTab.value = 'PowerQuality';
-        }
-      });
-  
-      // === Mounted ===
-      onMounted(async () => {
-        await fetchEN50160Data();
-        await initialLoad();
-      });
-  
-      return {
-        tabs,
-        sidebarOpen,
-        channel,
-        tbdata,
-        channelComputed,
-        mode,
-        t,
-        activeTab,
-        changeTab,
-        // 날짜/시간
-        currentDate,
-        currentTime,
-        currentTimeOptions,
-        displayTimestamp,
-        onDateChange,
-        onLoadClick,
-        formatTimestamp,
-        // 로딩
-        isLoading,
-        isDownloading,
-        // 모달
-        showDownloadModal,
-        openDownloadModal,
-        closeDownloadModal,
-        downloadReport,
-        // 데이터 (탭별 분리)
-        diagnosisReportData,
-        pqReportData,
-        diagnosisRef,
-        pqDiagnosisRef,
-        asset,
       }
+      
+      isLoading.value = false;
+    };
+
+    // === 탭 변경 ===
+    const changeTab = async (tabName) => {
+      activeTab.value = tabName;
+      
+      // 진단 탭으로 변경 시 해당 탭 데이터가 없으면 로드
+      if (tabName === 'Equipment' || tabName === 'PowerQuality') {
+        const targetData = tabName === 'Equipment' ? diagnosisReportData.value : pqReportData.value;
+        if (!targetData.main || targetData.main.length === 0) {
+          await initialLoad();
+        }
+      }
+    };
+
+    // === 다운로드 모달 ===
+    const openDownloadModal = () => {
+      showDownloadModal.value = true;
+    };
+
+    const closeDownloadModal = () => {
+      showDownloadModal.value = false;
+    };
+
+    // === 리포트 다운로드 ===
+    const downloadReport = async () => {
+      const state = tabState.value[activeTab.value];
+      if (!state.displayTime) return;
+
+      isDownloading.value = true;
+
+      try {
+        const modeType = getCurrentMode();
+        const chName = channelComputed.value == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub;
+        const timestamp = state.displayTime;
+
+        const response = await axios.get(
+          `/report/downloadDiagnosisReport/${modeType}/${chName}/${channelComputed.value}/${timestamp}?locale=${locale.value}`,
+          { responseType: 'blob' }
+        );
+
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        const dateStr = timestamp.split('T')[0];
+        link.download = `${modeType}_report_${chName}_${dateStr}.docx`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        closeDownloadModal();
+      } catch (error) {
+        console.error('리포트 다운로드 실패:', error);
+        alert(t('report.downloadError') || '다운로드에 실패했습니다.');
+      } finally {
+        isDownloading.value = false;
+      }
+    };
+
+    // === EN50160 데이터 로드 ===
+    const fetchEN50160Data = async () => {
+      try {
+        const res = await fetch('/en50160_info.json')
+        const data = await res.json()
+        tbdata.value = [...data.tbdata]
+      } catch (error) {
+        console.log("EN50160 데이터 가져오기 실패:", error);
+      }
+    };
+
+    // === Watch ===
+    watch(() => route.params.channel, async (newChannel) => {
+      channel.value = newChannel;
+      // 탭 상태 초기화
+      tabState.value = {
+        Equipment: { date: todayStr, time: '', timeOptions: [], displayTime: null },
+        PowerQuality: { date: todayStr, time: '', timeOptions: [], displayTime: null }
+      };
+      diagnosisReportData.value = { main: [], detail: [], timestamp: null };
+      pqReportData.value = { main: [], detail: [], timestamp: null };
+      await initialLoad();
+    });
+
+    watch(channelStatus, (newVal) => {
+      setupMenu.value = newVal;
+    }, { immediate: true });
+
+    watch(mode, (newVal) => {
+      if (newVal) {
+        activeTab.value = 'Equipment';
+      } else {
+        activeTab.value = 'PowerQuality';
+      }
+    });
+
+    // === Mounted ===
+    onMounted(async () => {
+      await fetchEN50160Data();
+      await initialLoad();
+    });
+
+    return {
+      tabs,
+      sidebarOpen,
+      channel,
+      tbdata,
+      channelComputed,
+      mode,
+      t,
+      activeTab,
+      changeTab,
+      // 날짜/시간
+      currentDate,
+      currentTime,
+      currentTimeOptions,
+      displayTimestamp,
+      onDateChange,
+      onLoadClick,
+      formatTimestamp,
+      // 로딩
+      isLoading,
+      isDownloading,
+      // 모달
+      showDownloadModal,
+      openDownloadModal,
+      closeDownloadModal,
+      downloadReport,
+      // 데이터 (탭별 분리)
+      diagnosisReportData,
+      pqReportData,
+      diagnosisRef,
+      pqDiagnosisRef,
+      asset,
+      selectedReport,
     }
   }
-  </script>
-  
+}
+</script>
+
+<style>
+@import '../../css/card-styles.css';
+</style>

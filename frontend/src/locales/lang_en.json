@@ -421,10 +421,14 @@
         "displaying": "Last saved datetime",
         "load": "Load",
         "noData":"No Data",
+        "searchReport" : "Report Search",
+        "selectReport" : "Select Report",
+
         "sitemap": {
         "title": "Report",
         "main": "Main Channel",
         "sub": "Sub Channel"
+
         },
         "modal":{
             "download": "Download",
@@ -468,7 +472,8 @@
         "weeklyLoadDistribution": "Weekly Load Rate Distribution Statistics",
         "THD1": "Voltage THD",
         "THD2": "Current THD",
-        "distortionRate": "Distortion Rate"
+        "distortionRate": "Distortion Rate",
+        "reportData": "Report Data"
         },
         "cardContext": {
         "th_title": "Item",

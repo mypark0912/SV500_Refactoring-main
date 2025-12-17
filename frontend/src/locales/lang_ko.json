@@ -419,6 +419,8 @@
     "displaying": "마지막 저장 시간",
     "load": "불러오기",
     "noData":"데이터 없음",
+    "searchReport" : "보고서 조회",
+    "selectReport" : "보고서 선택",
     "sitemap": {
       "title": "리포트",
       "main": "주 채널",
@@ -458,6 +460,7 @@
         "hourlyEngUsage":"시간당 사용 추이",
         "dailyEngUsage":"일간 사용 추이",
         "monthlyEngUsage":"월간 사용 추이",
+        "reportData": "보고서 데이터",
         
 
       "Diagnosis": "설비 진단",
