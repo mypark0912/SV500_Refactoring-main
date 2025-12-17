@@ -42,8 +42,8 @@ class WeeklyReportConfig:
     retention_weeks: int = 12
 
 
-# EN50160 기준값 (60Hz 시스템 기준)
-EN50160_LIMITS = {
+# EN50160 기준값 (60Hz 시스템 기준) - 기본값
+EN50160_LIMITS_DEFAULT = {
     "frequency": {
         "nominal": 60.0,
         "limit_99_5": {"min": 59.40, "max": 60.60},  # ±1%
@@ -81,28 +81,35 @@ class EN50160ReportProcessor:
 
     def __init__(self, config: WeeklyReportConfig = None):
         self.config = config or WeeklyReportConfig()
-        self.limits = EN50160_LIMITS
+        # 인스턴스별 limits 복사 (다른 인스턴스에 영향 안 주도록)
+        self.limits = json.loads(json.dumps(EN50160_LIMITS_DEFAULT))
         self.nominal_voltage = 22900.0
         self.nominal_current = 100.0
         self.nominal_frequency = 60.0
 
     def set_limits(self, nominal_voltage: float = None, nominal_current: float = None, nominal_frequency: float = None):
-        """정격값 설정"""
+        """정격값 설정 및 리미트 재계산"""
         if nominal_voltage is not None:
             self.nominal_voltage = nominal_voltage
+            logger.info(f"정격전압 설정: {nominal_voltage}V")
+
         if nominal_current is not None:
             self.nominal_current = nominal_current
+            logger.info(f"정격전류 설정: {nominal_current}A")
+
         if nominal_frequency is not None:
             self.nominal_frequency = nominal_frequency
+            logger.info(f"정격주파수 설정: {nominal_frequency}Hz")
+
             # 주파수 리미트 재계산
             self.limits["frequency"]["nominal"] = nominal_frequency
             self.limits["frequency"]["limit_99_5"] = {
-                "min": nominal_frequency * 0.99,
-                "max": nominal_frequency * 1.01
+                "min": round(nominal_frequency * 0.99, 2),
+                "max": round(nominal_frequency * 1.01, 2)
             }
             self.limits["frequency"]["limit_100"] = {
-                "min": nominal_frequency * 0.94,
-                "max": nominal_frequency * 1.04
+                "min": round(nominal_frequency * 0.94, 2),
+                "max": round(nominal_frequency * 1.04, 2)
             }
 
     # =========================================================================
@@ -156,30 +163,41 @@ class EN50160ReportProcessor:
             "bin_centers": [round(float(c), 4) for c in bin_centers]
         }
 
-    def list_files(self) -> List[Dict[str, Any]]:
-        """저장된 Parquet 파일 목록 조회"""
-        import pyarrow.parquet as pq
-        from datetime import datetime
+    def list_files(self, channel: str = None) -> List[str]:
+        """
+        저장된 Parquet 파일에서 날짜 목록 조회 (중복 제거)
 
+        Args:
+            channel: 채널명 (Main, Sub 등). None이면 전체
+
+        Returns:
+            날짜 문자열 리스트 (예: ["20251217", "20251210", ...])
+        """
         output_dir = Path(self.config.output_dir)
-        files = []
+        dates = set()
 
-        for file in sorted(output_dir.glob("pq_weekly_*.parquet"), reverse=True):
+        # 패턴: en50160_weekly__Main_20251217.parquet
+        if channel:
+            pattern = f"en50160_weekly__{channel}_*.parquet"
+        else:
+            pattern = "en50160_weekly__*.parquet"
+
+        for file in output_dir.glob(pattern):
             try:
-                parquet_file = pq.ParquetFile(file)
-                metadata = parquet_file.metadata
+                # 파일명에서 날짜 추출
+                # en50160_weekly__Main_20251217.parquet → 20251217
+                filename = file.stem  # 확장자 제거
+                parts = filename.split("_")
+                date_str = parts[-1]  # 마지막이 날짜
 
-                files.append({
-                    "filename": file.name,
-                    "filepath": str(file),
-                    "num_rows": metadata.num_rows,
-                    "file_size_kb": round(file.stat().st_size / 1024, 1),
-                    "created_at": datetime.fromtimestamp(file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
-                })
+                # 날짜 형식 검증 (8자리 숫자)
+                if len(date_str) == 8 and date_str.isdigit():
+                    dates.add(date_str)
             except Exception as e:
-                logger.warning(f"파일 읽기 실패: {file.name} - {e}")
+                logger.warning(f"파일명 파싱 실패: {file.name} - {e}")
 
-        return files
+        # 최신순 정렬
+        return sorted(list(dates), reverse=True)
 
     def read_parquet(self, filepath: str = None, filename: str = None) -> Optional[pd.DataFrame]:
         """Parquet 파일 읽기"""
@@ -222,6 +240,8 @@ class EN50160ReportProcessor:
         """
         전체 차트 데이터 반환 (파일 1번만 읽기)
 
+        ※ set_limits()로 설정된 self.nominal_voltage, self.nominal_frequency 사용
+
         Returns:
             {
                 "frequency": {...},
@@ -229,16 +249,18 @@ class EN50160ReportProcessor:
                 "thd": {...},
                 "unbalance": {...},
                 "flicker": {...},
-                "summary": {...}
+                "harmonics": {...}
             }
         """
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
 
+        logger.info(f"차트 데이터 생성 - 정격전압: {self.nominal_voltage}V, 정격주파수: {self.nominal_frequency}Hz")
+
         return {
             "frequency": self._get_frequency_from_df(df),
-            "voltage": self._get_voltage_from_df(df, nominal_voltage),
+            "voltage": self._get_voltage_from_df(df),
             "thd": self._get_thd_from_df(df),
             "unbalance": self._get_unbalance_from_df(df),
             "flicker": self._get_flicker_from_df(df),
@@ -259,6 +281,8 @@ class EN50160ReportProcessor:
         """
         주파수 Chart.js용 데이터 반환 (DataFrame 직접 전달)
 
+        ※ self.limits["frequency"] 사용 (set_limits로 설정된 값)
+
         Returns:
             {
                 "timeseries": { "labels": [...], "data": [...] },
@@ -275,19 +299,21 @@ class EN50160ReportProcessor:
         values = df[freq_col].dropna().values
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
 
+        # self.limits 사용 (set_limits로 설정된 값)
+        limits = self.limits["frequency"]
+
         # 시계열 데이터
         timeseries = {
             "labels": timestamps,
             "data": [round(float(v), 3) for v in df[freq_col].values]
         }
 
-        # 히스토그램 데이터
-        limits = self.limits["frequency"]
+        # 히스토그램 데이터 (동적 리미트 적용)
         histogram = self._calculate_histogram(
             values,
             bins=30,
-            range_min=limits["limit_99_5"]["min"],  # 59.4Hz
-            range_max=limits["limit_99_5"]["max"]   # 60.6Hz
+            range_min=limits["limit_99_5"]["min"],
+            range_max=limits["limit_99_5"]["max"]
         )
 
         # 통계
@@ -295,7 +321,7 @@ class EN50160ReportProcessor:
         measured_max = float(np.max(values))
         measured_avg = float(np.mean(values))
 
-        # 99.5% 범위 내 비율 계산
+        # 99.5% 범위 내 비율 계산 (동적 리미트 적용)
         in_range_99_5 = np.sum(
             (values >= limits["limit_99_5"]["min"]) &
             (values <= limits["limit_99_5"]["max"])
@@ -331,27 +357,27 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전압 변동 (Voltage Variations)
     # =========================================================================
-    def get_voltage_chart_data(self, filepath: str = None, filename: str = None,
-                                nominal_voltage: float = 22900.0) -> Optional[Dict]:
+    def get_voltage_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
         """전압 변동 Chart.js용 데이터 반환 (파일 경로 지정)"""
         df = self.read_parquet(filepath, filename)
         if df is None:
             return None
-        return self._get_voltage_from_df(df, nominal_voltage)
+        return self._get_voltage_from_df(df)
 
-    def _get_voltage_from_df(self, df: pd.DataFrame, nominal_voltage: float = 22900.0) -> Optional[Dict]:
+    def _get_voltage_from_df(self, df: pd.DataFrame) -> Optional[Dict]:
         """
         전압 변동 Chart.js용 데이터 반환 (DataFrame 직접 전달)
 
-        Args:
-            df: DataFrame
-            nominal_voltage: 정격전압 (V), 기본값 22.9kV
+        ※ self.nominal_voltage 사용 (set_limits로 설정된 값)
 
         Returns:
             3상 각각의 시계열, 히스토그램, 통계 데이터
         """
         timestamps = df['timestamp'].dt.strftime("%Y-%m-%d %H:%M").tolist()
         limits = self.limits["voltage"]
+
+        # self.nominal_voltage 사용 (set_limits로 설정된 값)
+        nominal_voltage = self.nominal_voltage
 
         # 정격전압 기준 한계값 계산
         limit_95_min = nominal_voltage * limits["limit_95"]["min"] / 100

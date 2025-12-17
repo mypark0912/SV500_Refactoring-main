@@ -280,7 +280,7 @@ export default {
     const channel = ref(props.channel);
     const mode = computed(() => props.mode);
     const iticDataList = ref([]);
-    const filename = 'pq_weekly_2025-W50_all.parquet'
+    const filename = 'en50160_weekly__Main_20251217.parquet'
 
     // ============================================================
     // 공통 데이터
