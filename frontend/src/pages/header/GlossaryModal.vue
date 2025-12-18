@@ -285,13 +285,12 @@ export default {
       
       return formatted
     }
-
-    const tabs = [
-      { key: 'equipment', label: 'Equipment' },
-      { key: 'pq', label: 'PQ' },
-      { key: 'fault', label: 'Fault' },
-      { key: 'event', label: 'Event' },
-    ]
+const tabs = computed(() => [
+  { key: 'equipment', label: isKorean.value ? '장비' : 'Equipment' },
+  { key: 'pq', label: isKorean.value ? '전력품질' : 'PQ' },
+  { key: 'fault', label: isKorean.value ? '결함' : 'Fault' },
+  { key: 'event', label: isKorean.value ? '이벤트' : 'Event' },
+])
 
     const allItems = computed(() => {
       const items = []
