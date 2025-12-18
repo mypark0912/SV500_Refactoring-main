@@ -2546,7 +2546,7 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
     channel_fields_to_compare = [
         "Enable", "PowerQuality", "ctInfo", "ptInfo", "assetInfo",
         "eventInfo", "sampling", "demand", "trendInfo", "alarm",
-        "n_kva", "confStatus", "useDO", "useAI"
+        "n_kva", "confStatus","status_Info", "useDO", "useAI", "ai_modbus"
     ]
 
     for channel_name in ["Main", "Sub"]:
