@@ -1,26 +1,33 @@
 {
   "Title": "SV-500 시작하기!",
+  "glossary": {
+      "title": "용어설명집",
+      "searchPlaceholder": "용어 검색...",
+      "searchResults": "검색 결과: {count}개",
+      "noResults": "검색 결과가 없습니다",
+      "tryDifferent": "다른 검색어를 입력해 보세요"
+    },
   "common": {
     "positive": "정상",
     "negative": "역상",
-     "value":"값",
+    "value": "값",
     "yes": "예",
     "no": "아니오",
     "save": "저장",
     "close": "닫기",
     "ok": "확인",
-    "change":"변경",
-    "cancel":"취소",
+    "change": "변경",
+    "cancel": "취소",
     "none": "없음",
     "under": "미만",
     "over": "초과",
     "min": "분",
     "hour": "시",
     "sec": "초",
-        "mainChannel": "메인 채널",
+    "mainChannel": "메인 채널",
     "subChannel": "서브 채널",
     "and": "및"
-},
+  },
   "onboardingModal": {
     "steps": {
       "restartCheck": "재시작 확인",
@@ -195,7 +202,8 @@
     "link": {
       "msg": "도움이 필요하세요?",
       "catalog": "카달로그",
-      "manual": "사용자매뉴얼"
+      "manual": "사용자매뉴얼",
+      "glossary": "용어설명"
     }
   },
   "sidebar": {
@@ -211,20 +219,20 @@
     "config": "관리자",
     "setup": "설정",
     "general": "일반",
-    "system":"시스템",
+    "system": "시스템",
     "service": "서비스",
     "calibration": "캘리브레이션",
     "maintenance": "유지보수"
   },
   "dashboard": {
-    "loading":"대시보드 로딩 중",
+    "loading": "대시보드 로딩 중",
     "singleinfo": {
       "title": "설비 현황",
       "Operatingtime": "운전 시간",
       "EquipmentInformation": "설비 정보",
-      "OperationStatus":"운용 현황",
-      "running":"가동중",
-      "stopped":"정지"
+      "OperationStatus": "운용 현황",
+      "running": "가동중",
+      "stopped": "정지"
     },
     "sitemap": "대시보드",
     "meter": {
@@ -262,7 +270,7 @@
       "pq": "전력 품질 진단",
       "diagnostic": "설비 진단",
       "event": "이벤트 진단",
-      "fault":"전기적 이상 진단",
+      "fault": "전기적 이상 진단",
       "name": "이름",
       "type": "종류",
       "st0": "정지",
@@ -368,8 +376,8 @@
       "name": "설비 이름",
       "type": "설비 종류",
       "drivetype": "구동방식",
-      "dr1":"직입기동",
-      "dr2":"인버터기동",
+      "dr1": "직입기동",
+      "dr2": "인버터기동",
       "location": "설치 장소",
       "status": "설비 상태",
       "Rated Voltage": "정격 전압",
@@ -412,22 +420,22 @@
     }
   },
   "report": {
-    "accordionTitle1":"설비",
-    "accordionTitle2":"전력품질",
-    "accordionTitle3":"이벤트",
-    "accordionTitle4":"전기적이상",
+    "accordionTitle1": "설비",
+    "accordionTitle2": "전력품질",
+    "accordionTitle3": "이벤트",
+    "accordionTitle4": "전기적이상",
     "displaying": "마지막 저장 시간",
     "load": "불러오기",
-    "noData":"데이터 없음",
-    "searchReport" : "보고서 조회",
-    "selectReport" : "보고서 선택",
-    "lastSaved" : "마지막 저장 시간",
+    "noData": "데이터 없음",
+    "searchReport": "보고서 조회",
+    "selectReport": "보고서 선택",
+    "lastSaved": "마지막 저장 시간",
     "sitemap": {
       "title": "리포트",
       "main": "주 채널",
       "sub": "보조 채널"
     },
-    "modal":{
+    "modal": {
       "download": "Download",
       "downloadReport": "리포트 다운로드",
       "downloadDesc1": "현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.",
@@ -455,14 +463,13 @@
       "Channel": "설비정보",
       "PowerQuality": "전력품질",
       "reportdate": "보고서 날짜",
-        "installation": "설치 장소",
-        "EN50160": "EN50160 리포트",
-        "iticCurAnalysis": "ITIC 분석",
-        "hourlyEngUsage":"시간당 사용 추이",
-        "dailyEngUsage":"일간 사용 추이",
-        "monthlyEngUsage":"월간 사용 추이",
-        "reportData": "보고서 데이터",
-        
+      "installation": "설치 장소",
+      "EN50160": "EN50160 리포트",
+      "iticCurAnalysis": "ITIC 분석",
+      "hourlyEngUsage": "시간당 사용 추이",
+      "dailyEngUsage": "일간 사용 추이",
+      "monthlyEngUsage": "월간 사용 추이",
+      "reportData": "보고서 데이터",
 
       "Diagnosis": "설비 진단",
       "Energy": "전력량",
@@ -501,11 +508,11 @@
         "thu": "목",
         "fri": "금",
         "sat": "토",
-         "day":"day",
-        "week":"요일"
+        "day": "day",
+        "week": "요일"
       },
-      "hight":"높음",
-        "low" :"낮음",
+      "hight": "높음",
+      "low": "낮음",
       "info": {
         "equip": "설비 정보",
         "status": "진단 상태",
@@ -528,8 +535,8 @@
         "Import": "수전",
         "Export": "발전"
       },
-        "iticxscale":"기준전압 대비 (%)",
-        "iticyscale":"시간 (초)"
+      "iticxscale": "기준전압 대비 (%)",
+      "iticyscale": "시간 (초)"
     }
   },
   "pq": {
@@ -546,7 +553,7 @@
       "phaseVoltage": "상전압",
       "lineVoltage": "선간전압",
       "current": "전류",
-      "voltage":"전압"
+      "voltage": "전압"
     },
     "Button": {
       "table": "테이블",
@@ -672,13 +679,13 @@
     }
   },
   "config": {
-    "comfirmtext1":"설비 주요 설정 변경 시 이전의 계산값이 모두 삭제됩니다.",
-    "comfirmtext2":"계속 진행하시겠습니까?",
+    "comfirmtext1": "설비 주요 설정 변경 시 이전의 계산값이 모두 삭제됩니다.",
+    "comfirmtext2": "계속 진행하시겠습니까?",
     "sitemap": {
       "title": "설정",
       "Main Channel": "주채널",
       "Sub Channel": "보조채널",
-      "Command":"시스템",
+      "Command": "시스템",
       "General": "일반",
       "User Management": "사용자 관리",
       "API User Management": "Restful API 사용자 관리",
@@ -696,7 +703,7 @@
       "Installation": "설치",
       "Update": "업데이트",
       "Replacement": "교체",
-      "Calibration":"캘리브레이션",
+      "Calibration": "캘리브레이션",
       "FirmWare": "펌웨어",
       "App": "앱",
       "Web": "웹",
@@ -739,9 +746,9 @@
         "parity": "패리티",
         "dbits": "데이터 비트",
         "sbits": "스톱 비트",
-        "rtu_use":"사용",
-        "yes":"예",
-        "no":"아니오"
+        "rtu_use": "사용",
+        "yes": "예",
+        "no": "아니오"
       },
       "demand": {
         "title": "수요 전력",
@@ -770,55 +777,55 @@
       "selEnable": "사용",
       "selPQ": "전력품질",
       "alarmCard": {
-          "title": "알람",
-          "common": "공통",
-          "timeDelay": "비교 시간 지연 (초)",
-          "alChannel": "알람 채널",
-          "parameter": "발생 요소",
-          "conditions": "발생 조건",
-          "hysteresis": "편차 범위(%)",
-          "value": "기준 값"
+        "title": "알람",
+        "common": "공통",
+        "timeDelay": "비교 시간 지연 (초)",
+        "alChannel": "알람 채널",
+        "parameter": "발생 요소",
+        "conditions": "발생 조건",
+        "hysteresis": "편차 범위(%)",
+        "value": "기준 값"
       },
-            "Diagnosis":{
-                "title":"진단 설비 관리",
-                "AddAsset":"설비 추가",
-                "UnregisterAsset":"설비 등록 해제",
-                "registerAsset":"설비 등록",
-                "NameChange":"이름 변경",
-                "DeleteAsset":"설비 삭제",
-                "AssetName":"설비 이름",
-                "AssetType":"설비 타입",
-                "EquipmentName":"장비 이름",
-                "transformerCapacity":"변압기 수용량",
-                "EditConfiguration":"수정 여부",
-                "CreateAsset":"생성"
-            }
+      "Diagnosis": {
+        "title": "진단 설비 관리",
+        "AddAsset": "설비 추가",
+        "UnregisterAsset": "설비 등록 해제",
+        "registerAsset": "설비 등록",
+        "NameChange": "이름 변경",
+        "DeleteAsset": "설비 삭제",
+        "AssetName": "설비 이름",
+        "AssetType": "설비 타입",
+        "EquipmentName": "장비 이름",
+        "transformerCapacity": "변압기 수용량",
+        "EditConfiguration": "수정 여부",
+        "CreateAsset": "생성"
+      }
     },
     "system": {
       "title_1": "주채널 초기화 명령어",
       "title_2": "보조채널 초기화 명령어",
       "title_3": "설정",
-      "title_4":"백업 / 소프트웨어 업데이트",
+      "title_4": "백업 / 소프트웨어 업데이트",
       "demand": "수요전력",
       "minmax": "최대/최소",
       "energy": "전력량",
       "alarm": "알람 발생횟수",
       "eventCount": "이벤트 발생횟수",
-      "runhour":"운전 시간",
-      "init":"설정 초기화",
-      "reboot":"재부팅",
+      "runhour": "운전 시간",
+      "init": "설정 초기화",
+      "reboot": "재부팅",
       "import": "가져오기",
       "export": "내보내기",
       "restore": "복원",
       "reset": "초기화",
-      "warnmessage1":"시스템 재설치 확인",
-      "warnmessage2":"스마트 시스템을 재설치하면 기존 데이터가 모두 삭제됩니다.",         
-      "warnmessage3"  :"계속하기 전에 백업을 다운로드하시기 바랍니다.",
-      "warnmessage4":"정말 진행하시겠습니까?",
-      "confirm":"재설치 진행",
-      "cancel":"취소"  
-      
+      "warnmessage1": "시스템 재설치 확인",
+      "warnmessage2": "스마트 시스템을 재설치하면 기존 데이터가 모두 삭제됩니다.",
+      "warnmessage3": "계속하기 전에 백업을 다운로드하시기 바랍니다.",
+      "warnmessage4": "정말 진행하시겠습니까?",
+      "confirm": "재설치 진행",
+      "cancel": "취소"
     },
+    
     "save": "변경 저장",
     "testSet": "테스트 진단 설정 "
   }
