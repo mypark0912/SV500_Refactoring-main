@@ -2537,8 +2537,8 @@ def transform_en50160_data(redis_data):
     transformed = {}
 
     # 날짜 정보
-    transformed["start date"] = redis_data.get("start_time", "")
-    transformed["end date"] = redis_data.get("last_report_time", "")
+    transformed["startdate"] = redis_data.get("last_report_time", "")
+    transformed["enddate"] = redis_data.get("end_time", "")
 
     # status와 compliance - 기존 형식 유지
     transformed["status"] = redis_data.get("complete", 0) * 256  # 예시 값
