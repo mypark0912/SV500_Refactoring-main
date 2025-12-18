@@ -30,13 +30,15 @@
           <div class="metrics-section">
             <!-- Transformer -->
             <template v-if="stData.devType.includes('Transformer')">
-              <div class="metric-box temperature">
-                <div class="metric-main">
-                  <span class="metric-value">{{ transData.Temp?.toFixed(1) || 0 }}</span>
-                  <span class="metric-unit">℃</span>
+              <template v-if="hasTempData">
+                <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="metric-box temperature">
+                  <div class="metric-main">
+                    <span class="metric-value">{{ transData.Temp?.[index]?.toFixed(2) ?? '-' }}</span>
+                    <span class="metric-unit">℃</span>
+                  </div>
+                  <div class="metric-label">Temp {{ label }}</div>
                 </div>
-                <div class="metric-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-              </div>
+              </template>
               <div class="metric-box load">
                 <div class="metric-main">
                   <span class="metric-value">{{ LoadRate }}</span>
@@ -276,6 +278,11 @@ import transImg from '@/images/trans.png'
             return t('dashboard.diagnosis.st0');
         }
       });
+
+      const hasTempData = computed(() => {
+          return transData.value?.Temp?.length > 0
+        })
+
   
       return {
         stData,
@@ -292,6 +299,7 @@ import transImg from '@/images/trans.png'
         LoadRate,
         goToEquipmentDetail,
         computedChannel,
+        hasTempData,
       }
     }
   }
