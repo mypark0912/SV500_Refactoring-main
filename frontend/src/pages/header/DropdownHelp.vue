@@ -52,31 +52,49 @@
               <span>{{t('header.link.manual') }}</span>
             </router-link>
           </li>
-          <!--li>
-            <router-link class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3" to="#0" @click="dropdownOpen = false">
-              <svg class="w-3 h-3 fill-current text-violet-500 shrink-0 mr-2" viewBox="0 0 12 12">
-                <path d="M11.854.146a.5.5 0 00-.525-.116l-11 4a.5.5 0 00-.015.934l4.8 1.921 1.921 4.8A.5.5 0 007.5 12h.008a.5.5 0 00.462-.329l4-11a.5.5 0 00-.116-.525z" />
+          <!-- 용어설명집 추가 -->
+          <li>
+            <a 
+              class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3 cursor-pointer" 
+              @click="openGlossary"
+            >
+              <svg class="w-3 h-3 fill-current text-violet-500 shrink-0 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm2 0v12h8V2H4zm2 2h4v1H6V4zm0 3h4v1H6V7zm0 3h4v1H6v-1z"/>
               </svg>
-              <span>Contact us</span>
-            </router-link>
-          </li-->
+              <span>{{ t('header.link.glossary') }}</span>
+            </a>
+          </li>
         </ul>
       </div> 
     </transition>
+
+    <!-- 용어설명집 모달 -->
+    <GlossaryModal :isOpen="showGlossary" @close="showGlossary = false" />
   </div>
 </template>
 
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useI18n } from 'vue-i18n'  // ✅ 추가
+import { useI18n } from 'vue-i18n'
+import GlossaryModal from './GlossaryModal.vue'
+
 export default {
   name: 'DropdownHelp',
   props: ['align'],
+  components: {
+    GlossaryModal
+  },
   setup() {
     const { t } = useI18n();
     const dropdownOpen = ref(false)
     const trigger = ref(null)
     const dropdown = ref(null)
+    const showGlossary = ref(false)
+
+    const openGlossary = () => {
+      showGlossary.value = true
+      dropdownOpen.value = false
+    }
 
     // close on click outside
     const clickHandler = ({ target }) => {
@@ -104,6 +122,8 @@ export default {
       dropdownOpen,
       trigger,
       dropdown,
+      showGlossary,
+      openGlossary,
       t,
     }
   }
