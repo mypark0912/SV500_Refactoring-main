@@ -140,8 +140,10 @@
                       :id="`equipment-${category.key}-${item.key}`"
                       class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4"
                     >
-                      <dt class="font-medium text-gray-800 dark:text-gray-100" v-html="highlightText(getLabel(item))"></dt>
-                      <dd class="mt-1 text-sm text-gray-600 dark:text-gray-400" v-html="highlightText(getDescription(item))"></dd>
+                      <dt class="font-medium text-violet-700 dark:text-violet-500 mb-2" v-html="highlightText(getLabel(item))"></dt>
+                      <dd class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" 
+                          style="line-height: 1.8; word-break: keep-all; overflow-wrap: break-word; white-space: pre-wrap;"
+                          v-html="highlightText(formatDescription(getDescription(item)))"></dd>
                       <img v-if="item.image" :src="item.image" :alt="getLabel(item)" class="mt-3 max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600" />
                     </div>
                   </dl>
@@ -153,8 +155,10 @@
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Power Quality (PQ)</h2>
                 <dl class="space-y-4">
                   <div v-for="item in pqData" :key="item.key" :id="`pq-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
-                    <dt class="font-medium text-gray-800 dark:text-gray-100" v-html="highlightText(getLabel(item))"></dt>
-                    <dd class="mt-1 text-sm text-gray-600 dark:text-gray-400" v-html="highlightText(getDescription(item))"></dd>
+                    <dt class="font-medium text-violet-700 dark:text-violet-500 mb-2" v-html="highlightText(getLabel(item))"></dt>
+                    <dd class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" 
+                        style="line-height: 1.8; word-break: keep-all; overflow-wrap: break-word; white-space: pre-wrap;"
+                        v-html="highlightText(formatDescription(getDescription(item)))"></dd>
                     <img v-if="item.image" :src="item.image" :alt="getLabel(item)" class="mt-3 max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600" />
                   </div>
                 </dl>
@@ -165,8 +169,10 @@
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Fault</h2>
                 <dl class="space-y-4">
                   <div v-for="item in faultData" :key="item.key" :id="`fault-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
-                    <dt class="font-medium text-gray-800 dark:text-gray-100" v-html="highlightText(getLabel(item))"></dt>
-                    <dd class="mt-1 text-sm text-gray-600 dark:text-gray-400" v-html="highlightText(getDescription(item))"></dd>
+                    <dt class="font-medium text-violet-700 dark:text-violet-500 mb-2" v-html="highlightText(getLabel(item))"></dt>
+                    <dd class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" 
+                        style="line-height: 1.8; word-break: keep-all; overflow-wrap: break-word; white-space: pre-wrap;"
+                        v-html="highlightText(formatDescription(getDescription(item)))"></dd>
                     <img v-if="item.image" :src="item.image" :alt="getLabel(item)" class="mt-3 max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600" />
                   </div>
                 </dl>
@@ -177,8 +183,10 @@
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Event</h2>
                 <dl class="space-y-4">
                   <div v-for="item in eventData" :key="item.key" :id="`event-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
-                    <dt class="font-medium text-gray-800 dark:text-gray-100" v-html="highlightText(getLabel(item))"></dt>
-                    <dd class="mt-1 text-sm text-gray-600 dark:text-gray-400" v-html="highlightText(getDescription(item))"></dd>
+                    <dt class="font-medium text-violet-700 dark:text-violet-500 mb-2" v-html="highlightText(getLabel(item))"></dt>
+                    <dd class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" 
+                        style="line-height: 1.8; word-break: keep-all; overflow-wrap: break-word; white-space: pre-wrap;"
+                        v-html="highlightText(formatDescription(getDescription(item)))"></dd>
                     <img v-if="item.image" :src="item.image" :alt="getLabel(item)" class="mt-3 max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600" />
                   </div>
                 </dl>
@@ -219,6 +227,63 @@ export default {
       if (!searchQuery.value || !text) return text
       const query = searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       return text.replace(new RegExp(`(${query})`, 'gi'), '<mark class="bg-yellow-300 dark:bg-yellow-600 px-0.5 rounded">$1</mark>')
+    }
+
+    const formatDescription = (text) => {
+      if (!text) return ''
+      
+      let formatted = text
+      
+      // 줄바꿈이 있으면 처리
+      if (formatted.includes('\n')) {
+        const lines = formatted.split('\n')
+        const processedLines = []
+        let isFirstParagraph = true
+        
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim()
+          
+          // 빈 줄은 건너뛰기
+          if (!line) {
+            continue
+          }
+          
+          // "원인" 또는 "영향" 라인 처리 (연한 보라색으로 표시, "-" 없음)
+          if (line === '원인' || line === '영향' || line === 'Causes' || line === 'Effects' || line === 'Cause' || line === 'Effect') {
+            processedLines.push(`<div class="mb-2 mt-3"><span class="text-violet-400 dark:text-violet-300 font-semibold">${line}</span></div>`)
+            isFirstParagraph = false
+            continue
+          }
+          
+          // 첫 번째 문단 처리 (정의 부분, 일반 텍스트로 표시)
+          if (isFirstParagraph) {
+            processedLines.push(`<div class="mb-2" style="word-break: keep-all; overflow-wrap: break-word;">${line}</div>`)
+            isFirstParagraph = false
+            continue
+          }
+          
+          // 불릿 포인트 라인 처리 (라인 시작이 • 또는 - 또는 *)
+          if (line.match(/^[•\-\*]\s+/)) {
+            const content = line.replace(/^[•\-\*]\s+/, '')
+            processedLines.push(`<div class="ml-4 mb-2 flex items-start"><span class="text-violet-600 dark:text-violet-400 mr-2 flex-shrink-0 font-bold">•</span><span class="flex-1">${content}</span></div>`)
+          } else {
+            // 두 번째부터는 "-" 추가
+            processedLines.push(`<div class="ml-4 mb-2 flex items-start"><span class="text-gray-600 dark:text-gray-400 mr-2 flex-shrink-0">-</span><span class="flex-1" style="word-break: keep-all; overflow-wrap: break-word;">${line}</span></div>`)
+          }
+        }
+        
+        return processedLines.join('')
+      }
+      
+      // 줄바꿈이 없으면 자동 포맷팅 (기존 설명이 줄바꿈 없는 경우)
+      formatted = formatted
+        .replace(/([.!?])\s+([A-Z가-힣][^.!?]{20,})/g, '$1<br><br>$2')
+        .replace(/([.!?])\s+([A-Z가-힣])/g, '$1<br>$2')
+        .replace(/\s+(However|Additionally|Furthermore|Moreover|Therefore|Thus|그러나|하지만|또한|따라서|그러므로)/gi, '<br><br>$1')
+        .replace(/(<br>\s*){3,}/gi, '<br><br>')
+        .trim()
+      
+      return formatted
     }
 
     const tabs = [
@@ -310,7 +375,7 @@ export default {
 
     return {
       tabs, activeTab, activeItem, expandedCategories, contentArea, searchQuery,
-      currentSearchIndex, searchResults, isKorean, getLabel, getDescription, highlightText,
+      currentSearchIndex, searchResults, isKorean, getLabel, getDescription, highlightText, formatDescription,
       equipmentData, pqData, faultData, eventData, currentTabItems,
       goToNext, goToPrev, clearSearch, toggleCategory, scrollToItem, close,
     }
