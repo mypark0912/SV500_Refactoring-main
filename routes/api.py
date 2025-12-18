@@ -2796,7 +2796,7 @@ def get_ai(channel):
                 readType = 1
             else:
                 readType = 2
-            readcount.append(int(aidict[channel][i]["count"])/readType)
+            readcount.append(int(aidict[channel][i]["count"])//readType)
 
         datalist = []
         total_count = sum(readcount)
