@@ -3577,7 +3577,7 @@ async def trigger_waveform(
         class Handler(pyinotify.ProcessEvent):
             def process_IN_CREATE(self, event_data):
                 """파일 생성 시작 감지"""
-                if event_data.pathname.endswith('.json'):
+                if event_data.pathname.endswith('.json') or event_data.pathname.endswith('.bin'):
                     print(f"[DEBUG] 파일 생성 시작: {event_data.pathname}")
                     for path in watch_paths:
                         if event_data.pathname.startswith(path):
@@ -3587,7 +3587,7 @@ async def trigger_waveform(
 
             def process_IN_CLOSE_WRITE(self, event_data):
                 """파일 쓰기 완료 감지"""
-                if event_data.pathname.endswith('.json'):
+                if event_data.pathname.endswith('.json') or event_data.pathname.endswith('.bin'):
                     print(f"[DEBUG] 파일 쓰기 완료: {event_data.pathname}")
                     for path in watch_paths:
                         if event_data.pathname.startswith(path):
