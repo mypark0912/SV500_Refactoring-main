@@ -13,7 +13,7 @@ from routes.util import get_mac_address, sysService, is_service_active, getVersi
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading
-import asyncio
+import asyncio, time
 
 import sqlite3
 
@@ -3737,8 +3737,21 @@ async def update_smartsystem(mode, request:Request):
                 text=True,
                 check=True
             )
-            ret = check_smart()
-            return {"success": ret, "message": "Update completed"}
+            ret = False
+            timeout = 20
+            start_time = time.time()
+
+            while time.time() - start_time < timeout:
+                if check_smart():  # 서비스가 활성 상태(True)인지 확인
+                    ret = True
+                    break
+                time.sleep(1)  # 1초 간격으로 재시도 (CPU 부하 방지)
+
+            # 3. 결과 반환
+            if ret:
+                return {"success": True, "message": "Update completed and service is active"}
+            else:
+                return {"success": False, "message": "Update completed but service start timed out"}
         except subprocess.CalledProcessError as e:
             return {"success": False, "message": f"Install failed: {e.stderr}"}
         except subprocess.TimeoutExpired:
