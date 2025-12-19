@@ -1,19 +1,23 @@
 <template>
   <div class="status-card">
     <div class="card-content">
-      <!-- 12 컬럼 그리드로 변경 -->
       <div class="grid grid-cols-12 gap-4 items-center">
-        <!-- 장비 정보 섹션 - Temp 유무에 따라 비율 변경 -->
-        <div :class="hasTempData ? 'col-span-6' : 'col-span-3'">
-          <div class="flex items-center gap-3 justify-between">
-            <div class="flex items-center gap-3">
-              <div class="equipment-avatar">
-                <img class="avatar-image" :src="motorImageSrc" :alt="stData.devType" />
-              </div>
-              <div class="equipment-info">
-                <h3 class="equipment-name">{{ stData.devNickname }}</h3>
-              </div>
+        <!-- 장비 정보 섹션 - 왼쪽 고정 -->
+        <div class="col-span-3">
+          <div class="flex items-center gap-3">
+            <div class="equipment-avatar">
+              <img class="avatar-image" :src="motorImageSrc" :alt="stData.devType" />
             </div>
+            <div class="equipment-info">
+              <h3 class="equipment-name">{{ stData.devNickname }}</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- 메트릭 섹션 - 오른쪽 정렬 (가동중 포함) -->
+        <div class="col-span-9">
+          <div class="metrics-section">
+            <!-- 가동중 배지 -->
             <div class="equipment-status">
               <span 
                 class="status-badge"
@@ -25,12 +29,7 @@
                 </span>
               </span>
             </div>
-          </div>
-        </div>
- 
-        <!-- 메트릭 섹션 - Temp 유무에 따라 비율 변경 -->
-        <div :class="hasTempData ? 'col-span-6' : 'col-span-9'">
-          <div class="metrics-section">
+
             <!-- Transformer -->
             <template v-if="stData.devType.includes('Transformer')">
               <template v-if="hasTempData">
@@ -42,7 +41,7 @@
                   <div class="metric-label">Temp {{ label }}</div>
                 </div>
               </template>
-              <div class="metric-box load">
+              <div class="metric-box load" :class="{ 'max-w-[160px]': !hasTempData }">
                 <div class="metric-main">
                   <span class="metric-value">{{ LoadRate }}</span>
                   <span class="metric-unit">%</span>
@@ -50,7 +49,7 @@
                 <div class="metric-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
               </div>
             </template>
- 
+
             <!-- VFD -->
             <template v-else-if="stData.devType=='VFD'">
               <template v-if="hasTempData">
@@ -77,7 +76,7 @@
                 <div class="metric-label">{{ t('dashboard.meter.current') }}</div>
               </div>
             </template>
- 
+
             <!-- 기타 장비 -->
             <template v-else>
               <div v-if="true" class="metric-box hours">
@@ -129,7 +128,7 @@
     </div>
   </div>
 </template>
- 
+
 <script>
 import motorImg from '@/images/motor_m.png'
 import fanImg from '@/images/fan_m.png'
@@ -252,7 +251,6 @@ export default {
       () => LoadFactor.value,
       (newVal) => {
         if (newVal > 0 && transData.value?.Stotal) {
-          //console.log((((transData.value.Stotal/1000) / newVal) * 100));
           LoadRate.value = (((transData.value.Stotal/1000) / newVal) * 100).toFixed(2);
         }
       },
@@ -329,29 +327,20 @@ export default {
   @apply whitespace-nowrap;
 }
 
-.equipment-type {
-  @apply text-xs font-semibold text-blue-500 dark:text-blue-400;
-  @apply bg-blue-100 dark:bg-blue-700 px-2 py-0.5 rounded;
-  @apply inline-block w-fit mt-0.5;
-}
-
 /* 상태 배지 */
 .equipment-status {
-  @apply flex items-center;
-  @apply flex-shrink-0;
+  @apply flex items-center flex-shrink-0;
 }
 
 .status-badge {
   @apply flex items-center gap-1.5 px-2.5 py-1;
   @apply rounded-full font-semibold text-xs;
   @apply border-2 transition-all duration-300;
-  @apply shadow-sm;
-  @apply whitespace-nowrap;
+  @apply shadow-sm whitespace-nowrap;
 }
 
 .status-indicator {
-  @apply w-1.5 h-1.5 rounded-full;
-  @apply animate-pulse;
+  @apply w-1.5 h-1.5 rounded-full animate-pulse;
 }
 
 .status-running {
@@ -371,22 +360,19 @@ export default {
 }
 
 .status-stopped .status-indicator {
-  @apply bg-gray-400;
-  @apply animate-none;
+  @apply bg-gray-400 animate-none;
 }
 
 /* 메트릭 섹션 */
 .metrics-section {
-  @apply flex items-center gap-3;
-  @apply w-full justify-end;
+  @apply flex items-center gap-3 w-full justify-end;
 }
 
 .metric-box {
   @apply flex flex-col items-center justify-center px-4 py-2 rounded-lg;
   @apply bg-gray-50 dark:bg-gray-700/50;
   @apply border border-gray-200 dark:border-gray-600;
-  @apply flex-1;
-  @apply h-14;
+  @apply flex-1 max-w-[160px] h-14;
   @apply transition-all duration-200 hover:shadow-sm;
 }
 
@@ -422,18 +408,15 @@ export default {
 }
 
 .metric-main {
-  @apply flex items-baseline gap-1;
-  @apply leading-none;
+  @apply flex items-baseline gap-1 leading-none;
 }
 
 .metric-value {
-  @apply text-sm font-bold text-gray-900 dark:text-white;
-  @apply leading-none;
+  @apply text-sm font-bold text-gray-900 dark:text-white leading-none;
 }
 
 .metric-unit {
-  @apply text-xs font-medium text-gray-500 dark:text-gray-400;
-  @apply leading-none;
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400 leading-none;
 }
 
 .metric-label {
@@ -453,13 +436,12 @@ export default {
 }
 
 @media (max-width: 768px) {
-  /* 태블릿에서는 5:7 비율 */
   .grid > div:first-child {
-    @apply col-span-5;
+    @apply col-span-4;
   }
   
   .grid > div:last-child {
-    @apply col-span-7;
+    @apply col-span-8;
   }
 
   .status-badge {
@@ -484,17 +466,12 @@ export default {
 }
 
 @media (max-width: 640px) {
-  /* 모바일에서는 세로 배치 */
   .grid {
     @apply grid-cols-1;
   }
   
   .grid > div {
     @apply col-span-full;
-  }
-
-  .equipment-status {
-    @apply ml-auto;
   }
   
   .metrics-section {
