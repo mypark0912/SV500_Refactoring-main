@@ -3684,29 +3684,9 @@ async def update_smartsystem(mode, request: Request):
                       smart_version='1.0.0')
         save_post(update, 0, 0)
 
-    # redis_state.client.select(0)
-    result = redis_state.client.hget("System", "setup")
-    if not result:
-        return {"success": False, "message": "Setup data not found"}
-
-    setting = json.loads(result)
-    main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
-    sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
-
-    if not main_channel_data or not sub_channel_data:
-        return {"success": False, "message": "Channel data not found"}
 
     if int(mode) == 1:
-        main_channel_data['assetInfo']['name'] = ''
-        main_channel_data['assetInfo']['type'] = ''
-        main_channel_data['assetInfo']['nickname'] = ''
-        sub_channel_data['assetInfo']['name'] = ''
-        sub_channel_data['assetInfo']['type'] = ''
-        sub_channel_data['assetInfo']['nickname'] = ''
-        FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(setting, f, indent=4)
-        redis_state.client.hset("System", "setup", json.dumps(setting))
+        reset_assetInfo('Main','Sub')
         try:
             result = subprocess.run(
                 ['sh', '/usr/local/sv500/iss/install.sh', '--fresh'],
@@ -3714,7 +3694,7 @@ async def update_smartsystem(mode, request: Request):
                 text=True,
                 check=True
             )
-            service_timeout = 60
+            service_timeout = 30
             start_time = time.time()
 
             while time.time() - start_time < service_timeout:
@@ -3741,21 +3721,11 @@ async def update_smartsystem(mode, request: Request):
 
             return {"success": False, "message": "Health check timed out after 60s"}
         except subprocess.CalledProcessError as e:
-            return {"success": False, "message": f"Install failed: {e.stderr}"}  # 6. 에러 메시지 추가
+            return {"success": False, "message": f"Fresh installation is failed: {e.stderr}"}  # 6. 에러 메시지 추가
         except subprocess.TimeoutExpired:
-            return {"success": False, "message": "Install timeout"}
+            return {"success": False, "message": "Fresh installation is timeout"}
 
     else:
-        # ch1 = ''
-        # ch2 = ''
-        # if main_channel_data['assetInfo']['name'] != '':
-        #     ch1 = 'Main'
-        #     reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
-        # if sub_channel_data['assetInfo']['name'] != '':
-        #     ch2 = 'Sub'
-        #     reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
-
-        # reset_assetInfo(ch1, ch2)
         try:
             result = subprocess.run(
                 ['sh', '/usr/local/sv500/iss/install.sh'],
@@ -3763,7 +3733,7 @@ async def update_smartsystem(mode, request: Request):
                 text=True,
                 check=True
             )
-            service_timeout = 60
+            service_timeout = 30
             start_time = time.time()
 
             while time.time() - start_time < service_timeout:
@@ -3791,7 +3761,7 @@ async def update_smartsystem(mode, request: Request):
             return {"success": False, "message": "Health check timed out after 60s"}
 
         except subprocess.CalledProcessError as e:
-            return {"success": False, "message": f"Install failed: {e.stderr}"}
+            return {"success": False, "message": f"Update failed: {e.stderr}"}
         except Exception as e:
             return {"success": False, "message": str(e)}
 
