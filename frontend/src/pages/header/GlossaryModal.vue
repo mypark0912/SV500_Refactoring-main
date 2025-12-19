@@ -67,15 +67,16 @@
           </div>
           
           <!-- 메인 콘텐츠 -->
-          <div class="flex flex-1 overflow-hidden">
+          <div class="flex flex-1 overflow-hidden p-4">
             <!-- 왼쪽: 탭 + 트리뷰 -->
-            <div class="w-64 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-              <div class="flex border-b border-gray-200 dark:border-gray-700">
+            <div class="w-80 flex flex-col pt-1 pb-1">
+              <div class="flex flex-col flex-1 border-r border-gray-200 dark:border-gray-700 pr-4">
+              <div class="flex border-b border-gray-200 dark:border-gray-700 pb-1 mb-1">
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
                   @click="activeTab = tab.key"
-                  class="flex-1 px-2 py-2 text-xs font-medium transition-colors"
+                  class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
                   :class="activeTab === tab.key 
                     ? 'text-violet-600 border-b-2 border-violet-600 bg-violet-50 dark:bg-violet-900/20' 
                     : 'text-gray-500 hover:text-gray-700'"
@@ -123,6 +124,7 @@
                     </li>
                   </ul>
                 </template>
+              </div>
               </div>
             </div>
 
