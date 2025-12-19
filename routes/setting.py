@@ -3720,10 +3720,16 @@ async def update_smartsystem(mode, request:Request):
             return {"success": False, "message": "Install timeout"}
 
     else:
+        ch1 = ''
+        ch2 = ''
         if main_channel_data['assetInfo']['name'] != '':
+            ch1 = 'Main'
             reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
         if sub_channel_data['assetInfo']['name'] != '':
+            ch2 = 'Sub'
             reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
+            
+        reset_assetInfo(ch1, ch2)
         try:
             result = subprocess.run(
                 ['sh', '/usr/local/sv500/iss/install.sh'],
@@ -3731,11 +3737,56 @@ async def update_smartsystem(mode, request:Request):
                 text=True,
                 check=True
             )
+
             return {"success": True, "message": "Update completed"}
         except subprocess.CalledProcessError as e:
             return {"success": False, "message": f"Install failed: {e.stderr}"}
         except subprocess.TimeoutExpired:
             return {"success": False, "message": "Install timeout"}
+
+
+def reset_assetInfo(channel1,channel2):
+    FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
+
+    if redis_state.client.hexists("System", "setup"):
+        setting = json.loads(redis_state.client.hget("System", "setup"))
+    else:
+        if not os.path.exists(FILE_PATH):
+            return {"success": False, "error": "setting file not found"}
+        try:
+            with open(FILE_PATH, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # 채널별 에셋정보 리셋
+    if channel1 != '':
+        for ch in setting.get("channel", []):
+            if ch.get("channel") == "Main":
+                ch["assetInfo"] = {
+                    "name": "",
+                    "type": "",
+                    "nickname": "",
+                    "driveType": "DOL"
+                }
+                break
+
+    if channel2 != '':
+        for ch in setting.get("channel", []):
+            if ch.get("channel") == "Sub":
+                ch["assetInfo"] = {
+                    "name": "",
+                    "type": "",
+                    "nickname": "",
+                    "driveType": "DOL"
+                }
+                break
+
+    # 저장
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(setting, f, indent=2, ensure_ascii=False)
+
+    redis_state.client.hset("System", "setup", json.dumps(setting))
 
 
 @router.post("/setDefaultIP")
