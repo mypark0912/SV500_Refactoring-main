@@ -1,5 +1,12 @@
 {
   "Title" : "SV-500スタート！",
+  "glossary": {
+    "title": "用語集",
+    "searchPlaceholder": "用語を検索...",
+    "searchResults": "検索結果: {count}件",
+    "noResults": "検索結果がありません",
+    "tryDifferent": "別のキーワードで検索してください"
+},
   "signin": {
     "account": "アカウント",
     "language": "言語",
@@ -29,7 +36,8 @@
     "link": {
       "msg": "お困りですか？",
       "catalog": "カタログ",
-      "manual": "ユーザーマニュアル"
+      "manual": "ユーザーマニュアル",
+      "glossary": "用語集"
     }
   },
   "sidebar": {
@@ -203,7 +211,8 @@
         "Last Week": "先週",
         "parameter": "パラメータ",
         "compliance": "遵守事項",
-        "RequiredQuality": "要求品質"
+        "RequiredQuality": "要求品質",
+        "glossary": "用語集"
       },
       "energyInfo": {
         "This Month": "今月",

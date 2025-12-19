@@ -16,7 +16,7 @@
           <!-- 헤더 -->
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              {{ isKorean ? '용어설명집' : locale === 'ja' ? '用語集' : 'Glossary' }}
+              {{ isKorean ? '용어설명집' : isJapanese ? '用語集' : 'Glossary' }}
             </h3>
             <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +35,7 @@
                 <input 
                   v-model="searchQuery"
                   type="text" 
-                  :placeholder="isKorean ? '용어 검색...' : locale === 'ja' ? '用語検索...' : 'Search terms...'"
+                  :placeholder="isKorean ? '용어 검색...' : isJapanese ? '用語検索...' : 'Search terms...'"
                   class="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   @keydown.enter.exact="goToNext"
                   @keydown.shift.enter.exact="goToPrev"
@@ -61,7 +61,7 @@
                 </button>
               </template>
               <span v-else-if="searchQuery" class="text-sm text-red-500 whitespace-nowrap">
-                {{ isKorean ? '결과 없음' : locale === 'ja' ? '結果なし' : 'No results' }}
+                {{ isKorean ? '결과 없음' : isJapanese ? '結果なし' : 'No results' }}
               </span>
             </div>
           </div>
@@ -131,7 +131,7 @@
               <!-- Equipment -->
               <section class="mb-8">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                  {{ isKorean ? '장비' : locale === 'ja' ? '設備' : 'Equipment' }}
+                  {{ isKorean ? '장비' : isJapanese ? '設備' : 'Equipment' }}
                 </h2>
                 <div v-for="category in equipmentData" :key="category.key" class="mb-6">
                   <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">{{ category.label }}</h3>
@@ -155,7 +155,7 @@
               <!-- PQ -->
               <section class="mb-8">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                  {{ isKorean ? '전력품질 (PQ)' : locale === 'ja' ? '電力品質 (PQ)' : 'Power Quality (PQ)' }}
+                  {{ isKorean ? '전력품질 (PQ)' : isJapanese ? '電力品質 (PQ)' : 'Power Quality (PQ)' }}
                 </h2>
                 <dl class="space-y-4">
                   <div v-for="item in pqData" :key="item.key" :id="`pq-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
@@ -171,7 +171,7 @@
               <!-- Fault -->
               <section class="mb-8">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                  {{ isKorean ? '결함' : locale === 'ja' ? '故障' : 'Fault' }}
+                  {{ isKorean ? '결함' : isJapanese ? '故障' : 'Fault' }}
                 </h2>
                 <dl class="space-y-4">
                   <div v-for="item in faultData" :key="item.key" :id="`fault-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
@@ -187,7 +187,7 @@
               <!-- Event -->
               <section class="mb-8">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                  {{ isKorean ? '이벤트' : locale === 'ja' ? 'イベント' : 'Event' }}
+                  {{ isKorean ? '이벤트' : isJapanese ? 'イベント' : 'Event' }}
                 </h2>
                 <dl class="space-y-4">
                   <div v-for="item in eventData" :key="item.key" :id="`event-${item.key}`" class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 scroll-mt-4">
@@ -306,7 +306,7 @@ export default {
 
     const tabs = computed(() => [
       { key: 'equipment', label: isKorean.value ? '장비' : isJapanese.value ? '設備' : 'Equipment' },
-      { key: 'pq',        label: isKorean.value ? '전력품질 (PQ)' : isJapanese.value ? '電力品質 (PQ)' : 'Power Quality (PQ)' },
+      { key: 'pq',        label: isKorean.value ? '전력품질' : isJapanese.value ? '電力品質' : 'Power Quality' },
       { key: 'fault',     label: isKorean.value ? '결함' : isJapanese.value ? '故障' : 'Fault' },
       { key: 'event',     label: isKorean.value ? '이벤트' : isJapanese.value ? 'イベント' : 'Event' },
     ])
@@ -395,7 +395,7 @@ export default {
 
     return {
       tabs, activeTab, activeItem, expandedCategories, contentArea, searchQuery,
-      currentSearchIndex, searchResults, isKorean, getLabel, getDescription, highlightText, formatDescription,
+      currentSearchIndex, searchResults, isKorean,isJapanese, getLabel, getDescription, highlightText, formatDescription,
       equipmentData, pqData, faultData, eventData, currentTabItems,
       goToNext, goToPrev, clearSearch, toggleCategory, scrollToItem, close,
     }
