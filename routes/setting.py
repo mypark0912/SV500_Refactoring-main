@@ -3660,8 +3660,9 @@ def get_sysMode():
         print(str(e))
         return {"success": False}
 
+
 @router.get('/updateSmartSystem/{mode}')
-async def update_smartsystem(mode, request:Request):
+async def update_smartsystem(mode, request: Request):
     if int(mode) == 1:
         c_text = 'Smart System reinstall'
         saveLog("Reinstll SmartSystem", request)
@@ -3705,7 +3706,7 @@ async def update_smartsystem(mode, request:Request):
         FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
         with open(FILE_PATH, "w", encoding="utf-8") as f:
             json.dump(setting, f, indent=4)
-        redis_state.client.hset("System","setup", json.dumps(setting))
+        redis_state.client.hset("System", "setup", json.dumps(setting))
         try:
             result = subprocess.run(
                 ['sh', '/usr/local/sv500/iss/install.sh', '--fresh'],
@@ -3713,23 +3714,48 @@ async def update_smartsystem(mode, request:Request):
                 text=True,
                 check=True
             )
-            return {"success": True, "message": "Fresh install completed"}
+            service_timeout = 60
+            start_time = time.time()
+
+            while time.time() - start_time < service_timeout:
+                if check_smart():
+                    break
+                await asyncio.sleep(1)
+
+            if not check_smart():
+                return {"success": False, "message": "Service start timed out"}
+
+            # 2. API 헬스체크 재시도 (최대 60초)
+            health_timeout = 60
+            start_time = time.time()
+
+            while time.time() - start_time < health_timeout:
+                try:
+                    async with httpx.AsyncClient(timeout=5) as client:
+                        response = await client.get(f"http://{os_spec.restip}:5000/api/alive")
+                        if response.status_code == 200:
+                            return {"success": True, "message": "Fresh installation is completed"}
+                except Exception as e:
+                    print(f"Health check retry... {e}")
+                await asyncio.sleep(3)  # 3초 간격 재시도
+
+            return {"success": False, "message": "Health check timed out after 60s"}
         except subprocess.CalledProcessError as e:
             return {"success": False, "message": f"Install failed: {e.stderr}"}  # 6. 에러 메시지 추가
         except subprocess.TimeoutExpired:
             return {"success": False, "message": "Install timeout"}
 
     else:
-        ch1 = ''
-        ch2 = ''
-        if main_channel_data['assetInfo']['name'] != '':
-            ch1 = 'Main'
-            reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
-        if sub_channel_data['assetInfo']['name'] != '':
-            ch2 = 'Sub'
-            reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
-            
-        reset_assetInfo(ch1, ch2)
+        # ch1 = ''
+        # ch2 = ''
+        # if main_channel_data['assetInfo']['name'] != '':
+        #     ch1 = 'Main'
+        #     reset_result1 = await reset_smart(main_channel_data['assetInfo']['name'], 0)
+        # if sub_channel_data['assetInfo']['name'] != '':
+        #     ch2 = 'Sub'
+        #     reset_result2 = await reset_smart(sub_channel_data['assetInfo']['name'], 0)
+
+        # reset_assetInfo(ch1, ch2)
         try:
             result = subprocess.run(
                 ['sh', '/usr/local/sv500/iss/install.sh'],
@@ -3737,28 +3763,40 @@ async def update_smartsystem(mode, request:Request):
                 text=True,
                 check=True
             )
-            ret = False
-            timeout = 20
+            service_timeout = 60
             start_time = time.time()
 
-            while time.time() - start_time < timeout:
-                if check_smart():  # 서비스가 활성 상태(True)인지 확인
-                    ret = True
+            while time.time() - start_time < service_timeout:
+                if check_smart():
                     break
-                time.sleep(1)  # 1초 간격으로 재시도 (CPU 부하 방지)
+                await asyncio.sleep(1)
 
-            # 3. 결과 반환
-            if ret:
-                return {"success": True, "message": "Update completed and service is active"}
-            else:
-                return {"success": False, "message": "Update completed but service start timed out"}
+            if not check_smart():
+                return {"success": False, "message": "Service start timed out"}
+
+            # 2. API 헬스체크 재시도 (최대 60초)
+            health_timeout = 60
+            start_time = time.time()
+
+            while time.time() - start_time < health_timeout:
+                try:
+                    async with httpx.AsyncClient(timeout=5) as client:
+                        response = await client.get(f"http://{os_spec.restip}:5000/api/alive")
+                        if response.status_code == 200:
+                            return {"success": True, "message": "Update completed"}
+                except Exception as e:
+                    print(f"Health check retry... {e}")
+                await asyncio.sleep(3)  # 3초 간격 재시도
+
+            return {"success": False, "message": "Health check timed out after 60s"}
+
         except subprocess.CalledProcessError as e:
             return {"success": False, "message": f"Install failed: {e.stderr}"}
-        except subprocess.TimeoutExpired:
-            return {"success": False, "message": "Install timeout"}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
 
-def reset_assetInfo(channel1,channel2):
+def reset_assetInfo(channel1, channel2):
     FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
 
     if redis_state.client.hexists("System", "setup"):
