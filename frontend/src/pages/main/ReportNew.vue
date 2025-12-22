@@ -618,18 +618,18 @@ const sortByOrder = (arr, orderList) => {
       }
       
       // 4. EN50160 요약 데이터 조회
-      try {
-          const SummaryResponse = await axios.get(`/report/getEn50160_summary/${channelComputed.value}/${selectedReport.value}`);
+      // try {
+      //     const SummaryResponse = await axios.get(`/report/getEn50160_summary/${channelComputed.value}/${selectedReport.value}`);
           
-          if (SummaryResponse.success) {
-            tbdata.value = SummaryResponse.data;
-            console.log("EN50160 요약 데이터 로드 완료:", tbdata.value);
-          }else{
-            console.log("EN50160 요약 데이터 없음");
-          }
-      } catch (error_ensummary) {
-        console.warn("EN50160 요약 데이터 조회 실패:", error_ensummary);
-      }
+      //     if (SummaryResponse.success) {
+      //       tbdata.value = SummaryResponse.data;
+      //       console.log("EN50160 요약 데이터 로드 완료:", tbdata.value);
+      //     }else{
+      //       console.log("EN50160 요약 데이터 없음");
+      //     }
+      // } catch (error_ensummary) {
+      //   console.warn("EN50160 요약 데이터 조회 실패:", error_ensummary);
+      // }
       
       isLoading.value = false;
     };

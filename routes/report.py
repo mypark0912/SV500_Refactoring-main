@@ -1373,19 +1373,19 @@ async def get_en50160_report_by_date(channel: str, date: str):
         logging.error(f"EN50160 리포트 조회 실패: {e}")
         return {"success": False, "msg": str(e)}
 
-@router.get("/getEn50160_summary/{channel}/{date}")
-async def get_summaryData(channel, date):
-    try:
-        result = await get_en50160_report_by_date(channel, date)
-
-        if result is None:
-            return {"success": False, "msg": f"리포트 없음: {channel}/{date}"}
-
-        return {"success": True, "data": result}
-
-    except Exception as e:
-        logging.error(f"EN50160 리포트 조회 실패: {e}")
-        return {"success": False, "msg": str(e)}
+# @router.get("/getEn50160_summary/{channel}/{date}")
+# async def get_summaryData(channel, date):
+#     try:
+#         result = await get_en50160_report_by_date(channel, date)
+#
+#         if result is None:
+#             return {"success": False, "msg": f"리포트 없음: {channel}/{date}"}
+#
+#         return {"success": True, "data": result}
+#
+#     except Exception as e:
+#         logging.error(f"EN50160 리포트 조회 실패: {e}")
+#         return {"success": False, "msg": str(e)}
 
 @router.get("/week/{channel}/{filename}")
 async def get_weekly_report(channel:str, filename: str):
