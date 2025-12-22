@@ -1344,11 +1344,54 @@ async def download_diagnosis_report(mode: str, asset_name: str, channel: str, ti
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def get_en50160_report_by_date(channel: str, date: str):
+    try:
+        from datetime import datetime, timedelta
+
+        # 날짜 파싱
+        target_date = datetime.strptime(date, "%Y%m%d")
+        start_of_day = target_date.strftime("%Y-%m-%dT00:00:00Z")
+        end_of_day = (target_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
+
+        query = f'''
+        from(bucket: "ntek30")
+            |> range(start: {start_of_day}, stop: {end_of_day})
+            |> filter(fn: (r) => r["_measurement"] == "en50160")
+            |> filter(fn: (r) => r["channel"] == "{channel}")
+            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+        '''
+
+        tables = influx_state.query_api.query(query)
+
+        for table in tables:
+            for record in table.records:
+                return {"success": True, "data": dict(record.values)}
+
+        return {"success": False, "msg": f"리포트 없음: {channel}/{date}"}
+
+    except Exception as e:
+        logging.error(f"EN50160 리포트 조회 실패: {e}")
+        return {"success": False, "msg": str(e)}
+
+@router.get("/getEn50160_summary/{channel}/{date}")
+async def get_summaryData(channel, date):
+    try:
+        result = await get_en50160_report_by_date(channel, date)
+
+        if result is None:
+            return {"success": False, "msg": f"리포트 없음: {channel}/{date}"}
+
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        logging.error(f"EN50160 리포트 조회 실패: {e}")
+        return {"success": False, "msg": str(e)}
+
 @router.get("/week/{channel}/{filename}")
 async def get_weekly_report(channel:str, filename: str):
     # get_all_chart_data 사용 (내부에서 파일 1번만 읽음)
     set_limit(channel)
-    return processor.get_all_chart_data(filename=filename)
+    return processor.get_all_chart_data(channel,filename=filename)
 
 
 def set_limit(channel):
@@ -1370,15 +1413,14 @@ def set_limit(channel):
 
 @router.get("/list/{channel}")
 def get_filelist(channel):
-    filelist = processor.list_files()
+    filelist = processor.list_files(channel)
     return {"success": True, "data" : filelist}
 
 
 @router.get('/getReportDiagnosis/{mode}/{asset}/{channel}/{date}')
-async def get_report_diagnosis_data(mode: str, asset:str, channel: str, date: str):
+async def get_report_diagnosis_data(mode: str, asset: str, channel: str, date: str):
     """
     저장된 Parquet 파일에서 진단 데이터 + 트렌드 한꺼번에 조회
-
     Args:
         mode: diagnosis 또는 powerquality
         channel: Main 또는 Sub
@@ -1387,11 +1429,30 @@ async def get_report_diagnosis_data(mode: str, asset:str, channel: str, date: st
     try:
         import pandas as pd
         import json
+        import numpy as np
         from pathlib import Path
 
+        def convert_to_serializable(obj):
+            """numpy/pandas 타입을 JSON 직렬화 가능한 타입으로 변환"""
+            if isinstance(obj, dict):
+                return {k: convert_to_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_to_serializable(v) for v in obj]
+            elif isinstance(obj, (np.integer,)):
+                return int(obj)
+            elif isinstance(obj, (np.floating,)):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (pd.Timestamp,)):
+                return obj.isoformat()
+            elif pd.isna(obj):
+                return None
+            return obj
+
         # 파일 경로 구성
-        output_dir = Path("/usr/local/sv500/reports/weekly")
-        pattern = f"diagnosis_report_{asset}_{channel}_{date}.parquet"
+        output_dir = Path("/usr/local/sv500/reports") / channel;
+        pattern = f"diagnosis_report_{asset}_{date}.parquet"
         files = list(output_dir.glob(pattern))
 
         if not files:
@@ -1414,15 +1475,29 @@ async def get_report_diagnosis_data(mode: str, asset:str, channel: str, date: st
         if isinstance(mode_data, str):
             mode_data = json.loads(mode_data)
 
-        # main, detail, trends 한꺼번에 리턴
+        main_data = mode_data.get("main", []) if mode_data else []
+        detail_data = mode_data.get("detail", []) if mode_data else []
+        trends_data = mode_data.get("trends") if mode_data else None
+
+        # 각각 문자열이면 파싱
+        if isinstance(main_data, str):
+            main_data = json.loads(main_data)
+        if isinstance(detail_data, str):
+            detail_data = json.loads(detail_data)
+        if isinstance(trends_data, str):
+            trends_data = json.loads(trends_data)
+
         result = {
             "asset_name": record.get("asset_name"),
             "mode": mode,
             "timestamp": mode_data.get("timestamp") if mode_data else None,
-            "main": mode_data.get("main", []) if mode_data else [],
-            "detail": mode_data.get("detail", []) if mode_data else [],
-            "trends": mode_data.get("trends") if mode_data else None
+            "main": main_data,
+            "detail": detail_data,
+            "trends": trends_data
         }
+
+        # numpy/pandas 타입 변환
+        result = convert_to_serializable(result)
 
         trends_count = len(result['trends']) if result['trends'] else 0
         logging.info(f"✅ 결과: main={len(result['main'])}개, detail={len(result['detail'])}개, trends={trends_count}개 항목")

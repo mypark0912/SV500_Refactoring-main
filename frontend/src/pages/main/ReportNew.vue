@@ -601,7 +601,7 @@ const sortByOrder = (arr, orderList) => {
 
         // 3. EN50160 데이터 조회
         try {
-          const filename = `en50160_weekly__${channelComputed.value}_${selectedReport.value}.parquet`;
+          const filename = `en50160_weekly_${selectedReport.value}.parquet`;
           const en50160Response = await axios.get(`/report/week/${channelComputed.value}/${filename}`);
           
           if (en50160Response.data) {
@@ -615,6 +615,18 @@ const sortByOrder = (arr, orderList) => {
 
       } catch (error) {
         console.error("데이터 조회 실패:", error);
+      }
+      
+      // 4. EN50160 요약 데이터 조회
+      try {
+          const SummaryResponse = await axios.get(`/report/getEn50160_summary/${channelComputed.value}/${selectedReport.value}`);
+          
+          if (SummaryResponse.success) {
+            tbdata.value = SummaryResponse.data;
+            console.log("EN50160 요약 데이터 로드 완료:", tbdata.value);
+          }
+      } catch (error_ensummary) {
+        console.warn("EN50160 요약 데이터 조회 실패:", error_ensummary);
       }
       
       isLoading.value = false;

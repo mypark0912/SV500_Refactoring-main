@@ -9,6 +9,7 @@ Parquet 데이터를 Chart.js용으로 변환
 
 import json
 import logging
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -35,7 +36,7 @@ class NumpyEncoder(json.JSONEncoder):
 @dataclass
 class WeeklyReportConfig:
     """주간 리포트 설정"""
-    output_dir: str = "/usr/local/sv500/reports/weekly"
+    output_dir: str = "/usr/local/sv500/reports"
     bucket: str = "ntek30"
     measurement: str = "en10min"
     channels: List[str] = field(default_factory=lambda: ["Main", "Sub"])
@@ -173,14 +174,12 @@ class EN50160ReportProcessor:
         Returns:
             날짜 문자열 리스트 (예: ["20251217", "20251210", ...])
         """
-        output_dir = Path(self.config.output_dir)
+        output_dir = Path(self.config.output_dir) / channel
+
         dates = set()
 
         # 패턴: en50160_weekly__Main_20251217.parquet
-        if channel:
-            pattern = f"en50160_weekly__{channel}_*.parquet"
-        else:
-            pattern = "en50160_weekly__*.parquet"
+        pattern = "en50160_weekly_*.parquet"
 
         for file in output_dir.glob(pattern):
             try:
@@ -199,17 +198,12 @@ class EN50160ReportProcessor:
         # 최신순 정렬
         return sorted(list(dates), reverse=True)
 
-    def read_parquet(self, filepath: str = None, filename: str = None) -> Optional[pd.DataFrame]:
+    def read_parquet(self, channel:str = None, filename: str = None) -> Optional[pd.DataFrame]:
         """Parquet 파일 읽기"""
         try:
-            if filepath:
-                path = Path(filepath)
-            elif filename:
-                path = Path(self.config.output_dir) / filename
-            else:
-                logger.error("filepath 또는 filename 필요")
-                return None
+            path = Path(self.config.output_dir) / channel / filename
 
+            print(path)
             if not path.exists():
                 logger.error(f"파일 없음: {path}")
                 return None
@@ -222,9 +216,9 @@ class EN50160ReportProcessor:
             logger.error(f"파일 읽기 실패: {e}")
             return None
 
-    def read_to_dict(self, filepath: str = None, filename: str = None) -> Optional[List[Dict]]:
+    def read_to_dict(self, channel: str, filename: str = None) -> Optional[List[Dict]]:
         """Parquet 파일을 딕셔너리 리스트로 변환"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
 
@@ -236,7 +230,7 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전체 리포트 데이터 (단일 API용)
     # =========================================================================
-    def get_all_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_all_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """
         전체 차트 데이터 반환 (파일 1번만 읽기)
 
@@ -252,7 +246,7 @@ class EN50160ReportProcessor:
                 "harmonics": {...}
             }
         """
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
 
@@ -270,9 +264,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 주파수 (Frequency)
     # =========================================================================
-    def get_frequency_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_frequency_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """주파수 Chart.js용 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
         return self._get_frequency_from_df(df)
@@ -357,9 +351,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전압 변동 (Voltage Variations)
     # =========================================================================
-    def get_voltage_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_voltage_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """전압 변동 Chart.js용 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel,filename)
         if df is None:
             return None
         return self._get_voltage_from_df(df)
@@ -451,9 +445,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전압 불평형 (Voltage Unbalance)
     # =========================================================================
-    def get_unbalance_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_unbalance_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """전압 불평형 Chart.js용 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
         return self._get_unbalance_from_df(df)
@@ -506,9 +500,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 전압 THD
     # =========================================================================
-    def get_thd_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_thd_chart_data(self, channel: str = None, filename: str = None) -> Optional[Dict]:
         """전압 THD Chart.js용 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
         return self._get_thd_from_df(df)
@@ -565,9 +559,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # Flicker (Pst, Plt)
     # =========================================================================
-    def get_flicker_chart_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_flicker_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """Flicker (Pst, Plt) Chart.js용 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
         return self._get_flicker_from_df(df)
@@ -647,9 +641,9 @@ class EN50160ReportProcessor:
     # =========================================================================
     # 고조파 (Harmonics)
     # =========================================================================
-    def get_harmonics_table_data(self, filepath: str = None, filename: str = None) -> Optional[Dict]:
+    def get_harmonics_table_data(self, channel:str, filename: str = None) -> Optional[Dict]:
         """고조파 테이블 데이터 반환 (파일 경로 지정)"""
-        df = self.read_parquet(filepath, filename)
+        df = self.read_parquet(channel, filename)
         if df is None:
             return None
         return self._get_harmonics_from_df(df)

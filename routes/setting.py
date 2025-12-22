@@ -3538,6 +3538,18 @@ async def wait_for_file(watch_paths: list, timeout: int = 30) -> dict:
     finally:
         notifier.stop()
 
+@router.get("/HarmTrigger/{channel}")
+async def set_harmTrigger(channel, request:Request, cmd: int = CmdType.CMD_CAPTURE, item: int = ItemType.ITEM_WAVEFORM):
+    try:
+        if channel == 'Main' or channel == 'main':
+            type = 0
+        else:
+            type = 1
+        await push_command_left(Command(type=0, cmd=cmd, item=item), request)
+        return {"success": True}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
 @router.get("/trigger")
 async def trigger_waveform(
