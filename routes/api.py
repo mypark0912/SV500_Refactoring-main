@@ -1518,8 +1518,8 @@ async def get_realtime_harmonics(channel,asset):
         req_flag = int(req_status) if req_status else 0
 
         do_request = False
-
-        if is_abnormal:
+        isRun = get_eqStatus(channel).get('status', False)
+        if is_abnormal and isRun:
             # 이상 상태인데 아직 트리거를 안 보냈다면(0), 트리거 요청(True)
             if req_flag == 0:
                 do_request = True
