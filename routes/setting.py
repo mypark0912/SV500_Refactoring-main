@@ -3546,6 +3546,7 @@ async def set_harmTrigger(channel, request:Request, cmd: int = CmdType.CMD_CAPTU
         else:
             chtype = 1
         await push_command_left(Command(type=chtype, cmd=cmd, item=item), request)
+        redis_state.client_db1.hset("waveRequest",channel,1)
         return {"success": True}
 
     except Exception as e:

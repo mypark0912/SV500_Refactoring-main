@@ -486,18 +486,21 @@ export default {
       try {
         if (!isComponentActive.value) return;
 
-        const response = await axios.get(`/api/getRealTimeHarmonics/${asset.value}`);
+        const response = await axios.get(`/api/getRealTimeHarmonics/${channelComputed.value}/${asset.value}`);
         
         if (response.data && response.data.success) {
           if (!isComponentActive.value) return;
 
           tbdataH.value = response.data.data;
           updateChartByOption('Harmonics', selectedOptions.Harmonics);
-        } else {
-          const res = await axios.get(`/setting/HarmTrigger/${channelComputed.value}`)
-          if (res.success){
-            console.warn("VFD Waveform file trigger 전송");
+
+          if(response.data.request){
+            const res = await axios.get(`/setting/HarmTrigger/${channelComputed.value}`)
+            if (res.success){
+              console.warn("VFD Waveform file trigger 전송");
+            }
           }
+        } else {
           tbdataH.value = null;
         }
       } catch (error) {

@@ -1475,17 +1475,15 @@ def get_running(channel):
         return {"total": 0, "current": 0}
 
 
-@router.get("/getRealTimeHarmonics/{asset}")
+@router.get("/getRealTimeHarmonics/{channel}/{asset}")
 @gc_after_large_data(threshold_mb=30)
-async def get_realtime_harmonics(asset):
+async def get_realtime_harmonics(channel,asset):
     async with httpx.AsyncClient(timeout=api_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
         data = response.json()
 
     if data and "Data" in data:
         # 하모닉스 데이터 추출
-        if len(data["Data"]) == 0:
-            return {"success": False}
         voltage_harmonics = []  # harmonicsSelectedV2 ~ V63
         current_harmonics = []  # harmonicsSelectedI2 ~ I63
 
@@ -1512,13 +1510,33 @@ async def get_realtime_harmonics(asset):
             else:
                 current_harmonics.append(0)
 
+        is_voltage_all_zero = not any(v > 0 for v in voltage_harmonics)
+        is_current_all_zero = not any(i > 0 for i in current_harmonics)
+        is_abnormal = is_voltage_all_zero and is_current_all_zero
+
+        req_status = redis_state.client_db1.hget("waveRequest", channel)
+        req_flag = int(req_status) if req_status else 0
+
+        do_request = False
+
+        if is_abnormal:
+            # 이상 상태인데 아직 트리거를 안 보냈다면(0), 트리거 요청(True)
+            if req_flag == 0:
+                do_request = True
+            # 이미 보낸 상태(1)라면 do_request는 False로 유지되어 중복 호출 방지
+        else:
+            # 정상 상태로 돌아왔다면, 다음에 다시 이상 발생 시 캡처할 수 있도록 플래그 리셋(0)
+            if req_flag == 1:
+                redis_state.client_db1.hset("waveRequest", channel, 0)
+
         return {
             "success": True,
             "data": {
                 "LastRecordDateTime": data.get("LastRecordDateTime", ""),
-                "voltage": voltage_harmonics,  # 62개 (2차~63차)
-                "current": current_harmonics  # 62개 (2차~63차)
-            }
+                "voltage": voltage_harmonics,
+                "current": current_harmonics
+            },
+            "request": do_request  # 프론트엔드에서 이 값을 보고 /HarmTrigger 호출 결정
         }
     else:
         return {"success": False}
