@@ -494,7 +494,10 @@ export default {
           tbdataH.value = response.data.data;
           updateChartByOption('Harmonics', selectedOptions.Harmonics);
         } else {
-          console.warn("서버 응답이 비어있습니다.");
+          const res = await axios.get(`/setting/HarmTrigger/${channelComputed.value}`)
+          if (res.success){
+            console.warn("VFD Waveform file trigger 전송");
+          }
           tbdataH.value = null;
         }
       } catch (error) {

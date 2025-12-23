@@ -15,6 +15,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field, asdict
+import pyarrow.parquet as pq
 
 logger = logging.getLogger(__name__)
 
@@ -203,14 +204,29 @@ class EN50160ReportProcessor:
         try:
             path = Path(self.config.output_dir) / channel / filename
 
-            print(path)
             if not path.exists():
                 logger.error(f"파일 없음: {path}")
                 return None
 
-            df = pd.read_parquet(path)
-            logger.info(f"파일 로드: {path.name} ({len(df)} 레코드)")
+            table = pq.read_table(path)
+
+            # 2. 메타데이터(en50160_summary) 추출
+            summary = None
+            if table.schema.metadata and b'en50160_summary' in table.schema.metadata:
+                summary_json = table.schema.metadata[b'en50160_summary'].decode('utf-8')
+                summary = json.loads(summary_json)
+
+            # 3. 테이블을 DataFrame으로 변환
+            df = table.to_pandas()
+
+            # 4. 추출한 요약 데이터를 df의 속성(attrs)에 저장하여 전달
+            df.attrs['summary'] = summary
+
+            logger.info(f"파일 로드: {path.name} ({len(df)} 레코드, 메타데이터 포함)")
             return df
+            # df = pd.read_parquet(path)
+            # logger.info(f"파일 로드: {path.name} ({len(df)} 레코드)")
+            # return df
 
         except Exception as e:
             logger.error(f"파일 읽기 실패: {e}")
@@ -231,28 +247,14 @@ class EN50160ReportProcessor:
     # 전체 리포트 데이터 (단일 API용)
     # =========================================================================
     def get_all_chart_data(self, channel:str, filename: str = None) -> Optional[Dict]:
-        """
-        전체 차트 데이터 반환 (파일 1번만 읽기)
-
-        ※ set_limits()로 설정된 self.nominal_voltage, self.nominal_frequency 사용
-
-        Returns:
-            {
-                "frequency": {...},
-                "voltage": {...},
-                "thd": {...},
-                "unbalance": {...},
-                "flicker": {...},
-                "harmonics": {...}
-            }
-        """
         df = self.read_parquet(channel, filename)
         if df is None:
             return None
-
+        report_summary = df.attrs.get('summary')
         logger.info(f"차트 데이터 생성 - 정격전압: {self.nominal_voltage}V, 정격주파수: {self.nominal_frequency}Hz")
 
         return {
+            "summary": report_summary,
             "frequency": self._get_frequency_from_df(df),
             "voltage": self._get_voltage_from_df(df),
             "thd": self._get_thd_from_df(df),

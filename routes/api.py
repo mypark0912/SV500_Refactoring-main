@@ -1484,6 +1484,8 @@ async def get_realtime_harmonics(asset):
 
     if data and "Data" in data:
         # 하모닉스 데이터 추출
+        if len(data["Data"]) == 0:
+            return {"success": False}
         voltage_harmonics = []  # harmonicsSelectedV2 ~ V63
         current_harmonics = []  # harmonicsSelectedI2 ~ I63
 
