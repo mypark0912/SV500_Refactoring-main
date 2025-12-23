@@ -450,7 +450,15 @@
       "downloading": "Downloading...",
       "cancel": "Cancel",
       "confirmDownload": "Download",
-      "downloadError": "Download failed."
+      "downloadError": "Download failed.",
+      "weeklyReport": "Weekly Report",
+      "weeklyReportDesc": "Download an integrated Word report containing all data for the selected week.",
+      "assetInfo": "Asset Information",
+      "equipmentDiag": "Equipment Diagnosis Results",
+      "pqDiag": "Power Quality Diagnosis Results",
+      "en50160": "EN50160 Analysis Results",
+      "energyAnalysis": "Energy Consumption Analysis",
+      "trendCharts": "Trend Charts for Each Item"
     },
     "info": {
       "ct_direction1": "CT1 Direction",

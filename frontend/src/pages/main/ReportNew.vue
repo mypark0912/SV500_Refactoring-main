@@ -43,17 +43,17 @@
           >
             <div
               class="absolute inset-0 bg-black/50"
-              @click="closeDownloadModal"
+              @click="!isDownloading && closeDownloadModal()"
             ></div>
             <div
               class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6"
             >
               <div class="flex items-center gap-3 mb-4">
                 <div
-                  class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center"
+                  class="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-full flex items-center justify-center"
                 >
                   <svg
-                    class="w-5 h-5 text-emerald-600 dark:text-emerald-400"
+                    class="w-5 h-5 text-violet-600 dark:text-violet-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -67,72 +67,107 @@
                   </svg>
                 </div>
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                  {{ t("report.modal.downloadReport") || "리포트 다운로드" }}
+                  {{ t("report.modal.weeklyReport") || "통합 주간 리포트 다운로드" }}
                 </h3>
               </div>
 
               <div
-                class="mb-6 text-sm text-gray-600 dark:text-gray-300 space-y-2"
+                class="mb-6 text-sm text-gray-600 dark:text-gray-300 space-y-3"
               >
                 <p>
-                  {{
-                    t("report.modal.downloadDesc1") ||
-                    "현재 표시된 진단 데이터를 Word 문서로 다운로드합니다."
-                  }}
+                  {{ t("report.modal.weeklyReportDesc") || "선택한 주간의 모든 데이터를 통합한 Word 문서를 다운로드합니다." }}
                 </p>
-                <div
-                  class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-1"
-                >
-                  <p class="font-medium text-gray-800 dark:text-gray-200">
+                
+                <!-- 포함 내용 -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                  <p class="font-medium text-gray-800 dark:text-gray-200 mb-2">
                     {{ t("report.modal.downloadIncludes") || "포함 내용:" }}
                   </p>
-                  <ul
-                    class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-0.5"
-                  >
-                    <li>
-                      {{ t("report.modal.downloadItem1") || "설비 정보" }}
-                    </li>
-                    <li>
-                      {{ t("report.modal.downloadItem2") || "진단 결과 차트" }}
-                    </li>
-                    <li>
-                      {{ t("report.modal.downloadItem3") || "상세 분석 항목" }}
-                    </li>
-                    <li>
-                      {{ t("report.modal.downloadItem4") || "트렌드 차트" }}
-                    </li>
-                  </ul>
+                  <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.assetInfo") || "설비 정보" }}
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.equipmentDiag") || "설비 진단" }}
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.pqDiag") || "전력품질 진단" }}
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.en50160") || "EN50160 분석" }}
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.energyAnalysis") || "전력량 분석" }}
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {{ t("report.modal.trendCharts") || "트렌드 차트" }}
+                    </div>
+                  </div>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  📅 {{ t("report.modal.downloadDate") || "기준 날짜" }}:
-                  {{ formatTimestamp(displayTimestamp) }}
-                </p>
+                
+                <!-- 기준 날짜 -->
+                <div class="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <span class="text-blue-600 dark:text-blue-400">📅</span>
+                  <span class="text-blue-700 dark:text-blue-300">
+                    {{ t("report.modal.downloadDate") || "기준 날짜" }}: 
+                    <span class="font-semibold">{{ formatDateStr(selectedReport) }}</span>
+                  </span>
+                </div>
               </div>
 
+              <!-- 로딩 상태 -->
               <div
                 v-if="isDownloading"
-                class="mb-4 flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg"
+                class="mb-4 p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg"
               >
-                <div
-                  class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"
-                ></div>
-                <span class="text-sm text-blue-600 dark:text-blue-400">{{
-                  t("report.modal.downloading") || "다운로드 중..."
-                }}</span>
+                <div class="flex items-center gap-3">
+                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+                  <div>
+                    <p class="text-sm font-medium text-amber-700 dark:text-amber-400">
+                      {{ t("report.modal.generating") || "리포트 생성 중..." }}
+                    </p>
+                    <p class="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                      {{ t("report.modal.generatingDesc") || "차트와 데이터를 처리하고 있습니다. 잠시만 기다려주세요." }}
+                    </p>
+                  </div>
+                </div>
+                <!-- 프로그레스 바 (애니메이션) -->
+                <div class="mt-3 w-full bg-amber-200 dark:bg-amber-800 rounded-full h-1.5 overflow-hidden">
+                  <div class="bg-amber-500 h-1.5 rounded-full animate-pulse" style="width: 70%"></div>
+                </div>
               </div>
 
+              <!-- 버튼 -->
               <div class="flex justify-end gap-3">
                 <button
                   @click="closeDownloadModal"
                   :disabled="isDownloading"
-                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {{ t("report.modal.cancel") || "취소" }}
                 </button>
                 <button
-                  @click="downloadReport"
-                  :disabled="isDownloading"
-                  class="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  @click="downloadWeeklyReport"
+                  :disabled="isDownloading || !selectedReport"
+                  class="px-4 py-2 text-sm font-medium bg-violet-500 text-white rounded-lg hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   <svg
                     v-if="!isDownloading"
@@ -148,7 +183,8 @@
                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                     />
                   </svg>
-                  {{ t("report.modal.confirmDownload") || "다운로드" }}
+                  <span v-if="isDownloading">{{ t("report.modal.downloading") || "다운로드 중..." }}</span>
+                  <span v-else>{{ t("report.modal.confirmDownload") || "다운로드" }}</span>
                 </button>
               </div>
             </div>
@@ -210,7 +246,11 @@
                       :disabled="!selectedReport || isLoading"
                       class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg v-if="isLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       {{ t('report.load') || 'Load' }}
@@ -219,8 +259,8 @@
                     <!-- Download 버튼 -->
                     <button 
                       @click="openDownloadModal"
-                      :disabled="!displayTimestamp || isDownloading"
-                      class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      :disabled="!selectedReport || isDownloading"
+                      class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-violet-500 text-white rounded-lg hover:bg-violet-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -334,89 +374,58 @@ export default {
 
     // === PQ 정렬 순서 정의 ===
     const pqDisplayOrder = [
-      // 전압 관련
       'VoltagePhaseAngle',
       'VoltageRMS',
       'DC',
-      // 전류 관련
       'CurrentRMS',
       'CurrentPhaseAngle',
       'CrestFactor',
-      // 파형, 왜곡 관련
       'Unbalance',
       'Harmonics',
       'ZeroSequence',
       'NegativeSequence',
-      // 전력, 효율 관련
       'Power',
       'PowerFactor',
       'TotalDemandDistortion',
-      // 기타
       'PhaseAngle',
       'Events',
     ];
 
-// === 정렬 함수 (item_name 또는 Name 둘 다 지원) ===
-const sortByOrder = (arr, orderList) => {
-  if (!arr || !Array.isArray(arr)) return arr;
-  return [...arr].sort((a, b) => {
-    // item_name 또는 Name 필드 사용
-    const nameA = a.item_name || a.Name || '';
-    const nameB = b.item_name || b.Name || '';
-    
-    const indexA = orderList.indexOf(nameA);
-    const indexB = orderList.indexOf(nameB);
-    
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
-};
+    const sortByOrder = (arr, orderList) => {
+      if (!arr || !Array.isArray(arr)) return arr;
+      return [...arr].sort((a, b) => {
+        const nameA = a.item_name || a.Name || '';
+        const nameB = b.item_name || b.Name || '';
+        const indexA = orderList.indexOf(nameA);
+        const indexB = orderList.indexOf(nameB);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    };
 
     // === 날짜/시간 상태 (탭별 분리) ===
     const tabState = ref({
-      Equipment: {
-        date: todayStr,
-        time: "",
-        timeOptions: [],
-        displayTime: null,
-      },
-      PowerQuality: {
-        date: todayStr,
-        time: "",
-        timeOptions: [],
-        displayTime: null,
-      },
+      Equipment: { date: todayStr, time: "", timeOptions: [], displayTime: null },
+      PowerQuality: { date: todayStr, time: "", timeOptions: [], displayTime: null },
     });
 
-    // === 현재 탭의 날짜/시간 (computed) ===
     const currentDate = computed({
       get: () => tabState.value[activeTab.value]?.date || todayStr,
-      set: (val) => {
-        if (tabState.value[activeTab.value])
-          tabState.value[activeTab.value].date = val;
-      },
+      set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].date = val; },
     });
     const currentTime = computed({
       get: () => tabState.value[activeTab.value]?.time || "",
-      set: (val) => {
-        if (tabState.value[activeTab.value])
-          tabState.value[activeTab.value].time = val;
-      },
+      set: (val) => { if (tabState.value[activeTab.value]) tabState.value[activeTab.value].time = val; },
     });
-    const currentTimeOptions = computed(
-      () => tabState.value[activeTab.value]?.timeOptions || []
-    );
-    const displayTimestamp = computed(
-      () => tabState.value[activeTab.value]?.displayTime || null
-    );
+    const currentTimeOptions = computed(() => tabState.value[activeTab.value]?.timeOptions || []);
+    const displayTimestamp = computed(() => tabState.value[activeTab.value]?.displayTime || null);
 
     // === 리포트 데이터 (탭별 분리) ===
     const diagnosisReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
     const pqReportData = ref({ main: [], detail: [], trends: null, timestamp: null });
     const en50160ReportData = ref(null);
 
-    // === Refs ===
     const diagnosisRef = ref(null);
     const pqDiagnosisRef = ref(null);
 
@@ -425,14 +434,11 @@ const sortByOrder = (arr, orderList) => {
 
     const mode = computed(() => {
       if (channelComputed.value === "Main")
-        return (
-          channelComputed.value === "Main" && setupMenu.value.MainDiagnosis
-        );
+        return channelComputed.value === "Main" && setupMenu.value.MainDiagnosis;
       else
         return channelComputed.value === "Sub" && setupMenu.value.SubDiagnosis;
     });
 
-    // 탭 목록
     const tabs = computed(() => {
       if (mode.value) {
         return [
@@ -449,42 +455,31 @@ const sortByOrder = (arr, orderList) => {
       }
     });
 
-    // === 타임스탬프 포맷 ===
     const formatTimestamp = (timestamp) => {
       if (!timestamp) return "";
       const date = new Date(timestamp);
       return date.toLocaleString("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
       });
     };
 
-    // === 날짜 문자열 포맷 (20251217 → 2025-12-17) ===
     const formatDateStr = (dateStr) => {
       if (!dateStr || dateStr.length !== 8) return dateStr;
       return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
     };
 
-    // === 현재 모드 반환 ===
     const getCurrentMode = () => {
       return activeTab.value === "Equipment" ? "diagnosis" : "powerquality";
     };
 
-    // === 시간 목록 조회 ===
     const fetchTimeOptions = async (date, modeType) => {
-      const chName =
-        channelComputed.value == "Main"
-          ? asset.value.assetName_main
-          : asset.value.assetName_sub;
+      const chName = channelComputed.value == "Main"
+        ? asset.value.assetName_main
+        : asset.value.assetName_sub;
 
       try {
-        const response = await axios.get(
-          `/report/reportTimes/${date}/${chName}/${modeType}`
-        );
+        const response = await axios.get(`/report/reportTimes/${date}/${chName}/${modeType}`);
         if (response.data.success) {
           return response.data.data.map((time) => ({
             value: time,
@@ -497,27 +492,19 @@ const sortByOrder = (arr, orderList) => {
       return [];
     };
 
-    // === 마지막 저장 데이터 조회 ===
     const fetchLastSavedData = async (modeType) => {
-      const chName =
-        channelComputed.value == "Main"
-          ? asset.value.assetName_main
-          : asset.value.assetName_sub;
+      const chName = channelComputed.value == "Main"
+        ? asset.value.assetName_main
+        : asset.value.assetName_sub;
 
       try {
-        const response = await axios.get(
-          `/report/lastReportData/${modeType}/${chName}`
-        );
+        const response = await axios.get(`/report/lastReportData/${modeType}/${chName}`);
         if (response.data.success) {
           let data = response.data.data;
-          
-          // PowerQuality일 경우 정렬 적용
           if (modeType === 'powerquality' && data) {
             data.main = sortByOrder(data.main, pqDisplayOrder);
             data.detail = sortByOrder(data.detail, pqDisplayOrder);
-            console.log("=== fetchLastSavedData PQ 정렬 후 main ===", data.main);
           }
-          
           return data;
         }
       } catch (error) {
@@ -526,13 +513,10 @@ const sortByOrder = (arr, orderList) => {
       return null;
     };
 
-    // === 날짜 변경 ===
     const onDateChange = async () => {
       const modeType = getCurrentMode();
       const state = tabState.value[activeTab.value];
-
       state.timeOptions = await fetchTimeOptions(state.date, modeType);
-
       if (state.timeOptions.length > 0) {
         state.time = state.timeOptions[0].value;
       } else {
@@ -540,7 +524,7 @@ const sortByOrder = (arr, orderList) => {
       }
     };
 
-    // === Load 버튼 클릭 (Parquet 파일에서 전체 로드) ===
+    // === Load 버튼 클릭 ===
     const onLoadClick = async () => {
       if (!selectedReport.value) return;
 
@@ -551,13 +535,12 @@ const sortByOrder = (arr, orderList) => {
         : asset.value.assetName_sub;
 
       try {
-        if (mode.value){
-          // 1. Diagnosis 데이터 조회
+        if (mode.value) {
+          // Diagnosis 데이터 조회
           try {
             const diagResponse = await axios.get(
               `/report/getReportDiagnosis/diagnosis/${chName}/${channelComputed.value}/${selectedReport.value}`
             );
-            
             if (diagResponse.data.success) {
               diagnosisReportData.value = {
                 main: diagResponse.data.data.main,
@@ -571,21 +554,14 @@ const sortByOrder = (arr, orderList) => {
             console.warn("Diagnosis 데이터 조회 실패:", diagError);
           }
 
-          // 2. PowerQuality 데이터 조회
+          // PowerQuality 데이터 조회
           try {
             const pqResponse = await axios.get(
               `/report/getReportDiagnosis/powerquality/${chName}/${channelComputed.value}/${selectedReport.value}`
             );
-            
-            console.log("=== PQ 원본 main ===", pqResponse.data.data?.main);
-            
             if (pqResponse.data.success) {
-              // main과 detail 정렬 적용
               const sortedMain = sortByOrder(pqResponse.data.data.main || [], pqDisplayOrder);
               const sortedDetail = sortByOrder(pqResponse.data.data.detail || [], pqDisplayOrder);
-              
-              console.log("=== PQ 정렬 후 main ===", sortedMain);
-              
               pqReportData.value = {
                 main: sortedMain,
                 detail: sortedDetail,
@@ -599,72 +575,43 @@ const sortByOrder = (arr, orderList) => {
           }
         }
 
-        // 3. EN50160 데이터 조회
+        // EN50160 데이터 조회
         try {
           const filename = `en50160_weekly_${selectedReport.value}.parquet`;
           const en50160Response = await axios.get(`/report/week/${channelComputed.value}/${filename}`);
-          
           if (en50160Response.data) {
             en50160ReportData.value = en50160Response.data;
-            console.log("EN50160 데이터 로드 완료:", en50160ReportData.value);
           }
         } catch (en50160Error) {
           console.warn("EN50160 데이터 조회 실패:", en50160Error);
           en50160ReportData.value = null;
         }
-
       } catch (error) {
         console.error("데이터 조회 실패:", error);
       }
       
-      // 4. EN50160 요약 데이터 조회
-      // try {
-      //     const SummaryResponse = await axios.get(`/report/getEn50160_summary/${channelComputed.value}/${selectedReport.value}`);
-          
-      //     if (SummaryResponse.success) {
-      //       tbdata.value = SummaryResponse.data;
-      //       console.log("EN50160 요약 데이터 로드 완료:", tbdata.value);
-      //     }else{
-      //       console.log("EN50160 요약 데이터 없음");
-      //     }
-      // } catch (error_ensummary) {
-      //   console.warn("EN50160 요약 데이터 조회 실패:", error_ensummary);
-      // }
-      
       isLoading.value = false;
     };
 
-    // === 리포트 데이터 조회 ===
     const fetchReportData = async (timestamp) => {
-      const chName =
-        channelComputed.value == "Main"
-          ? asset.value.assetName_main
-          : asset.value.assetName_sub;
+      const chName = channelComputed.value == "Main"
+        ? asset.value.assetName_main
+        : asset.value.assetName_sub;
       const modeType = getCurrentMode();
 
       try {
-        const response = await axios.get(
-          `/report/reportDataByTime/${modeType}/${chName}/${timestamp}`
-        );
-
+        const response = await axios.get(`/report/reportDataByTime/${modeType}/${chName}/${timestamp}`);
         if (response.data.success) {
           let mainData = response.data.data.main;
           let detailData = response.data.data.detail;
 
-          // PowerQuality일 경우 정렬 적용
           if (modeType === 'powerquality') {
             mainData = sortByOrder(mainData, pqDisplayOrder);
             detailData = sortByOrder(detailData, pqDisplayOrder);
-            console.log("=== fetchReportData PQ 정렬 후 main ===", mainData);
           }
 
-          const data = {
-            main: mainData,
-            detail: detailData,
-            timestamp: timestamp,
-          };
+          const data = { main: mainData, detail: detailData, timestamp: timestamp };
 
-          // 탭에 따라 다른 데이터에 저장
           if (activeTab.value === "Equipment") {
             diagnosisReportData.value = data;
           } else {
@@ -676,14 +623,12 @@ const sortByOrder = (arr, orderList) => {
       }
     };
 
-    // === 초기 로드 (탭별) ===
     const initialLoad = async () => {
       const modeType = getCurrentMode();
       const state = tabState.value[activeTab.value];
 
       isLoading.value = true;
 
-      // 오늘 날짜 시간 목록 조회
       state.timeOptions = await fetchTimeOptions(state.date, modeType);
 
       if (state.timeOptions.length > 0) {
@@ -691,18 +636,11 @@ const sortByOrder = (arr, orderList) => {
         await fetchReportData(state.time);
         state.displayTime = state.time;
       } else {
-        // 오늘 데이터 없으면 마지막 저장 데이터 로드
         state.time = "";
         const lastData = await fetchLastSavedData(modeType);
         if (lastData && lastData.timestamp) {
           state.displayTime = lastData.timestamp;
-
-          const data = {
-            main: lastData.main,
-            detail: lastData.detail,
-            timestamp: lastData.timestamp,
-          };
-
+          const data = { main: lastData.main, detail: lastData.detail, timestamp: lastData.timestamp };
           if (activeTab.value === "Equipment") {
             diagnosisReportData.value = data;
           } else {
@@ -714,17 +652,11 @@ const sortByOrder = (arr, orderList) => {
       isLoading.value = false;
     };
 
-    // === 탭 변경 ===
     const changeTab = async (tabName) => {
       activeTab.value = tabName;
-
-      // 진단 탭으로 변경 시 해당 탭 데이터가 없으면 로드
-      if(mode.value){
+      if (mode.value) {
         if (tabName === "Equipment" || tabName === "PowerQuality") {
-          const targetData =
-            tabName === "Equipment"
-              ? diagnosisReportData.value
-              : pqReportData.value;
+          const targetData = tabName === "Equipment" ? diagnosisReportData.value : pqReportData.value;
           if (!targetData.main || targetData.main.length === 0) {
             await initialLoad();
           }
@@ -738,39 +670,43 @@ const sortByOrder = (arr, orderList) => {
     };
 
     const closeDownloadModal = () => {
-      showDownloadModal.value = false;
+      if (!isDownloading.value) {
+        showDownloadModal.value = false;
+      }
     };
 
-    // === 리포트 다운로드 ===
-    const downloadReport = async () => {
-      const state = tabState.value[activeTab.value];
-      if (!state.displayTime) return;
+    // === 통합 주간 리포트 다운로드 ===
+    const downloadWeeklyReport = async () => {
+      if (!selectedReport.value) return;
 
       isDownloading.value = true;
 
       try {
-        const modeType = getCurrentMode();
-        const chName =
-          channelComputed.value == "Main"
-            ? asset.value.assetName_main
-            : asset.value.assetName_sub;
-        const timestamp = state.displayTime;
+        const chName = channelComputed.value == "Main"
+          ? asset.value.assetName_main
+          : asset.value.assetName_sub;
 
+        // 통합 주간 리포트 API 호출
         const response = await axios.get(
-          `/report/downloadDiagnosisReport/${modeType}/${chName}/${channelComputed.value}/${timestamp}?locale=${locale.value}`,
-          { responseType: "blob" }
+          `/report/downloadWeeklyReport/${channelComputed.value}/${selectedReport.value}`,
+          {
+            params: {
+              locale: locale.value,
+              asset_name: chName
+            },
+            responseType: "blob",
+            timeout: 120000  // 2분 타임아웃 (리포트 생성에 시간이 걸릴 수 있음)
+          }
         );
 
+        // 파일 다운로드
         const blob = new Blob([response.data], {
           type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-
-        const dateStr = timestamp.split("T")[0];
-        link.download = `${modeType}_report_${chName}_${dateStr}.docx`;
-
+        link.download = `weekly_report_${channelComputed.value}_${selectedReport.value}.docx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -779,13 +715,18 @@ const sortByOrder = (arr, orderList) => {
         closeDownloadModal();
       } catch (error) {
         console.error("리포트 다운로드 실패:", error);
-        alert(t("report.downloadError") || "다운로드에 실패했습니다.");
+        
+        // 에러 메시지 표시
+        let errorMessage = t("report.downloadError") || "다운로드에 실패했습니다.";
+        if (error.code === 'ECONNABORTED') {
+          errorMessage = t("report.downloadTimeout") || "리포트 생성 시간이 초과되었습니다. 다시 시도해주세요.";
+        }
+        alert(errorMessage);
       } finally {
         isDownloading.value = false;
       }
     };
 
-    // === EN50160 데이터 로드 ===
     const fetchEN50160Data = async () => {
       try {
         const res = await fetch("/en50160_info.json");
@@ -796,18 +737,15 @@ const sortByOrder = (arr, orderList) => {
       }
     };
 
-    // === 파일 목록 조회 ===
     const fetchDates = async () => {
       try {
         const response = await axios.get(`/report/list/${channelComputed.value}`);
         if (response.data.success) {
           reportDates.value = response.data.data;
-          // 목록이 있으면 첫 번째 선택
           if (reportDates.value.length > 0) {
             selectedReport.value = reportDates.value[0];
           }
         } else {
-          console.warn("서버 응답이 success: false 입니다.");
           reportDates.value = [];
         }
       } catch (error) {
@@ -821,39 +759,20 @@ const sortByOrder = (arr, orderList) => {
       () => route.params.channel,
       async (newChannel) => {
         channel.value = newChannel;
-        // 탭 상태 초기화
         tabState.value = {
-          Equipment: {
-            date: todayStr,
-            time: "",
-            timeOptions: [],
-            displayTime: null,
-          },
-          PowerQuality: {
-            date: todayStr,
-            time: "",
-            timeOptions: [],
-            displayTime: null,
-          },
+          Equipment: { date: todayStr, time: "", timeOptions: [], displayTime: null },
+          PowerQuality: { date: todayStr, time: "", timeOptions: [], displayTime: null },
         };
         diagnosisReportData.value = { main: [], detail: [], trends: null, timestamp: null };
         pqReportData.value = { main: [], detail: [], trends: null, timestamp: null };
         en50160ReportData.value = null;
         
-        // 채널 변경 시 파일 목록 다시 조회
         await fetchDates();
-        if(mode.value)
-          await initialLoad();
+        if (mode.value) await initialLoad();
       }
     );
 
-    watch(
-      channelStatus,
-      (newVal) => {
-        setupMenu.value = newVal;
-      },
-      { immediate: true }
-    );
+    watch(channelStatus, (newVal) => { setupMenu.value = newVal; }, { immediate: true });
 
     watch(mode, (newVal) => {
       if (newVal) {
@@ -867,8 +786,7 @@ const sortByOrder = (arr, orderList) => {
     onMounted(async () => {
       await fetchDates();
       await fetchEN50160Data();
-      if (mode.value)
-        await initialLoad();
+      if (mode.value) await initialLoad();
     });
 
     return {
@@ -881,7 +799,6 @@ const sortByOrder = (arr, orderList) => {
       t,
       activeTab,
       changeTab,
-      // 날짜/시간
       currentDate,
       currentTime,
       currentTimeOptions,
@@ -890,15 +807,12 @@ const sortByOrder = (arr, orderList) => {
       onLoadClick,
       formatTimestamp,
       formatDateStr,
-      // 로딩
       isLoading,
       isDownloading,
-      // 모달
       showDownloadModal,
       openDownloadModal,
       closeDownloadModal,
-      downloadReport,
-      // 데이터 (탭별 분리)
+      downloadWeeklyReport,
       diagnosisReportData,
       pqReportData,
       en50160ReportData,

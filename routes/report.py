@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException,Query
 from fastapi.responses import FileResponse
 from states.global_state import influx_state, redis_state, os_spec
 from docx import Document
@@ -6,40 +6,68 @@ from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+from typing import Dict, Any, List, Optional
 import numpy as np
-from datetime import datetime
+import pandas as pd
+import pyarrow.parquet as pq
+from datetime import datetime, timedelta, timezone
 import logging, os, json, tempfile, uuid
-from .en50160_dataMap import EN50160ReportProcessor
+from .en50160_dataMap import EN50160ReportProcessor, WeeklyReportConfig
 from .api import get_asset, get_params, get_trendData, Trend
+from .weekly_report import generate_weekly_report
+from pathlib import Path
+import warnings
 
 router = APIRouter()
+
+REPORTS_DIR = Path("/usr/local/sv500/reports")
+
+# matplotlib 기본 설정
+plt.rcParams['axes.unicode_minus'] = False
+
+# matplotlib 폰트 관련 경고 억제
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', message='.*glyph.*')
+warnings.filterwarnings('ignore', message='.*Substituting.*')
+
+# matplotlib 로거 레벨 조정
+logging.getLogger('matplotlib').setLevel(logging.DEBUG)
+logging.getLogger('matplotlib.font_manager').setLevel(logging.DEBUG)
+
+_font_prop_cache = None
+_font_initialized = False
 
 # ============================================
 # 한글 폰트 설정
 # ============================================
 def setup_korean_font():
-    """
-    한글 폰트 설정 (매번 차트 생성 전 호출)
-    """
+    """한글 폰트 설정 (한 번만 초기화)"""
+    global _font_prop_cache, _font_initialized
+
+    if _font_initialized:
+        return _font_prop_cache
+
     font_path = '/home/root/webserver/fonts/NanumGothicCoding.ttf'
     if os.path.exists(font_path):
-        # 폰트 캐시 재구축
-        fm._load_fontmanager(try_read_cache=False)
-        fm.fontManager.addfont(font_path)
-        font_prop = fm.FontProperties(fname=font_path)
-        font_name = font_prop.get_name()
+        try:
+            fm.fontManager.addfont(font_path)
+            font_prop = fm.FontProperties(fname=font_path)
+            font_name = font_prop.get_name()
+            plt.rcParams['font.family'] = font_name
+            plt.rcParams['axes.unicode_minus'] = False
+            _font_prop_cache = font_prop
+            _font_initialized = True
+            return font_prop
+        except Exception as e:
+            logging.warning(f"폰트 로드 실패: {e}")
 
-        # rcParams 강제 설정
-        plt.rcParams['font.family'] = font_name
-        plt.rcParams['font.sans-serif'] = [font_name]
-        plt.rcParams['axes.unicode_minus'] = False
-
-        return font_prop
-    else:
-        plt.rcParams['axes.unicode_minus'] = False
-        return None
+    plt.rcParams['axes.unicode_minus'] = False
+    _font_initialized = True
+    return None
 
 
 # 모듈 로드 시 폰트 초기 설정
@@ -317,7 +345,7 @@ def create_diagnosis_bar_chart(chart_path, main_data, mode='diagnosis', locale='
 
     if mode == 'powerquality':
         if locale == 'ko':
-            status_labels = ['정지', '정상', '저', '중', '고']
+            status_labels = ['정지', '정상', '낮음', '중간', '높음']
         else:
             status_labels = ['Stop', 'OK', 'Low', 'Medium', 'High']
     else:
@@ -1509,3 +1537,972 @@ async def get_report_diagnosis_data(mode: str, asset: str, channel: str, date: s
         import traceback
         traceback.print_exc()
         return {"success": False, "msg": str(e)}
+
+
+# ============================================
+# 유틸리티 함수
+# ============================================
+def convert_to_serializable(obj):
+    """numpy/pandas 타입을 JSON 직렬화 가능한 타입으로 변환"""
+    if isinstance(obj, dict):
+        return {k: convert_to_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(v) for v in obj]
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (pd.Timestamp,)):
+        return obj.isoformat()
+    elif pd.isna(obj):
+        return None
+    return obj
+
+
+def parse_json_field(value):
+    """JSON 문자열이면 파싱, 아니면 그대로 반환"""
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+    return value
+
+
+def get_week_range_from_date(date_str: str):
+    """
+    날짜 문자열(20251217)로부터 해당 주의 시작/종료일 계산
+
+    Returns:
+        (start_date, end_date) - 둘 다 datetime 객체
+    """
+    # 20251217 → 2025-12-17
+    target_date = datetime.strptime(date_str, "%Y%m%d")
+
+    # 해당 주의 월요일 찾기
+    monday = target_date - timedelta(days=target_date.weekday())
+    sunday = monday + timedelta(days=6)
+
+    return monday, sunday
+
+
+# ============================================
+# 데이터 로드 함수
+# ============================================
+def get_en50160_from_redis(channel: str, existing_data: Optional[Dict] = None) -> Optional[Dict]:
+    """
+    EN50160 요약 테이블 데이터 조회 (API 호출)
+
+    Args:
+        channel: 채널명 (Main/Sub)
+        existing_data: 기존 EN50160 데이터 (있으면 detail_table만 업데이트)
+
+    Returns:
+        EN50160 데이터 딕셔너리
+    """
+    try:
+        from routes.api import getEn50160
+
+        # API 호출로 데이터 가져오기
+        result = getEn50160(channel)
+
+        if result and result.get('success'):
+            tbdata = result.get('data', {})
+
+            if tbdata:
+                # 테이블 데이터 변환
+                detail_table = transform_en50160_table_data(tbdata)
+
+                if existing_data:
+                    existing_data['detail_table'] = detail_table
+                    return existing_data
+                else:
+                    return {'detail_table': detail_table}
+
+    except ImportError:
+        logging.warning("getEn50160 import 실패")
+    except Exception as e:
+        logging.error(f"EN50160 데이터 조회 실패: {e}")
+
+    return existing_data
+
+
+def transform_en50160_table_data(tbdata: Dict) -> List[Dict]:
+    """
+    getEn50160 API 데이터를 테이블 형식으로 변환
+    """
+    # 파라미터 정의
+    params_def = [
+        {'parameter': 'Frequency Variation 1', 'parameter_ko': '주파수 변동 1',
+         'keys': {'l1': 'Frequency Variation 1', 'l2': None, 'l3': None},
+         'required': '(+1%~-1%), 99.5%/Week', 'bits': [0]},
+        {'parameter': 'Frequency Variation 2', 'parameter_ko': '주파수 변동 2',
+         'keys': {'l1': 'Frequency Variation 2', 'l2': None, 'l3': None},
+         'required': '(+4%~-6%), 100%/Week', 'bits': [1]},
+        {'parameter': 'Voltage Variation 1', 'parameter_ko': '전압 변동 1',
+         'keys': {'l1': 'Voltage Variation 1 L1(%)', 'l2': 'Voltage Variation 1 L2(%)',
+                  'l3': 'Voltage Variation 1 L3(%)'},
+         'required': '(+10%~-10%), 95%/Week', 'bits': [2, 3, 4]},
+        {'parameter': 'Voltage Variation 2', 'parameter_ko': '전압 변동 2',
+         'keys': {'l1': 'Voltage Variation 2 L1(%)', 'l2': 'Voltage Variation 2 L2(%)',
+                  'l3': 'Voltage Variation 2 L3(%)'},
+         'required': '(+10%~-15%), 100%/Week', 'bits': [5, 6, 7]},
+        {'parameter': 'Voltage Unbalance', 'parameter_ko': '전압 불평형',
+         'keys': {'l1': 'Voltage Unbalance', 'l2': None, 'l3': None},
+         'required': '(2% 미만), 100%/Week', 'bits': [8]},
+        {'parameter': 'THD', 'parameter_ko': 'THD',
+         'keys': {'l1': 'THDs Variation L1(%)', 'l2': 'THDs Variation L2(%)', 'l3': 'THDs Variation L3(%)'},
+         'required': '(8%미만), 95%/Week', 'bits': [9, 10, 11]},
+        {'parameter': 'Harmonics', 'parameter_ko': '고조파',
+         'keys': {'l1': 'Harmonics Variatiopn L1(%)', 'l2': 'Harmonics Variatiopn L2(%)',
+                  'l3': 'Harmonics Variatiopn L3(%)'},
+         'required': '(0.5%~6%), 95%/Week', 'bits': [12, 13, 14]},
+        {'parameter': 'Pst', 'parameter_ko': 'Pst',
+         'keys': {'l1': 'Flickers Pst L1(%)', 'l2': 'Flickers Pst L2(%)', 'l3': 'Flickers Pst L3(%)'},
+         'required': '(1), Info Only', 'bits': [15, 16, 17]},
+        {'parameter': 'Plt', 'parameter_ko': 'Plt',
+         'keys': {'l1': 'Flickers Plt L1(%)', 'l2': 'Flickers Plt L2(%)', 'l3': 'Flickers Plt L3(%)'},
+         'required': '(1), 95%/Week', 'bits': [18, 19, 20]},
+        {'parameter': 'Signal Vol.', 'parameter_ko': '신호 전압',
+         'keys': {'l1': 'Signaling Voltage L1(%)', 'l2': 'Signaling Voltage L2(%)', 'l3': 'Signaling Voltage L3(%)'},
+         'required': '(10%미만), 99%/Day', 'bits': [21, 22, 23]},
+        {'parameter': 'Voltage Sag', 'parameter_ko': '전압 강하',
+         'keys': {'l1': 'Voltage Dips L1', 'l2': 'Voltage Dips L2', 'l3': 'Voltage Dips L3'},
+         'required': 'Info Only', 'bits': None},
+        {'parameter': 'Voltage Swell', 'parameter_ko': '전압 상승',
+         'keys': {'l1': 'Voltage Swells L1', 'l2': 'Voltage Swells L2', 'l3': 'Voltage Swells L3'},
+         'required': 'Info Only', 'bits': None},
+        {'parameter': 'Short Interruption', 'parameter_ko': '단시간 정전',
+         'keys': {'l1': 'Short Interruptions L1', 'l2': 'Short Interruptions L2', 'l3': 'Short Interruptions L3'},
+         'required': 'Info Only', 'bits': None},
+        {'parameter': 'Long Interruption', 'parameter_ko': '장시간 정전',
+         'keys': {'l1': 'Long Interruptions L1', 'l2': 'Long Interruptions L2', 'l3': 'Long Interruptions L3'},
+         'required': 'Info Only', 'bits': None},
+        {'parameter': 'Signaling Volt.', 'parameter_ko': '신호 전압',
+         'keys': {'l1': 'Signaling Voltage L1(%)', 'l2': 'Signaling Voltage L2(%)', 'l3': 'Signaling Voltage L3(%)'},
+         'required': 'Info Only', 'bits': None},
+    ]
+
+    # status&compliance 비트마스크
+    compliance_mask = tbdata.get('status&compliance', 0)
+
+    detail_table = []
+    for param in params_def:
+        keys = param['keys']
+
+        # L1, L2, L3 값 가져오기
+        l1 = tbdata.get(keys['l1'], '-') if keys['l1'] else '-'
+        l2 = tbdata.get(keys['l2'], '-') if keys['l2'] else '-'
+        l3 = tbdata.get(keys['l3'], '-') if keys['l3'] else '-'
+
+        # Compliance 판정
+        if param['bits']:
+            failed = any((compliance_mask & (1 << bit)) != 0 for bit in param['bits'])
+            compliance = 'Failed' if failed else 'OK'
+        else:
+            compliance = '-'
+
+        detail_table.append({
+            'parameter': param['parameter'],
+            'parameter_ko': param['parameter_ko'],
+            'l1': l1,
+            'l2': l2,
+            'l3': l3,
+            'compliance': compliance,
+            'required': param['required']
+        })
+
+    return detail_table
+
+
+def get_itic_data_for_report(channel: str) -> Optional[List[Dict]]:
+    """
+    ITIC 이벤트 데이터 조회
+
+    Args:
+        channel: 채널명 (Main/Sub)
+
+    Returns:
+        ITIC 이벤트 리스트 [{duration, voltage_pct, event_type}, ...]
+    """
+    try:
+        from routes.api import getITIC_data, format_influx_time, get_setupContext
+
+        data = getITIC_data("events", channel)
+
+        if not data or len(data) == 0:
+            return None
+
+        # ratedV 조회
+        ch = 'main' if channel == 'Main' else 'sub'
+        setupdict = get_setupContext()
+        if not setupdict:
+            return None
+
+        rated_itic = setupdict[ch]
+        rated_voltage = rated_itic["ptInfo"]["vnorminal"]
+
+        # ITIC 이벤트 형식으로 변환
+        itic_events = []
+
+        def parse_mask(mask):
+            """마스크에서 위상 리스트 파싱"""
+            phases = []
+            if mask & 1: phases.append(0)  # L1
+            if mask & 2: phases.append(1)  # L2
+            if mask & 4: phases.append(2)  # L3
+            return phases if phases else [0]
+
+        def get_fin_value(phaselist, levellist, event_type):
+            """위상별 레벨에서 최종 값 계산"""
+            values = [levellist[p] for p in phaselist if p < len(levellist) and levellist[p] is not None]
+            if not values:
+                return 0
+            # SAG는 최소값, SWELL은 최대값
+            return min(values) if event_type == 'SAG' else max(values)
+
+        for event in data:
+            phaselist = parse_mask(event.get("mask", 7))
+            levellist = [event.get("level_l1"), event.get("level_l2"), event.get("level_l3")]
+
+            voltage_value = get_fin_value(phaselist, levellist, event.get("event_type", "SAG"))
+            voltage_pct = (voltage_value * 100) / rated_voltage if rated_voltage else 0
+            duration_sec = event.get("duration", 0) / 1000.0  # ms -> sec
+
+            itic_events.append({
+                "duration": duration_sec,
+                "voltage_pct": round(voltage_pct, 2),
+                "event_type": event.get("event_type", "SAG"),
+                "event_time": format_influx_time(event.get("time")) if event.get("time") else None
+            })
+
+        logging.info(f"ITIC 이벤트 {len(itic_events)}개 조회됨")
+        return itic_events
+
+    except ImportError as e:
+        logging.warning(f"ITIC 관련 모듈 import 실패: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"ITIC 데이터 조회 실패: {e}")
+        return None
+
+
+def transform_en50160_data(harmdict: Dict) -> Dict:
+    summary = {
+        'compliance': 'PASS',  # 기본값
+        'frequency': {'result': 'N/A'},
+        'voltage': {'result': 'N/A'},
+        'thd': {'result': 'N/A'},
+        'unbalance': {'result': 'N/A'},
+        'flicker': {'result': 'N/A'},
+        'harmonics': {'result': 'N/A'}
+    }
+
+    try:
+        # harmdict 구조에 따라 매핑
+        if 'frequency' in harmdict:
+            freq_data = harmdict['frequency']
+            if isinstance(freq_data, dict):
+                summary['frequency']['result'] = freq_data.get('result', freq_data.get('status', 'N/A'))
+            else:
+                summary['frequency']['result'] = 'PASS' if freq_data else 'FAIL'
+
+        if 'voltage' in harmdict:
+            volt_data = harmdict['voltage']
+            if isinstance(volt_data, dict):
+                summary['voltage']['result'] = volt_data.get('result', volt_data.get('status', 'N/A'))
+            else:
+                summary['voltage']['result'] = 'PASS' if volt_data else 'FAIL'
+
+        if 'thd' in harmdict:
+            thd_data = harmdict['thd']
+            if isinstance(thd_data, dict):
+                summary['thd']['result'] = thd_data.get('result', thd_data.get('status', 'N/A'))
+            else:
+                summary['thd']['result'] = 'PASS' if thd_data else 'FAIL'
+
+        if 'unbalance' in harmdict:
+            unbal_data = harmdict['unbalance']
+            if isinstance(unbal_data, dict):
+                summary['unbalance']['result'] = unbal_data.get('result', unbal_data.get('status', 'N/A'))
+            else:
+                summary['unbalance']['result'] = 'PASS' if unbal_data else 'FAIL'
+
+        if 'flicker' in harmdict:
+            flicker_data = harmdict['flicker']
+            if isinstance(flicker_data, dict):
+                summary['flicker']['result'] = flicker_data.get('result', flicker_data.get('status', 'N/A'))
+            else:
+                summary['flicker']['result'] = 'PASS' if flicker_data else 'FAIL'
+
+        if 'harmonics' in harmdict:
+            harm_data = harmdict['harmonics']
+            if isinstance(harm_data, dict):
+                summary['harmonics']['result'] = harm_data.get('result', harm_data.get('status', 'N/A'))
+            else:
+                summary['harmonics']['result'] = 'PASS' if harm_data else 'FAIL'
+
+        # 전체 compliance 판정
+        results = [
+            summary['frequency']['result'],
+            summary['voltage']['result'],
+            summary['thd']['result'],
+            summary['unbalance']['result'],
+            summary['flicker']['result'],
+            summary['harmonics']['result']
+        ]
+
+        if 'FAIL' in results:
+            summary['compliance'] = 'FAIL'
+        elif all(r == 'PASS' for r in results):
+            summary['compliance'] = 'PASS'
+        else:
+            summary['compliance'] = 'PARTIAL'
+
+    except Exception as e:
+        logging.error(f"EN50160 데이터 변환 실패: {e}")
+
+    return summary
+
+def load_diagnosis_parquet(channel: str, date_str: str, asset_name: str) -> Optional[Dict]:
+    """
+    진단 Parquet 파일 로드
+
+    파일명: diagnosis_report_{asset_name}_{date}.parquet
+    """
+    try:
+        filepath = REPORTS_DIR / channel / f"diagnosis_report_{asset_name}_{date_str}.parquet"
+
+        if not filepath.exists():
+            logging.warning(f"진단 파일 없음: {filepath}")
+            return None
+
+        df = pd.read_parquet(filepath)
+        if df.empty:
+            return None
+
+        record = df.iloc[0].to_dict()
+
+        result = {
+            "asset_name": record.get("asset_name"),
+            "channel_name": record.get("channel_name"),
+            "diagnosis": None,
+            "powerquality": None
+        }
+
+        # diagnosis 데이터 파싱
+        if record.get("diagnosis"):
+            diag_data = parse_json_field(record["diagnosis"])
+            if diag_data:
+                result["diagnosis"] = {
+                    "timestamp": diag_data.get("timestamp"),
+                    "main": parse_json_field(diag_data.get("main", [])),
+                    "detail": parse_json_field(diag_data.get("detail", [])),
+                    "trends": parse_json_field(diag_data.get("trends"))
+                }
+
+        # powerquality 데이터 파싱
+        if record.get("powerquality"):
+            pq_data = parse_json_field(record["powerquality"])
+            if pq_data:
+                result["powerquality"] = {
+                    "timestamp": pq_data.get("timestamp"),
+                    "main": parse_json_field(pq_data.get("main", [])),
+                    "detail": parse_json_field(pq_data.get("detail", [])),
+                    "trends": parse_json_field(pq_data.get("trends"))
+                }
+
+        logging.info(f"진단 데이터 로드 완료: {filepath.name}")
+        return convert_to_serializable(result)
+
+    except Exception as e:
+        logging.error(f"진단 Parquet 로드 실패: {e}")
+        return None
+
+
+def load_en50160_parquet(channel: str, date_str: str) -> Optional[Dict]:
+    """EN50160 주간 Parquet 파일 로드 (EN50160ReportProcessor 사용)"""
+    try:
+        filename = f"en50160_weekly_{date_str}.parquet"
+        filepath = REPORTS_DIR / channel / filename
+
+        if not filepath.exists():
+            logging.warning(f"EN50160 파일 없음: {filepath}")
+            return None
+
+        # EN50160ReportProcessor 사용 (timeseries, histogram 포함)
+        try:
+            from routes.api import get_setupContext
+
+            config = WeeklyReportConfig(output_dir=str(REPORTS_DIR))
+            local_processor = EN50160ReportProcessor(config)
+
+            ch_key = 'main' if channel.lower() == 'main' else 'sub'
+            setupdict = get_setupContext()
+            if setupdict and ch_key in setupdict:
+                ch_setup = setupdict[ch_key]
+                pt_info = ch_setup.get('ptInfo', {})
+                local_processor.set_limits(
+                    nominal_voltage=pt_info.get('vnorminal'),
+                    nominal_frequency=pt_info.get('fnominal', 60.0)
+                )
+
+            result = local_processor.get_all_chart_data(channel, filename)
+            if result:
+                logging.info(f"EN50160 데이터 로드 완료 (Processor): {filename}")
+                return convert_to_serializable(result)
+
+        except ImportError as e:
+            logging.warning(f"EN50160ReportProcessor import 실패, 기본 로직 사용: {e}")
+
+        # 기본 로직 (fallback) - 기존 코드 유지
+        table = pq.read_table(filepath)
+        summary = None
+        if table.schema.metadata and b'en50160_summary' in table.schema.metadata:
+            summary_json = table.schema.metadata[b'en50160_summary'].decode('utf-8')
+            summary = json.loads(summary_json)
+
+        df = table.to_pandas()
+        if df.empty:
+            return None
+
+        result = {
+            "summary": summary,
+            "frequency": _get_frequency_stats(df),
+            "voltage": _get_voltage_stats(df),
+            "thd": _get_thd_stats(df),
+            "unbalance": _get_unbalance_stats(df),
+            "flicker": _get_flicker_stats(df),
+            "harmonics": _get_harmonics_stats(df),
+            "total_samples": len(df)
+        }
+        logging.info(f"EN50160 데이터 로드 완료 (기본): {filename}")
+        return convert_to_serializable(result)
+
+    except Exception as e:
+        logging.error(f"EN50160 Parquet 로드 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+def _get_frequency_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """주파수 통계 계산"""
+    col = "frequency_avg"
+    if col not in df.columns:
+        return None
+
+    values = df[col].dropna().values
+    if len(values) == 0:
+        return None
+
+    nominal = 60.0  # 기본값
+    limit_99_5_min = nominal * 0.99
+    limit_99_5_max = nominal * 1.01
+
+    in_range = np.sum((values >= limit_99_5_min) & (values <= limit_99_5_max)) / len(values) * 100
+
+    return {
+        "statistics": {
+            "min": float(np.min(values)),
+            "max": float(np.max(values)),
+            "avg": float(np.mean(values)),
+            "in_range_99_5_percent": round(in_range, 2),
+            "result_99_5": "PASS" if in_range >= 99.5 else "FAIL"
+        },
+        "limits": {
+            "nominal": nominal,
+            "limit_99_5": {"min": limit_99_5_min, "max": limit_99_5_max}
+        }
+    }
+
+
+def _get_voltage_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """전압 통계 계산"""
+    phases = {}
+    nominal = 22900.0  # 기본값
+    limit_95_min = nominal * 0.9
+    limit_95_max = nominal * 1.1
+
+    for phase in range(1, 4):
+        col = f"voltage_l{phase}"
+        if col not in df.columns:
+            continue
+
+        values = df[col].dropna().values
+        if len(values) == 0:
+            continue
+
+        in_range = np.sum((values >= limit_95_min) & (values <= limit_95_max)) / len(values) * 100
+
+        phases[f"L{phase}"] = {
+            "statistics": {
+                "min": float(np.min(values)),
+                "max": float(np.max(values)),
+                "avg": float(np.mean(values)),
+                "in_range_95_percent": round(in_range, 2),
+                "result_95": "PASS" if in_range >= 95.0 else "FAIL"
+            }
+        }
+
+    if not phases:
+        return None
+
+    return {
+        "phases": phases,
+        "limits": {
+            "nominal": nominal,
+            "limit_95": {"min": limit_95_min, "max": limit_95_max}
+        }
+    }
+
+
+def _get_thd_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """THD 통계 계산"""
+    phases = {}
+    limit_95 = 8.0
+
+    for phase in range(1, 4):
+        col = f"voltage_thd_l{phase}"
+        if col not in df.columns:
+            continue
+
+        values = df[col].dropna().values
+        if len(values) == 0:
+            continue
+
+        in_range = np.sum(values <= limit_95) / len(values) * 100
+
+        phases[f"L{phase}"] = {
+            "statistics": {
+                "max": float(np.max(values)),
+                "avg": float(np.mean(values)),
+                "percentile_95": float(np.percentile(values, 95)),
+                "in_range_95_percent": round(in_range, 2),
+                "result": "PASS" if in_range >= 95.0 else "FAIL"
+            }
+        }
+
+    if not phases:
+        return None
+
+    return {
+        "phases": phases,
+        "limits": {"limit_95": limit_95}
+    }
+
+
+def _get_unbalance_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """전압 불평형 통계 계산"""
+    col = "voltage_unbalance_0"
+    if col not in df.columns:
+        return None
+
+    values = df[col].dropna().values
+    if len(values) == 0:
+        return None
+
+    limit_95 = 2.0
+    in_range = np.sum(values <= limit_95) / len(values) * 100
+
+    return {
+        "statistics": {
+            "max": float(np.max(values)),
+            "avg": float(np.mean(values)),
+            "percentile_95": float(np.percentile(values, 95)),
+            "in_range_95_percent": round(in_range, 2),
+            "result": "PASS" if in_range >= 95.0 else "FAIL"
+        },
+        "limits": {"limit_95": limit_95}
+    }
+
+
+def _get_flicker_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """플리커 통계 계산"""
+    result = {"pst": {}, "plt": {}}
+    plt_limit = 1.0
+
+    for phase in range(1, 4):
+        # Pst
+        pst_col = f"pst_l{phase}"
+        if pst_col in df.columns:
+            values = df[pst_col].dropna().values
+            if len(values) > 0:
+                result["pst"][f"L{phase}"] = {
+                    "statistics": {
+                        "max": float(np.max(values)),
+                        "avg": float(np.mean(values)),
+                        "percentile_95": float(np.percentile(values, 95))
+                    }
+                }
+
+        # Plt
+        plt_col = f"plt_l{phase}"
+        if plt_col in df.columns:
+            values = df[plt_col].dropna().values
+            if len(values) > 0:
+                in_range = np.sum(values <= plt_limit) / len(values) * 100
+                result["plt"][f"L{phase}"] = {
+                    "statistics": {
+                        "max": float(np.max(values)),
+                        "avg": float(np.mean(values)),
+                        "percentile_95": float(np.percentile(values, 95)),
+                        "in_range_95_percent": round(in_range, 2),
+                        "result": "PASS" if in_range >= 95.0 else "FAIL"
+                    }
+                }
+
+    if not result["pst"] and not result["plt"]:
+        return None
+
+    result["limits"] = {"plt_95": plt_limit}
+    return result
+
+
+def _get_harmonics_stats(df: pd.DataFrame) -> Optional[Dict]:
+    """고조파 통계 계산"""
+    phases = {}
+
+    harmonics_limits = {
+        "h2": 2.0, "h3": 5.0, "h4": 1.0, "h5": 6.0,
+        "h6": 0.5, "h7": 5.0, "h8": 0.5, "h9": 1.5,
+        "h10": 0.5, "h11": 3.5, "h12": 0.5, "h13": 3.0,
+    }
+
+    for phase in range(1, 4):
+        col = f"harmonics_l{phase}"
+        if col not in df.columns:
+            continue
+
+        # harmonics_l1은 리스트 컬럼
+        try:
+            all_harmonics = np.array(df[col].tolist())
+            if all_harmonics.shape[0] == 0:
+                continue
+
+            phase_data = {}
+            for h in range(min(12, all_harmonics.shape[1])):  # H2 ~ H13
+                h_num = h + 2
+                h_key = f"h{h_num}"
+                h_values = all_harmonics[:, h]
+                limit = harmonics_limits.get(h_key, 0.5)
+
+                in_range = np.sum(h_values <= limit) / len(h_values) * 100
+
+                phase_data[h_key] = {
+                    "max": float(np.max(h_values)),
+                    "avg": float(np.mean(h_values)),
+                    "limit": limit,
+                    "in_range_95_percent": round(in_range, 2),
+                    "result": "PASS" if in_range >= 95.0 else "FAIL"
+                }
+
+            phases[f"L{phase}"] = phase_data
+        except Exception as e:
+            logging.warning(f"고조파 파싱 실패 L{phase}: {e}")
+            continue
+
+    if not phases:
+        return None
+
+    return {
+        "phases": phases,
+        "limits": harmonics_limits
+    }
+
+
+def load_energy_data(channel: str, start_date: datetime, end_date: datetime) -> Optional[Dict]:
+    """전력량 데이터 조회 - 일별/시간별/월별"""
+    try:
+        from .api import get_dailyEnergy, get_hourEnergy, get_monthlyEnergy
+
+        daily_data = []
+        hourly_data = []
+        monthly_data = []
+        hourly_by_hour = {h: [] for h in range(24)}
+
+        # 월별 데이터 조회
+        year = start_date.strftime("%Y")
+        try:
+            monthly_response = get_monthlyEnergy(channel, year)
+            if monthly_response.get('success') and monthly_response.get('monthlyData'):
+                monthly_data = monthly_response['monthlyData']
+        except Exception as e:
+            logging.warning(f"월별 데이터 조회 실패: {e}")
+
+        current_date = start_date
+        processed_months = set()
+
+        while current_date <= end_date:
+            date_str = current_date.strftime("%Y-%m-%d")
+            year_month = current_date.strftime("%Y-%m")
+
+            if year_month not in processed_months:
+                daily_response = get_dailyEnergy(channel, year_month)
+                if daily_response.get('success') and daily_response.get('dailyData'):
+                    for item in daily_response['dailyData']:
+                        item_date = item.get('date', '')
+                        if start_date.strftime("%Y-%m-%d") <= item_date <= end_date.strftime("%Y-%m-%d"):
+                            if not any(d['date'] == item_date for d in daily_data):
+                                daily_data.append({'date': item_date, 'value': item.get('value', 0)})
+                processed_months.add(year_month)
+
+            hourly_response = get_hourEnergy(channel, date_str)
+            if hourly_response.get('success') and hourly_response.get('hourlyData'):
+                for item in hourly_response['hourlyData']:
+                    hour = item.get('hour', 0)
+                    value = item.get('value', 0)
+                    hourly_by_hour[hour].append(value)
+                    if current_date.date() == end_date.date():
+                        hourly_data.append({'hour': hour, 'value': value})
+
+            current_date += timedelta(days=1)
+
+        if not daily_data:
+            return None
+
+        daily_data.sort(key=lambda x: x['date'])
+        hourly_data.sort(key=lambda x: x.get('hour', 0))
+
+        hourly_avg = {h: sum(v) / len(v) if v else 0 for h, v in hourly_by_hour.items()}
+        peak_hour = max(hourly_avg, key=hourly_avg.get)
+        off_peak_hour = min(hourly_avg, key=hourly_avg.get)
+
+        return {
+            'daily': daily_data,
+            'hourly': hourly_data,
+            'monthly': monthly_data,
+            'hourlyPattern': {
+                'peakHour': {'hour': peak_hour, 'avgValue': hourly_avg[peak_hour]},
+                'offPeakHour': {'hour': off_peak_hour, 'avgValue': hourly_avg[off_peak_hour]}
+            }
+        }
+    except Exception as e:
+        logging.error(f"전력량 데이터 조회 실패: {e}")
+        return None
+
+def get_asset_info_from_redis(channel: str, redis_state=None) -> Optional[Dict]:
+    """
+    Redis에서 설비 정보 조회
+    """
+    try:
+        if redis_state is None or redis_state.client is None:
+            return None
+
+        # ChannelData에서 정보 조회
+        if redis_state.client.hexists("Equipment", "ChannelData"):
+            ch_data = json.loads(redis_state.client.hget("Equipment", "ChannelData"))
+            ch_key = "main" if channel.lower() == "main" else "sub"
+
+            if ch_key in ch_data:
+                return {
+                    "ratedVoltage": ch_data[ch_key].get("RatedVoltage"),
+                    "ratedCurrent": ch_data[ch_key].get("RatedCurrent"),
+                    "ratedFrequency": ch_data[ch_key].get("RatedFrequency")
+                }
+
+        # System setup에서 정보 조회
+        setup_json = redis_state.client.hget("System", "setup")
+        if setup_json:
+            setup = json.loads(setup_json)
+            for ch in setup.get("channel", []):
+                if ch.get("channel") == channel:
+                    asset_info = ch.get("assetInfo", {})
+                    pt_info = ch.get(channel, {}).get("ptInfo", {})
+                    ct_info = ch.get(channel, {}).get("ctInfo", {})
+
+                    return {
+                        "name": asset_info.get("name"),
+                        "type": asset_info.get("type"),
+                        "ratedVoltage": pt_info.get("vnorminal"),
+                        "ratedCurrent": ct_info.get("inorminal"),
+                        "ratedFrequency": pt_info.get("linefrequency", 60)
+                    }
+
+        return None
+
+    except Exception as e:
+        logging.error(f"Redis 설비 정보 조회 실패: {e}")
+        return None
+
+
+# ============================================
+# API 라우터
+# ============================================
+@router.get("/downloadWeeklyReport/{channel}/{date}")
+async def download_weekly_report(
+        channel: str,
+        date: str,
+        locale: str = Query(default='en', regex='^(ko|en)$'),
+        asset_name: str = Query(default=None)
+):
+    try:
+        logging.info(f"📄 통합 주간 리포트 생성 요청: channel={channel}, date={date}, locale={locale}")
+
+        # 주간 범위 계산
+        start_date, end_date = get_week_range_from_date(date)
+        report_period = f"{start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}"
+
+        # 설비 정보 조회
+        # 실제 환경에서는 redis_state를 import해서 사용
+        # asset_info_from_redis = get_asset_info_from_redis(channel, redis_state)
+        asset_info = {
+            "name": asset_name or "Unknown",
+            "type": "Motor",
+            "channel": channel,
+            "ratedVoltage": 380,
+            "ratedCurrent": 100,
+            "ratedFrequency": 60
+        }
+
+        # Redis에서 정보 조회 시도
+        # if not asset_name:
+        #     redis_info = get_asset_info_from_redis(channel, redis_state)
+        #     if redis_info:
+        #         asset_info.update(redis_info)
+
+        if asset_name:
+            asset_info["name"] = asset_name
+
+        # 진단 데이터 로드
+        diagnosis_result = load_diagnosis_parquet(channel, date, asset_info["name"])
+
+        diagnosis_data = None
+        powerquality_data = None
+
+        if diagnosis_result:
+            diagnosis_data = diagnosis_result.get("diagnosis")
+            powerquality_data = diagnosis_result.get("powerquality")
+
+        # EN50160 데이터 로드
+        en50160_data = load_en50160_parquet(channel, date)
+
+        if en50160_data is None or en50160_data.get('summary') is None:
+            en50160_data = get_en50160_from_redis(channel, en50160_data)
+
+        # 전력량 데이터 로드
+        # 실제 환경에서는 influx_state를 import해서 사용
+        energy_data = load_energy_data(channel, start_date, end_date)
+        # energy_data = None  # 실제 환경에서 활성화
+
+        itic_events = get_itic_data_for_report(channel)
+        # 출력 파일 경로
+        temp_dir = tempfile.gettempdir()
+        report_id = str(uuid.uuid4())[:8]
+        output_path = f'{temp_dir}/weekly_report_{report_id}.docx'
+
+        # 리포트 생성
+        generate_weekly_report(
+            asset_info=asset_info,
+            diagnosis_data=diagnosis_data,
+            powerquality_data=powerquality_data,
+            en50160_data=en50160_data,
+            energy_data=energy_data,
+            itic_events=itic_events,  # 추가됨
+            report_period=report_period,
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            locale=locale,
+            output_path=output_path
+        )
+
+        if not Path(output_path).exists():
+            raise HTTPException(status_code=500, detail="Report file not created")
+
+        # 파일명 생성
+        filename = f"weekly_report_{channel}_{date}.docx"
+
+        logging.info(f"✅ 통합 주간 리포트 생성 완료: {filename}")
+
+        return FileResponse(
+            path=output_path,
+            filename=filename,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"❌ 리포트 생성 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/weeklyReportData/{channel}/{date}")
+async def get_weekly_report_data(
+        channel: str,
+        date: str,
+        asset_name: str = Query(default=None)
+):
+    """
+    통합 주간 리포트 데이터 조회 (JSON)
+
+    미리보기나 디버깅용
+    """
+    try:
+        start_date, end_date = get_week_range_from_date(date)
+
+        # 진단 데이터 로드
+        diagnosis_result = load_diagnosis_parquet(channel, date, asset_name or "Unknown")
+
+        # EN50160 데이터 로드
+        en50160_data = load_en50160_parquet(channel, date)
+
+        return {
+            "success": True,
+            "data": {
+                "channel": channel,
+                "date": date,
+                "reportPeriod": f"{start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}",
+                "diagnosis": diagnosis_result.get("diagnosis") if diagnosis_result else None,
+                "powerquality": diagnosis_result.get("powerquality") if diagnosis_result else None,
+                "en50160": en50160_data
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"리포트 데이터 조회 실패: {e}")
+        return {"success": False, "msg": str(e)}
+
+
+# @router.get("/weeklyReportDates/{channel}")
+# async def get_weekly_report_dates(channel: str):
+#     """
+#     사용 가능한 주간 리포트 날짜 목록 조회
+#     """
+#     try:
+#         channel_dir = REPORTS_DIR / channel
+#
+#         if not channel_dir.exists():
+#             return {"success": True, "data": []}
+#
+#         dates = set()
+#
+#         # EN50160 파일에서 날짜 추출
+#         for file in channel_dir.glob("en50160_weekly_*.parquet"):
+#             try:
+#                 parts = file.stem.split("_")
+#                 date_str = parts[-1]
+#                 if len(date_str) == 8 and date_str.isdigit():
+#                     dates.add(date_str)
+#             except:
+#                 continue
+#
+#         # 진단 파일에서 날짜 추출
+#         for file in channel_dir.glob("diagnosis_report_*.parquet"):
+#             try:
+#                 parts = file.stem.split("_")
+#                 date_str = parts[-1]
+#                 if len(date_str) == 8 and date_str.isdigit():
+#                     dates.add(date_str)
+#             except:
+#                 continue
+#
+#         sorted_dates = sorted(list(dates), reverse=True)
+#
+#         return {"success": True, "data": sorted_dates}
+#
+#     except Exception as e:
+#         logging.error(f"날짜 목록 조회 실패: {e}")
+#         return {"success": False, "msg": str(e)}

@@ -448,7 +448,15 @@
       "downloading": "다운로드 중...",
       "cancel": "취소",
       "confirmDownload": "다운로드",
-      "downloadError": "다운로드에 실패했습니다."
+      "downloadError": "다운로드에 실패했습니다.",
+      "weeklyReport": "주간리포트",
+      "weeklyReportDesc": "선택한 주간의 모든 데이터를 통합한 Word 문서를 다운로드합니다.",
+      "assetInfo": "설비정보",
+      "equipmentDiag": "설비진단결과",
+      "pqDiag": "전력품질 진단결과",
+      "en50160": "EN50160 분석결과",
+      "energyAnalysis":"전력량 분석",
+      "trendCharts":"각 항목의 트렌드차트"
     },
     "info": {
       "ct_direction1": "CT1 방향",
