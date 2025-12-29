@@ -458,7 +458,9 @@
       "pqDiag": "Power Quality Diagnosis Results",
       "en50160": "EN50160 Analysis Results",
       "energyAnalysis": "Energy Consumption Analysis",
-      "trendCharts": "Trend Charts for Each Item"
+      "trendCharts": "Trend Charts for Each Item",
+      "generating":"Report is creating...",
+      "generatingDesc":"Processing charts and data. Please wait a moment."
     },
     "info": {
       "ct_direction1": "CT1 Direction",

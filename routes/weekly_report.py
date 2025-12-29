@@ -358,9 +358,15 @@ def create_trend_chart(chart_path: str, trend_data: Dict, locale: str = 'en', is
 
     # X축 라벨 포맷팅
     def format_xaxis_label(label):
-        if 'T' in str(label):
-            return str(label).split('T')[1][:5] if 'T' in str(label) else str(label)[-5:]
-        return str(label)[-5:] if len(str(label)) > 5 else str(label)
+        label_str = str(label)
+        separator = 'T' if 'T' in label_str else ' ' if ' ' in label_str else None
+
+        if separator:
+            date_part = label_str.split(separator)[0][5:]  # MM-DD
+            time_part = label_str.split(separator)[1][:5]  # HH:MM
+            return f"{date_part} {time_part}"
+
+        return label_str[-5:] if len(label_str) > 5 else label_str
 
     if len(labels) > 10:
         step = len(labels) // 10
@@ -956,10 +962,11 @@ def add_diagnosis_section(doc, diagnosis_data: Dict, mode: str, section_num: int
                 if isinstance(item, dict):
                     ts = item.get('timestamp', '')
                     # timestamp 포맷팅 (2025-12-18T15:51:39.200000 -> 12-18 15:51)
-                    if ts and 'T' in ts:
+                    if ts and ('T' in ts or ' ' in ts):
                         try:
-                            date_part = ts.split('T')[0][5:]  # MM-DD
-                            time_part = ts.split('T')[1][:5]  # HH:MM
+                            separator = 'T' if 'T' in ts else ' '
+                            date_part = ts.split(separator)[0][5:]  # MM-DD
+                            time_part = ts.split(separator)[1][:5]  # HH:MM
                             labels.append(f"{date_part} {time_part}")
                         except:
                             labels.append(ts[:16] if len(ts) > 16 else ts)
