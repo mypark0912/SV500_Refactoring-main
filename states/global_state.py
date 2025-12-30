@@ -331,4 +331,8 @@ async def cleanup_global_resources():
         influx_state.client.close()
     if redis_state.client:
         redis_state.client.close()
+    if redis_state.client_db1:
+        redis_state.client_db1.close()
+    if redis_state.binary_client:
+        redis_state.binary_client.close()
     # await http_state.close()  # ← 비동기로 변경
