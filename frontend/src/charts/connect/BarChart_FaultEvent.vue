@@ -187,8 +187,8 @@ export default {
                     'rgba(100, 116, 139, 0.1)', // No Data
                     'rgba(16, 185, 129, 0.1)',  // OK
                     'rgba(245, 158, 11, 0.1)',  // Warning
-                    'rgba(249, 115, 22, 0.1)',  // Inspect
-                    'rgba(239, 68, 68, 0.1)'    // Repair
+                    'rgba(245, 158, 11, 0.1)',  // Inspect
+                    'rgba(245, 158, 11, 0.1)'    // Repair
                   ]
                   return colors[context.tick.value] || 'rgba(156, 163, 175, 0.1)'
                 },
@@ -211,8 +211,8 @@ export default {
                     '#64748B', // No Data
                     '#10B981', // OK
                     '#F59E0B', // Warning
-                    '#F97316', // Inspect
-                    '#EF4444'  // Repair
+                    '#F59E0B', // Inspect
+                    '#F59E0B'  // Repair
                   ]
                   return colors[context.tick.value] || '#6B7280'
                 },

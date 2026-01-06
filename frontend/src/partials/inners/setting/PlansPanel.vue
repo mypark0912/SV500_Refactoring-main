@@ -12,7 +12,10 @@
               <input
                 type="checkbox"
                 class="form-checkbox text-violet-500 focus:ring-violet-500"
-                :checked="inputDict.useFuction.ftp === 1||inputDict.useFuction.ftp === true"
+                :checked="
+                  inputDict.useFuction.ftp === 1 ||
+                  inputDict.useFuction.ftp === true
+                "
                 @change="handleFTPToggle($event)"
               />
               <span>{{ t("config.plansPanel.useWaveFormFTP") }}</span>
@@ -23,7 +26,10 @@
               <input
                 type="checkbox"
                 class="form-checkbox text-violet-500 focus:ring-violet-500"
-                :checked="inputDict.useFuction.sntp === 1||inputDict.useFuction.sntp === true"
+                :checked="
+                  inputDict.useFuction.sntp === 1 ||
+                  inputDict.useFuction.sntp === true
+                "
                 @change="
                   inputDict.useFuction.sntp = $event.target.checked ? 1 : 0
                 "
@@ -154,7 +160,13 @@
                 </h3>
               </header>
             </div>
+
             <div class="px-4 py-4 space-y-3">
+              <div
+                class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-1 mt-2"
+              >
+                Basic
+              </div>
               <div>
                 <label
                   class="block text-sm font-medium mb-2"
@@ -184,34 +196,87 @@
                   maxlength="20"
                 />
               </div>
+              <div class="flex space-x-3">
+                <div>
+                  <label
+                    class="block text-sm font-medium mb-2"
+                    for="serial-number"
+                  >
+                    {{ t("config.plansPanel.devInformation.sn")
+                    }}<!--Serial Number-->
+                  </label>
+                  <input
+                    readonly
+                    v-model="inputDict.deviceInfo.serial_number"
+                    class="form-input w-full"
+                    type="text"
+                  />
+                </div>
 
-              <div>
-                <label
-                  class="block text-sm font-medium mb-2"
-                  for="serial-number"
-                >
-                  {{ t("config.plansPanel.devInformation.sn")
-                  }}<!--Serial Number-->
-                </label>
-                <input
-                  readonly
-                  v-model="inputDict.deviceInfo.serial_number"
-                  class="form-input w-full"
-                  type="text"
-                />
+                <div>
+                  <label
+                    class="block text-sm font-medium mb-2"
+                    for="mac-address"
+                  >
+                    {{ t("config.plansPanel.devInformation.mac")
+                    }}<!--Mac Address-->
+                  </label>
+                  <input
+                    readonly
+                    v-model="inputDict.deviceInfo.mac_address"
+                    class="form-input w-full"
+                    type="text"
+                  />
+                </div>
               </div>
 
+              <!-- Measurement -->
+              <div
+                class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-1 mt-2"
+              >
+                Measurement
+              </div>
+
+              <!-- PF Sign & VA type -->
+              <div class="flex space-x-3">
+                <div class="flex-1">
+                  <label class="block text-sm font-medium mb-1.5"
+                    >PF Sign</label
+                  >
+                  <select
+                    v-model.number="inputDict.pf_sign"
+                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option :value="0">IEC</option>
+                    <option :value="1">IEEE</option>
+                  </select>
+                </div>
+                <div class="flex-1">
+                  <label class="block text-sm font-medium mb-1.5"
+                    >VA type</label
+                  >
+                  <select
+                    v-model.number="inputDict.va_type"
+                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option :value="0">RMS</option>
+                    <option :value="1">vector</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Unbalance -->
               <div>
-                <label class="block text-sm font-medium mb-2" for="mac-address">
-                  {{ t("config.plansPanel.devInformation.mac")
-                  }}<!--Mac Address-->
-                </label>
-                <input
-                  readonly
-                  v-model="inputDict.deviceInfo.mac_address"
-                  class="form-input w-full"
-                  type="text"
-                />
+                <label class="block text-sm font-medium mb-1.5"
+                  >Unbalance</label
+                >
+                <select
+                  v-model.number="inputDict.unbalance"
+                  class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option :value="0">Nema</option>
+                  <option :value="1">Sequence Components</option>
+                </select>
               </div>
             </div>
           </div>
@@ -380,39 +445,36 @@
               <div class="flex space-x-3">
                 <div class="flex-1">
                   <label class="block text-sm font-medium mb-2" for="rtu_use">
-                    {{ t("config.plansPanel.modbus.rtu_use")
-                }}</label
+                    {{ t("config.plansPanel.modbus.rtu_use") }}</label
                   >
                   <select
                     v-model.number="inputDict.modbus.rtu_use"
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
                   >
-                    <option :value="0">{{ t("config.plansPanel.modbus.no")
-                }}</option>
-                    <option :value="1">{{ t("config.plansPanel.modbus.yes")
-                }}</option>
-             
+                    <option :value="0">
+                      {{ t("config.plansPanel.modbus.no") }}
+                    </option>
+                    <option :value="1">
+                      {{ t("config.plansPanel.modbus.yes") }}
+                    </option>
                   </select>
                 </div>
                 <div class="flex-1">
-                <div>
-                <label class="block text-sm font-medium mb-2" for="rtu-id">
-                  {{ t("config.plansPanel.modbus.rtuid")
-                  }}<!--RTU/ID--></label
-                >
-                <input
-                  :disabled="inputDict.modbus.rtu_use == 0"
-                  v-model.number="inputDict.modbus.modbus_id"
-                  class="form-input w-full"
-                  type="number"
-                  maxlength="20"
-                />
-              </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2" for="rtu-id">
+                      {{ t("config.plansPanel.modbus.rtuid")
+                      }}<!--RTU/ID--></label
+                    >
+                    <input
+                      :disabled="inputDict.modbus.rtu_use == 0"
+                      v-model.number="inputDict.modbus.modbus_id"
+                      class="form-input w-full"
+                      type="number"
+                      maxlength="20"
+                    />
+                  </div>
                 </div>
-
-
               </div>
-
 
               <!-- Baud Rate and Parity in one row -->
               <div class="flex space-x-3">
@@ -556,6 +618,7 @@
                 </div>
               </div>
             </div> -->
+            <!-- ETC 카드 -->
             <div
               class="relative xl:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg flex flex-col flex-1"
             >
@@ -585,81 +648,128 @@
                   <h3
                     class="text-lg text-gray-800 dark:text-gray-100 font-semibold"
                   >
-                    ETC
-                    <!--Demand-->
+                    MQTT
                   </h3>
                 </header>
               </div>
               <div class="px-4 py-3 space-y-4">
-                <!-- ✅ 전체 여백 조정 -->
-
-                <div>
-                  <label class="block text-sm font-medium mb-1.5" for="model"
-                    >PF Sign</label
-                  >
-                  <select
-                    v-model.number="inputDict.pf_sign"
-                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option :value="0">IEC</option>
-                    <option :value="1">IEEE</option>
-                  </select>
+                <!-- MQTT -->
+                <div
+                  class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-1"
+                >
+                  MQTT
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium mb-1.5" for="model"
-                    >VA type</label
-                  >
+                <!-- Use & Type -->
+                <div class="flex space-x-3">
+                  <div class="flex-1">
+                    <label class="block text-sm font-medium mb-1.5">Use</label>
+                    <select
+                      v-model="inputDict.MQTT.Use"
+                      class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <option :value="0">
+                      {{ t("config.plansPanel.modbus.no") }}
+                    </option>
+                    <option :value="1">
+                      {{ t("config.plansPanel.modbus.yes") }}
+                    </option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Type -->
+                <div class="flex-1" v-if="inputDict.MQTT.Use === 1">
+                  <label class="block text-sm font-medium mb-1.5">Type</label>
                   <select
-                    v-model.number="inputDict.va_type"
+                    v-model="inputDict.MQTT.Type"                    
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option :value="0">RMS</option>
-                    <option :value="1">vector</option>
+                    <option value="AWSIoTCore">AWSIoTCore</option>
+                    <option value="General">General</option>
                   </select>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium mb-1.5" for="model"
-                    >Unbalance</label
-                  >
-                  <select
-                    v-model.number="inputDict.unbalance"
-                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option :value="0">Nema</option>
-                    <option :value="1">Sequence Components</option>
-                  </select>
+                <!-- Host -->
+                <div v-if="inputDict.MQTT.Use === 1">
+                  <label class="block text-sm font-medium mb-1.5">Host</label>
+                  <input
+                    v-model="inputDict.MQTT.host"
+                    class="form-input w-full"
+                    type="text"
+                    placeholder="Enter MQTT host"
+                  />
                 </div>
-                <!-- <div v-if="devMode === 'device2'">
-                  <label class="block text-sm font-medium mb-1.5" for="model"
-                    >DO Alarm Setup</label
-                  >
-                  <select
-                    v-model.number="inputDict.useFuction.useDO"
-                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option :value="1">Enable</option>
-                    <option :value="0">Disable</option>
-                  </select>
-                </div> -->
-                <!--div v-if="devMode === 'device2'">
-                  <label class="block text-sm font-medium mb-1.5" for="model"
-                    >AI Setup</label
-                  >
-                  <select
-                    v-model.number="inputDict.useFuction.useAI"
-                    class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option :value="1">Enable</option>
-                    <option :value="0">Disable</option>
-                  </select>
-                </div-->
+
+                <!-- Port & Device ID -->
+                <div v-if="inputDict.MQTT.Use === 1" class="flex space-x-3">
+                  <div class="flex-1">
+                    <label class="block text-sm font-medium mb-1.5">Port</label>
+                    <input
+                      v-model.number="inputDict.MQTT.port"
+                      class="form-input w-full"
+                      type="number"
+                      placeholder="1883"
+                    />
+                  </div>
+                  <div class="flex-1">
+                    <label class="block text-sm font-medium mb-1.5"
+                      >Device ID</label
+                    >
+                    <input
+                      :value="inputDict.deviceInfo.mac_address"
+                      class="form-input w-full bg-gray-100 dark:bg-gray-700"
+                      type="text"
+                      readonly
+                    />
+                  </div>
+                </div>
+
+                <!-- Username & Password (General only) -->
+                <div
+                  v-if="
+                    inputDict.MQTT.Use === 1 &&
+                    inputDict.MQTT.Type === 'General'
+                  "
+                  class="flex space-x-3"
+                >
+                  <div class="flex-1">
+                    <label class="block text-sm font-medium mb-1.5"
+                      >Username</label
+                    >
+                    <input
+                      v-model="inputDict.MQTT.username"
+                      class="form-input w-full"
+                      type="text"
+                      placeholder="Enter username"
+                    />
+                  </div>
+                  <div class="flex-1">
+                    <label class="block text-sm font-medium mb-1.5"
+                      >Password</label
+                    >
+                    <input
+                      v-model="inputDict.MQTT.password"
+                      class="form-input w-full"
+                      type="password"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <WaveformFTPCard :showFTP="inputDict.useFuction.ftp === 1 || inputDict.useFuction.ftp === true" />
-          <SNTPCard :showSNTP="inputDict.useFuction.sntp === 1 || inputDict.useFuction.sntp === true" />
+          <WaveformFTPCard
+            :showFTP="
+              inputDict.useFuction.ftp === 1 ||
+              inputDict.useFuction.ftp === true
+            "
+          />
+          <SNTPCard
+            :showSNTP="
+              inputDict.useFuction.sntp === 1 ||
+              inputDict.useFuction.sntp === true
+            "
+          />
           <DiagnosisSetupCard1 :showDiagnosis="useDiagnosis || showDiagnosis" />
         </div>
       </section>

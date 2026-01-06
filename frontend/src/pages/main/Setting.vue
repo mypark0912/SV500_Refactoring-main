@@ -1123,6 +1123,7 @@ export default {
         try {
           const generalData = { ...inputDict.value };
 
+
           // useFuction 필드들을 숫자로 변환
           if (generalData.useFuction) {
             generalData.useFuction.ftp =

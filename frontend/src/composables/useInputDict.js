@@ -59,6 +59,15 @@ export function useInputDict() {
       host: "",
       // period: "",
       timezone: "",
+    },
+    MQTT :{
+      Use:"",
+      Type:"",
+      host:"",
+      port:"", 
+      device_id:"",     
+      username:"",
+      password:""
     }
   });
 
