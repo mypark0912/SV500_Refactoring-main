@@ -545,8 +545,8 @@
         "Import": "수전",
         "Export": "발전"
       },
-      "iticxscale": "기준전압 대비 (%)",
-      "iticyscale": "시간 (초)"
+      "iticxscale": "시간 (초)",
+      "iticyscale": "기준전압 대비 (%)"
     }
   },
   "pq": {

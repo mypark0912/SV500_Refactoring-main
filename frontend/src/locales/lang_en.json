@@ -549,8 +549,8 @@
       "previewForPdf": {
         "title1": "Power Quality - EN 50160 Report"
       },
-      "iticxscale": "% of Base Voltage",
-      "iticyscale": "Time (sec)"
+      "iticxscale": "Time (sec)",
+      "iticyscale": "% of Base Voltage"
     }
   },
 
