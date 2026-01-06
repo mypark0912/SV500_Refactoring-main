@@ -296,6 +296,32 @@ async def set_system_time(request: TimeSetRequest):
         logging.error(f"Error: {e}")
         return { "success": False }
 
+@router.post("/checktime")
+async def check_device_time(request: TimeSetRequest):
+    """
+    클라이언트 시간과 장비 시간 비교하여 상태 반환
+    """
+    try:
+        device_now = datetime.now()
+
+        # 클라이언트 시간 파싱 (YYYY-MM-DD HH:mm:ss 형식)
+        client_dt = datetime.strptime(request.datetime_str, '%Y-%m-%d %H:%M:%S')
+
+        # 시간 차이 계산
+        diff_seconds = abs((device_now - client_dt).total_seconds())
+        twenty_four_hours = 24 * 60 * 60  # 86400초
+        status = diff_seconds <= twenty_four_hours
+
+        return {
+            "success": True,
+            "deviceTime": device_now.isoformat(),
+            "status": status,  # True: 정상, False: 24시간 이상 차이
+            "diffSeconds": int(diff_seconds)
+        }
+    except Exception as e:
+        logging.error(f"Error checking time: {e}")
+        return {"success": False, "status": False}
+
 @router.post('/savePost/{mode}/{idx}')
 def save_maintanence(data: Post, mode: int, idx:int):
     return save_post(data,mode, idx)
