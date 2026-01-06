@@ -82,7 +82,7 @@ import DiagnosisTab from '../../partials/inners/diagnosis/DiagnosisTab.vue'
 //import Diagnosis_Info from '../../partials/dashboard/Diagnosis_Info_Trans.vue'
 import Diagnosis_Info from '../../partials/inners/diagnosis/Diagnosis_Info.vue'
 import { useI18n } from 'vue-i18n'  
-
+import { useAuthStore } from '@/store/auth';
 export default {
   name: 'Diagnosis2',
   props:['channel'],
@@ -104,12 +104,25 @@ export default {
     const rawdata = ref([]);
     const drType = ref('');
     const activeTab = ref('Status');
-    const tabs = ref([
+    const authStore = useAuthStore();
+    const isAdmin = computed(() => {
+      const role = parseInt(authStore?.getUserRole);
+      return role > 1;
+    });
+    const tabs = computed(() => {
+    const baseTabs = [
       { name: 'Status', label: 'Dignosis Status'},
       { name: 'PowerQuality', label: 'PowerQuality' },
       { name: 'Event', label: 'Event' },
-      { name: 'Fault', label: 'Fault' },
-    ]);
+    ];
+    
+    if (isAdmin.value) {
+      baseTabs.push({ name: 'Fault', label: 'Fault' });
+    }
+    
+    return baseTabs;
+  });
+
 
     const changeTab = (tabName) => {
         activeTab.value = tabName;
