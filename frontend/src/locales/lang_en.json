@@ -417,7 +417,10 @@
       "pqfe1": "OK",
       "pqfe2": "Low",
       "pqfe3": "Medium",
-      "pqfe4": "High"
+      "pqfe4": "High",
+      "fe2": "Low",
+      "fe3": "Medium",
+      "fe4": "High"
     }
   },
 

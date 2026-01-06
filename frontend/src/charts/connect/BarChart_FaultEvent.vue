@@ -122,9 +122,9 @@ export default {
       return [
         t('diagnosis.tabContext.pqfe0'), // No Data
         t('diagnosis.tabContext.pqfe1'), // OK
-        t('diagnosis.tabContext.pqfe2'), // Warning
-        t('diagnosis.tabContext.pqfe3'), // Inspect
-        t('diagnosis.tabContext.pqfe4')  // Repair
+        t('diagnosis.tabContext.fe2'), // Warning
+        t('diagnosis.tabContext.fe3'), // Inspect
+        t('diagnosis.tabContext.fe4')  // Repair
       ]
     }
 

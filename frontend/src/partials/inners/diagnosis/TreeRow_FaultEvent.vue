@@ -76,8 +76,10 @@
         switch (status) {
           case 'OK': return 'bg-green-500/20 text-green-700 font-semibold dark:bg-green-600/40 dark:text-green-300';
           case 'Low': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
-          case 'Medium': return 'bg-orange-500/20 text-orange-700 font-semibold dark:bg-orange-600/40 dark:text-orange-300';
-          case 'High': return 'bg-red-500/20 text-red-700 font-semibold dark:bg-red-600/40 dark:text-red-300';
+          case 'Medium': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
+          case 'High': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
+          // case 'Medium': return 'bg-orange-500/20 text-orange-700 font-semibold dark:bg-orange-600/40 dark:text-orange-300';
+          // case 'High': return 'bg-red-500/20 text-red-700 font-semibold dark:bg-red-600/40 dark:text-red-300';
           default: return 'bg-gray-500/20 text-gray-700 font-semibold dark:bg-gray-600/40 dark:text-gray-300';
         }
       }; 
@@ -85,9 +87,9 @@
       const getStatusCText = (status) => {
         switch (status) {
           case 'OK': return t('diagnosis.tabContext.pqfe1');
-          case 'Low': return t('diagnosis.tabContext.pqfe2');
-          case 'Medium': return t('diagnosis.tabContext.pqfe3');
-          case 'High': return t('diagnosis.tabContext.pqfe4');
+          case 'Low': return t('diagnosis.tabContext.fe2');
+          case 'Medium': return t('diagnosis.tabContext.fe3');
+          case 'High': return t('diagnosis.tabContext.fe4');
           default: return t('diagnosis.tabContext.pqfe0');
         }
       }; 
