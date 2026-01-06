@@ -96,13 +96,23 @@ export default {
           border: 'rgba(245, 158, 11, 1)',
         },
         3: {
-          bg: 'rgba(249, 115, 22, 0.8)',    // 오렌지 - Inspect
-          border: 'rgba(249, 115, 22, 1)',
+          bg: 'rgba(245, 158, 11, 0.8)',    // 노랑 - Inspect
+          border: 'rgba(245, 158, 11, 1)',
         },
         4: {
-          bg: 'rgba(239, 68, 68, 0.8)',     // 빨강 - Repair
-          border: 'rgba(239, 68, 68, 1)',
+          bg: 'rgba(245, 158, 11, 0.8)',     // 노랑 - Repair
+          border: 'rgba(245, 158, 11, 1)',
         }
+
+        
+        // 3: {
+        //   bg: 'rgba(249, 115, 22, 0.8)',    // 오렌지 - Inspect
+        //   border: 'rgba(249, 115, 22, 1)',
+        // },
+        // 4: {
+        //   bg: 'rgba(239, 68, 68, 0.8)',     // 빨강 - Repair
+        //   border: 'rgba(239, 68, 68, 1)',
+        // }
       }
       return colorMap[Math.floor(value)] || colorMap[0]
     }

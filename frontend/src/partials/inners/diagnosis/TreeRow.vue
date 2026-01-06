@@ -63,10 +63,11 @@
 
 watch(() => locale.value, (newLocale) => {
   if (props.item?.Descriptions?.[newLocale]) {
-    if(props.item.Status > 1)
-      descStr.value = props.item.Descriptions[newLocale];
-    else
-      descStr.value = "-";
+    descStr.value = props.item.Descriptions[newLocale];
+    // if(props.item.Status > 1)
+    //   descStr.value = props.item.Descriptions[newLocale];
+    // else
+    //   descStr.value = "-";
   } else {
     descStr.value = "-";
   }

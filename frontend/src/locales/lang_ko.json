@@ -414,9 +414,9 @@
       "st4": "위험",
       "pqfe0": "정지",
       "pqfe1": "정상",
-      "pqfe2": "주의",
-      "pqfe3": "경고",
-      "pqfe4": "위험"
+      "pqfe2": "낮음",
+      "pqfe3": "중간",
+      "pqfe4": "높음"
     }
   },
   "report": {
@@ -545,8 +545,8 @@
         "Import": "수전",
         "Export": "발전"
       },
-      "iticxscale": "기준전압 대비 (%)",
-      "iticyscale": "시간 (초)"
+      "iticxscale": "시간 (초)",
+      "iticyscale": "기준전압 대비 (%)"
     }
   },
   "pq": {
