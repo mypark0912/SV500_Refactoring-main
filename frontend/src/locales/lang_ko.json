@@ -24,8 +24,8 @@
     "min": "분",
     "hour": "시",
     "sec": "초",
-    "mainChannel": "메인 채널",
-    "subChannel": "서브 채널",
+    "mainChannel": "채널 1",
+    "subChannel": "채널 2",
     "and": "및"
   },
   "onboardingModal": {
@@ -208,10 +208,10 @@
   },
   "sidebar": {
     "dashboard": "대시보드",
-    "main": "주 채널",
+    "main": "채널 1",
     "meter": "계측 현황",
     "pq": "전력품질 현황",
-    "sub": "보조 채널",
+    "sub": "채널 2",
     "diagnosis": "진단",
     "event": "알람/이벤트",
     "report": "리포트",
@@ -238,8 +238,8 @@
     "meter": {
       "title": "계측 현황",
       "singletitle": "전압/전류/주파수",
-      "subtitle_main": "주 채널",
-      "subtitle_sub": "보조 채널",
+      "subtitle_main": "채널 1",
+      "subtitle_sub": "채널 2",
       "subtitle_main2": "Primary",
       "subtitle_sub2": "Secondary",
       "voltage": "전압",
@@ -254,8 +254,8 @@
       "title": "전력 품질 현황",
       "singletitle": "불평형률/고조파",
       "title2": "총 고조파 왜곡률",
-      "subtitle_main": "주 채널",
-      "subtitle_sub": "보조 채널",
+      "subtitle_main": "채널 1",
+      "subtitle_sub": "채널 2",
       "voltageunbalance": "전압 불평형률",
       "currentunbalance": "전류 불평형률",
       "unbalance": "불평형률",
@@ -264,8 +264,8 @@
     },
     "diagnosis": {
       "title": "진단 현황",
-      "subtitle_main": "주 채널",
-      "subtitle_sub": "보조 채널",
+      "subtitle_main": "채널 1",
+      "subtitle_sub": "채널 2",
       "equipment": "설비",
       "pq": "전력 품질 진단",
       "diagnostic": "설비 진단",
@@ -315,8 +315,8 @@
   "meter": {
     "sitemap": {
       "title": "계측 현황",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "cardTitle": {
       "title_meter": "계측",
@@ -369,8 +369,8 @@
   "diagnosis": {
     "sitemap": {
       "title": "진단",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "info": {
       "name": "설비 이름",
@@ -435,8 +435,8 @@
     "lastSaved": "마지막 저장 시간",
     "sitemap": {
       "title": "리포트",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "modal": {
       "download": "Download",
@@ -555,8 +555,8 @@
   "pq": {
     "sitemap": {
       "title": "전력 품질",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "tabs": {
       "harmonics": "고조파",
@@ -576,8 +576,8 @@
   "event": {
     "sitemap": {
       "title": "이벤트",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "date": {
       "StartDate": "시작 날짜",
@@ -660,8 +660,8 @@
   "trend": {
     "sitemap": {
       "title": "트렌드",
-      "main": "주 채널",
-      "sub": "보조 채널"
+      "main": "채널 1",
+      "sub": "채널 2"
     },
     "date": {
       "StartDate": "시작 날짜",
@@ -696,8 +696,8 @@
     "comfirmtext2": "계속 진행하시겠습니까?",
     "sitemap": {
       "title": "설정",
-      "Main Channel": "주채널",
-      "Sub Channel": "보조채널",
+      "Main Channel": "채널 1",
+      "Sub Channel": "채널 2",
       "Command": "시스템",
       "General": "일반",
       "User Management": "사용자 관리",
@@ -815,8 +815,8 @@
       }
     },
     "system": {
-      "title_1": "주채널 초기화 명령어",
-      "title_2": "보조채널 초기화 명령어",
+      "title_1": "채널 1 초기화 명령어",
+      "title_2": "채널 2 초기화 명령어",
       "title_3": "설정",
       "title_4": "백업 / 소프트웨어 업데이트",
       "demand": "수요전력",

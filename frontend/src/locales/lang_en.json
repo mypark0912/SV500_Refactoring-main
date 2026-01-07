@@ -24,8 +24,8 @@
     "minu": "min",
     "hour": "Hour",
     "sec": "Sec",
-    "mainChannel": "Main channel",
-    "subChannel": "Sub channel",
+    "mainChannel": "Channel 1",
+    "subChannel": "Channel 2",
     "and": "and"
   },
   "onboardingModal": {
@@ -208,10 +208,10 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
-    "main": "Main Channel",
+    "main": "Channel 1",
     "meter": "Meter",
     "pq": "Power Quality",
-    "sub": "Sub Channel",
+    "sub": "Channel 2",
     "diagnosis": "Diagnostic",
     "event": "Alarm/Event",
     "report": "Report",
@@ -238,8 +238,8 @@
     "meter": {
       "title": "Meter",
       "singletitle": "Voltage/Current/Frequency",
-      "subtitle_main": "main channel",
-      "subtitle_sub": "sub channel",
+      "subtitle_main": "Channel 1",
+      "subtitle_sub": "Channel 2",
       "subtitle_main2": "Primary",
       "subtitle_sub2": "Secondary",
       "voltage": "Voltage",
@@ -254,8 +254,8 @@
       "title": "Power Quality",
       "singletitle": "Unbalance/Harmonics",
       "title2": "THD",
-      "subtitle_main": "main channel",
-      "subtitle_sub": "sub channel",
+      "subtitle_main": "Channel 1",
+      "subtitle_sub": "Channel 2",
       "voltageunbalance": "Voltage Unbalance",
       "currentunbalance": "Current Unbalance",
       "unbalance": "Unbalance",
@@ -264,8 +264,8 @@
     },
     "diagnosis": {
       "title": "Status",
-      "subtitle_main": "main channel",
-      "subtitle_sub": "sub channel",
+      "subtitle_main": "Channel 1",
+      "subtitle_sub": "Channel 2",
       "equipment": "Equipment",
       "diagnostic": "Equipment Status",
       "event": "Event Status",
@@ -315,8 +315,8 @@
   "meter": {
     "sitemap": {
       "title": "Meter",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "cardTitle": {
       "title_meter": "Meter",
@@ -370,8 +370,8 @@
   "diagnosis": {
     "sitemap": {
       "title": "Diagnostic",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "info": {
       "name": "Equipment Name",
@@ -437,8 +437,8 @@
     "lastSaved": "Last Saved DateTime",
     "sitemap": {
       "title": "Report",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "modal": {
       "download": "Download",
@@ -560,8 +560,8 @@
   "pq": {
     "sitemap": {
       "title": "Power Quality",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "tabs": {
       "harmonics": "Harmonics",
@@ -581,8 +581,8 @@
   "event": {
     "sitemap": {
       "title": "Event",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "date": {
       "StartDate": "Occur Datetime",
@@ -665,8 +665,8 @@
   "trend": {
     "sitemap": {
       "title": "Trend",
-      "main": "Main Channel",
-      "sub": "Sub Channel"
+      "main": "Channel 1",
+      "sub": "Channel 2"
     },
     "date": {
       "StartDate": "Start Date",
@@ -701,8 +701,8 @@
     "comfirmtext2": "Would you like to proceed?",
     "sitemap": {
       "title": "Configuration",
-      "Main Channel": "Main Channel",
-      "Sub Channel": "Sub Channel",
+      "Main Channel": "Channel 1",
+      "Sub Channel": "Channel 2",
       "Command": "System",
       "General": "General",
       "User Management": "User Management",
@@ -820,8 +820,8 @@
       }
     },
     "system": {
-      "title_1": "Main Channel Clear Command",
-      "title_2": "Sub Channel Clear Command",
+      "title_1": "Channel 1 Clear Command",
+      "title_2": "Channel 2 Clear Command",
       "title_3": "Settings",
       "title_4": "Backup / Software Update",
       "demand": "Demand",
