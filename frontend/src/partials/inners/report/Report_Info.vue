@@ -18,7 +18,7 @@
        class="w-14 h-14 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
   
   <div class="min-w-[120px] flex flex-col space-y-2">
-    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
+    <span class="text-xs font-bold text-gray-500 dark:text-gray-100 uppercase whitespace-nowrap">
       {{ assetType }}
     </span>
     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
@@ -36,7 +36,7 @@
   </div>
   
   <div v-if="devLocation != ''" class="min-w-[120px] flex flex-col space-y-2">
-    <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
+    <span class="text-xs font-bold text-gray-500 dark:text-gray-100 uppercase whitespace-nowrap">
       {{ t('report.cardTitle.installation') }}
     </span>
     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">
@@ -52,7 +52,7 @@
       :key="item.Name"
       class="min-w-[120px] flex flex-col space-y-2 flex-shrink-0"
     >
-      <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
+      <span class="text-xs font-bold text-gray-500 dark:text-gray-100 uppercase whitespace-nowrap">
         {{ t(`dashboard.transDiag.${item.Name}`) }}
       </span>
       <span class="text-lg font-bold text-gray-800 dark:text-gray-100">

@@ -31,7 +31,7 @@
           class="w-3 h-3 rounded-sm" 
           :style="{ backgroundColor: item.color }"
         ></span>
-        <span class="text-xs text-gray-600 dark:text-gray-400">{{ item.name }}</span>
+        <span class="text-xs text-gray-600 dark:text-gray-300">{{ item.name }}</span>
       </div>
     </div>
 
@@ -75,7 +75,7 @@
             <th 
               v-for="col in tableColumns" 
               :key="col.key"
-              class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"
             >
               {{ col.label }}
             </th>
@@ -90,7 +90,7 @@
             <td 
               v-for="col in tableColumns" 
               :key="col.key"
-              class="px-3 py-2 text-gray-700 dark:text-gray-300"
+              class="px-3 py-2 text-gray-700 dark:text-gray-200"
             >
               <template v-if="col.key === 'result'">
                 <span 
@@ -216,12 +216,31 @@ export default {
   setup(props) {
     const lineChartRef = ref(null)
     let chartInstance = null
+    let darkModeObserver = null
 
     // 3상 색상
     const phaseColors = {
       'L1': '#e53935',
       'L2': '#43a047',
       'L3': '#1e88e5'
+    }
+
+    // 다크모드 감지
+    const isDarkMode = () => {
+      return document.documentElement.classList.contains('dark')
+    }
+
+    // 테마별 색상 정의
+    const getThemeColors = () => {
+      const dark = isDarkMode()
+      return {
+        textColor: dark ? '#e5e7eb' : '#374151',
+        textColorSecondary: dark ? '#f3f4f6' : '#6b7280',
+        axisLineColor: dark ? '#4b5563' : '#e5e7eb',
+        splitLineColor: dark ? '#374151' : '#f3f4f6',
+        tooltipBg: dark ? '#1f2937' : '#fff',
+        tooltipBorder: dark ? '#374151' : '#e5e7eb'
+      }
     }
 
     // 전체 결과 계산
@@ -260,6 +279,8 @@ export default {
       }
 
       chartInstance = echarts.init(lineChartRef.value)
+      
+      const colors = getThemeColors()
 
       // 시리즈 생성
       const series = (datasets || []).map(ds => ({
@@ -330,7 +351,15 @@ export default {
         tooltip: {
           trigger: 'axis',
           axisPointer: {
-            type: 'cross'
+            type: 'cross',
+            lineStyle: {
+              color: colors.axisLineColor
+            }
+          },
+          backgroundColor: colors.tooltipBg,
+          borderColor: colors.tooltipBorder,
+          textStyle: {
+            color: colors.textColor
           },
           formatter: (params) => {
             let html = `<div style="font-size: 12px;"><b>${params[0].axisValue}</b><br/>`
@@ -346,12 +375,15 @@ export default {
           data: labels,
           axisLabel: {
             fontSize: 10,
-            color: '#6b7280',
+            color: colors.textColorSecondary,
             rotate: 0,
             interval: Math.floor(labels.length / 7)
           },
           axisLine: {
-            lineStyle: { color: '#e5e7eb' }
+            lineStyle: { color: colors.axisLineColor }
+          },
+          axisTick: {
+            lineStyle: { color: colors.axisLineColor }
           }
         },
         yAxis: {
@@ -359,22 +391,22 @@ export default {
           name: props.yAxis?.name || '',
           nameTextStyle: {
             fontSize: 11,
-            color: '#6b7280'
+            color: colors.textColorSecondary
           },
           min: props.yAxis?.min,
           max: props.yAxis?.max,
           axisLabel: {
             fontSize: 10,
-            color: '#6b7280',
+            color: colors.textColorSecondary,
             formatter: props.yAxis?.formatter
           },
           axisLine: {
             show: true,
-            lineStyle: { color: '#e5e7eb' }
+            lineStyle: { color: colors.axisLineColor }
           },
           splitLine: {
             lineStyle: {
-              color: '#f3f4f6',
+              color: colors.splitLineColor,
               type: 'dashed'
             }
           }
@@ -385,12 +417,29 @@ export default {
       chartInstance.setOption(option)
     }
 
+    // 다크모드 변경 감지
+    const setupDarkModeObserver = () => {
+      darkModeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'class') {
+            initLineChart()
+          }
+        })
+      })
+      
+      darkModeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
+    }
+
     const handleResize = () => {
       chartInstance?.resize()
     }
 
     onMounted(() => {
       initLineChart()
+      setupDarkModeObserver()
       window.addEventListener('resize', handleResize)
     })
 
@@ -408,6 +457,9 @@ export default {
 
     onBeforeUnmount(() => {
       window.removeEventListener('resize', handleResize)
+      if (darkModeObserver) {
+        darkModeObserver.disconnect()
+      }
       if (chartInstance) {
         chartInstance.dispose()
         chartInstance = null

@@ -35,15 +35,15 @@
         <!-- No Data 표시 -->
         <div v-if="!tbdata || Object.keys(tbdata).length === 0" 
              class="flex flex-col items-center justify-center py-12">
-          <svg class="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 text-gray-100 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          <p class="text-lg font-medium text-gray-500 dark:text-gray-400">No Summary data available</p>
+          <p class="text-lg font-medium text-gray-500 dark:text-gray-100">No Summary data available</p>
         </div>
         
         <!-- 테이블 -->
         <table v-else class="table-auto w-full dark:text-white">
-          <thead class="text-xs uppercase text-gray-400 bg-gray-50 dark:bg-gray-400 dark:text-gray-200 dark:bg-opacity-50 rounded-sm">
+          <thead class="text-xs uppercase text-gray-100 bg-gray-50 dark:bg-gray-400 dark:text-gray-200 dark:bg-opacity-50 rounded-sm">
             <tr>
               <th class="p-2"><div class="font-bold text-left">{{ t('report.cardContext.pqInfo.parameter') }}</div></th>
               <th class="p-2"><div class="font-bold text-center">L1</div></th>
@@ -66,10 +66,10 @@
         </table>
         <div v-if="!enReport_data || Object.keys(enReport_data).length === 0" 
              class="flex flex-col items-center justify-center py-12">
-          <svg class="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 text-gray-100 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          <p class="text-lg font-medium text-gray-500 dark:text-gray-400">No Detail data available</p>
+          <p class="text-lg font-medium text-gray-500 dark:text-gray-100">No Detail data available</p>
         </div>
         <!-- Frequency 차트 -->
          <div v-else>
@@ -123,11 +123,11 @@
         <div class="flex items-center gap-x-6 mb-4">
           <div class="flex items-center gap-x-2">
             <span class="w-3 h-3 rounded-full" style="background-color: orange"></span>
-            <span class="text-sm text-gray-600 dark:text-gray-400">sag/interruption</span>
+            <span class="text-sm text-gray-600 dark:text-gray-100">sag/interruption</span>
           </div>
           <div class="flex items-center gap-x-2">
             <span class="w-3 h-3 rounded-full" style="background-color: green"></span>
-            <span class="text-sm text-gray-600 dark:text-gray-400">swell</span>
+            <span class="text-sm text-gray-600 dark:text-gray-100">swell</span>
           </div>
         </div>
         <LineChart :data="linechartData" width="595" height="248" />

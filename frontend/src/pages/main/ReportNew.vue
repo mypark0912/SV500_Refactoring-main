@@ -84,37 +84,37 @@
                     {{ t("report.modal.downloadIncludes") || "포함 내용:" }}
                   </p>
                   <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {{ t("report.modal.assetInfo") || "설비 정보" }}
                     </div>
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {{ t("report.modal.equipmentDiag") || "설비 진단" }}
                     </div>
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {{ t("report.modal.pqDiag") || "전력품질 진단" }}
                     </div>
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {{ t("report.modal.en50160") || "EN50160 분석" }}
                     </div>
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {{ t("report.modal.energyAnalysis") || "전력량 분석" }}
                     </div>
-                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-100">
                       <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
@@ -214,7 +214,7 @@
                         class="relative px-5 py-3 whitespace-nowrap transition-all duration-200 ease-in-out rounded-t-lg border-b-2"
                         :class="activeTab === tab.name
                           ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 border-violet-500 font-semibold'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-transparent cursor-pointer'">
+                          : 'text-gray-500 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-transparent cursor-pointer'">
                         {{ t(`report.cardTitle.${tab.label}`) }}
                         <span 
                           v-if="activeTab === tab.name" 
@@ -226,7 +226,7 @@
                   
                   <!-- 오른쪽: 보고서 조회 툴바 -->
                   <div class="flex items-center gap-3 flex-wrap">
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-100">
                       {{ t('report.searchReport') || '보고서 조회' }}
                     </span>
                     

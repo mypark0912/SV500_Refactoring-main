@@ -16,7 +16,7 @@
                 'px-3 py-1 text-sm font-medium rounded-md transition-colors',
                 selectedPhase === phase
                   ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                  : 'text-gray-600 dark:text-gray-100 hover:text-gray-800 dark:hover:text-white'
               ]"
             >
               {{ phase }}
@@ -27,7 +27,7 @@
   
       <!-- 전체 결과 요약 -->
       <div v-if="overallResult" class="mb-4 flex items-center gap-4">
-        <span class="text-sm text-gray-600 dark:text-gray-400">Overall Result:</span>
+        <span class="text-sm text-gray-600 dark:text-gray-100">Overall Result:</span>
         <span
           :class="[
             'px-2 py-1 text-xs font-medium rounded',
@@ -38,7 +38,7 @@
         >
           {{ overallResult }}
         </span>
-        <span class="text-sm text-gray-500 dark:text-gray-400">
+        <span class="text-sm text-gray-500 dark:text-gray-100">
           ({{ totalSamples }} samples)
         </span>
       </div>
@@ -53,25 +53,25 @@
         <table class="w-full text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 Harmonic
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 Limit (%)
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 Max (%)
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 Avg (%)
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 95th (%)
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 In Range
               </th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-100 uppercase">
                 Result
               </th>
             </tr>
@@ -82,22 +82,22 @@
               :key="key"
               :class="item.result === 'FAIL' ? 'bg-red-50 dark:bg-red-900/20' : ''"
             >
-              <td class="px-3 py-2 text-gray-700 dark:text-gray-300 font-medium">
+              <td class="px-3 py-2 text-gray-700 dark:text-gray-100 font-medium">
                 {{ formatHarmonicName(key) }}
               </td>
-              <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-400">
+              <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-100">
                 {{ item.limit }}
               </td>
-              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
+              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-100">
                 {{ item.max }}
               </td>
-              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
+              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-100">
                 {{ item.avg }}
               </td>
-              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
+              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-100">
                 {{ item.percentile_95 }}
               </td>
-              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
+              <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-100">
                 {{ item.in_range_95_percent }}%
               </td>
               <td class="px-3 py-2 text-center">
