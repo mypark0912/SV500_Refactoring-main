@@ -75,7 +75,7 @@
                       :class="
                         activeTab === tab.name
                           ? 'text-violet-500 border-b-2 border-violet-500'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                          : 'text-gray-500 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300'
                       "
                     >
                     {{ t(`trend.tabTitle.${tab.label }`)}}               
@@ -86,7 +86,7 @@
 
               <!-- Tab Content -->
               <div v-for="(tab, index) in tabs" :key="index">
-                    <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
+                    <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-gray-100 text-left pt-3 px-4">
                         <!-- 차트 컨테이너 -->
                         <div class="flex flex-col space-y-2">                                         
                             <TrendTab v-if="activeTab === 'Meter'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>       
@@ -409,7 +409,7 @@ export default {
 }
 
 :deep(.dark .flatpickr-weekday) {
-  color: #9ca3af !important;
+  color: #f3f4f6 !important;
 }
 
 /* 날짜 영역 */

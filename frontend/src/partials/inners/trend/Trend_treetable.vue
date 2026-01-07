@@ -9,7 +9,7 @@
     
     <!-- Table header -->
     <thead
-      class="text-xs uppercase text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700 dark:bg-opacity-50 rounded-sm"
+      class="text-xs uppercase text-gray-400 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 dark:bg-opacity-50 rounded-sm"
     >
       <tr>
         <th class="px-4 py-2">

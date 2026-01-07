@@ -1,5 +1,5 @@
 <template>
-  <tr class="hover:bg-gray-50 dark:hover:text-gray-400">
+  <tr class="hover:bg-gray-50 dark:hover:text-gray-800">
     <!-- 첫 번째 컬럼 (70%) - Item -->
     <td class="px-4 py-1 overflow-hidden">
       <div 

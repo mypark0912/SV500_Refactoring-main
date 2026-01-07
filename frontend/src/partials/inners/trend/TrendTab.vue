@@ -3,7 +3,7 @@
     <div class="col-span-4 flex flex-col gap-6 h-auto">
       <div v-show="true" role="alert">
         <div
-          class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-400"
+          class="flex flex-col w-full px-4 py-2 rounded-lg text-sm bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700/60 text-gray-600 dark:text-gray-100"
         >
           <div class="flex flex-col w-full gap-3">
             <div class="flex items-start">
