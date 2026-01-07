@@ -615,6 +615,7 @@
             } else {
               Object.assign(channel_sub.value, response.data.data[0]);
             }
+
             setupStore.setsetupFromFile(true);
           }
         } catch (error) {
@@ -663,7 +664,8 @@
             Object.assign(inputDict.value, setupDict.value["General"]);
             Object.assign(channel_main.value, setupDict.value["main"]);
             Object.assign(channel_sub.value, setupDict.value["sub"]);
-            devLang.value = setupDict.value["lang"];
+            devLang.value = setupDict.value["lang"];       
+            inputDict.value.MQTT.device_id = inputDict.value.deviceInfo.mac_address;
             setupStore.setsetupFromFile(true);
           }
         } catch (error) {

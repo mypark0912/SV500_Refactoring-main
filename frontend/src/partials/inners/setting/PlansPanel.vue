@@ -715,7 +715,7 @@
                       >Device ID</label
                     >
                     <input
-                      :value="inputDict.deviceInfo.mac_address"
+                      :value="inputDict.MQTT.device_id"
                       class="form-input w-full bg-gray-100 dark:bg-gray-700"
                       type="text"
                       readonly
