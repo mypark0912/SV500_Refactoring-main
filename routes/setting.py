@@ -3378,6 +3378,24 @@ def list_certs():
 
     return {'passOK': 1, 'files': files}
 
+@router.delete('/deleteCert/{filename}')
+def delete_cert(filename: str):
+    """인증서 파일 삭제"""
+    # 경로 조작 방지
+    if '..' in filename or '/' in filename:
+        return {'passOK': 0, 'error': 'Invalid filename'}
+
+    file_path = os.path.join(SETTING_FOLDER, "certs", filename)
+
+    if not os.path.exists(file_path):
+        return {'passOK': 0, 'error': 'File not found'}
+
+    try:
+        os.remove(file_path)
+        return {'passOK': 1, 'filename': filename}
+    except Exception as e:
+        return {'passOK': 0, 'error': str(e)}
+
 @router.get("/checkMQTT")
 def check_mqtt():
     if redis_state.client.hexists("System", "setup"):

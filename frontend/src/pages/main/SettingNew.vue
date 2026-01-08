@@ -561,6 +561,7 @@
           isRestartDone.value = true;
           return;
         }
+        
         if (inputDict.value.useFuction.diagnosis_main || inputDict.value.useFuction.diagnosis_sub) {
           try {
             const response = await axios.get(`/setting/restartasset`);
@@ -589,6 +590,7 @@
           alert("✅ Service restarted successfully");
           isRestartDone.value = true;
         }
+        await serviceMQTT();
       };
 
       const serviceRestart = async (cmd, item) => {
@@ -601,6 +603,17 @@
           }
         } catch (error) {
           return { result: false, msg: error };
+        }
+      };
+
+      const serviceMQTT = async () => {
+        try {
+          const response = await axios.get(`/setting/checkMQTT`);
+          if (response.data.passOK == 1) {
+            console.log(response.data.ret);
+          } 
+        } catch (error) {
+          console.log(error);
         }
       };
 
