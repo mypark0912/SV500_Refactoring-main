@@ -8,7 +8,7 @@
                     <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold mr-4">{{ itemDict[item] }}</h3>
                     
                     <!-- Redis, InfluxDB,'Core', 'WebServer' 상태 -->
-                    <template v-if="['Redis', 'InfluxDB','Core', 'WebServer','SmartSystems', 'SmartAPI','A35' ].includes(item)">
+                    <template v-if="['Redis', 'InfluxDB','Core', 'WebServer','SmartSystems', 'SmartAPI','A35','MQTTClient' ].includes(item)">
                       <span v-if="health" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
                          Running
                       </span>
@@ -199,6 +199,7 @@ export default {
       "Core":"Core",
       "WebServer":"WebServer",
       "A35":"A35",
+      "MQTTClient":"MQTTClient"
     });
 
     const mode = ref(props.mode);
@@ -242,6 +243,9 @@ export default {
           break;
         case "A35":
           health.value = Status?.value?.["a35"];
+          break;
+        case "MQTTClient":
+          health.value = Status?.value?.["mqClient"];
           break;
       }
     }, { immediate: true });

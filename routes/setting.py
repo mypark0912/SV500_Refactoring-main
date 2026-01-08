@@ -3414,6 +3414,7 @@ def check_mqtt():
     if setup:
         if "MQTT" in setup["General"]:
             if int(setup["General"]["MQTT"]["Use"]) == 1:
+                redis_state.client.hset("System","MQTT", 1)
                 if service_exists("mqClient"):
                     if is_service_enabled("mqClient"):
                         if not is_service_active("mqClient"):
@@ -3429,6 +3430,7 @@ def check_mqtt():
                     ret["enable"] = execService("enable", "mqClient",0.5)
                     ret["start"] = execService("start", "mqClient",0.3)
             else:
+                redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
                     if is_service_enabled("mqClient"):
                         if is_service_active("mqClient"):
@@ -3554,7 +3556,8 @@ async def check_sysStatus():
             'a35': 'A35',
             'web': 'WebServer',
             'core': 'Core',
-            'smartsystem': 'SmartSystems'
+            'smartsystem': 'SmartSystems',
+            'mqClient': 'MQTTClient'
         }
         versionDict = {}
         if version_dict:
@@ -3571,15 +3574,50 @@ async def check_sysStatus():
             versionDict['fw'] = a35Dict['fw']
             versionDict['A35'] = a35Dict['A35']
 
-        servicedict = {
-            'smartsystem' : 'smartsystemsservice',
-            'smartapi': 'smartsystemsrestapiservice',
-            'redis': 'redis',
-            'influxdb': 'influxdb',
-            'core': 'core',
-            'webserver':'webserver',
-            'a35':'sv500A35'
-        }
+        if redis_state.client.hexists("System","MQTT"):
+            if int(redis_state.client.hget("System","MQTT")) == 1 and service_exists("mqClient.service"):
+                servicedict = {
+                    'smartsystem': 'smartsystemsservice',
+                    'smartapi': 'smartsystemsrestapiservice',
+                    'redis': 'redis',
+                    'influxdb': 'influxdb',
+                    'core': 'core',
+                    'webserver': 'webserver',
+                    'a35': 'sv500A35',
+                    'mqClient':'mqClient'
+                }
+            else:
+                servicedict = {
+                    'smartsystem' : 'smartsystemsservice',
+                    'smartapi': 'smartsystemsrestapiservice',
+                    'redis': 'redis',
+                    'influxdb': 'influxdb',
+                    'core': 'core',
+                    'webserver':'webserver',
+                    'a35':'sv500A35'
+                }
+        else:
+            if service_exists("mqClient.service"):
+                servicedict = {
+                    'smartsystem': 'smartsystemsservice',
+                    'smartapi': 'smartsystemsrestapiservice',
+                    'redis': 'redis',
+                    'influxdb': 'influxdb',
+                    'core': 'core',
+                    'webserver': 'webserver',
+                    'a35': 'sv500A35',
+                    'mqClient': 'mqClient'
+                }
+            else:
+                servicedict = {
+                    'smartsystem': 'smartsystemsservice',
+                    'smartapi': 'smartsystemsrestapiservice',
+                    'redis': 'redis',
+                    'influxdb': 'influxdb',
+                    'core': 'core',
+                    'webserver': 'webserver',
+                    'a35': 'sv500A35'
+                }
         service_status = {}
 
         # 각 서비스의 상태 확인

@@ -171,6 +171,7 @@
             <ServiceCard :item="'WebServer'" :mode="'Service'" :state="ChannelState" :version="versionDict['WebServer']" @service-done="showMessage"/>
             <ServiceCard :item="'A35'" :mode="'Service'" :state="ChannelState" :version="versionDict['A35']" @service-done="showMessage"/>
             <ServiceCard2 :item="'fw'" :version="versionDict['fw']" />
+            <ServiceCard v-if="'mqClient' in sysStatus" :item="'MQTTClient'" :mode="'Service'" :state="ChannelState" :version="versionDict['MQTTClient']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
@@ -463,6 +464,7 @@
         if (response.data.success){
            diskStatus.value = response.data.disk;
            sysStatus.value = response.data.data;
+           //console.log(sysStatus.value);
            versionDict.value = response.data.versions;
 
            if(!sysStatus.value["smartsystem"])
