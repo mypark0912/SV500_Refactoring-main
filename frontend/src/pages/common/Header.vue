@@ -60,7 +60,7 @@
             align="right" 
             :status="timeStatus" 
             :device-time="deviceTime"
-            @time-synced="onTimeSynced"
+            @time-synced="onTimeSynced" @refresh-time="onTimeSynced"
           />
           <hr class="w-px h-6 bg-gray-200 dark:bg-gray-700/60 border-none" />
           <Help align="right" />
@@ -155,7 +155,7 @@ export default {
 
     // ✅ 시간 동기화 완료 핸들러
     const onTimeSynced = async () => {
-      console.log('시간 동기화 완료!');
+      //console.log('시간 동기화 완료!');
       await getDeviceTime();  // 동기화 후 시간 다시 가져오기
     }
 
