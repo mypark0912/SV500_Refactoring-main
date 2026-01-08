@@ -3433,7 +3433,7 @@ def check_mqtt():
                     if is_service_enabled("mqClient"):
                         if is_service_active("mqClient"):
                             ret["stop"] = execService("stop", "mqClient",0)
-                        ret["disable"] = execService("disable", "mqClient",0)
+                        ret["disable"] = execService("disable", "mqClient",0.3)
     return {"passOK":1, "result": ret}
 
 def create_service_file(
