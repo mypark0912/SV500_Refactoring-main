@@ -8,7 +8,7 @@ import shutil, logging, subprocess, asyncio
 from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
-from typing import Dict, Any
+from typing import Dict, Any, List
 from routes.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS
 from routes.api import parameter_options
 from .RedisBinary import Command, CmdType, ItemType
@@ -1797,6 +1797,7 @@ def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         return {'passOK': '0', 'error': str(e)}
+
 @router.get('/checkBearing')
 def load_bearings_from_db():
     """DB에서 Bearing 데이터 로드"""
@@ -3316,6 +3317,195 @@ def check_a35version():
     a35 = redis_state.client.hget("version","a35")
 
     return {"fw":fw , "A35":a35}
+
+@router.post('/uploadCerts')
+def upload_certs(files: List[UploadFile] = File(...)):
+    """AWS IoT Core 인증서 파일들 업로드 (복수)"""
+    if not files:
+        return {'passOK': 0, 'error': 'No files provided'}
+
+    allowed_extensions = {'.pem', '.crt', '.key', '.cert'}
+    save_path = os.path.join(SETTING_FOLDER, "certs")
+    os.makedirs(save_path, exist_ok=True)
+
+    uploaded = []
+    errors = []
+
+    for file in files:
+        if file.filename == '':
+            continue
+
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            errors.append({'filename': file.filename, 'error': 'Invalid file type'})
+            continue
+
+        try:
+            file_path = os.path.join(save_path, file.filename)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            os.chmod(file_path, 0o600)
+            uploaded.append(file.filename)
+
+        except Exception as e:
+            errors.append({'filename': file.filename, 'error': str(e)})
+
+    return {
+        'passOK': 1 if uploaded else 0,
+        'uploaded': uploaded,
+        'errors': errors
+    }
+
+
+@router.get('/listCerts')
+def list_certs():
+    """저장된 인증서 파일 목록"""
+    cert_path = os.path.join(SETTING_FOLDER, "certs")
+
+    if not os.path.exists(cert_path):
+        return {'passOK': 1, 'files': []}
+
+    files = []
+    for f in os.listdir(cert_path):
+        file_path = os.path.join(cert_path, f)
+        if os.path.isfile(file_path):
+            files.append({
+                'filename': f,
+                'size': os.path.getsize(file_path),
+                'modified': os.path.getmtime(file_path)
+            })
+
+    return {'passOK': 1, 'files': files}
+
+@router.get("/checkMQTT")
+def check_mqtt():
+    if redis_state.client.hexists("System", "setup"):
+        setup = json.loads(redis_state.client.hget("System", "setup"))
+    else:
+        file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+        if not os.path.exists(file_path):
+            return {"passOK": 0, "error": "setting file not found"}
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setup = json.load(f)
+        except Exception as e:
+            return {"passOK": 0}
+
+    ret = {}
+    if setup:
+        if "MQTT" in setup["General"]:
+            if int(setup["General"]["MQTT"]["Use"]) == 1:
+                if service_exists("mqClient"):
+                    if is_service_enabled("mqClient"):
+                        if not is_service_active("mqClient"):
+                            ret["start"] = execService("start","mqClient",0.3)
+                    else:
+                        ret["enable"] = execService("enable", "mqClient",0.5)
+                        ret["start"] = execService("start", "mqClient")
+                else:
+                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_client","/home/root/mqClient")
+                    ret["reload"] = execService("daemon-reload", None, 0.5)  # 이거 추가!
+                    ret["enable"] = execService("enable", "mqClient",0.5)
+                    ret["start"] = execService("start", "mqClient",0.3)
+            else:
+                if service_exists("mqClient"):
+                    if is_service_enabled("mqClient"):
+                        if is_service_active("mqClient"):
+                            ret["stop"] = execService("stop", "mqClient",0)
+                        ret["disable"] = execService("disable", "mqClient",0)
+    return {"passOK":1, "result": ret}
+
+def create_service_file(
+        service_name: str,
+        description: str,
+        exec_start: str,
+        working_directory: str,
+        user: str = "root",
+        after: str = "network.target",
+        restart: str = "always",
+        wanted_by: str = "multi-user.target"
+) -> bool:
+    """systemd 서비스 파일 내용을 생성합니다."""
+
+    service_content = f"""[Unit]
+Description={description}
+After={after}
+
+[Service]
+ExecStart={exec_start}
+WorkingDirectory={working_directory}
+Restart={restart}
+User={user}
+
+[Install]
+WantedBy={wanted_by}
+"""
+    filename = f"/etc/systemd/system/{service_name}.service"
+    try:
+        with open(filename, 'w') as f:
+            f.write(service_content)
+        return True
+    except Exception as e:
+        print(str(e))
+        return False
+
+def execService(cmd: str, item: str = None, wait_after: float = 0) -> dict:
+    """
+    systemctl 명령 실행
+
+    Args:
+        cmd: systemctl 명령 (start, stop, enable, disable, daemon-reload 등)
+        item: 서비스 이름 (daemon-reload의 경우 None)
+        wait_after: 명령 실행 후 대기 시간(초)
+    """
+    try:
+        if cmd == "daemon-reload":
+            command = ['sudo', 'systemctl', 'daemon-reload']
+        else:
+            if not item:
+                return {
+                    'success': False,
+                    'error': f'Service name required for {cmd}',
+                    'action': cmd
+                }
+            command = ['sudo', 'systemctl', cmd, item]
+
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
+
+        # 성공 시 대기
+        if result.returncode == 0 and wait_after > 0:
+            time.sleep(wait_after)
+
+        return {
+            'success': result.returncode == 0,
+            'stdout': result.stdout.strip(),
+            'stderr': result.stderr.strip(),
+            'returncode': result.returncode,
+            'service': item,
+            'action': cmd
+        }
+
+    except subprocess.TimeoutExpired:
+        return {
+            'success': False,
+            'error': f'Timeout expired while {cmd}ing {item or "daemon"}',
+            'service': item,
+            'action': cmd
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'service': item,
+            'action': cmd
+        }
 
 @router.get("/SysCheck")
 async def check_sysStatus():

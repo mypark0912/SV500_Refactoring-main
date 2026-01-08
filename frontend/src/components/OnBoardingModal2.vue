@@ -880,7 +880,7 @@
           try {
             isCheckingRestart.value = true;
             const response = await axios.get(`/setting/apply`);
-            console.log("apply response:", response.data);
+            //console.log("apply response:", response.data);
     
             needsRestart.value = response.data.restartDevice || false;
     
