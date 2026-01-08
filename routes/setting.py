@@ -3418,6 +3418,8 @@ def check_mqtt():
                     if is_service_enabled("mqClient"):
                         if not is_service_active("mqClient"):
                             ret["start"] = execService("start","mqClient",0.3)
+                        else:
+                            ret["restart"] = execService("restart", "mqClient", 0.3)
                     else:
                         ret["enable"] = execService("enable", "mqClient",0.5)
                         ret["start"] = execService("start", "mqClient")
