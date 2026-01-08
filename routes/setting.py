@@ -2456,7 +2456,7 @@ async def saveSetting(channel: str, request: Request):
                 setting = json.load(f)
         else:
             # 기본 JSON 구조 (필요에 따라 수정)
-            setting = {"mode": "device", "General": {}, "channel": []}
+            setting = {"mode": "device0", "General": {}, "channel": []}
 
         # 채널 파라미터가 "general"이면 "General" 부분 업데이트
         if channel.lower() == "general":        
