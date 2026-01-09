@@ -3418,24 +3418,27 @@ def check_mqtt():
                 if service_exists("mqClient"):
                     if is_service_enabled("mqClient"):
                         if not is_service_active("mqClient"):
-                            ret["start"] = execService("start","mqClient",0.3)
+                            ret["start"] = sysService("start","MQTTClient")  #execService("start","mqClient",0.3)
                         else:
-                            ret["restart"] = execService("restart", "mqClient", 0.1)
+                            ret["restart"] = sysService("restart","MQTTClient") #execService("restart", "mqClient", 0.1)
                     else:
-                        ret["enable"] = execService("enable", "mqClient",0.5)
-                        ret["start"] = execService("start", "mqClient")
+                        ret["enable"] = sysService("enable","MQTTClient")
+                        time.sleep(0.5) #execService("enable", "mqClient",0.5)
+                        ret["start"] = sysService("start","MQTTClient")
                 else:
                     ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_client","/home/root/mqClient")
-                    ret["reload"] = execService("daemon-reload", None, 0.5)  # 이거 추가!
-                    ret["enable"] = execService("enable", "mqClient",0.5)
-                    ret["start"] = execService("start", "mqClient",0.3)
+                    ret["reload"] = execService('daemon-reload')  # 이거 추가!
+                    time.sleep(0.3)
+                    ret["enable"] = sysService("enable","MQTTClient")
+                    time.sleep(0.5 )
+                    ret["start"] = sysService("start","MQTTClient") #execService("start", "mqClient",0.3)
             else:
                 redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
                     if is_service_enabled("mqClient"):
                         if is_service_active("mqClient"):
-                            ret["stop"] = execService("stop", "mqClient",0)
-                        ret["disable"] = execService("disable", "mqClient",0.3)
+                            ret["stop"] = sysService("stop","MQTTClient")
+                        ret["disable"] = sysService("disable","MQTTClient")
     return {"passOK":1, "result": ret}
 
 def create_service_file(
@@ -3472,26 +3475,19 @@ WantedBy={wanted_by}
         print(str(e))
         return False
 
-def execService(cmd: str, item: str = None, wait_after: float = 0) -> dict:
+def execService(cmd: str, service: str = None) -> dict:
     """
     systemctl 명령 실행
 
     Args:
-        cmd: systemctl 명령 (start, stop, enable, disable, daemon-reload 등)
-        item: 서비스 이름 (daemon-reload의 경우 None)
-        wait_after: 명령 실행 후 대기 시간(초)
+        cmd: systemctl 명령 (start, stop, enable, disable, restart, daemon-reload 등)
+        service: 서비스 이름 (daemon-reload의 경우 불필요)
     """
     try:
-        if cmd == "daemon-reload":
+        if cmd == 'daemon-reload':
             command = ['sudo', 'systemctl', 'daemon-reload']
         else:
-            if not item:
-                return {
-                    'success': False,
-                    'error': f'Service name required for {cmd}',
-                    'action': cmd
-                }
-            command = ['sudo', 'systemctl', cmd, item]
+            command = ['sudo', 'systemctl', cmd, service]
 
         result = subprocess.run(
             command,
@@ -3501,32 +3497,22 @@ def execService(cmd: str, item: str = None, wait_after: float = 0) -> dict:
             timeout=30
         )
 
-        # 성공 시 대기
-        if result.returncode == 0 and wait_after > 0:
-            time.sleep(wait_after)
-
         return {
             'success': result.returncode == 0,
             'stdout': result.stdout.strip(),
             'stderr': result.stderr.strip(),
-            'returncode': result.returncode,
-            'service': item,
-            'action': cmd
+            'returncode': result.returncode
         }
 
     except subprocess.TimeoutExpired:
         return {
             'success': False,
-            'error': f'Timeout expired while {cmd}ing {item or "daemon"}',
-            'service': item,
-            'action': cmd
+            'error': f'Timeout expired while {cmd} {service or ""}'
         }
     except Exception as e:
         return {
             'success': False,
-            'error': str(e),
-            'service': item,
-            'action': cmd
+            'error': str(e)
         }
 
 @router.get("/SysCheck")
