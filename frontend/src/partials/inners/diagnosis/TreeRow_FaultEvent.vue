@@ -1,5 +1,5 @@
 <template>
-    <tr class="hover:bg-gray-50">
+    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
     <td class="px-4 py-1">
         <div :style="{ paddingLeft: level * 20 + 'px' }" class="flex items-center text-sm" :class="{'font-bold': isParent}">
         <button
