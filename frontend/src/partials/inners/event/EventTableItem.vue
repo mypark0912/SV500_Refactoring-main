@@ -9,10 +9,10 @@
         <div class="font-medium text-gray-800 dark:text-gray-100">{{ item.StartTime }}</div>
       </td>
       <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-        <div class="text-left font-medium text-gray-600">{{ item.Duration }} ms</div>
+        <div class="text-left font-medium text-gray-600 dark:text-gray-100">{{ item.Duration }} ms</div>
       </td>
       <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-        <div class="text-left font-medium text-gray-600">{{ item.EndTime }}</div>
+        <div class="text-left font-medium text-gray-600 dark:text-gray-100">{{ item.EndTime }}</div>
       </td>
       <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
         <div class="text-left">{{ item.Phase }}</div>
