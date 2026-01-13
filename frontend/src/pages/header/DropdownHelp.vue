@@ -35,22 +35,28 @@
           @focusout="dropdownOpen = false"
         >
           <li>
-            <router-link class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3" to="#0" @click="dropdownOpen = false">
+            <a 
+              class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3 cursor-pointer" 
+              @click="downloadDoc('catalog')"
+            >
               <svg class="w-3 h-3 fill-current text-violet-500 shrink-0 mr-2" viewBox="0 0 12 12">
                 <rect y="3" width="12" height="9" rx="1" />
                 <path d="M2 0h8v2H2z" />
               </svg>
               <span> {{t('header.link.catalog') }}</span>
-            </router-link>
+            </a>
           </li>
           <li>
-            <router-link class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3" to="#0" @click="dropdownOpen = false">
+            <a 
+              class="font-medium text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 flex items-center py-1 px-3 cursor-pointer" 
+              @click="downloadDoc('manual')"
+            >
               <svg class="w-3 h-3 fill-current text-violet-500 shrink-0 mr-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
                   <path d="M5 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5Z" />
                   <path d="M4 0a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4V4a4 4 0 0 0-4-4H4ZM2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Z" />
               </svg> 
               <span>{{t('header.link.manual') }}</span>
-            </router-link>
+            </a>
           </li>
           <!-- 용어설명집 추가 -->
           <li>
@@ -77,6 +83,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GlossaryModal from './GlossaryModal.vue'
+import axios from 'axios'
 
 export default {
   name: 'DropdownHelp',
@@ -85,7 +92,7 @@ export default {
     GlossaryModal
   },
   setup() {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const dropdownOpen = ref(false)
     const trigger = ref(null)
     const dropdown = ref(null)
@@ -118,6 +125,33 @@ export default {
       document.removeEventListener('keydown', keyHandler)
     })
 
+    const downloadDoc = async(mode) =>{
+      try{
+        const response = await axios.get(
+          `/api/download/${mode}/${locale.value}`,
+          {
+            responseType: "blob",
+            timeout: 120000  // 2분 타임아웃 (리포트 생성에 시간이 걸릴 수 있음)
+          }
+        );
+
+        // 파일 다운로드
+        const blob = new Blob([response.data], {
+          type: "application/pdf",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${mode}_${locale.value}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }catch (error) {
+        console.error("매뉴얼 다운로드 실패:", error);
+      } 
+    }
+
     return {
       dropdownOpen,
       trigger,
@@ -125,6 +159,8 @@ export default {
       showGlossary,
       openGlossary,
       t,
+      locale,
+      downloadDoc,
     }
   }
 }

@@ -6,9 +6,8 @@ from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from states.global_state import influx_state, redis_state, os_spec
-from collections import defaultdict
+from fastapi.responses import FileResponse
 from .redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
-# from .auth import checkLoginAPI
 from .RedisBinary import RedisDataType
 from .DemandMap import DemandDataFormatter
 from .util import is_service_active
@@ -5396,6 +5395,34 @@ def get_heatmap_load_factor_data(channel: str, weeks: int = 4):
             "heatmapData": []
         }
 
+@router.get("/download/{mode}/{lang}")
+def get_deviceDoc(mode, lang):
+    helpPath = "/home/root/help"
+    if mode == "manual":
+        if lang == "ko":
+            file_path = os.path.join(helpPath, 'manual_ko.pdf')
+        elif lang == "en":
+            file_path = os.path.join(helpPath, 'manual_en.pdf')
+        else:
+            file_path = os.path.join(helpPath, 'manual_ja.pdf')
+    else:
+        if lang == "ko":
+            file_path = os.path.join(helpPath, 'catalog_ko.pdf')
+        elif lang == "en":
+            file_path = os.path.join(helpPath, 'catalog_en.pdf')
+        else:
+            file_path = os.path.join(helpPath, 'catalog_ja.pdf')
+    # 파일이 존재하지 않으면 에러 처리
+    if not os.path.exists(file_path):
+        return {"passOK": "0", "error": "manual pdf file not found"}
+
+    try:
+        # 파일을 클라이언트로 다운로드 응답
+        response = FileResponse(file_path, media_type="application/pdf", filename=f"{mode}_{lang}.pdf")
+        response.headers["Content-Disposition"] = f"attachment; filename={mode}_{lang}.pdf"  # 다운로드 강제
+        return response
+    except Exception as e:
+        return {"passOK": "0", "error": f"An unexpected error occurred: {str(e)}"}
 
 def cleanup_executor():
     """프로그램 종료 시 호출"""
