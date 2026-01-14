@@ -53,10 +53,11 @@
           <div class="flex flex-col">
             <!-- 헤더 - 스크롤바 영역만큼 패딩 추가 -->
             <div
-              class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4"
+              class="grid grid-cols-[25%_6%_8%_1fr_8%_10%] gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-4"
               style="padding-right: 16px"
             >
               <div class="text-left">Parameter</div>
+              <div class="text-left">Unit</div>
               <div class="text-left">Module</div>
               <div class="text-left">Default Thresholds(Min/Max)</div>
               <div class="text-left">Ack.</div>
@@ -68,13 +69,18 @@
               <div
                 v-for="({ row, originalIndex }, idx) in filteredParamData"
                 :key="originalIndex"
-                class="grid grid-cols-[30%_10%_1fr_10%_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
+                class="grid grid-cols-[25%_6%_8%_1fr_8%_10%] gap-2 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 text-sm px-1"
               >
                 <div class="text-left" hidden>{{ row.originalIndex }}</div>
                 <!-- Name -->
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
                   {{ row.Titles[locale] }}
                 </div>
+                <!-- Unit -->
+                <div class="text-left text-xs text-gray-600 dark:text-gray-400">
+                  {{ row.Unit || '-' }}
+                </div>
+                <!-- Module -->
                 <div class="text-left text-xs text-gray-800 dark:text-gray-200">
                   {{ row.AssemblyID }}
                 </div>
