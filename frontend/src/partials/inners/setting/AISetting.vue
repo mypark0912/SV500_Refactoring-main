@@ -190,9 +190,9 @@
                     v-model.number="row.destination"
                     class="w-24 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
                   >
-                    <option :value="0">온도 R상</option>
-                    <option :value="1">온도 S상</option>
-                    <option :value="2">온도 T상</option>
+                    <option :value="0">{{t("config.channelPanel.tempR")}}</option>
+                    <option :value="1">{{t("config.channelPanel.tempS")}}</option>
+                    <option :value="2">{{t("config.channelPanel.tempT")}}</option>
                   </select>
                 </td>
                 <!-- Period (ms) -->
@@ -277,10 +277,10 @@
 
 <script setup>
 import { ref, inject, computed, watch, onMounted } from "vue";
-
+import { useI18n } from "vue-i18n";
 // 고유 ID 생성용 카운터
 let nextId = 1;
-
+const { t } = useI18n();
 const props = defineProps({
   channel: { type: String, default: '' }
 });

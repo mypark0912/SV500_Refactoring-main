@@ -787,6 +787,9 @@
       }
     },
     "channelPanel": {
+      "tempR":"온도 R상",
+      "tempS":"온도 S상",
+      "tempT":"온도 T상",
       "selEnable": "사용",
       "selPQ": "전력품질",
       "alarmCard": {

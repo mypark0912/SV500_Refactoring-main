@@ -794,6 +794,9 @@
     "channelPanel": {
       "selEnable": "Enable",
       "selPQ": "PowerQuality",
+      "tempR":"Temp R",
+      "tempS":"Temp S",
+      "tempT":"Temp T",
       "alarmCard": {
         "title": "Alarm",
         "common": "COMMON",
