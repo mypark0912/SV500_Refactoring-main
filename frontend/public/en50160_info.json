@@ -18,11 +18,11 @@
         },
         {
             "parameter": "Voltage Unbalance",
-            "required": "(2% 미만), 100% / Week"
+            "required": "(< 2%), 100% / Week"
         },
         {
             "parameter": "THD",
-            "required": "(8%미만), 95% / Week"
+            "required": "(< 8%), 95% / Week"
         },
         {
             "parameter": "Harmonics",
@@ -38,7 +38,7 @@
         },
         {
             "parameter": "Signal Vol.",
-            "required": "(10%미만), 99% / Day"
+            "required": "(< 10%), 99% / Day"
         },
         {
             "parameter": "Voltage Sag",

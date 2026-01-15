@@ -684,8 +684,9 @@
                     v-model="inputDict.MQTT.Type"                    
                     class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="AWSIoTCore">AWSIoTCore</option>
-                    <option value="General">General</option>
+                    <option :value="0">Local</option>
+                    <option :value="1">public</option>
+                    <option :value="2">AWSIoTCore</option>
                   </select>
                 </div>
                 <!-- Host -->
@@ -758,7 +759,7 @@
                 <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 'General'
+                    inputDict.MQTT.Type === 0 || inputDict.MQTT.Type === 1
                   "
                   class="flex space-x-3"
                 >
@@ -786,7 +787,7 @@
                 <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 'AWSIoTCore'
+                    inputDict.MQTT.Type === 2
                   "
                   class="space-y-3"
                 >
