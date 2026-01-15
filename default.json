@@ -48,7 +48,7 @@
     },    
     "MQTT" :{
       "Use":0,
-      "Type":"General",
+      "Type":0,
       "host":"",
       "port":"", 
       "device_id":"",     
