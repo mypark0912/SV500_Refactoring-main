@@ -3426,7 +3426,7 @@ def check_mqtt():
                         time.sleep(0.5) #execService("enable", "mqClient",0.5)
                         ret["start"] = sysService("start","MQTTClient")
                 else:
-                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_client","/home/root/mqClient")
+                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_publisher","/home/root/mqClient")
                     ret["reload"] = execService('daemon-reload')  # 이거 추가!
                     time.sleep(0.3)
                     ret["enable"] = sysService("enable","MQTTClient")
