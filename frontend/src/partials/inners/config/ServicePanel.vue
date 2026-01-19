@@ -39,7 +39,7 @@
         <span v-else class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-yellow-500/20 text-yellow-700 font-semibold">
           {{ initInfluxStatus }}
         </span>
-        <button v-if="updateInflux == 0"
+        <button v-if="updateInflux === 0"
         class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
         @click="init"
       >
@@ -51,7 +51,7 @@
         </svg>
         Influx Init
       </button>
-      <button v-if="updateInflux == 1"
+      <button v-if="updateInflux === 1"
         class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
         @click="updateInfluxBucket"
       >
@@ -422,7 +422,7 @@
       const checkSmartflag = ref(false);
       const errorSmart = ref([]);
       const versionDict = ref({});
-      const updateInflux = ref(0);
+      const updateInflux = ref(null);
       const feedbackModalOpen = ref(false);
       const ipAddress = ref('');
       const showMessage = async(text) => {
