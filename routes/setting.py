@@ -71,6 +71,14 @@ async def checkInitDB():
     else:
         return {'result': True}
 
+@router.get('/checkInfluxStatus')
+async def check_influxStatus():
+    file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+    if not os.path.exists(file_path):
+        return {'result': True, 'status': 0}
+    else:
+        ret = await check_downsampling_status()
+        return ret
 
 @router.get('/initDB')
 async def initInflux(background_tasks: BackgroundTasks):
@@ -726,10 +734,13 @@ async def check_downsampling_status():
         # 전체 상태 판단
         all_buckets_exist = all(b["exists"] for b in bucket_status)
         all_tasks_exist = all(t["exists"] for t in task_status)
-
+        if all_buckets_exist and all_tasks_exist:
+            status = 2
+        else:
+            status = 1
         return {
             "result": True,
-            "all_configured": all_buckets_exist and all_tasks_exist,
+            "status": status,
             "buckets": {
                 "all_exist": all_buckets_exist,
                 "details": bucket_status

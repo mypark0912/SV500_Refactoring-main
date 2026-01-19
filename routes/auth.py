@@ -62,7 +62,6 @@ class User(BaseModel):
 
 DB_PATH = os.path.join(SETTING_FOLDER, "user.db")
 CAL_PATH = os.path.join(SETTING_FOLDER, "calibration.csv")
-INIT_PATH = os.path.join(SETTING_FOLDER, 'influx.json')
 SETUP_PATH = os.path.join(SETTING_FOLDER, 'setup.json')
 
 #def get_mac_address():

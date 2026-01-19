@@ -39,7 +39,19 @@
         <span v-else class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-yellow-500/20 text-yellow-700 font-semibold">
           {{ initInfluxStatus }}
         </span>
-        <button v-if="!updateInflux"
+        <button v-if="updateInflux == 0"
+        class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
+        @click="init"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" stroke-width="1.25" class="mr-2">
+          <path d="M19 14v-2h2l-9 -9l-9 9h2v7a2 2 0 0 0 2 2h2.5"></path>
+          <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 1.75 1.032"></path>
+          <path d="M15.536 17.586a2.123 2.123 0 0 0 -2.929 0a1.951 1.951 0 0 0 0 2.828c.809 .781 2.12 .781 2.929 0c.809 -.781 -.805 .778 0 0l1.46 -1.41l1.46 -1.419"></path>
+          <path d="M15.54 17.582l1.46 1.42l1.46 1.41c.809 .78 -.805 -.779 0 0s2.12 .781 2.929 0a1.951 1.951 0 0 0 0 -2.828a2.123 2.123 0 0 0 -2.929 0"></path>
+        </svg>
+        Influx Init
+      </button>
+      <button v-if="updateInflux == 1"
         class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
         @click="updateInfluxBucket"
       >
@@ -410,7 +422,7 @@
       const checkSmartflag = ref(false);
       const errorSmart = ref([]);
       const versionDict = ref({});
-      const updateInflux = ref(false);
+      const updateInflux = ref(0);
       const feedbackModalOpen = ref(false);
       const ipAddress = ref('');
       const showMessage = async(text) => {
@@ -503,6 +515,7 @@
     const getInfluxStatus = async () => {
       try {
         const response = await axios.get("/setting/initDB/status");
+
         initInfluxStatus.value = response.data.status;
       } catch (error) {
         message.value = "Failed to check Influx Init Status";
@@ -514,7 +527,7 @@
       try{
           const response = await axios.get("/setting/setup-downsampling");
           if(response.data.result){
-             updateInflux.value = true;
+             updateInflux.value = 2;
           }else{
             console.log(response.data.messages);
           }
@@ -526,21 +539,38 @@
     onMounted(()=>{
       SysCheck();
       getInfluxStatus();
-      checkInfluxUpdate();
+      checkInfluxStatus();
     })
 
-    const checkInfluxUpdate = async()=>{
+    const checkInfluxStatus = async()=>{
       try{
-          const response = await axios.get("/setting/check-downsampling");
+          const response = await axios.get("/setting/checkInfluxStatus");
+          console.log(response.data);
           if(response.data.result){
-            console.log(response.data.all_configured);
-             updateInflux.value = response.data.all_configured;
+              
+             updateInflux.value = response.data.status;
           }else{
             console.log(response.data.message);
           }
         }catch(error){
           console.error(error);
         }
+    };
+
+    const init = async () => {
+      try {
+        const response = await axios.get("/setting/initDB");
+        if (response.data.success){
+          message.value = "InfluxDB initiated"
+          authStore.setInstall(3);
+        }else{
+          message.value = "InfluxDB initialization Failed"
+        }
+      } catch (error) {
+        message.value = "InfluxDB initialization Failed";
+      }
+
+      //emit('service-done', message.value);
     };
 
     provide('sysStatus',sysStatus);
@@ -709,6 +739,7 @@
         feedbackModalOpen,
         ipAddress,
         saveIPAddress,
+        init,
       }
 
     }
