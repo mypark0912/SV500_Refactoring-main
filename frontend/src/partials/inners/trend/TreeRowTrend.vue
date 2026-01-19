@@ -31,7 +31,12 @@
     <td class="px-4 py-1 text-center">
       <input
         type="checkbox"
-        class="form-checkbox text-violet-500 focus:ring-violet-500"
+        class="w-4 h-4 rounded border-gray-300 dark:border-gray-500 
+           bg-white dark:bg-gray-700 
+           text-violet-500 dark:text-violet-400
+           focus:ring-0 focus:ring-offset-0
+           checked:bg-violet-500 dark:checked:bg-violet-500
+           cursor-pointer"
         :value="item.ID" 
         :checked="isChecked"
         @change="onCheckChange"
