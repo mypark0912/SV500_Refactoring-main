@@ -727,7 +727,7 @@
                 <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 0 
+                    inputDict.MQTT.Type === 1 
                   "
                   class="flex space-x-3"
                 >
@@ -753,7 +753,7 @@
                 <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 1
+                    inputDict.MQTT.Type === 0
                   "
                   class="flex space-x-3"
                 >
