@@ -53,7 +53,9 @@
       "port":"", 
       "device_id":"",     
       "username":"",
-      "password":""
+      "password":"",
+      "externalport": "",
+      "url": ""
     }
   },
   "channel": [

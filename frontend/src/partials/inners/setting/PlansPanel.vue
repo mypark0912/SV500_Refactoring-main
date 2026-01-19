@@ -723,43 +723,37 @@
                     />
                   </div>
                 </div>
-
-                <!-- Username & Password (General only) -->
-                <!--div
+                <!-- Username & Password (Local, public only) -->
+                <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 'General'
+                    inputDict.MQTT.Type === 0 
                   "
                   class="flex space-x-3"
                 >
                   <div class="flex-1">
-                    <label class="block text-sm font-medium mb-1.5"
-                      >Username</label
-                    >
+                    <label class="block text-sm font-medium mb-1.5">externalPort</label>
                     <input
-                      v-model="inputDict.MQTT.username"
+                      v-model="inputDict.MQTT.externalport"
                       class="form-input w-full"
-                      type="text"
-                      placeholder="Enter username"
+                      type="number"
+                      placeholder="Enter external port"
                     />
                   </div>
                   <div class="flex-1">
-                    <label class="block text-sm font-medium mb-1.5"
-                      >Password</label
-                    >
+                    <label class="block text-sm font-medium mb-1.5">externalUrl</label>
                     <input
-                      v-model="inputDict.MQTT.password"
+                      v-model="inputDict.MQTT.url"
                       class="form-input w-full"
-                      type="password"
-                      placeholder="Enter password"
+                      type="text"
+                      placeholder="Enter url"
                     />
                   </div>
-                </div-->
-                <!-- Username & Password (General only) -->
+                </div>
                 <div
                   v-if="
                     inputDict.MQTT.Use === 1 &&
-                    inputDict.MQTT.Type === 0 || inputDict.MQTT.Type === 1
+                    inputDict.MQTT.Type === 1
                   "
                   class="flex space-x-3"
                 >
@@ -782,6 +776,10 @@
                     />
                   </div>
                 </div>
+
+
+
+
 
                 <!-- AWS IoT Core Certificates (AWSIoTCore only) -->
                 <div
@@ -853,6 +851,8 @@
                   <div v-if="certUploadMessage" :class="certUploadSuccess ? 'text-green-600' : 'text-red-600'" class="text-sm">
                     {{ certUploadMessage }}
                   </div>
+
+
                 </div>
               </div>
             </div>

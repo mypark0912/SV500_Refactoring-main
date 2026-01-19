@@ -67,7 +67,9 @@ export function useInputDict() {
       port:"", 
       device_id:"",     
       username:"",
-      password:""
+      password:"",
+      externalport:"",
+      url:""
     }
   });
 
