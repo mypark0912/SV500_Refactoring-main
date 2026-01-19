@@ -1,4 +1,4 @@
-import logging
+import logging, socket
 import uuid, psutil, sqlite3, os, subprocess
 from pathlib import Path
 from datetime import date
@@ -160,6 +160,28 @@ def get_mac_address():
         mac_int = uuid.getnode()
         mac_address = f'{mac_int:012x}'
         return mac_address
+
+def get_ip_address():
+    """지정된 네트워크 카드들의 IP 주소 가져오기"""
+
+    TARGET_INTERFACES = ['sw0ep', 'end1']
+
+    try:
+        network_interfaces = psutil.net_if_addrs()
+
+        for interface_name in TARGET_INTERFACES:
+            if interface_name in network_interfaces:
+                for addr in network_interfaces[interface_name]:
+                    if addr.family == socket.AF_INET:
+                        ip = addr.address
+                        if ip and ip != '127.0.0.1':
+                            return ip
+
+        return '0.0.0.0'
+
+    except Exception as e:
+        print(f"IP 주소 가져오기 실패: {e}")
+        return '0.0.0.0'
 
 def getVersions():
     versionPath = '/home/root/versionInfo.txt'
