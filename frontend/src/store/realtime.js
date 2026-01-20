@@ -96,12 +96,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
         if (channel === 'Main') {
           meterDictMain.value = {
             ...meterDictMain.value,
-            Temp: newData
+            Temp2: newData
           }
         } else {
           meterDictSub.value = {
             ...meterDictSub.value,
-            Temp: newData
+            Temp2: newData
           }
         }
         
@@ -109,18 +109,18 @@ export const useRealtimeStore = defineStore('realtime', () => {
       } else {
         // 실패 시 빈 리스트
         if (channel === 'Main') {
-          meterDictMain.value = { ...meterDictMain.value, Temp: [] }
+          meterDictMain.value = { ...meterDictMain.value, Temp2: [] }
         } else {
-          meterDictSub.value = { ...meterDictSub.value, Temp: [] }
+          meterDictSub.value = { ...meterDictSub.value, Temp2: [] }
         }
         return false
       }
     } catch (err) {
       console.error(`❌ ${channel} 온도 데이터 실패:`, err)
       if (channel === 'Main') {
-        meterDictMain.value = { ...meterDictMain.value, Temp: [] }
+        meterDictMain.value = { ...meterDictMain.value, Temp2: [] }
       } else {
-        meterDictSub.value = { ...meterDictSub.value, Temp: [] }
+        meterDictSub.value = { ...meterDictSub.value, Temp2: [] }
       }
       return false
     }
@@ -147,12 +147,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
         await Promise.all([
           fetchChannelData('Main', opMode, channelState),
           fetchChannelData('Sub', opMode, channelState),
-          fetchTempData('Main'),
-          fetchTempData('Sub')
+          //fetchTempData('Main'),
+          //fetchTempData('Sub')
         ])
       } else {
         await fetchChannelData('Main', opMode, channelState)
-        await fetchTempData('Main');
+        //await fetchTempData('Main');
         isSubDataLoaded.value = true
       }
       // if (opMode === 'device2') {
@@ -179,12 +179,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
         await Promise.all([
           fetchChannelData('Main', opMode, channelState),
           fetchChannelData('Sub', opMode, channelState),
-          fetchTempData('Main'),
-          fetchTempData('Sub')
+          //fetchTempData('Main'),
+          //fetchTempData('Sub')
         ])
       } else {
         await fetchChannelData('Main', opMode, channelState);
-        await fetchTempData('Main');
+        //await fetchTempData('Main');
       }
     }, interval)
   }

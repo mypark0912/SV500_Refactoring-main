@@ -265,7 +265,7 @@ export default {
     // 변압기 관련 데이터 (Sub 채널에서 가져옴 - Secondary 온도, 누설전류, 피상전력)
     const transData = computed(() => {
       return {
-        Temp: meterDictSub.value.Temp,
+        Temp: meterDictSub.value.Temp2,
         Ig: meterDictSub.value.Ig,
         Stotal: meterDictSub.value.S4,
       };
@@ -273,8 +273,10 @@ export default {
 
     // Primary 온도 데이터 (Main 채널에서 가져옴)
     const primaryTempData = computed(() => {
-      return meterDictMain.value.Temp;
+      return meterDictMain.value.Temp2;
     });
+
+    
 
     // Primary 온도 데이터 유무 (Main 채널)
     const hasPrimaryTempData = computed(() => {
