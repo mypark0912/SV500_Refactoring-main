@@ -227,7 +227,7 @@
   "dashboard": {
     "loading": "대시보드 로딩 중",
     "singleinfo": {
-      "title": "설비 현황",
+      "title": "설비 정보",
       "Operatingtime": "운전 시간",
       "EquipmentInformation": "설비 정보",
       "OperationStatus": "운용 현황",
@@ -263,13 +263,13 @@
       "THD": "총 고조파 왜곡률"
     },
     "diagnosis": {
-      "title": "설비 현황",
-      "title2": "설비 현황",
+      "title": "설비 정보",
+      "title2": "설비 정보",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
       "equipment": "설비",
-      "pq": "전력 품질 진단",
-      "diagnostic": "설비 진단",
+      "pq": "전력 품질 상태",
+      "diagnostic": "설비 상태",
       "event": "이벤트 진단",
       "fault": "전기적 이상 진단",
       "name": "이름",
@@ -442,7 +442,7 @@
     "modal": {
       "download": "Download",
       "downloadReport": "리포트 다운로드",
-      "downloadDesc1": "현재 표시된 진단 데이터를 Word 문서로 다운로드합니다.",
+      "downloadDesc1": "현재 표시된 설비 데이터를 Word 문서로 다운로드합니다.",
       "downloadIncludes": "포함 내용:",
       "downloadItem1": "설비 정보",
       "downloadItem2": "진단 결과 차트",
@@ -456,8 +456,8 @@
       "weeklyReport": "주간리포트",
       "weeklyReportDesc": "선택한 주간의 모든 데이터를 통합한 Word 문서를 다운로드합니다.",
       "assetInfo": "설비정보",
-      "equipmentDiag": "설비진단결과",
-      "pqDiag": "전력품질 진단결과",
+      "equipmentDiag": "설비상태결과",
+      "pqDiag": "전력품질 상태결과",
       "en50160": "EN50160 분석결과",
       "energyAnalysis":"전력량 분석",
       "trendCharts":"각 항목의 트렌드차트",
@@ -485,7 +485,7 @@
       "monthlyEngUsage": "월간 사용 추이",
       "reportData": "보고서 데이터",
 
-      "Diagnosis": "설비 진단",
+      "Diagnosis": "설비 상태",
       "Energy": "전력량",
       "Energy2": "전력량 & 부하율 추이",
       "parameter": "전력품질 파라미터 추이",
@@ -529,7 +529,7 @@
       "low": "낮음",
       "info": {
         "equip": "설비 정보",
-        "status": "진단 상태",
+        "status": "설비 상태",
         "pq": "전력품질 상태",
         "energy": "총 전력량"
       },
