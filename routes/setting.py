@@ -2812,17 +2812,17 @@ def save_frpc_config(subdomain,file_path="/home/root/frp_0.66.0_linux_arm64/frpc
 
         # TOML 내용 생성
         toml_content = f'''serverAddr = "13.125.5.143"
-            serverPort = 7000
-            auth.token = "NTEK_system_20260116_mypark"
-            transport.tls.enable = true
-            
-            [[proxies]]
-            name = "device-web"
-            type = "http"
-            localIP = "127.0.0.1"
-            localPort = 4000
-            subdomain = "{subdomain}"
-            '''
+serverPort = 7000
+auth.token = "NTEK_system_20260116_mypark"
+transport.tls.enable = true
+
+[[proxies]]
+name = "device-web"
+type = "http"
+localIP = "127.0.0.1"
+localPort = 4000
+subdomain = "{subdomain}"
+'''
 
         # 파일 저장
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -2855,19 +2855,19 @@ def save_frpc_service(frpc_binary_path, frpc_config_path, service_path="/etc/sys
 
         # 서비스 파일 내용 생성
         service_content = f'''[Unit]
-        Description=FRP Client
-        After=network.target
-        
-        [Service]
-        Type=simple
-        ExecStart={frpc_binary_path} -c {frpc_config_path}
-        Restart=always
-        RestartSec=5
-        User=root
-        
-        [Install]
-        WantedBy=multi-user.target
-        '''
+Description=FRP Client
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={frpc_binary_path} -c {frpc_config_path}
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+'''
 
         # 파일 저장
         with open(service_path, 'w', encoding='utf-8') as f:
