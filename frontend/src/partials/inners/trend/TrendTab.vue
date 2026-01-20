@@ -70,8 +70,32 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
+            <div v-else-if="tap == `Diagnosis`" class="flex items-center justify-between mt-1">
+              <label class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="saveCsv"
+                :true-value="1"
+                :false-value="0"
+                class="form-checkbox text-violet-500"
+              />
+              <span class="text-sm">save CSV</span>
+            </label>
             <a
-              v-else-if="tap == `PowerQuality` || tap == `Diagnosis`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawDiagnosisChartByName"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
+            </div>
+            <a
+              v-else-if="tap == `PowerQuality`"
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"

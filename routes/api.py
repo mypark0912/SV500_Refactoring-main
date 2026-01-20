@@ -2843,6 +2843,9 @@ def getMeterRedis2(channel, mode):
         meterdata["thdi total"] = sum([try_float(thd.get(k)) for k in ["THD_I1", "THD_I2", "THD_I3"]])
         meterdata["tddi total"] = sum([try_float(thd.get(k)) for k in ["TDD_I1", "TDD_I2", "TDD_I3"]])
 
+        ai_result = get_ai(channel)
+        meterdata["Temp2"] = ai_result.get("data", [])
+
         return {"success": True, "data": meterdata}
 
     except Exception as e:
