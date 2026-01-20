@@ -2856,13 +2856,14 @@ def save_frpc_service(frpc_binary_path, frpc_config_path, service_path="/etc/sys
         # 서비스 파일 내용 생성
         service_content = f'''[Unit]
 Description=FRP Client
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 ExecStart={frpc_binary_path} -c {frpc_config_path}
-Restart=always
-RestartSec=5
+Restart=on-failure
+RestartSec=10
 User=root
 
 [Install]
@@ -3527,8 +3528,22 @@ def check_mqtt():
                     save_frpc_config(subdomain, name_prefix)
                     save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
                                       "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
+
                     execService('daemon-reload')
-                    sysService("start","frpc")
+                    save_frpc_restart_monitor()
+                    execService('daemon-reload')
+                    sysService("enable", "frpc")
+                    sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+                    sysService("start", "frpc")
+                    sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+
+                    # sysService("enable", "frpc")
+                    # save_frpc_restart_monitor()
+                    # sysService("enable","frpc-monitor")
+                    # execService('daemon-reload')
+                    # sysService("start","frpc")
+                    # sysService("start","frpc-monitor")
+
             else:
                 redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
@@ -3537,6 +3552,75 @@ def check_mqtt():
                             ret["stop"] = sysService("stop","MQTTClient")
                         ret["disable"] = sysService("disable","MQTTClient")
     return {"passOK":1, "result": ret}
+
+
+def save_frpc_restart_monitor(
+        interfaces=["end1"],
+        restart_delay=5,
+        script_path="/usr/local/bin/frpc-restart-monitor.sh",
+        service_path="/etc/systemd/system/frpc-monitor.service"
+):
+    try:
+        import os
+
+        # 1. 모니터링 스크립트 생성
+        interfaces_str = " ".join(interfaces)
+        script_content = f'''#!/bin/bash
+INTERFACES="{interfaces_str}"
+
+ip monitor link | while read line; do
+    for iface in $INTERFACES; do
+        if echo "$line" | grep -q "$iface"; then
+            if echo "$line" | grep -q "state UP"; then
+                sleep {restart_delay}
+                systemctl restart frpc
+            fi
+        fi
+    done
+done
+'''
+
+        # 스크립트 디렉토리 생성
+        os.makedirs(os.path.dirname(script_path), exist_ok=True)
+
+        # 스크립트 저장
+        with open(script_path, 'w', encoding='utf-8') as f:
+            f.write(script_content)
+
+        # 실행 권한 부여
+        os.chmod(script_path, 0o755)
+        print(f"Monitor script saved to {script_path}")
+
+        # 2. systemd 서비스 파일 생성
+        service_content = f'''[Unit]
+Description=FRPC Restart Monitor
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={script_path}
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+'''
+
+        # 서비스 디렉토리 생성
+        os.makedirs(os.path.dirname(service_path), exist_ok=True)
+
+        # 서비스 파일 저장
+        with open(service_path, 'w', encoding='utf-8') as f:
+            f.write(service_content)
+
+        print(f"Service file saved to {service_path}")
+
+        return True
+
+    except Exception as e:
+        print(f"Failed to create frpc restart monitor: {str(e)}")
+        return False
 
 def create_service_file(
         service_name: str,
@@ -3611,6 +3695,16 @@ def execService(cmd: str, service: str = None) -> dict:
             'success': False,
             'error': str(e)
         }
+
+@router.get('/checkFrp')
+def check_frp():
+    if service_exists("frpc.service"):
+        if is_service_active("frpc"):
+            return { "exist": True, "status": True}
+        else:
+            return {"exist": True, "status": False}
+    else:
+        return {"exist": False, "status": False}
 
 @router.get("/SysCheck")
 async def check_sysStatus():
