@@ -2804,12 +2804,12 @@ def apply():
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
 
-def save_frpc_config(subdomain,file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
+def save_frpc_config(subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
     try:
         # 디렉토리가 없으면 생성
         import os
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
+        proxyname = f"device-web-{prefix}"
         # TOML 내용 생성
         toml_content = f'''serverAddr = "13.125.5.143"
 serverPort = 7000
@@ -2817,7 +2817,7 @@ auth.token = "NTEK_system_20260116_mypark"
 transport.tls.enable = true
 
 [[proxies]]
-name = "device-web"
+name = "{proxyname}"
 type = "http"
 localIP = "127.0.0.1"
 localPort = 4000
@@ -3523,7 +3523,8 @@ def check_mqtt():
 
                 if int(setup["General"]["MQTT"]["Type"]) == 1:
                     subdomain = setup["General"]["MQTT"]["url"]
-                    save_frpc_config(subdomain)
+                    name_prefix = setup["General"]["MQTT"]["externalport"]
+                    save_frpc_config(subdomain, name_prefix)
                     save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
                                       "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
                     execService('daemon-reload')
