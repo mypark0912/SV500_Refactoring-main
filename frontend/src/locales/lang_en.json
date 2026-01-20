@@ -212,7 +212,7 @@
     "meter": "Meter",
     "pq": "Power Quality",
     "sub": "Channel 2",
-    "diagnosis": "Diagnostic",
+    "diagnosis": "Equipment",
     "event": "Alarm/Event",
     "report": "Report",
     "trend": "Trend",
@@ -264,7 +264,7 @@
       "THD": "THD"
     },
     "diagnosis": {
-      "title": "Status",
+      "title": "Equipment Status",
       "title2": "Equipment Status",
       "subtitle_main": "Channel 1",
       "subtitle_sub": "Channel 2",
@@ -371,7 +371,7 @@
   },
   "diagnosis": {
     "sitemap": {
-      "title": "Diagnostic",
+      "title": "Equipment",
       "main": "Channel 1",
       "sub": "Channel 2"
     },
@@ -392,15 +392,15 @@
       "Rated KVA": "Rated Capacity"
     },
     "tabTitle": {
-      "Dignosis Status": "Diagnostic Status",
+      "Dignosis Status": "Equipment Status",
       "Fault": "Fault",
       "PowerQuality": "Power Quality",
       "Event": "Event",
-      "detailTitle": "Diagnostic detail item status",
+      "detailTitle": "Equipment detail item status",
       "detailTitle_pq": "Power Quality detail item status",
       "detailTitle_event": "Event detail item status",
       "detailTitle_fault": "Fault detail item status",
-      "detailTitle_trend": "Diagnostic detail item trend",
+      "detailTitle_trend": "Equipment detail item trend",
       "detailTitle_trend_pq": "Power Quality detail item trend"
     },
     "tabContext": {

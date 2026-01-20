@@ -212,7 +212,7 @@
     "meter": "계측 현황",
     "pq": "전력품질 현황",
     "sub": "채널 2",
-    "diagnosis": "진단",
+    "diagnosis": "설비",
     "event": "알람/이벤트",
     "report": "리포트",
     "trend": "트렌드",
@@ -236,7 +236,7 @@
     },
     "sitemap": "대시보드",
     "meter": {
-      "title": "계측 현황",
+      "title": "계측 상태",
       "singletitle": "전압/전류/주파수",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
@@ -263,7 +263,7 @@
       "THD": "총 고조파 왜곡률"
     },
     "diagnosis": {
-      "title": "진단 현황",
+      "title": "설비 현황",
       "title2": "설비 현황",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
@@ -369,7 +369,7 @@
   },
   "diagnosis": {
     "sitemap": {
-      "title": "진단",
+      "title": "설비",
       "main": "채널 1",
       "sub": "채널 2"
     },
@@ -390,16 +390,16 @@
       "Rated KVA": "정격 용량"
     },
     "tabTitle": {
-      "Dignosis Status": "설비 진단",
+      "Dignosis Status": "설비 상태",
       "Fault": "전기적 이상",
-      "PowerQuality": "전력품질 진단",
+      "PowerQuality": "전력품질 상태",
       "Event": "이벤트",
-      "detailTitle": "세부항목 진단상태",
-      "detailTitle_pq": "세부항목 진단상태",
-      "detailTitle_event": "세부항목 진단상태",
-      "detailTitle_fault": "세부항목 진단상태",
-      "detailTitle_trend": "설비진단 세부항목 트렌드",
-      "detailTitle_trend_pq": "전력품질진단 세부항목 트렌드"
+      "detailTitle": "세부항목 상태",
+      "detailTitle_pq": "세부항목 상태",
+      "detailTitle_event": "세부항목 상태",
+      "detailTitle_fault": "세부항목 상태",
+      "detailTitle_trend": "설비상태 세부항목 트렌드",
+      "detailTitle_trend_pq": "전력품질상태 세부항목 트렌드"
     },
     "tabContext": {
       "th_title": "항목",
