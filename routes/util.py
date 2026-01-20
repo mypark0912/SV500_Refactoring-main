@@ -274,7 +274,8 @@ def sysService(cmd, item):
       "Core":"core",
       "WebServer":"webserver",
       "A35":"sv500A35",
-        "MQTTClient":"mqClient"
+      "MQTTClient":"mqClient",
+      "frpc":"frpc"
     }
 
     try:

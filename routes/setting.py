@@ -2803,6 +2803,83 @@ def apply():
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
+
+def save_frpc_config(subdomain,file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
+    try:
+        # 디렉토리가 없으면 생성
+        import os
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # TOML 내용 생성
+        toml_content = f'''serverAddr = "13.125.5.143"
+            serverPort = 7000
+            auth.token = "NTEK_system_20260116_mypark"
+            transport.tls.enable = true
+            
+            [[proxies]]
+            name = "device-web"
+            type = "http"
+            localIP = "127.0.0.1"
+            localPort = 4000
+            subdomain = "{subdomain}"
+            '''
+
+        # 파일 저장
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(toml_content)
+
+        print(f"frpc.toml saved to {file_path}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to save frpc.toml: {str(e)}")
+        return False
+
+
+def read_frpc_config(file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        print(f"Failed to read frpc.toml: {str(e)}")
+        return None
+
+
+def save_frpc_service(frpc_binary_path, frpc_config_path, service_path="/etc/systemd/system/frpc.service"):
+    try:
+        import os
+
+        # 디렉토리가 없으면 생성
+        os.makedirs(os.path.dirname(service_path), exist_ok=True)
+
+        # 서비스 파일 내용 생성
+        service_content = f'''[Unit]
+        Description=FRP Client
+        After=network.target
+        
+        [Service]
+        Type=simple
+        ExecStart={frpc_binary_path} -c {frpc_config_path}
+        Restart=always
+        RestartSec=5
+        User=root
+        
+        [Install]
+        WantedBy=multi-user.target
+        '''
+
+        # 파일 저장
+        with open(service_path, 'w', encoding='utf-8') as f:
+            f.write(service_content)
+
+        print(f"frpc.service saved to {service_path}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to save frpc.service: {str(e)}")
+        return False
+
 @router.get('/checkCommision/{asset}')
 async def check_comm(asset):
     try:
@@ -3443,6 +3520,14 @@ def check_mqtt():
                     ret["enable"] = sysService("enable","MQTTClient")
                     time.sleep(0.5 )
                     ret["start"] = sysService("start","MQTTClient") #execService("start", "mqClient",0.3)
+
+                if int(setup["General"]["MQTT"]["Type"]) == 1:
+                    subdomain = setup["General"]["MQTT"]["url"]
+                    save_frpc_config(subdomain)
+                    save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
+                                      "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
+                    execService('daemon-reload')
+                    sysService("start","frpc")
             else:
                 redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
