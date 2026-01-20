@@ -76,7 +76,7 @@
   import Header from '../common/Header.vue'
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
   import DualChannelLayout from '../layouts/DualChannelLayout.vue' 
-  import IntegratedLayout from '../layouts/IntegratedLayout2.vue'  
+  import IntegratedLayout from '../layouts/IntegratedLayout3.vue'  
   import Footer from "../common/Footer.vue"
   import { useSetupStore } from '@/store/setup'
   import { useAuthStore } from '@/store/auth'
