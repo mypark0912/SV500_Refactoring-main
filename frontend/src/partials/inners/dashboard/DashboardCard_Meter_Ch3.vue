@@ -82,7 +82,7 @@
         <div class="detail-card unbalance-detail">
           <div class="detail-header">
             <h3 class="detail-title">
-              <span class="detail-icon">⚖️</span>
+              <span class="detail-icon">✔️</span>
                {{ t('dashboard.pq.unbalance') }}
             </h3>
    

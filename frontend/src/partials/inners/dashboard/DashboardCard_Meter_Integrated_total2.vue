@@ -21,7 +21,6 @@
           </div>
           <div class="equipment-info">
             <h3 class="equipment-name">{{ stData.devNickname }}</h3>
-            <span class="equipment-type">{{ stData.devType }}</span>
           </div>
         </div>
 
@@ -67,7 +66,7 @@
 
         <!-- 누설전류 -->
         <div class="metric-card">
-          <div class="metric-icon">💧</div>
+          <div class="metric-icon">⚡</div>
           <div class="metric-content">
             <div class="metric-label">{{ t("dashboard.transDiag.Ig") }}</div>
             <div class="metric-main">
