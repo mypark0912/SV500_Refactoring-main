@@ -668,7 +668,9 @@
     "sitemap": {
       "title": "Trend",
       "main": "Channel 1",
-      "sub": "Channel 2"
+      "sub": "Channel 2",
+      "notice1":"Frequency",
+      "notice2":"Current"
     },
     "date": {
       "StartDate": "Start Date",

@@ -662,7 +662,9 @@
     "sitemap": {
       "title": "트렌드",
       "main": "채널 1",
-      "sub": "채널 2"
+      "sub": "채널 2",
+      "notice1":"주파수",
+      "notice2":"전류"
     },
     "date": {
       "StartDate": "시작 날짜",

@@ -71,16 +71,24 @@
               }}
             </a>
             <div v-else-if="tap == `Diagnosis`" class="flex items-center justify-between mt-1">
-              <label class="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                v-model="saveCsv"
-                :true-value="1"
-                :false-value="0"
-                class="form-checkbox text-violet-500"
-              />
-              <span class="text-sm">save CSV</span>
-            </label>
+              <div class="flex items-center gap-4 mt-1 px-1">
+                <label class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    v-model="withFreq"
+                    class="form-checkbox text-violet-500"
+                  />
+                  <span class="text-sm">{{  t('trend.sitemap.notice1') }}</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    v-model="withCurrent"
+                    class="form-checkbox text-violet-500"
+                  />
+                  <span class="text-sm">{{  t('trend.sitemap.notice2') }}</span>
+                </label>
+              </div>
             <a
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
@@ -244,6 +252,8 @@ export default {
     const items = ref([]);
     const authStore = useAuthStore();
     const saveCsv = ref(0);
+    const withFreq = ref(false);
+    const withCurrent = ref(false);
     const option = ref({
       lineLabels: [],
       lineData: [],
@@ -1180,6 +1190,28 @@ export default {
       // 리프 노드에서 AssemblyID와 Name 수집
       const effectiveParams = getEffectiveParameters();
 
+      if (withFreq.value) {
+        effectiveParams.push({
+          AssemblyID: "VOL",
+          Name: "LF"
+        });
+      }
+      // 전류 체크박스가 선택되었을 때
+      if (withCurrent.value) {
+        effectiveParams.push({
+          AssemblyID: "PWS",
+          Name: "rmsiA"
+        });
+        effectiveParams.push({
+          AssemblyID: "PWS",
+          Name: "rmsiB"
+        });
+        effectiveParams.push({
+          AssemblyID: "PWS",
+          Name: "rmsiC"
+        });
+      }
+
       // 선택된 파라미터
       // 현재 items
       // 체크된 IDs
@@ -1192,7 +1224,7 @@ export default {
         return;
       }
 
-      if (effectiveParams.length > 4) {
+      if (effectiveParams.length > 8) {
         alert(t("trend.Linechart.parametercount"));
         return;
       }
@@ -1402,6 +1434,8 @@ export default {
       lastDate,
       saveCsv,
       isNtek,
+      withFreq,
+      withCurrent,
     };
   },
 };
