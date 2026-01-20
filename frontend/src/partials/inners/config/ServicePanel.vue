@@ -127,8 +127,7 @@
         </a>
       </div> -->
       <div v-if="frpStatus.exist" class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-      <div v-if="frpStatus.exist">
-        <label 
+        <label v-if="frpStatus.exist"
           for="reference"
           class="text-sm text-gray-700 dark:text-gray-300 font-medium"
         >
@@ -137,10 +136,9 @@
         <span v-if="frpStatus.exist && frpStatus.status" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-green-500/20 text-green-700 font-semibold">
           Running
         </span>
-        <span v-else class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-red-500/20 text-red-700 font-semibold">
+        <span v-else-if="frpStatus.exist && !frpStatus.status" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-red-500/20 text-red-700 font-semibold">
           Stopped
         </span>
-      </div>
       <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
       <button 
         class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
