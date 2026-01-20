@@ -52,7 +52,16 @@
       <div class="metrics-row-2">
         <!-- 부하율 -->
         <div class="metric-card">
-          <div class="metric-icon">⚡</div>
+          <div class="metric-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <!-- 게이지 반원 배경 -->
+  <path d="M3 20a11 11 0 0 1 22 0" stroke="#6366f1" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- 게이지 바늘 -->
+  <path d="M14 20 L18 10" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- 중심점 -->
+  <circle cx="14" cy="20" r="2.5" fill="#6366f1"/>
+</svg></div>
           <div class="metric-content">
             <div class="metric-label">
               {{ t("dashboard.transDiag.LoadFactor") }}

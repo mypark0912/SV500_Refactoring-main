@@ -82,7 +82,15 @@
         <div class="detail-card unbalance-detail">
           <div class="detail-header">
             <h3 class="detail-title">
-              <span class="detail-icon">✔️</span>
+              <span class="detail-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <!-- 3상 막대 (높이 다르게 - 불평형 표현) -->
+  <rect x="4" y="12" width="5" height="12" rx="1" fill="#6366f1"/>
+  <rect x="11.5" y="6" width="5" height="18" rx="1" fill="#6366f1"/>
+  <rect x="19" y="9" width="5" height="15" rx="1" fill="#6366f1"/>
+  
+  <!-- 균형 기준선 -->
+  <line x1="2" y1="14" x2="26" y2="14" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="2 2"/>
+</svg></span>
                {{ t('dashboard.pq.unbalance') }}
             </h3>
    
