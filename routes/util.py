@@ -28,8 +28,8 @@ class WatchTarget(IntEnum):
     BOTH = 2
 
 WAVEFORM_PATHS = {
-    WatchTarget.MAIN: "/home/root/ch1/waveform",
-    WatchTarget.SUB: "/home/root/ch2/waveform"
+    WatchTarget.MAIN: "/sv500/ch1/waveform",
+    WatchTarget.SUB: "/sv500/ch2/waveform"
 }
 
 def get_db_connection():
