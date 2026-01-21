@@ -102,7 +102,7 @@
 <script>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import sampleImg from '@/images/transformer_m.png'
+import sampleImg from '@/images/trans.png'
 import { useSetupStore } from '@/store/setup'
 import { useRealtimeStore } from '@/store/realtime'
 import axios from 'axios'
