@@ -11,9 +11,26 @@ class EquipmentType(IntEnum):
 
 
 @dataclass
-class CompressorFan:
-    Turbulence_FAN: int = -1
+class Compressor:
     Turbulence_CMP: int = -1
+    MechanicalUnbalance_MDE: int = -1
+    SoftFoot_MDE: int = -1
+    TorqueRipple_MOT: int = -1
+    Load_MFD: int = -1
+    CableConnection_MFD: int = -1
+    NoiseVibration_PWS: int = -1
+    Heat_PWS: int = -1
+    IncomingVoltage_VOL: int = -1
+    Rotor_ROT: int = -1
+    Stator_STA: int = -1
+    Bearing_MIB: int = -1
+    DCLink_MFD: int = -1
+    # GroundFault_PWS: int = -1
+    # VIUnbalance_PWS: int = -1
+
+@dataclass
+class Fan:
+    Turbulence_FAN: int = -1
     MechanicalUnbalance_MDE: int = -1
     SoftFoot_MDE: int = -1
     TorqueRipple_MOT: int = -1
