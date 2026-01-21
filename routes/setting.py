@@ -3504,6 +3504,31 @@ def check_mqtt():
         if "MQTT" in setup["General"]:
             if int(setup["General"]["MQTT"]["Use"]) == 1:
                 redis_state.client.hset("System","MQTT", 1)
+                if int(setup["General"]["MQTT"]["Type"]) == 0:
+                    file_path = os.path.join(SETTING_FOLDER, 'mqtt.json')
+                    if not os.path.exists(file_path):
+                        jsonData = {
+                            "host": setup["General"]["MQTT"]["host"],
+                            "port": int(setup["General"]["MQTT"]["port"]),
+                            "device_id": setup["General"]["MQTT"]["device_id"],
+                            "username": setup["General"]["MQTT"]["username"],
+                            "password": setup["General"]["MQTT"]["password"]
+                        }
+
+                    else:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            jsonData = json.load(f)
+
+                        # setup 값으로 덮어쓰기
+                        jsonData["host"] = setup["General"]["MQTT"]["host"]
+                        jsonData["port"] = int(setup["General"]["MQTT"]["port"])
+                        jsonData["device_id"] = setup["General"]["MQTT"]["device_id"]
+                        jsonData["username"] = setup["General"]["MQTT"]["username"]
+                        jsonData["password"] = setup["General"]["MQTT"]["password"]
+
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(jsonData, f, indent=2, ensure_ascii=False)
+
                 if service_exists("mqClient"):
                     if is_service_enabled("mqClient"):
                         if not is_service_active("mqClient"):
