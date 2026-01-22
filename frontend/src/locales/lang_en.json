@@ -212,7 +212,7 @@
     "meter": "Meter",
     "pq": "Power Quality",
     "sub": "Channel 2",
-    "diagnosis": "Equipment",
+    "diagnosis": "Status Monitoring",
     "event": "Alarm/Event",
     "report": "Report",
     "trend": "Trend",
@@ -229,7 +229,7 @@
     "singleinfo": {
       "title": "Equipment Info",
       "Operatingtime": "Running Hours",
-      "EquipmentInformation": "Equipment Information",
+      "EquipmentInformation": "Nameplate Info",
       "OperationStatus": "Operating Status",
       "running": "Running",
       "stopped": "Stopped"
@@ -264,8 +264,8 @@
       "THD": "THD"
     },
     "diagnosis": {
-      "title": "Equipment Status",
-      "title2": "Equipment Status",
+      "title": "Status Monitoring",
+      "title2": "Status Monitoring",
       "subtitle_main": "Channel 1",
       "subtitle_sub": "Channel 2",
       "equipment": "Equipment",
@@ -703,6 +703,7 @@
   "config": {
     "comfirmtext1": "The changed settings will delete all previous calculations for",
     "comfirmtext2": "Would you like to proceed?",
+    "apply": "Apply",
     "sitemap": {
       "title": "Configuration",
       "Main Channel": "Channel 1",

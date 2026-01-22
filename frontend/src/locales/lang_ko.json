@@ -128,11 +128,11 @@
       "validating": "설정을 검증하는 중..."
     },
     "diagnosis": {
-      "title": "진단 설정",
-      "results": "진단 설정 결과",
+      "title": "설비 설정",
+      "results": "설비 설정 결과",
       "nameplate": "네임플레이트 설정",
       "parameters": "자산 파라미터",
-      "settings": "진단 설정",
+      "settings": "설비 설정",
       "profile": "고급 프로파일",
       "configSuccess": "모든 설정 완료",
       "configFailed": "설정 실패",
@@ -140,7 +140,7 @@
       "fixErrors": "오류를 수정한 후 다시 시도하세요.",
       "configuring": "네임플레이트 설정 중...",
       "settingParams": "자산 파라미터 설정 중...",
-      "savingSettings": "진단 설정 저장 중...",
+      "savingSettings": "설비 설정 저장 중...",
       "savingProfile": "고급 프로파일 저장 중..."
     },
     "buttons": {
@@ -212,7 +212,7 @@
     "meter": "계측 현황",
     "pq": "전력품질 현황",
     "sub": "채널 2",
-    "diagnosis": "설비",
+    "diagnosis": "상태 감시",
     "event": "알람/이벤트",
     "report": "리포트",
     "trend": "트렌드",
@@ -229,14 +229,14 @@
     "singleinfo": {
       "title": "설비 정보",
       "Operatingtime": "운전 시간",
-      "EquipmentInformation": "설비 정보",
+      "EquipmentInformation": "명판 정보",
       "OperationStatus": "운용 현황",
       "running": "가동중",
       "stopped": "정지"
     },
     "sitemap": "대시보드",
     "meter": {
-      "title": "계측 상태",
+      "title": "계측",
       "singletitle": "전압/전류/주파수",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
@@ -263,15 +263,15 @@
       "THD": "총 고조파 왜곡률"
     },
     "diagnosis": {
-      "title": "설비 정보",
-      "title2": "설비 정보",
+      "title": "상태 감시",
+      "title2": "상태 감시",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
       "equipment": "설비",
       "pq": "전력 품질 상태",
       "diagnostic": "설비 상태",
-      "event": "이벤트 진단",
-      "fault": "전기적 이상 진단",
+      "event": "이벤트 상태",
+      "fault": "전기적 이상 상태",
       "name": "이름",
       "type": "종류",
       "st0": "정지",
@@ -445,7 +445,7 @@
       "downloadDesc1": "현재 표시된 설비 데이터를 Word 문서로 다운로드합니다.",
       "downloadIncludes": "포함 내용:",
       "downloadItem1": "설비 정보",
-      "downloadItem2": "진단 결과 차트",
+      "downloadItem2": "설비 상태 결과 차트",
       "downloadItem3": "상세 분석 항목",
       "downloadItem4": "트렌드 차트",
       "downloadDate": "기준 날짜",
@@ -684,7 +684,7 @@
     "tabTitle": {
       "Meter": "계측",
       "Power Quality": "전력 품질",
-      "Diagnosis": "진단",
+      "Diagnosis": "설비 상태",
       "Parameters": "파라미터",
       "Energy": "전력량"
     },
@@ -697,6 +697,7 @@
   "config": {
     "comfirmtext1": "설비 주요 설정 변경 시 이전의 계산값이 모두 삭제됩니다.",
     "comfirmtext2": "계속 진행하시겠습니까?",
+    "apply": "적용",
     "sitemap": {
       "title": "설정",
       "Main Channel": "채널 1",
@@ -773,7 +774,7 @@
         "hours": "시간"
       },
       "dig": {
-        "title": "진단 설정",
+        "title": "설비 감시 설정",
         "advanced": "고급",
         "dburl": "DB 주소",
         "dbToken": "DB 토큰",
@@ -806,7 +807,7 @@
         "value": "기준 값"
       },
       "Diagnosis": {
-        "title": "진단 설비 관리",
+        "title": "설비 관리",
         "AddAsset": "설비 추가",
         "UnregisterAsset": "설비 등록 해제",
         "registerAsset": "설비 등록",
@@ -846,6 +847,6 @@
     },
     
     "save": "변경 저장",
-    "testSet": "테스트 진단 설정 "
+    "testSet": "테스트 설비 상태 설정 "
   }
 }
