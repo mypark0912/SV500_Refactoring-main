@@ -26,7 +26,7 @@
           </div>
 
           <!-- 검색창 -->
-          <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div class="flex items-center gap-2">
               <div class="relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,64 +67,64 @@
           </div>
           
           <!-- 메인 콘텐츠 -->
-          <div class="flex flex-1 overflow-hidden p-4">
+          <div class="flex flex-1 overflow-hidden p-4 min-h-0">
             <!-- 왼쪽: 탭 + 트리뷰 -->
-            <div class="w-80 flex flex-col pt-1 pb-1">
-              <div class="flex flex-col flex-1 border-r border-gray-200 dark:border-gray-700 pr-4">
-              <div class="flex border-b border-gray-200 dark:border-gray-700 pb-1 mb-1">
-                <button
-                  v-for="tab in tabs"
-                  :key="tab.key"
-                  @click="activeTab = tab.key"
-                  class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
-                  :class="activeTab === tab.key 
-                    ? 'text-violet-600 border-b-2 border-violet-600 bg-violet-50 dark:bg-violet-900/20' 
-                    : 'text-gray-500 hover:text-gray-700'"
-                >
-                  {{ tab.label }}
-                </button>
-              </div>
-              
-              <div class="flex-1 overflow-y-auto p-3">
-                <template v-if="activeTab === 'equipment'">
-                  <div v-for="category in equipmentData" :key="category.key" class="mb-2">
-                    <button
-                      @click="toggleCategory(category.key)"
-                      class="flex items-center gap-1 w-full text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-violet-600 py-1"
-                    >
-                      <svg class="w-4 h-4 transition-transform" :class="expandedCategories.includes(category.key) ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                      </svg>
-                      {{ category.label }}
-                    </button>
-                    <ul v-show="expandedCategories.includes(category.key)" class="ml-5">
-                      <li v-for="item in category.items" :key="item.key">
+            <div class="w-80 flex flex-col h-full overflow-hidden">
+              <div class="flex flex-col flex-1 border-r border-gray-200 dark:border-gray-700 pr-4 min-h-0">
+                <div class="flex border-b border-gray-200 dark:border-gray-700 pb-1 mb-1 flex-shrink-0">
+                  <button
+                    v-for="tab in tabs"
+                    :key="tab.key"
+                    @click="activeTab = tab.key"
+                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                    :class="activeTab === tab.key 
+                      ? 'text-violet-600 border-b-2 border-violet-600 bg-violet-50 dark:bg-violet-900/20' 
+                      : 'text-gray-500 hover:text-gray-700'"
+                  >
+                    {{ tab.label }}
+                  </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-3 min-h-0">
+                  <template v-if="activeTab === 'equipment'">
+                    <div v-for="category in equipmentData" :key="category.key" class="mb-2">
+                      <button
+                        @click="toggleCategory(category.key)"
+                        class="flex items-center gap-1 w-full text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-violet-600 py-1"
+                      >
+                        <svg class="w-4 h-4 transition-transform" :class="expandedCategories.includes(category.key) ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ category.label }}
+                      </button>
+                      <ul v-show="expandedCategories.includes(category.key)" class="ml-5">
+                        <li v-for="item in category.items" :key="item.key">
+                          <button
+                            @click="scrollToItem(`equipment-${category.key}-${item.key}`)"
+                            class="text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 py-0.5 w-full text-left"
+                            :class="{ 'text-violet-600 font-medium': activeItem === `equipment-${category.key}-${item.key}` }"
+                          >
+                            {{ getLabel(item) }}
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </template>
+
+                  <template v-else>
+                    <ul class="space-y-1">
+                      <li v-for="item in currentTabItems" :key="item.key">
                         <button
-                          @click="scrollToItem(`equipment-${category.key}-${item.key}`)"
-                          class="text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 py-0.5 w-full text-left"
-                          :class="{ 'text-violet-600 font-medium': activeItem === `equipment-${category.key}-${item.key}` }"
+                          @click="scrollToItem(`${activeTab}-${item.key}`)"
+                          class="text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 py-1 w-full text-left"
+                          :class="{ 'text-violet-600 font-medium': activeItem === `${activeTab}-${item.key}` }"
                         >
                           {{ getLabel(item) }}
                         </button>
                       </li>
                     </ul>
-                  </div>
-                </template>
-
-                <template v-else>
-                  <ul class="space-y-1">
-                    <li v-for="item in currentTabItems" :key="item.key">
-                      <button
-                        @click="scrollToItem(`${activeTab}-${item.key}`)"
-                        class="text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 py-1 w-full text-left"
-                        :class="{ 'text-violet-600 font-medium': activeItem === `${activeTab}-${item.key}` }"
-                      >
-                        {{ getLabel(item) }}
-                      </button>
-                    </li>
-                  </ul>
-                </template>
-              </div>
+                  </template>
+                </div>
               </div>
             </div>
 
@@ -397,11 +397,10 @@ export default {
 
     return {
       tabs, activeTab, activeItem, expandedCategories, contentArea, searchQuery,
-      currentSearchIndex, searchResults, isKorean,isJapanese, getLabel, getDescription, highlightText, formatDescription,
+      currentSearchIndex, searchResults, isKorean, isJapanese, getLabel, getDescription, highlightText, formatDescription,
       equipmentData, pqData, faultData, eventData, currentTabItems,
       goToNext, goToPrev, clearSearch, toggleCategory, scrollToItem, close,
     }
   }
 }
 </script>
-
