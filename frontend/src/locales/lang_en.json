@@ -704,6 +704,13 @@
     "comfirmtext1": "The changed settings will delete all previous calculations for",
     "comfirmtext2": "Would you like to proceed?",
     "apply": "Apply",
+    "nameplates":"Nameplates",
+    "nameplatesConfiguration":"Nameplate Configuration",
+    "parameters":"Parameters/Thresholds",
+    "parametersConfiguration":"Parameter Configuration",
+    "addbearing":"Add Bearing",
+    "eventSetup":"Event Setup",
+    "trendSetup":"Trend Setup",
     "sitemap": {
       "title": "Configuration",
       "Main Channel": "Channel 1",

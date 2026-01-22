@@ -35,7 +35,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Nameplates
+          {{ t("config.nameplates") }}
         </h3>
       </header>
     </div>
@@ -47,14 +47,14 @@
           <div
             class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase"
           >
-            Nameplates Configuration
+            {{ t("config.nameplatesConfiguration") }}
           </div>
           <button
             v-if="isAdmin"
             class="btn h-6 px-5 ml-auto mr-2 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
             @click="feedbackModalOpen = true"
           >
-            Add Bearing
+            {{ t("config.addbearing") }}
           </button>
           <button
             v-if="
@@ -63,7 +63,7 @@
             @click="showAdvancedModal = true"
             class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
           >
-            Advanced
+            {{ t("config.plansPanel.dig.advanced") }}
           </button>
         </div>
         <div class="mt-6 pt-2">
@@ -468,6 +468,7 @@ defineProps({
 });
 const authStore = useAuthStore(); // ✅ Pinia store 사용
 const { locale } = useI18n();
+const { t } = useI18n();
 const inputDict = inject("channel_inputDict");
 const tableData = inject("tableData");
 const modalData = inject("modalData");

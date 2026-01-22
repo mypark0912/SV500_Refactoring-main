@@ -34,7 +34,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          {{ title }}
+          {{ t("config.eventSetup") }}{{ title }}
         </h3>
       </header>
     </div>
@@ -252,7 +252,7 @@
 
 <script setup>
 import { inject, defineProps, ref, computed } from "vue";
-
+import { useI18n } from "vue-i18n";
 const props = defineProps({
   title: String,
   option1: String,
@@ -261,7 +261,7 @@ const props = defineProps({
 const title = ref(props.title);
 const option1 = ref(props.option1);
 const option2 = ref(props.option2);
-
+const { t } = useI18n();
 const inputDict = inject("channel_inputDict");
 
 // ✅ Action 버튼 정의

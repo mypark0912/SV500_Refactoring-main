@@ -39,7 +39,7 @@
                   <h3
                     class="text-lg text-gray-800 dark:text-gray-100 font-semibold"
                   >
-                    Trend Setup
+                    {{ t("config.trendSetup") }}
                   </h3>
                 </header>
               </div>
@@ -187,6 +187,7 @@
   import ModalBasic from "../../components/ModalBasic.vue";
   import flatPickr from "vue-flatpickr-component";
   import "flatpickr/dist/flatpickr.css";
+  import { useI18n } from "vue-i18n";
   import { useSetupStore } from "@/store/setup"; // ✅ Pinia Store 사용
   export default {
     name: "PlansPanel",
@@ -200,6 +201,7 @@
       const channel = ref(props.channel);
       const errorMessage = ref(""); // ✅ 에러 메시지 변수 추가
       const feedbackModalOpen = ref(false);
+      const { t } = useI18n();
       const toggle1 = ref("YES");
       const message = ref("Select upload setting file");
       const channel_inputDict = inject("channel_inputDict");

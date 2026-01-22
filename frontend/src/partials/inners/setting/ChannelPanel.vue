@@ -672,12 +672,12 @@
             <AlarmCard :parameterOptions="parameterOptions" />
             <EventCard1 />
             <EventCard2
-              :title="'Event Setup 2'"
+              :title="' 2'"
               :option1="'Sag'"
               :option2="'Swell'"
             />
             <EventCard2
-              :title="'Event Setup 3'"
+              :title="' 3'"
               :option1="'Over Current'"
               :option2="'Interruption'"
             />

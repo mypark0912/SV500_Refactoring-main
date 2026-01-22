@@ -28,7 +28,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Event Setup 1
+          {{ t("config.eventSetup") }} 1
         </h3>
       </header>
     </div>
@@ -160,9 +160,9 @@
 
 <script setup>
 import { inject, computed } from "vue";
-
+import { useI18n } from "vue-i18n";
 const inputDict = inject("channel_inputDict");
-
+const { t } = useI18n();
 const tc_action = [
   { value: 0, label: "None" },
   { value: 1, label: "Event" },

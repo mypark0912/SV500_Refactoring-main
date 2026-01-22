@@ -14,7 +14,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Trend Setup
+          {{ t("config.trendSetup") }}
         </h3>
       </header>
     </div>
@@ -71,14 +71,14 @@
 <script setup>
 import { inject, ref, computed, onMounted, nextTick } from "vue";
 import { useAuthStore } from '@/store/auth'
-
+import { useI18n } from "vue-i18n";
 const authStore = useAuthStore()
 const opMode = computed(() => authStore.getOpMode)
 
 // inject된 값들
 const selectedTrendSetup = inject("selectedTrendSetup");
 const updateNestedField = inject("updateNestedField");
-
+const { t } = useI18n();
 const parameterOptions = ref([
   { label: "None", value: "None" },
   //{ label: "Temperature", value: "Temperature" },

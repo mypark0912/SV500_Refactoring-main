@@ -698,6 +698,13 @@
     "comfirmtext1": "설비 주요 설정 변경 시 이전의 계산값이 모두 삭제됩니다.",
     "comfirmtext2": "계속 진행하시겠습니까?",
     "apply": "적용",
+    "nameplates":"명판정보",
+    "nameplatesConfiguration":"명판정보 설정",
+    "parameters":"파라미터/임계값",    
+    "parametersConfiguration":"파라미터 설정",
+    "addbearing":"베어링 추가",
+    "eventSetup":"이벤트 설정",
+    "trendSetup":"트랜드 설정",
     "sitemap": {
       "title": "설정",
       "Main Channel": "채널 1",

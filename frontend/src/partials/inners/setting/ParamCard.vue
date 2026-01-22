@@ -35,7 +35,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          Parameters/Thresholds
+          {{ t("config.parameters") }}
         </h3>
       </header>
     </div>
@@ -46,7 +46,7 @@
         <div
           class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-2"
         >
-          Parameter Configuration
+          {{ t("config.parametersConfiguration") }}
         </div>
         <div class="mt-6 pt-2">
           <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
@@ -149,6 +149,7 @@ defineProps({
 });
 // const authStore = useAuthStore(); // ✅ Pinia store 사용
 const { locale } = useI18n();
+const { t } = useI18n();
 const inputDict = inject("channel_inputDict");
 const paramData = inject("paramData");
 const isEditParameters = inject("isEditParameters");
