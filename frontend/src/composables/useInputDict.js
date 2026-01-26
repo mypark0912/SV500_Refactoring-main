@@ -125,6 +125,7 @@ export function useInputDict() {
       vnorminal: 100,
       pt1: 100,
       pt2: 100,
+      dash :0
     },
     assetInfo: {
       name: "",

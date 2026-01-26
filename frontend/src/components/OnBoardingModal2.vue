@@ -37,7 +37,7 @@
           <!-- Close button -->
           <div class="absolute top-4 right-4 z-10">
             <button
-              class="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400"
+              class="text-gray-400 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-400"
               @click.stop="closeModal"
             >
               <div class="sr-only">{{ t('common.close') }}</div>
@@ -69,7 +69,7 @@
                       :class="
                         currentStepIndex >= index
                           ? 'bg-violet-500 text-white'
-                          : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400'
+                          : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-100'
                       "
                     >
                       {{ index + 1 }}
@@ -138,7 +138,7 @@
                   </h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.restartCheck.required') }}:</span>
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.required') }}:</span>
                       <span
                         :class="
                           needsRestart
@@ -150,8 +150,8 @@
                       </span>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.restartCheck.checkTime') }}:</span>
-                      <span class="text-gray-700 dark:text-gray-300">{{
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.checkTime') }}:</span>
+                      <span class="text-gray-700 dark:text-gray-100">{{
                         new Date().toLocaleString()
                       }}</span>
                     </div>
@@ -237,7 +237,7 @@
                 </div>
                 <button
                   type="button"
-                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white"
                   @click="nextStep"
                   :disabled="isCheckingRestart"
                 >
@@ -303,7 +303,7 @@
                   {{ t('onboardingModal.test.result', { errors: mainTestResult.err || 0, warnings: mainTestResult.warn || 0 }) }}
                 </div>
                 <div
-                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 border-b border-gray-200 pb-1"
+                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
                 >
                   <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
                   <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
@@ -313,10 +313,10 @@
                   <div
                     v-for="(item, index) in mainTestData.Commissions"
                     :key="index"
-                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded hover:bg-gray-50"
+                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
                   >
                     <div class="text-left">{{ item.AssemblyID }}</div>
-                    <div class="text-left text-gray-600">
+                    <div class="text-left text-gray-600 dark:text-gray-100">
                       <span v-for="(msg, i) in item.Messages" :key="i">
                         • {{ msg }}
                       </span>
@@ -379,7 +379,7 @@
                   </div>
   
                   <div
-                    class="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-4"
+                    class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
                   >
                     {{ t('onboardingModal.test.chartTitle', { type: selectedMainChart }) }}
                   </div>
@@ -440,7 +440,7 @@
                   :class="
                     mainTestResult.err > 0
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
+                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
                   "
                   @click="handleMainTestNext"
                   :disabled="!canProceedFromMain"
@@ -504,7 +504,7 @@
                   {{ t('onboardingModal.test.result', { errors: subTestResult.err || 0, warnings: subTestResult.warn || 0 }) }}
                 </div>
                 <div
-                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 border-b border-gray-200 pb-1"
+                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
                 >
                   <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
                   <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
@@ -514,10 +514,10 @@
                   <div
                     v-for="(item, index) in subTestData.Commissions"
                     :key="index"
-                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded hover:bg-gray-50"
+                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
                   >
                     <div class="text-left">{{ item.AssemblyID }}</div>
-                    <div class="text-left text-gray-600">
+                    <div class="text-left text-gray-600 dark:text-gray-100">
                       <span v-for="(msg, i) in item.Messages" :key="i">
                         • {{ msg }}
                       </span>
@@ -580,7 +580,7 @@
                   </div>
   
                   <div
-                    class="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-4"
+                    class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
                   >
                     {{ t('onboardingModal.test.chartTitle', { type: selectedSubChart }) }}
                   </div>
@@ -641,7 +641,7 @@
                   :class="
                     subTestResult.err > 0
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'
+                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
                   "
                   @click="nextStep"
                   :disabled="!canProceedFromSub"
@@ -664,14 +664,14 @@
                   <h3 class="font-semibold mb-3">{{ t('onboardingModal.complete.summary') }}</h3>
                   <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.restartCheck') }}:</span>
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.restartCheck') }}:</span>
                       <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.completed') }}</span>
                     </div>
                     <div
                       v-if="diagnosis_main"
                       class="flex items-center justify-between"
                     >
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.mainTest') }}:</span>
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.mainTest') }}:</span>
                       <span
                         :class="
                           mainTestResult.err > 0
@@ -691,7 +691,7 @@
                       v-if="diagnosis_sub"
                       class="flex items-center justify-between"
                     >
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.subTest') }}:</span>
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.subTest') }}:</span>
                       <span
                         :class="
                           subTestResult.err > 0
@@ -708,7 +708,7 @@
                       </span>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-400">{{ t('onboardingModal.complete.overallStatus') }}:</span>
+                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.overallStatus') }}:</span>
                       <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.ready') }}</span>
                     </div>
                   </div>
@@ -739,7 +739,7 @@
                   </button>
                   <button
                     v-else
-                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-100 dark:hover:bg-white"
                     @click="closeModal"
                   >
                     {{ t('onboardingModal.buttons.finish') }}

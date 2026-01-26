@@ -190,7 +190,7 @@
                         updateNestedField(
                           'ctInfo',
                           'startingcurrent',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="serial-number"
@@ -212,7 +212,7 @@
                         updateNestedField(
                           'ctInfo',
                           'inorminal',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="mac-address"
@@ -277,7 +277,7 @@
                         updateNestedField(
                           'ctInfo',
                           'zctscale',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="mac-address"
@@ -299,7 +299,7 @@
                         updateNestedField(
                           'ctInfo',
                           'zcttpye',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="use-dhcp"
@@ -371,7 +371,7 @@
                       updateNestedField(
                         'ptInfo',
                         'linefrequency',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     id="line-frequency"
@@ -396,7 +396,7 @@
                         updateNestedField(
                           'ptInfo',
                           'wiringmode',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="ctdirection"
@@ -418,7 +418,7 @@
                         updateNestedField(
                           'ptInfo',
                           'vnorminal',
-                          $event.target.value
+                          $event.target.value,
                         )
                       "
                       id="mac-address"
@@ -465,7 +465,31 @@
                       :maxlength="20"
                     />
                   </div>
+
+
                 </div>
+                                  <div >
+                    <label
+                      class="block text-sm font-medium mb-2"
+                      for="line-frequency"
+                      >대시보드 출력설정</label
+                    >
+                  <select
+                    :value="getInputDict().ptInfo.dash"
+                    @change="
+                      updateNestedField(
+                        'ptInfo',
+                        'dash',
+                        Number($event.target.value),
+                      )
+                    "
+                    class="form-select w-full"
+                  >
+                    <option :value="0">Phase Voltage</option>
+                    <option :value="1">Line Voltage</option>
+                
+                  </select>
+                  </div>
               </div>
             </div>
             <!-- Sampling -->
@@ -513,7 +537,7 @@
                       updateNestedField(
                         'sampling',
                         'rate',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     class="form-select w-full"
@@ -534,7 +558,7 @@
                       updateNestedField(
                         'sampling',
                         'duration',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     class="form-select w-full"
@@ -558,7 +582,7 @@
                       updateNestedField(
                         'sampling',
                         'period',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     class="form-select w-full"
@@ -621,7 +645,7 @@
                       updateNestedField(
                         'demand',
                         'target',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     class="form-input w-full"
@@ -640,7 +664,7 @@
                       updateNestedField(
                         'demand',
                         'demand_interval',
-                        Number($event.target.value)
+                        Number($event.target.value),
                       )
                     "
                     class="form-select w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
@@ -671,11 +695,7 @@
             </div>
             <AlarmCard :parameterOptions="parameterOptions" />
             <EventCard1 />
-            <EventCard2
-              :title="' 2'"
-              :option1="'Sag'"
-              :option2="'Swell'"
-            />
+            <EventCard2 :title="' 2'" :option1="'Sag'" :option2="'Swell'" />
             <EventCard2
               :title="' 3'"
               :option1="'Over Current'"
@@ -693,26 +713,31 @@
             />
             <NameplateCard
               v-if="
-              selectedbtn == 2 &&
+                selectedbtn == 2 &&
                 (channel == 'Main'
                   ? currentDiagnosis.Main
-                  : currentDiagnosis.Sub) && tableData.length > 0
+                  : currentDiagnosis.Sub) &&
+                tableData.length > 0
               "
               :key="currentDiagnosis + '-' + channel"
             />
             <ParamCard
               v-if="
-              selectedbtn == 2 &&
+                selectedbtn == 2 &&
                 (channel == 'Main'
                   ? currentDiagnosis.Main
-                  : currentDiagnosis.Sub) && paramData.length > 0
+                  : currentDiagnosis.Sub) &&
+                paramData.length > 0
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <AISetting :channel="channel"/>
-            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" type="diagnostic" />
+            <AISetting :channel="channel" />
+            <DOAlarmCard
+              v-if="isConfigureStatus"
+              :channel="channel"
+              type="diagnostic"
+            />
             <DOAlarmCard v-if="isUseDOAlarm" :channel="channel" type="faults" />
-            
           </div>
         </div>
       </section>
@@ -1019,9 +1044,9 @@ export default {
     const stList = ref(["Info", "Pass", "Warning", "Error"]);
 
     const { parameterOptions, selectedTrendSetup } = useInputDict();
-    const assetDriveType = ref('DOL');
+    const assetDriveType = ref("DOL");
 
-    provide('assetDriveType', assetDriveType);
+    provide("assetDriveType", assetDriveType);
 
     provide("selectedTrendSetup", selectedTrendSetup);
 
@@ -1032,17 +1057,16 @@ export default {
         : inputDict_sub.value;
     };
     //console.log('Use DO',  getInputDict().assetInfo.type);
-    const isConfigureStatus = computed(()=>{
+    const isConfigureStatus = computed(() => {
       const currentDict = getInputDict();
-      if (currentDict.assetInfo.type != '' && currentDict.assetInfo.name != '')
+      if (currentDict.assetInfo.type != "" && currentDict.assetInfo.name != "")
         return currentDict.confStatus == 0 ? false : true;
-      else
-        return false;
+      else return false;
       // if(currentDict.assetInfo.type ==='Transformer' || currentDict.assetInfo.type ==='PrimaryTransformer'|| currentDict.assetInfo.type ==='PSupply')
       //   return false;
       // else
       //   return true;
-    })
+    });
     const isRestartButtonEnabled = computed(() => {
       const currentDict = getInputDict();
       const isChannelEnabled = currentDict.Enable === 1;
@@ -1127,7 +1151,7 @@ export default {
               }
             }
           },
-          { immediate: true }
+          { immediate: true },
         );
 
         watch(
@@ -1170,12 +1194,12 @@ export default {
               }
             }
           },
-          { deep: true, immediate: false }
+          { deep: true, immediate: false },
         );
       }
     };
     const validTrendItems = computed(() =>
-      selectedTrendSetup.value.params.filter((param) => param !== "None")
+      selectedTrendSetup.value.params.filter((param) => param !== "None"),
     );
 
     // ✅ 현재 채널의 Diagnosis 활성 상태 계산
@@ -1228,7 +1252,7 @@ export default {
 
           componentKey.value++;
         }
-      }
+      },
     );
     watch(
       () => getInputDict().assetInfo?.name,
@@ -1258,7 +1282,7 @@ export default {
             diagnosis_detail.value[channelKey].paramData = [];
           }
         }
-      }
+      },
     );
     onMounted(async () => {
       await nextTick();
@@ -1290,7 +1314,7 @@ export default {
         }
         selectedTrendSetup.value.params = selectedTrendSetup.value.params.slice(
           0,
-          8
+          8,
         );
       } else {
         selectedTrendSetup.value = {
@@ -1321,14 +1345,14 @@ export default {
         const response = await axios.get(`/setting/getAssetConfig/${asset}`);
         if (response.data.success === true) {
           const allData = response.data.data;
-          const driveTypeParam = allData.find(p => p.Name === 'DriveType');
+          const driveTypeParam = allData.find((p) => p.Name === "DriveType");
           if (driveTypeParam) {
             const index = parseInt(driveTypeParam.Value || "0");
-            assetDriveType.value = driveTypeParam.DataInfo?.[index] || 'DOL';
-            getInputDict().assetInfo.driveType = driveTypeParam.DataInfo?.[index] || 'DOL';
+            assetDriveType.value = driveTypeParam.DataInfo?.[index] || "DOL";
+            getInputDict().assetInfo.driveType =
+              driveTypeParam.DataInfo?.[index] || "DOL";
           }
           if (Array.isArray(allData)) {
-         
             const filteredTableData = allData.filter((item) => item.Type === 0);
 
             // diagnosis_detail에 직접 저장
@@ -1339,11 +1363,11 @@ export default {
             // modalData 로직 추가
             if (authStore.getUserRole == "2") {
               diagnosis_detail.value[channelKey].modalData = allData.filter(
-                (item) => item.Type === 1
+                (item) => item.Type === 1,
               );
             } else if (authStore.getUserRole == "3") {
               diagnosis_detail.value[channelKey].modalData = allData.filter(
-                (item) => [1, 2].includes(item.Type)
+                (item) => [1, 2].includes(item.Type),
               );
             }
           } else {
@@ -1410,7 +1434,7 @@ export default {
 
       if (isFTPEnabled && isAnyDiagnosisEnabled) {
         alert(
-          "Cannot use Waveform FTP and Diagnosis simultaneously. Please disable one of them."
+          "Cannot use Waveform FTP and Diagnosis simultaneously. Please disable one of them.",
         );
         return;
       }
@@ -1449,7 +1473,7 @@ export default {
       const validationResult = settingValidator.validateAllSettings(
         General_inputDict.value,
         inputDict_main.value,
-        inputDict_sub.value
+        inputDict_sub.value,
       );
 
       if (!validationResult.isValid) {
@@ -1467,7 +1491,7 @@ export default {
 
     provide(
       "channel_inputDict",
-      computed(() => getInputDict())
+      computed(() => getInputDict()),
     );
     provide("savefile", savefile);
     provide("tableData", tableData);
@@ -1477,7 +1501,7 @@ export default {
     provide("isEditParameters", isEditParameters);
     provide(
       "channel_inputDict",
-      computed(() => getInputDict())
+      computed(() => getInputDict()),
     );
     // ✅ 추가: 필수 함수들을 provide
     provide("updateNestedField", updateNestedField);
@@ -1546,13 +1570,13 @@ export default {
           plainTableData,
           {
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
 
         if (!response.data?.success) {
           console.error(
             "❌ Failed to save asset settings: " +
-              (response.data.error || "unknown error")
+              (response.data.error || "unknown error"),
           );
         }
         if (isEditParameters.value) changeDiagnosis.value.parameter = true;
@@ -1560,7 +1584,7 @@ export default {
         console.error("Error occurred while saving asset:", error);
         alert(
           "❌ Error occurred while saving asset: " +
-            (error.response?.data?.error || error.message)
+            (error.response?.data?.error || error.message),
         );
       }
     };
@@ -1576,11 +1600,11 @@ export default {
         return false;
       }
     };
-const isUseDOAlarm = computed(() => {
-  const currentDict = getInputDict();
-  return currentDict.useDO === 1 || currentDict.useDO === true;
-});
-    const setNameplateConfig = async () => { 
+    const isUseDOAlarm = computed(() => {
+      const currentDict = getInputDict();
+      return currentDict.useDO === 1 || currentDict.useDO === true;
+    });
+    const setNameplateConfig = async () => {
       try {
         const plainTableData = tableData.value.map((item) => ({ ...item }));
         const currentDict = getInputDict();
@@ -1590,23 +1614,21 @@ const isUseDOAlarm = computed(() => {
           plainTableData,
           {
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
 
         if (!response.data?.success) {
           const errorMessages = Array.isArray(response.data.error)
-            ? response.data.error.join('\n')
+            ? response.data.error.join("\n")
             : response.data.error || "unknown error";
-          
-          console.error(
-            `❌ Failed to save asset settings:\n${errorMessages}`
-          );
+
+          console.error(`❌ Failed to save asset settings:\n${errorMessages}`);
         }
       } catch (error) {
         console.error("Error occurred while saving asset:", error);
         alert(
           "❌ Error occurred while saving asset: " +
-            (error.response?.data?.error || error.message)
+            (error.response?.data?.error || error.message),
         );
       }
     };
@@ -1621,7 +1643,7 @@ const isUseDOAlarm = computed(() => {
           plainTableData,
           {
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
 
         if (response.data.success) {
@@ -1642,13 +1664,13 @@ const isUseDOAlarm = computed(() => {
       if (data.includes("Time")) {
         waveformLabelT.value = Array.from(
           { length: chartResult.value[data][0].length },
-          (_, i) => i * deltaT
+          (_, i) => i * deltaT,
         );
         waveformDataT.value = chartResult.value[data];
       } else {
         waveformLabelT.value = Array.from(
           { length: chartResult.value[data].length },
-          (_, i) => i * deltaF
+          (_, i) => i * deltaF,
         );
         waveformDataT.value = [chartResult.value[data]];
       }
@@ -1660,7 +1682,7 @@ const isUseDOAlarm = computed(() => {
       try {
         const currentDict = getInputDict();
         const response = await axios.get(
-          `/setting/test/${currentDict.assetInfo.name}`
+          `/setting/test/${currentDict.assetInfo.name}`,
         );
         if (response.data.success === true) {
           testData.value = response.data.data;
@@ -1702,7 +1724,7 @@ const isUseDOAlarm = computed(() => {
           alert("✅ Asset restarted successfully");
         } else {
           alert(
-            "❌ Restart failed: " + (response.data.error || "Unknown error")
+            "❌ Restart failed: " + (response.data.error || "Unknown error"),
           );
         }
       } catch (e) {
