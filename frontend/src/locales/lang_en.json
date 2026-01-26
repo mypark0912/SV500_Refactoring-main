@@ -373,7 +373,7 @@
   },
   "diagnosis": {
     "sitemap": {
-      "title": "Equipment",
+      "title": "Status Monitoring",
       "main": "Channel 1",
       "sub": "Channel 2"
     },
@@ -584,7 +584,7 @@
   },
   "event": {
     "sitemap": {
-      "title": "Event",
+      "title": "Alarm/Event",
       "main": "Channel 1",
       "sub": "Channel 2"
     },
