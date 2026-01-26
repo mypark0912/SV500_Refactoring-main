@@ -371,7 +371,7 @@
   },
   "diagnosis": {
     "sitemap": {
-      "title": "설비",
+      "title": "상태 감시",
       "main": "채널 1",
       "sub": "채널 2"
     },
@@ -578,7 +578,7 @@
   },
   "event": {
     "sitemap": {
-      "title": "이벤트",
+      "title": "알람/이벤트",
       "main": "채널 1",
       "sub": "채널 2"
     },
