@@ -85,7 +85,8 @@
         "linefrequency": 60,
         "vnorminal": 220,
         "pt1": 220,
-        "pt2": 220
+        "pt2": 220,
+        "dash":1
       },
       "assetInfo": {
         "name": "",

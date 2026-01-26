@@ -209,9 +209,11 @@
   "sidebar": {
     "dashboard": "대시보드",
     "main": "채널 1",
+    "main1": "1차측",
     "meter": "계측 현황",
     "pq": "전력품질 현황",
     "sub": "채널 2",
+    "sub1": "2차측",
     "diagnosis": "상태 감시",
     "event": "알람/이벤트",
     "report": "리포트",
