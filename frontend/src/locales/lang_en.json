@@ -209,9 +209,11 @@
   "sidebar": {
     "dashboard": "Dashboard",
     "main": "Channel 1",
+    "main1": "Primary",
     "meter": "Meter",
     "pq": "Power Quality",
     "sub": "Channel 2",
+    "sub1": "Secondary",
     "diagnosis": "Status Monitoring",
     "event": "Alarm/Event",
     "report": "Report",
@@ -269,10 +271,10 @@
       "subtitle_main": "Channel 1",
       "subtitle_sub": "Channel 2",
       "equipment": "Equipment",
-      "diagnostic": "Equipment Status",
+      "diagnostic": "Equipment",
       "event": "Event Status",
       "fault": "Fault Status",
-      "pq": "Power Quality Status",
+      "pq": "Power Quality",
       "name": "Name",
       "type": "Type",
       "st0": "Stop",
@@ -392,7 +394,7 @@
       "Rated KVA": "Rated Capacity"
     },
     "tabTitle": {
-      "Dignosis Status": "Equipment Status",
+      "Dignosis Status": "Equipment",
       "Fault": "Fault",
       "PowerQuality": "Power Quality",
       "Event": "Event",

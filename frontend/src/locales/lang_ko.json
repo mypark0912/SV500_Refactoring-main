@@ -209,9 +209,11 @@
   "sidebar": {
     "dashboard": "대시보드",
     "main": "채널 1",
+    "main1": "1차측",
     "meter": "계측 현황",
     "pq": "전력품질 현황",
     "sub": "채널 2",
+    "sub1": "2차측",
     "diagnosis": "상태 감시",
     "event": "알람/이벤트",
     "report": "리포트",
@@ -268,8 +270,8 @@
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
       "equipment": "설비",
-      "pq": "전력 품질 상태",
-      "diagnostic": "설비 상태",
+      "pq": "전력 품질",
+      "diagnostic": "설비",
       "event": "이벤트 상태",
       "fault": "전기적 이상 상태",
       "name": "이름",
@@ -390,7 +392,7 @@
       "Rated KVA": "정격 용량"
     },
     "tabTitle": {
-      "Dignosis Status": "설비 상태",
+      "Dignosis Status": "설비",
       "Fault": "전기적 이상",
       "PowerQuality": "전력품질 상태",
       "Event": "이벤트",
