@@ -1295,7 +1295,8 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
             "RatedFrequency": int(main_channel_data["ptInfo"]["linefrequency"]),
             "RatedVoltage": int(main_channel_data["ptInfo"]["vnorminal"]),
             "RatedCurrent": int(main_channel_data["ctInfo"]["inorminal"]),
-            "RatedKVA": int(main_channel_data["n_kva"])
+            "RatedKVA": int(main_channel_data["n_kva"]),
+            "DashPT":int(main_channel_data["ptInfo"]["dash"])
         }
     else:
         main_c = 0
@@ -1315,7 +1316,8 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
             "RatedFrequency": int(sub_channel_data["ptInfo"]["linefrequency"]),
             "RatedVoltage": int(sub_channel_data["ptInfo"]["vnorminal"]),
             "RatedCurrent": int(sub_channel_data["ctInfo"]["inorminal"]),
-            "RatedKVA": int(sub_channel_data["n_kva"])
+            "RatedKVA": int(sub_channel_data["n_kva"]),
+            "DashPT": int(sub_channel_data["ptInfo"]["dash"])
         }
     else:
         sub_c = 0
