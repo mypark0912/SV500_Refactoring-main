@@ -49,7 +49,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
       
       if (response.data.success) {
         const newData = response.data.data
-        
+        const DashPT = response.data.DashPT;
         // console.log(`[${channel}] 받은 데이터:`, {
         //   U4: newData.U4,
         //   Itot: newData.Itot
@@ -61,6 +61,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
             ...newData,
             P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
           }
+          meterDictMain.value.DashPT = DashPT;
           isMainDataLoaded.value = true
           //console.log('[Main] 스토어 업데이트 완료:', meterDictMain.value.U4)
         } else {
@@ -69,6 +70,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
             ...newData,
             P4: newData.P4 ? parseFloat((newData.P4 / 1000).toFixed(2)) : newData.P4
           }
+          meterDictSub.value.DashPT = DashPT;
           isSubDataLoaded.value = true
           //console.log('[Sub] 스토어 업데이트 완료:', meterDictSub.value.U4)
         }

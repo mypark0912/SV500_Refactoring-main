@@ -18,7 +18,8 @@
         <!-- 평균 전압 -->
         <div class="summary-item">
           <div class="summary-content">
-            <div class="summary-value">{{ data2.U4 || 0 }} <span class="summary-unit">V</span></div>
+            <div v-if="data2.DashPT == 0" class="summary-value">{{ data2.U4 || 0 }} <span class="summary-unit">V</span></div>
+            <div v-else class="summary-value">{{ data2.Upp4 || 0 }} <span class="summary-unit">V</span></div>
             <div class="summary-label">{{ t('dashboard.meter.avgvoltage') }}</div>
           </div>
         </div>
@@ -26,7 +27,7 @@
         <!-- 총 전류 -->
         <div class="summary-item">
           <div class="summary-content">
-            <div class="summary-value">{{ data2.Itot || 0 }} <span class="summary-unit">A</span></div>
+            <div class="summary-value">{{ data2.I4 || 0 }} <span class="summary-unit">A</span></div>
             <div class="summary-label">{{ t('dashboard.meter.totcurrent') }}</div>
           </div>
         </div>
@@ -49,7 +50,7 @@
           <div class="detail-header">
             <h4 class="detail-title">{{ t('dashboard.meter.voltage') }}</h4>
           </div>
-          <div class="detail-values">
+          <div v-if="data.DashPT == 0" class="detail-values">
             <div class="value-row">
               <span class="phase-label">L1</span>
               <div class="phase-value" :class="getVoltageClass(data2.U1)">
@@ -68,6 +69,29 @@
               <span class="phase-label">L3</span>
               <div class="phase-value" :class="getVoltageClass(data2.U3)">
                 {{ data2.U3 || 0 }} 
+                <span class="value-unit">V</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="detail-values">
+            <div class="value-row">
+              <span class="phase-label">L1</span>
+              <div class="phase-value" :class="getVoltageClass(data2.U1)">
+                {{ data2.Upp1 || 0 }} 
+                <span class="value-unit">V</span>
+              </div>
+            </div>
+            <div class="value-row">
+              <span class="phase-label">L2</span>
+              <div class="phase-value" :class="getVoltageClass(data2.U2)">
+                {{ data2.Upp2 || 0 }} 
+                <span class="value-unit">V</span>
+              </div>
+            </div>
+            <div class="value-row">
+              <span class="phase-label">L3</span>
+              <div class="phase-value" :class="getVoltageClass(data2.U3)">
+                {{ data2.Upp3 || 0 }} 
                 <span class="value-unit">V</span>
               </div>
             </div>

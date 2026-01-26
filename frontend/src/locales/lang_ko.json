@@ -245,7 +245,7 @@
       "voltage": "전압",
       "current": "전류",
       "avgvoltage": "평균 전압",
-      "totcurrent": "총 전류",
+      "totcurrent": "평균 전류",
       "activepower": "총 유효 전력",
       "activeenergy": "유효 전력량",
       "frequency": "주파수"

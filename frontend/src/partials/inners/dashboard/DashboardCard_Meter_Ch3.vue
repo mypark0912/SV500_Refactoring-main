@@ -14,7 +14,8 @@
         <!-- 전압 카드 (다른 카드와 동일한 스타일) -->
         <div class="summary-metric">
           <div class="summary-content">
-            <div class="summary-value">{{ data2.U4 || 0 }} <span class="summary-unit">V</span></div>
+            <div v-if="data2.DashPT == 0" class="summary-value">{{ data2.U4 || 0 }} <span class="summary-unit">V</span></div>
+             <div v-else class="summary-value">{{ data2.Upp4 || 0 }} <span class="summary-unit">V</span></div>
             <div class="summary-label">{{ t('dashboard.meter.avgvoltage') }}</div>
           </div>
         </div>
@@ -22,7 +23,7 @@
         <!-- 전류 카드 -->
         <div class="summary-metric">
           <div class="summary-content">
-            <div class="summary-value">{{ data2.Itot || 0 }} <span class="summary-unit">A</span></div>
+            <div class="summary-value">{{ data2.I4 || 0 }} <span class="summary-unit">A</span></div>
             <div class="summary-label">{{ t('dashboard.meter.totcurrent') }}</div>
           </div>
         </div>
@@ -68,11 +69,14 @@
           <div class="voltage-grid">
             <div class="voltage-item" v-for="(phase, index) in ['L1', 'L2', 'L3']" :key="phase">
               <div class="phase-label-small" :class="`phase-${index + 1}`">{{ phase }}</div>
-              <div class="phase-value">{{ data2[`U${index + 1}`] || 0 }}</div>
+              <div v-if="data2.DashPT == 0" class="phase-value">{{ data2[`U${index + 1}`] || 0 }}</div>
+              <div v-else class="phase-value">{{ data2[`Upp${index + 1}`] || 0 }}</div>
               <div class="phase-unit">V</div>
               <div class="phase-bar">
-                <div class="phase-fill" :class="`phase-${index + 1}`" 
+                <div v-if="data2.DashPT == 0" class="phase-fill" :class="`phase-${index + 1}`" 
                      :style="{ width: Math.min((data2[`U${index + 1}`] || 0) / 240 * 100, 100) + '%' }"></div>
+                <div v-else class="phase-fill" :class="`phase-${index + 1}`" 
+                :style="{ width: Math.min((data2[`Upp${index + 1}`] || 0) / 240 * 100, 100) + '%' }"></div>
               </div>
             </div>
           </div>
