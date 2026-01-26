@@ -248,7 +248,7 @@
       "voltage": "Voltage",
       "current": "Current",
       "avgvoltage": "Average voltage",
-      "totcurrent": "Total current",
+      "totcurrent": "Average current",
       "activepower": "Total active power",
       "activeenergy": "Active Energy",
       "frequency": "Frequency"
