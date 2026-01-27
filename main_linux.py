@@ -10,8 +10,8 @@ from pathlib import Path
 from routes import api_router
 from contextlib import asynccontextmanager
 import uvicorn, time, sys
-from routes.RedisBinary import BinaryDataProcessor, register_waveform_config
-from routes.MaxMinDataHandler import MaxMinDataHandler
+from utils.RedisBinary import BinaryDataProcessor, register_waveform_config
+from utils.MaxMinDataHandler import MaxMinDataHandler
 from routes.api import executor
 
 sys.dont_write_bytecode = True
@@ -110,7 +110,7 @@ async def lifespan(app: FastAPI):
         redis_state.handler = MaxMinDataHandler(redis_state.processor)
 
         # 모든 processor 설정 등록
-        from routes.binary_config import setup_all_processors
+        from utils.binary_config import setup_all_processors
         setup_all_processors(redis_state.processor)
 
         logging.info("Binary processor and handler initialized")

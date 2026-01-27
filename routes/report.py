@@ -16,9 +16,9 @@ import pandas as pd
 import pyarrow.parquet as pq
 from datetime import datetime, timedelta, timezone
 import logging, os, json, tempfile, uuid
-from .en50160_dataMap import EN50160ReportProcessor, WeeklyReportConfig
+from utils.en50160_dataMap import EN50160ReportProcessor, WeeklyReportConfig
 from .api import get_asset, get_params, get_trendData, Trend
-from .weekly_report import generate_weekly_report
+from utils.weekly_report import generate_weekly_report
 from pathlib import Path
 import warnings
 

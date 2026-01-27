@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from .util import save_post, Post, get_mac_address, getVersions, is_service_active, sysService, create_logdb_connection, get_ip_address
+from utils.util import save_post, Post, get_mac_address, getVersions, is_service_active, sysService, create_logdb_connection, get_ip_address
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 router = APIRouter()
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from .util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb
 from datetime import datetime
 router = APIRouter()
 
