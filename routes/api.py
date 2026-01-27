@@ -2844,6 +2844,10 @@ def getMeterRedis2(channel, mode):
             for key in item_keys:
                 meterdata[key] = data.get(key)
         stData = get_Equip_ChData(channel)
+        if stData["success"]:
+            dashSetup = int(stData["data"]["DashPT"])
+        else:
+            dashSetup = 1
 
         # thd 계산도 그대로
         thd = redis_data.get("thd", {})
@@ -2854,7 +2858,7 @@ def getMeterRedis2(channel, mode):
         ai_result = get_ai(channel)
         meterdata["Temp2"] = ai_result.get("data", [])
 
-        return {"success": True, "data": meterdata, "DashPT": int(stData["data"]["DashPT"])}
+        return {"success": True, "data": meterdata, "DashPT": dashSetup}
 
     except Exception as e:
         print(str(e))
