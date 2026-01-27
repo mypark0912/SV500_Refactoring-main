@@ -70,11 +70,11 @@
                   class="h-9 w-56 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                   v-model="modalSelectItem"
                 >
-                  <option value="all">SmartSystem All</option>
-                  <option value="log">SmartSystem Log</option>
-                  <option value="project">SmartSystem Project</option>
-                  <option value="dbbackup">SmartSystem Dbbackup</option>
-                  <option value="backup">SmartSystem Backup</option>
+                  <option value="all">SV-500 All</option>
+                  <option value="log">SV-500 Log</option>
+                  <option value="project">SV-500 Project</option>
+                  <option value="dbbackup">SV-500 Dbbackup</option>
+                  <option value="backup">SV-500 Backup</option>
                   <option value="other">Other Backup</option>
                 </select>
                 <select
@@ -118,7 +118,7 @@
                 <label
                   class="text-sm text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap"
                 >
-                  Smart System
+                  SV-500
                 </label>
                 <div class="flex items-center gap-3">
                   <label class="flex items-center cursor-pointer">

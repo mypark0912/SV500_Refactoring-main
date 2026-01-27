@@ -26,10 +26,12 @@
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('maxmin', 0)"
             >
+              
+              {{ t("config.system.minmax") }}&nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -37,21 +39,21 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp;{{ t("config.system.minmax") }}
               <!--MaxMin-->
             </button>
             <button
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('alarm', 0)"
             >
+
+              {{ t("config.system.alarm") }} &nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -59,11 +61,9 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp;{{ t("config.system.alarm") }}
               <!--Alarm-->
             </button>
 
@@ -71,10 +71,12 @@
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('event', 0)"
             >
+              
+              {{ t("config.system.eventCount") }}&nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -82,11 +84,9 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp;{{ t("config.system.eventCount") }}
               <!--Event Count-->
             </button>
           </div>
@@ -97,10 +97,12 @@
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('demand', 0)"
             >
+
+               {{ t("config.system.demand") }}&nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -108,21 +110,21 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp; {{ t("config.system.demand") }}
               <!--Demand-->
             </button>
             <button
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('energy', 0)"
             >
+
+              {{ t("config.system.energy") }}&nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -130,21 +132,20 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp;{{ t("config.system.energy") }}
               <!--Energy-->
             </button>
             <button
               class="btn w-40 h-11 px-5 bg-sky-900 text-xs text-white hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
               @click="command('runhour', 0)"
             >
+              {{ t("config.system.runhour") }}&nbsp;
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -152,11 +153,9 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              &nbsp;{{ t("config.system.runhour") }}
               <!--Run Hour-->
             </button>
           </div>
