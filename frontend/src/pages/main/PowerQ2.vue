@@ -176,6 +176,7 @@ export default {
     const waveInterval = ref(null);
     const dataInterval = ref(null);
     const isComponentActive = ref(false);
+    const isInitializing = ref(false); // 초기화 중 플래그 추가
     let timeout_harmonics = 5;
 
     // 선택된 옵션 저장
@@ -600,15 +601,21 @@ export default {
       }
     };
 
+    // [수정] fetchInterval을 모든 드라이브 타입에서 호출하도록 변경
     const fetchInterval = async () => {
-      try {
-        const response = await axios.get(`/api/getInteverval/sampling/${channelComputed.value}`);
-        if (response.data.success) {
-          timeout_harmonics = parseInt(response.data.data);
-          console.log('timeout_harmonics:', timeout_harmonics);
+      if (driveType.value == 'VFD'){
+        try {
+          const response = await axios.get(`/api/getInterval/sampling/${channelComputed.value}`);
+          if (response.data.success) {
+            timeout_harmonics = parseInt(response.data.data);
+            console.log('timeout_harmonics 설정됨:', timeout_harmonics);
+          }
+        } catch (error) {
+          console.log("인터벌 데이터 가져오기 실패:", error);
+          timeout_harmonics = 5; // 실패 시 기본값
         }
-      } catch (error) {
-        console.log("데이터 가져오기 실패:", error);
+      }else{
+        timeout_harmonics = 5;
       }
     };
 
@@ -628,17 +635,22 @@ export default {
       if (dataInterval.value) {
         clearInterval(dataInterval.value);
         dataInterval.value = null;
-        timeout_harmonics = 5;
       }
     };
 
+    // [수정] startInterval에서 항상 fetchInterval 호출
     const startInterval = async () => {
-      if (driveType.value == 'VFD')
-        await fetchInterval();
       stopInterval();
-      console.log('=== startInterval ===');
+      
+      if (!isComponentActive.value) return;
+      
+      // 모든 드라이브 타입에서 서버 인터벌 값 가져오기
+      await fetchInterval();
+      
+      console.log('=== startInterval === timeout:', timeout_harmonics);
+      
       if (activeTab.value === 'Harmonics' && isComponentActive.value) {
-        refreshData();
+        await refreshData();
         dataInterval.value = setInterval(refreshData, timeout_harmonics * 1000);
       }
     };
@@ -722,28 +734,59 @@ export default {
       activeTab.value = tabName;
     };
 
-    // ========== 라이프사이클 훅 ==========
-    // onMounted(() => {
-    //   isComponentActive.value = true;
-    //   initSelectedOptions();
-    //   // watch에서 immediate로 처리하므로 여기서는 호출하지 않음
-    // });
+    // [수정] 채널/드라이브 타입 변경 시 초기화하는 통합 함수
+    const initializeForChannel = async (newChannel) => {
+        //console.log('initializeForChannel 호출됨:', newChannel, 'isInitializing:', isInitializing.value);
+       // console.trace(); // 호출 스택 확인
+      if (isInitializing.value) {
+        //console.log('이미 초기화 중, 스킵');
+        return;
+      }
+      
+      isInitializing.value = true;
+      
+      try {
+        stopAllIntervals();
+        
+        if (waveUpdate.value) {
+          await endWave();
+        }
+        
+        channel.value = newChannel;
+        
+        // 차트 데이터 초기화
+        chartData.value = {};
+        chartData2.value = {};
+        chartData3.value = {};
+        linechartData.value = {};
+        linechartData2.value = {};
+        tbdata.value = null;
+        tbdataH.value = null;
+        timeout_harmonics = 5; // 인터벌 초기화
+        
+        // selectedOptions 초기화
+        initSelectedOptions();
+        
+        // 현재 탭에 따라 데이터 로드
+        if (activeTab.value === 'Harmonics') {
+          await startInterval();
+        } else if (activeTab.value === 'Waveform') {
+          await startWave();
+        }
+      } finally {
+        isInitializing.value = false;
+      }
+    };
 
+    // ========== 라이프사이클 훅 ==========
     onMounted(() => {
       isComponentActive.value = true;
       
       // channel 초기화 (props 또는 route에서)
-      channel.value = props.channel || route.params.channel;
+      const initialChannel = props.channel || route.params.channel;
       
-      // selectedOptions 초기화
-      initSelectedOptions();
-      
-      // 초기 데이터 로드
-      if (activeTab.value === 'Harmonics') {
-        startInterval();
-      } else if (activeTab.value === 'Waveform') {
-        startWave();
-      }
+      // 초기화 실행
+      initializeForChannel(initialChannel);
     });
 
     onBeforeUnmount(() => {
@@ -770,97 +813,27 @@ export default {
 
     // ========== watch - 함수 선언 후에 배치 ==========
 
-    // driveType 변경 감지 (immediate 없음)
-    watch(driveType, (newType, oldType) => {
-      // driveType이 실제로 변경되었을 때만 처리
-      if (oldType === undefined) return; // 초기 실행 무시
-      
-      initSelectedOptions();
+    // [수정] driveType watch 제거 - 채널 watch에서 통합 처리
+    // driveType은 channelComputed에 의존하므로 채널이 변경되면 자동으로 변경됨
 
-      if (activeTab.value === 'Harmonics' && isComponentActive.value) {
-        chartData.value = {};
-        chartData2.value = {};
-        chartData3.value = {};
-        tbdataH.value = null;
-        startInterval();
-      }
-    });
-
+    // [수정] 채널 변경만 감지하고 driveType 변경은 자동으로 처리됨
     watch(
-  () => route.params.channel,
-  async (newChannel, oldChannel) => {
-    if (!isComponentActive.value) return;
-    if (!newChannel) return;
-    if (newChannel === oldChannel) return;  // 같으면 무시
-    
-    stopAllIntervals();
-
-    if (waveUpdate.value) {
-      await endWave();
-    }
-
-    channel.value = newChannel;
-
-    // 차트 데이터 초기화
-    chartData.value = {};
-    chartData2.value = {};
-    chartData3.value = {};
-    linechartData.value = {};
-    linechartData2.value = {};
-    tbdata.value = null;
-    tbdataH.value = null;
-
-    initSelectedOptions();
-
-    if (activeTab.value === 'Harmonics') {
-      startInterval();
-    } else if (activeTab.value === 'Waveform') {
-      startWave();
-    }
-  }
-  // immediate 없음
-);
-    // 채널 변경 감지
-    // watch(
-    //   () => route.params.channel,
-    //   async (newChannel, oldChannel) => {
-    //     // 첫 실행이 아닐 때만 interval 정리
-    //     if (oldChannel !== undefined) {
-    //       stopAllIntervals();
-
-    //       if (waveUpdate.value) {
-    //         await endWave();
-    //       }
-    //     }
-
-    //     channel.value = newChannel;
-
-    //     // 차트 데이터 초기화
-    //     chartData.value = {};
-    //     chartData2.value = {};
-    //     chartData3.value = {};
-    //     linechartData.value = {};
-    //     linechartData2.value = {};
-    //     tbdata.value = null;
-    //     tbdataH.value = null;
-
-    //     // selectedOptions 초기화
-    //     initSelectedOptions();
-
-    //     // isComponentActive가 true일 때만 실행 (onMounted 이후)
-    //     if (isComponentActive.value) {
-    //       if (activeTab.value === 'Harmonics') {
-    //         startInterval();
-    //       } else if (activeTab.value === 'Waveform') {
-    //         startWave();
-    //       }
-    //     }
-    //   },
-    //   { immediate: true }
-    // );
+      () => route.params.channel,
+      async (newChannel, oldChannel) => {
+        if (!isComponentActive.value) return;
+        if (!newChannel) return;
+        if (newChannel === oldChannel) return;
+        
+        console.log('채널 변경 감지:', oldChannel, '->', newChannel);
+        
+        await initializeForChannel(newChannel);
+      }
+    );
 
     // 탭 변경 감지
     watch(activeTab, async (newTab, oldTab) => {
+      if (isInitializing.value) return; // 초기화 중에는 무시
+      
       await nextTick();
 
       if (oldTab === 'Waveform' && waveUpdate.value) {
@@ -868,13 +841,13 @@ export default {
       }
 
       if (newTab === 'Harmonics') {
-        startInterval();
+        await startInterval();
       } else {
         stopInterval();
       }
 
       if (newTab === 'Waveform') {
-        startWave();
+        await startWave();
       }
     });
 

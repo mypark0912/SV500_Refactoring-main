@@ -8,7 +8,7 @@
     />
 
     <!-- 진단 현황 카드 - 6칸, 세로 2줄 차지 -->
-    <DashboardCard_Meter_Integrated
+    <DashboardCard_Meter_Integrated v-if="channelState.SubEnable && channelState.SubDiagnosis"
       class="col-span-6 row-span-2"
       :channel="'sub'"
       :diagData="diagData_sub"

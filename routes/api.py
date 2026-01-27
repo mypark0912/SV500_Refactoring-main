@@ -3060,7 +3060,7 @@ def get_Calibrate(channel):
         print(str(e))
         return {"success": False, "error": str(e)}
 
-@router.get("/getInteverval/{mode}/{channel}")
+@router.get("/getInterval/{mode}/{channel}")
 def get_interval(mode, channel):
     if channel == 'Main' or channel == 'main':
         chName = 'main'

@@ -3585,7 +3585,7 @@ def save_frpc_restart_monitor(
         interfaces=["end1"],
         restart_delay=5,
         script_path="/usr/local/bin/frpc-restart-monitor.sh",
-        service_path="/etc/systemd/system/frpc-monitor.service"
+        service_path="/etc/systemd/system/frpc-restart-monitor.service"
 ):
     try:
         import os
