@@ -280,6 +280,7 @@ import transImg from '@/images/trans.png'
       });
 
       const hasTempData = computed(() => {
+
           return transData.value?.Temp?.length > 0
         })
 
