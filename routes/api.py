@@ -2845,7 +2845,10 @@ def getMeterRedis2(channel, mode):
                 meterdata[key] = data.get(key)
         stData = get_Equip_ChData(channel)
         if stData["success"]:
-            dashSetup = int(stData["data"]["DashPT"])
+            if "DashPT" in stData["data"]:
+                dashSetup = int(stData["data"]["DashPT"])
+            else:
+                dashSetup = 1
         else:
             dashSetup = 1
 

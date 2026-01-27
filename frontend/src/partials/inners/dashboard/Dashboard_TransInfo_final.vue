@@ -26,72 +26,66 @@
         </p>
       </div>
       <div class="equipment-status">
-          <span 
-            class="status-badge"
-            :class="isRunning ? 'status-running' : 'status-stopped'"
-          >
-            <span class="status-indicator"></span>
-            <span class="status-text">
-              {{ isRunning ? t('dashboard.singleinfo.running') : t('dashboard.singleinfo.stopped') }}
-            </span>
+        <span 
+          class="status-badge"
+          :class="isRunning ? 'status-running' : 'status-stopped'"
+        >
+          <span class="status-indicator"></span>
+          <span class="status-text">
+            {{ isRunning ? t('dashboard.singleinfo.running') : t('dashboard.singleinfo.stopped') }}
           </span>
-        </div>
+        </span>
+      </div>
     </div>
 
-    <!-- 데이터 테이블 -->
+    <!-- 데이터 섹션 -->
     <div class="data-section">
-      <div class="data-grid">
-        <!-- 운용 현황 카드들 -->
-        <div class="status-cards">
-          <!-- 온도 카드 -->
-          <!--div class="status-card temperature-card">
-            <div class="status-value">
-              <span class="value-number">{{ displayData.Temp }}</span>
-              <span class="value-unit">℃</span>
+      <!-- 상태 카드들 - 수평 정렬 -->
+      <div class="status-cards">
+        <!-- 온도 카드 - 데이터 있을 때만 표시 -->
+        <div v-if="displayData.Temp && displayData.Temp.length > 0" class="status-card temperature-card">
+          <div class="status-value">
+            <div class="temp-grid">
+              <div v-for="(temp, index) in displayData.Temp" :key="index" class="temp-row">
+                <span class="phase-label">{{ ['R', 'S', 'T'][index] }}</span>
+                <span class="value-number">{{ temp }}</span>
+                <span class="value-unit">℃</span>
+              </div>
             </div>
-            <div class="status-label">{{ t('dashboard.transDiag.Temperature') }}</div>
-          </div-->
-
-          <!-- 부하율 카드 -->
-          <div class="status-card load-card">
-            <div class="status-value" :class="getLoadRateClass(LoadRate)">
-              <span class="value-number">{{ LoadRate }}</span>
-              <span class="value-unit">%</span>
-            </div>
-            <div class="status-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
           </div>
-
-          <!-- 역률 카드 -->
-          <div class="status-card power-card">
-            <div class="status-value">
-              <span class="value-number">{{ displayData.PF }}</span>
-              <span class="value-unit">%</span>
-            </div>
-            <div class="status-label">{{ t('dashboard.transDiag.PowerFactor') }}</div>
-          </div>
-
-          <!-- 전류 카드 -->
-          <!--div class="status-card current-card">
-            <div class="status-value">
-              <span class="value-number">{{ displayData.Ig }}</span>
-              <span class="value-unit">A</span>
-            </div>
-            <div class="status-label">{{ t('dashboard.transDiag.Ig') }}</div>
-          </div-->
+          <div class="status-label">{{ t('dashboard.transDiag.Temperature') }}</div>
         </div>
 
-        <!-- 설비 사양 -->
-        <div class="data-table">
-          <div class="table-header">
-            <h4 class="table-title">{{ t('dashboard.singleinfo.EquipmentInformation') }}</h4>
+        <!-- 부하율 카드 -->
+        <div class="status-card load-card">
+          <div class="status-value" :class="getLoadRateClass(LoadRate)">
+            <span class="value-number">{{ LoadRate }}</span>
+            <span class="value-unit">%</span>
           </div>
-          <div class="table-content">
-            <div v-for="item in rawdata" :key="item.Name" class="data-row">
-              <span class="data-label">{{ t(`dashboard.transDiag.${item.Name}`) }}</span>
-              <span class="data-value">
-                {{ item.Value }} <span class="data-unit">{{ item.Unit }}</span>
-              </span>
-            </div>
+          <div class="status-label">{{ t('dashboard.transDiag.LoadFactor') }}</div>
+        </div>
+
+        <!-- 역률 카드 -->
+        <div class="status-card power-card">
+          <div class="status-value">
+            <span class="value-number">{{ displayData.PF }}</span>
+            <span class="value-unit">%</span>
+          </div>
+          <div class="status-label">{{ t('dashboard.transDiag.PowerFactor') }}</div>
+        </div>
+      </div>
+
+      <!-- 설비 사양 -->
+      <div class="data-table">
+        <div class="table-header">
+          <h4 class="table-title">{{ t('dashboard.singleinfo.EquipmentInformation') }}</h4>
+        </div>
+        <div class="table-content">
+          <div v-for="item in rawdata" :key="item.Name" class="data-row">
+            <span class="data-label">{{ t(`dashboard.transDiag.${item.Name}`) }}</span>
+            <span class="data-value">
+              {{ item.Value }} <span class="data-unit">{{ item.Unit }}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -118,7 +112,6 @@ export default {
     const realtimeStore = useRealtimeStore()
     let updateInterval = null;
     // 반응형 데이터
-    //const LoadRate = ref(0)
     const LoadFactor = ref(-1)
     const rawdata = ref([])
     const isRunning = ref(0);
@@ -137,9 +130,10 @@ export default {
 
     // 화면 표시용 데이터 (설비 타입에 따라 매핑)
     const displayData = computed(() => {
-      const data = realtimeData.value
+      const data = realtimeData.value;
+      console.log(data);
       if (!data || Object.keys(data).length === 0) {
-        return { Temp: '-', Ig: '-', Stotal: 0, PF: '-' }
+        return { Temp: [], Ig: '-', Stotal: 0, PF: '-' }
       }
 
       const chType = props.channel?.toLowerCase() === 'main'
@@ -148,7 +142,7 @@ export default {
 
       if (chType === 'Transformer') {
         return {
-          Temp: data.Temp ?? '-',
+          Temp: data.Temp2 ?? [],
           Ig: data.Ig ?? '-',
           Stotal: data.S4 ?? 0,
           PF: data.PF4 ?? '-',
@@ -157,7 +151,7 @@ export default {
 
       // 다른 설비 타입 처리
       return {
-        Temp: data.Temp ?? '-',
+        Temp: data.Temp2 ?? [],
         Ig: data.Ig ?? '-',
         Stotal: data.Stotal ?? 0,
         PF: data.PF ?? '-',
@@ -166,7 +160,6 @@ export default {
 
     // 부하율 계산
     const LoadRate = computed(() => {
-      //console.log('Stotal', displayData.value.Stotal);
       if (LoadFactor.value > 0 && displayData.value.Stotal > 0) {
         return (((displayData.value.Stotal/1000) / LoadFactor.value) * 100).toFixed(2)
       }
@@ -233,43 +226,30 @@ export default {
       }
     }
 
-    const getStatus = async() =>{
-      const chName = props.channel?.toLowerCase() === 'main'?'Main':'Sub'
-        const response = await axios.get(`/api/getEquipStatus/${chName}`);
-        if (response.data.success){
-          //console.log(response.data);
-          isRunning.value = response.data.status;
-        }
+    const getStatus = async() => {
+      const chName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
+      const response = await axios.get(`/api/getEquipStatus/${chName}`);
+      if (response.data.success) {
+        isRunning.value = response.data.status;
       }
-
-    // 부하율 자동 업데이트 (실시간 데이터 변경 시)
-    // watch(
-    //   () => displayData.value.Stotal,
-    //   (newStotal) => {
-    //     if (LoadFactor.value > 0 && newStotal > 0) {
-    //       console.log('Stotal:', newStotal);
-    //       LoadRate.value = ((newStotal / LoadFactor.value) * 100).toFixed(2)
-    //     }
-    //   },
-    //   { immediate: true }
-    // )
+    }
 
     // 마운트 시 설비 정보 로드
     onMounted(async() => {
       await fetchAsset()
       await getStatus();
-        updateInterval = setInterval(async () => {
-          await fetchAsset()
-          await getStatus();
-        }, 300000);  // 5분
+      updateInterval = setInterval(async () => {
+        await fetchAsset()
+        await getStatus();
+      }, 300000);  // 5분
     });
 
     onUnmounted(() => {
-        if (updateInterval) {
-          clearInterval(updateInterval);
-          updateInterval = null;
-        }
-      });
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+    });
 
     return {
       // 데이터
@@ -300,7 +280,7 @@ export default {
   @apply transition-all duration-300 hover:shadow-xl;
 }
 
-/* 헤더 섹션 - 두 번째 컴포넌트와 동일한 스타일 */
+/* 헤더 섹션 */
 .card-header {
   @apply p-3 border-b border-gray-200/50 dark:border-gray-700/50;
   @apply bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20;
@@ -354,66 +334,63 @@ export default {
 }
 
 .equipment-status {
-    @apply flex items-center;
-    @apply flex-shrink-0 ml-auto;
-  }
+  @apply flex items-center;
+  @apply flex-shrink-0 ml-auto;
+}
 
-  .status-badge {
-    @apply flex items-center gap-2 px-3 py-1.5;
-    @apply rounded-full font-semibold text-xs;
-    @apply border-2 transition-all duration-300;
-    @apply shadow-sm;
-    @apply whitespace-nowrap;
-  }
+.status-badge {
+  @apply flex items-center gap-2 px-3 py-1.5;
+  @apply rounded-full font-semibold text-xs;
+  @apply border-2 transition-all duration-300;
+  @apply shadow-sm;
+  @apply whitespace-nowrap;
+}
 
-  .status-indicator {
-    @apply w-2 h-2 rounded-full;
-    @apply animate-pulse;
-  }
+.status-indicator {
+  @apply w-2 h-2 rounded-full;
+  @apply animate-pulse;
+}
 
-  .status-running {
-    @apply bg-green-50 dark:bg-green-900/30;
-    @apply border-green-500 dark:border-green-600;
-    @apply text-green-700 dark:text-green-300;
-  }
+.status-running {
+  @apply bg-green-50 dark:bg-green-900/30;
+  @apply border-green-500 dark:border-green-600;
+  @apply text-green-700 dark:text-green-300;
+}
 
-  .status-running .status-indicator {
-    @apply bg-green-500;
-  }
+.status-running .status-indicator {
+  @apply bg-green-500;
+}
 
-  .status-stopped {
-    @apply bg-gray-50 dark:bg-gray-700/30;
-    @apply border-gray-400 dark:border-gray-500;
-    @apply text-gray-700 dark:text-gray-300;
-  }
+.status-stopped {
+  @apply bg-gray-50 dark:bg-gray-700/30;
+  @apply border-gray-400 dark:border-gray-500;
+  @apply text-gray-700 dark:text-gray-300;
+}
 
-  .status-stopped .status-indicator {
-    @apply bg-gray-400;
-    @apply animate-none;
-  }
+.status-stopped .status-indicator {
+  @apply bg-gray-400;
+  @apply animate-none;
+}
 
+/* 데이터 섹션 - 수평 배치 */
 .data-section {
   @apply flex-1 p-4;
+  @apply flex flex-row gap-4 items-stretch;
 }
 
-.data-grid {
-  @apply grid grid-cols-1 lg:grid-cols-2 gap-4;
-  @apply items-start;
-}
-
-/* 상태 카드들 */
+/* 상태 카드들 - 수평 정렬 */
 .status-cards {
-  @apply grid grid-cols-2 gap-3;
-  @apply h-full;
+  @apply flex flex-wrap gap-3;
+  @apply flex-1;
 }
 
 .status-card {
-  @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4;
+  @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3;
   @apply border border-gray-200 dark:border-gray-600;
   @apply transition-all duration-200 hover:shadow-md;
   @apply text-center;
   @apply flex flex-col justify-center;
-  @apply min-h-[5rem];
+  @apply flex-1 min-w-[80px];
 }
 
 .status-value {
@@ -433,7 +410,29 @@ export default {
   @apply leading-tight;
 }
 
-/* 개별 카드 스타일 */
+/* 온도 그리드 (세로 배치) */
+.temp-grid {
+  @apply flex flex-col gap-1;
+}
+
+.temp-row {
+  @apply flex items-center justify-center gap-1;
+}
+
+.phase-label {
+  @apply text-xs font-semibold text-gray-500 dark:text-gray-400;
+  @apply min-w-[16px];
+}
+
+.temp-row .value-number {
+  @apply text-lg;
+}
+
+.temp-row .value-unit {
+  @apply text-xs;
+}
+
+/* 개별 카드 호버 스타일 */
 .temperature-card:hover {
   @apply bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700;
 }
@@ -446,13 +445,11 @@ export default {
   @apply bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700;
 }
 
-.current-card:hover {
-  @apply bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700;
-}
-
+/* 데이터 테이블 - 가로 너비만 축소 */
 .data-table {
   @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg overflow-hidden;
   @apply border border-gray-200 dark:border-gray-600;
+  @apply w-[240px] flex-shrink-0;
 }
 
 .table-header {
@@ -489,34 +486,22 @@ export default {
   @apply text-xs font-semibold text-gray-500 dark:text-white;
 }
 
-/* 반응형 개선 */
+/* 반응형 */
 @media (max-width: 768px) {
   .equipment-info {
     @apply flex-col text-center gap-2;
   }
   
-  .data-grid {
-    @apply grid-cols-1;
+  .data-section {
+    @apply flex-col;
   }
   
   .status-cards {
-    @apply grid-cols-2 gap-2;
+    @apply w-full;
   }
   
-  .status-card {
-    @apply p-3;
-    @apply h-20;
-    @apply min-h-[5rem];
-  }
-  
-  .value-number {
-    @apply text-xl;
-  }
-}
-
-@media (max-width: 480px) {
-  .status-cards {
-    @apply grid-cols-1;
+  .data-table {
+    @apply w-full;
   }
 }
 
