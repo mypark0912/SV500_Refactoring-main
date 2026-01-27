@@ -178,7 +178,7 @@ export default {
     const waveInterval = ref(null);
     const dataInterval = ref(null);
     const isComponentActive = ref(false);
-    const isInitializing = ref(false); // 초기화 중 플래그 추가
+    const isInitializing = ref(false);
 
     let timeout_harmonics = 5;
 
@@ -252,13 +252,24 @@ export default {
         }
       }
     });
+
     // VFD 차트 모드
     const vfdChartMode = computed(() => {
       return selectedOptions.Harmonics === 'Voltage' ? 'Voltage' : 'Current';
     });
 
-    // driveType에 따른 탭 옵션
+    // driveType에 따른 탭 옵션 - Waveform은 VFD 여부와 관계없이 동일
     const tabs = computed(() => {
+      // Waveform 옵션은 VFD 여부와 관계없이 동일
+      const waveformTab = {
+        name: "Waveform",
+        label: t("pq.tabs.waveform"),
+        options: [
+          { key: "phaseVoltage", label: t("pq.options.phaseVoltage") },
+          { key: "lineVoltage", label: t("pq.options.lineVoltage") },
+        ],
+      };
+
       if (driveType.value === 'VFD') {
         return [
           {
@@ -269,14 +280,7 @@ export default {
               { key: "Current", label: t("pq.options.current") },
             ],
           },
-          {
-            name: "Waveform",
-            label: t("pq.tabs.waveform"),
-            options: [
-              { key: "Voltage", label: t("pq.options.lineVoltage") },
-              { key: "Current", label: t("pq.options.current") },
-            ],
-          },
+          waveformTab,
         ];
       } else {
         return [
@@ -289,14 +293,7 @@ export default {
               { key: "current", label: t("pq.options.current") },
             ],
           },
-          {
-            name: "Waveform",
-            label: t("pq.tabs.waveform"),
-            options: [
-              { key: "phaseVoltage", label: t("pq.options.phaseVoltage") },
-              { key: "lineVoltage", label: t("pq.options.lineVoltage") },
-            ],
-          },
+          waveformTab,
         ];
       }
     });
@@ -318,15 +315,15 @@ export default {
 
     // ========== 함수들 ==========
     
-    // selectedOptions 초기화 함수
+    // selectedOptions 초기화 함수 - Waveform은 항상 동일
     const initSelectedOptions = () => {
       if (driveType.value === 'VFD') {
         selectedOptions.Harmonics = 'Voltage';
-        selectedOptions.Waveform = 'Voltage';
       } else {
         selectedOptions.Harmonics = 'phaseVoltage';
-        selectedOptions.Waveform = 'phaseVoltage';
       }
+      // Waveform은 항상 동일
+      selectedOptions.Waveform = 'phaseVoltage';
     };
 
     const scaledDataV = (waveform) => {
@@ -373,6 +370,7 @@ export default {
     };
 
     const updateChartByOption = async (tab, option) => {
+      //console.log('=== updateChartByOption 호출 ===', tab, option);
       if (tab === "Waveform") {
         if (!tbdata.value) return;
 
@@ -634,7 +632,6 @@ export default {
       }
     };
 
-    // [수정] fetchInterval을 모든 드라이브 타입에서 호출하도록 변경
     const fetchInterval = async () => {
       if (driveType.value == 'VFD'){
         try {
@@ -645,7 +642,7 @@ export default {
           }
         } catch (error) {
           console.log("인터벌 데이터 가져오기 실패:", error);
-          timeout_harmonics = 5; // 실패 시 기본값
+          timeout_harmonics = 5;
         }
       }else{
         timeout_harmonics = 5;
@@ -653,6 +650,7 @@ export default {
     };
 
     const refreshData = async () => {
+      //console.log('=== refreshData 호출 ===');
       if (!isComponentActive.value) return;
 
       if (channel.value && activeTab.value === 'Harmonics') {
@@ -671,13 +669,13 @@ export default {
       }
     };
 
-    // [수정] startInterval에서 항상 fetchInterval 호출
     const startInterval = async () => {
       stopInterval();
       
       if (!isComponentActive.value) return;
+
+       tbdataH.value = null;
       
-      // 모든 드라이브 타입에서 서버 인터벌 값 가져오기
       await fetchInterval();
       
       console.log('=== startInterval === timeout:', timeout_harmonics);
@@ -767,12 +765,9 @@ export default {
       activeTab.value = tabName;
     };
 
-    // [수정] 채널/드라이브 타입 변경 시 초기화하는 통합 함수
+    // 채널/드라이브 타입 변경 시 초기화하는 통합 함수
     const initializeForChannel = async (newChannel) => {
-        //console.log('initializeForChannel 호출됨:', newChannel, 'isInitializing:', isInitializing.value);
-       // console.trace(); // 호출 스택 확인
       if (isInitializing.value) {
-        //console.log('이미 초기화 중, 스킵');
         return;
       }
       
@@ -795,7 +790,7 @@ export default {
         linechartData2.value = {};
         tbdata.value = null;
         tbdataH.value = null;
-        timeout_harmonics = 5; // 인터벌 초기화
+        timeout_harmonics = 5;
         
         // selectedOptions 초기화
         initSelectedOptions();
@@ -815,10 +810,8 @@ export default {
     onMounted(() => {
       isComponentActive.value = true;
       
-      // channel 초기화 (props 또는 route에서)
       const initialChannel = props.channel || route.params.channel;
       
-      // 초기화 실행
       initializeForChannel(initialChannel);
     });
 
@@ -844,12 +837,9 @@ export default {
         endWave();
     });
 
-    // ========== watch - 함수 선언 후에 배치 ==========
+    // ========== watch ==========
 
-    // [수정] driveType watch 제거 - 채널 watch에서 통합 처리
-    // driveType은 channelComputed에 의존하므로 채널이 변경되면 자동으로 변경됨
-
-    // [수정] 채널 변경만 감지하고 driveType 변경은 자동으로 처리됨
+    // 채널 변경 감지
     watch(
       () => route.params.channel,
       async (newChannel, oldChannel) => {
@@ -865,7 +855,12 @@ export default {
 
     // 탭 변경 감지
     watch(activeTab, async (newTab, oldTab) => {
-      if (isInitializing.value) return; // 초기화 중에는 무시
+        //console.log('=== activeTab watch 실행 ===', oldTab, '->', newTab);
+        //console.trace(); // 호출 스택 확인
+      if (isInitializing.value) return;
+      
+      // 먼저 모든 인터벌 정리
+      stopAllIntervals();
       
       await nextTick();
 
@@ -875,8 +870,6 @@ export default {
 
       if (newTab === 'Harmonics') {
         await startInterval();
-      } else {
-        stopInterval();
       }
 
       if (newTab === 'Waveform') {
