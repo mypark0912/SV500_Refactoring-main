@@ -2801,30 +2801,37 @@ def get_eqStatus(channel):
         status = float(itot) > (float(stCrDict["sub"]) * 3)
     return {"success": True, "status": status}
 
+
 @router.get("/getAIdata/{channel}")
 def get_ai(channel):
-    if channel == 'Main' or channel =='main':
+    if channel == 'Main' or channel == 'main':
         chName = 'main'
     else:
         chName = 'sub'
-    if redis_state.client.hexists("Equipment", "AIConfig"):
-        aidict = json.loads(redis_state.client.hget("Equipment", "AIConfig"))
-        readcount = []
-        for i in range(len(aidict[channel])):
-            if int(aidict[channel][i]["dataType"]) == 0:
-                readType = 1
-            else:
-                readType = 2
-            readcount.append(int(aidict[channel][i]["count"])//readType)
 
-        datalist = []
-        total_count = sum(readcount)
-        for i in range(1, total_count + 1):
-            datalist.append(float(redis_state.client_db1.hget(f"meter_{chName}", f"aim{i}")))
+    if not redis_state.client.hexists("Equipment", "AIConfig"):
+        return {"success": False, "data": []}
 
-        return {"success": True, "data":datalist}
-    else:
-        return {"success": False, "data":[]}
+    aidict = json.loads(redis_state.client.hget("Equipment", "AIConfig"))
+
+    # 해당 채널이 없는 경우 체크
+    if channel not in aidict or not aidict[channel]:
+        return {"success": False, "data": []}
+
+    readcount = []
+    for i in range(len(aidict[channel])):
+        if int(aidict[channel][i]["dataType"]) == 0:
+            readType = 1
+        else:
+            readType = 2
+        readcount.append(int(aidict[channel][i]["count"]) // readType)
+
+    datalist = []
+    total_count = sum(readcount)
+    for i in range(1, total_count + 1):
+        datalist.append(float(redis_state.client_db1.hget(f"meter_{chName}", f"aim{i}")))
+
+    return {"success": True, "data": datalist}
 
 @router.get("/getMeterRedisNew/{channel}/{mode}")
 def getMeterRedis2(channel, mode):
