@@ -47,8 +47,10 @@
                 <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
                   <!-- 콤보박스 -->
                   <div class="mt-2 mb-4 flex items-center gap-x-2">
-                    <span>DriveType : {{ driveType }}</span>
-                    <label class="sr-only" :for="tab.name + '-select'">
+                    <span v-if="isShowDriveType">DriveType : {{ driveType }}</span>
+                    <span v-if="isShowDriveType" class="mx-3 text-gray-300 dark:text-gray-600">|</span>
+                    <label :for="tab.name + '-select'" 
+                      class="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Select Option
                     </label>
                     <select :id="tab.name + '-select'" :value="selectedOptions[tab.name]"
@@ -177,6 +179,7 @@ export default {
     const dataInterval = ref(null);
     const isComponentActive = ref(false);
     const isInitializing = ref(false); // 초기화 중 플래그 추가
+
     let timeout_harmonics = 5;
 
     // 선택된 옵션 저장
@@ -206,10 +209,21 @@ export default {
     });
 
     const driveType = computed(() => {
-      if (channelComputed.value == 'Main' || channelComputed.value == 'main')
-        return setupStore.getAssetConfig.assetdriveType_main;
-      else
-        return setupStore.getAssetConfig.assetdriveType_sub;
+      if (channelComputed.value == 'Main' || channelComputed.value == 'main'){
+        console.log(setupStore.getChannelSetting.MainDiagnosis);
+        if(setupStore.getChannelSetting.MainDiagnosis){
+          return setupStore.getAssetConfig.assetdriveType_main;
+        }else{
+          return 'DOL';
+        }
+      }        
+      else{
+        if(setupStore.getChannelSetting.SubDiagnosis){
+          return setupStore.getAssetConfig.assetdriveType_sub;
+        }else{
+          return 'DOL';
+        }
+      }
     });
 
     const asset = computed(() => {
@@ -219,6 +233,25 @@ export default {
         return setupStore.getAssetConfig.assetName_sub;
     });
 
+    const isShowDriveType = computed(()=>{
+      if (channelComputed.value == 'Main' || channelComputed.value == 'main'){
+        const isTrans = setupStore.getAssetConfig.assetType_main == 'Transformer' || setupStore.getAssetConfig.assetType_main == 'PrimaryTransformer';
+        if (setupStore.getChannelSetting.MainDiagnosis && !isTrans)
+        {
+          return true;
+        }else{
+          return false;
+        }
+      }else{
+        const isTrans = setupStore.getAssetConfig.assetType_sub == 'Transformer' || setupStore.getAssetConfig.assetType_sub == 'PrimaryTransformer'
+        if (setupStore.getChannelSetting.SubDiagnosis && !isTrans)
+        {
+          return true;
+        }else{
+          return false;
+        }
+      }
+    });
     // VFD 차트 모드
     const vfdChartMode = computed(() => {
       return selectedOptions.Harmonics === 'Voltage' ? 'Voltage' : 'Current';
@@ -887,6 +920,7 @@ export default {
       driveType,
       vfdChartMode,
       asset,
+      isShowDriveType,
     };
   },
 };
