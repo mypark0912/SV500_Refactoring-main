@@ -126,6 +126,8 @@ async def initInflux(background_tasks: BackgroundTasks):
         if influx_state.error:
             return {"success": False, "message": influx_state.error}
         set_cli = init_influxcli()
+        if not set_cli["status"]:
+            logging.warning(set_cli["message"])
         sysService('restart', 'InfluxDB')
         background_tasks.add_task(complete_influx_setup)
 
