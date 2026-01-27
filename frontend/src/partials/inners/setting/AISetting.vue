@@ -84,6 +84,16 @@
                 <th
                   class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
                 >
+                  Type
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
+                  Model
+                </th>
+                <th
+                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
+                >
                   Start<br />Address
                 </th>
                 <th
@@ -152,6 +162,22 @@
                     class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
                     min="0"
                     max="255"
+                  />
+                </td>
+                <td class="px-2 py-2 text-center">
+                  <select
+                    v-model.number="row.Type"
+                    class="w-28 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option :value="0">Temperature</option>
+                  </select>
+                </td>
+                <td class="px-2 py-2 text-center">
+                  <input
+                    type="text"
+                    v-model="row.model"
+                    class="w-28 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                    step="0.01"
                   />
                 </td>
                 <!-- Start Address -->
@@ -301,6 +327,8 @@ const createDefaultRow = (id) => ({
   id: id,
   enable: 0,
   devId: 0,
+  Type: 0,
+  model: 'T001',
   startAddr: 0,
   count: 0,
   dataType: 0,
@@ -308,6 +336,8 @@ const createDefaultRow = (id) => ({
   period: 1000,
   fc: 0,
   scale: 1.0,
+  min: 0.0,
+  max: 500.0
 });
 
 // 초기 기본값
@@ -316,6 +346,8 @@ const defaultConfig = [
     id: 1,
     enable: 1,
     devId: 100,
+    Type: 0,
+    model: 'T001',
     startAddr: 14,
     count: 28,
     dataType: 2,
@@ -328,6 +360,8 @@ const defaultConfig = [
     id: 2,
     enable: 1,
     devId: 100,
+    Type: 0,
+    model: 'T001',
     startAddr: 90,
     count: 12,
     dataType: 2,
@@ -347,6 +381,8 @@ const loadFromChannel = () => {
       id: item.id || idx + 1,
       enable: item.enable ?? 0,
       devId: item.devId ?? 0,
+      Type: item.Type ?? 0,
+      model: item.model ?? '',
       startAddr: item.startAddr ?? 0,
       count: item.count ?? 0,
       dataType: item.dataType ?? 0,

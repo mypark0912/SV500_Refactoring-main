@@ -2802,6 +2802,50 @@ def get_eqStatus(channel):
     return {"success": True, "status": status}
 
 
+# @router.get("/getAIdata/{channel}")
+# def get_ai(channel):
+#     if channel == 'Main' or channel == 'main':
+#         chName = 'main'
+#     else:
+#         chName = 'sub'
+#
+#     if not redis_state.client.hexists("Equipment", "AIConfig"):
+#         return {"success": False, "data": []}
+#
+#     aidict = json.loads(redis_state.client.hget("Equipment", "AIConfig"))
+#
+#     # 해당 채널이 없는 경우 체크
+#     if channel not in aidict or not aidict[channel]:
+#         return {"success": False, "data": []}
+#
+#     datalist = []
+#     data_idx = 1
+#
+#     for config in aidict[channel]:
+#         data_type = int(config["dataType"])
+#         read_type = 1 if data_type == 0 else 2
+#         count = int(config["count"]) // read_type
+#         min_val = config.get("min")
+#         max_val = config.get("max")
+#
+#         for _ in range(count):
+#             raw_value = redis_state.client_db1.hget(f"meter_{chName}", f"aim{data_idx}")
+#             if raw_value is not None:
+#                 value = float(raw_value)
+#                 # min/max 범위 체크
+#                 if min_val is not None and max_val is not None:
+#                     if value < min_val or value > max_val:
+#                         datalist.append(None)
+#                     else:
+#                         datalist.append(value)
+#                 else:
+#                     datalist.append(value)
+#             else:
+#                 datalist.append(None)
+#             data_idx += 1
+#
+#     return {"success": True, "data": datalist}
+
 @router.get("/getAIdata/{channel}")
 def get_ai(channel):
     if channel == 'Main' or channel == 'main':
