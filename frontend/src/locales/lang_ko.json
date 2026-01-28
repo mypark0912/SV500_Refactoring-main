@@ -805,6 +805,7 @@
       "tempT":"온도 T상",
       "selEnable": "사용",
       "selPQ": "전력품질",
+      "dashoutput": "대시보드 출력설정",
       "alarmCard": {
         "title": "알람",
         "common": "공통",

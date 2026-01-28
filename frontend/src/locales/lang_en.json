@@ -811,6 +811,7 @@
       "tempR":"Temp R",
       "tempS":"Temp S",
       "tempT":"Temp T",
+      "dashoutput": "Dashboard Output Settings",
       "alarmCard": {
         "title": "Alarm",
         "common": "COMMON",

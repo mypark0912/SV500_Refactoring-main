@@ -472,7 +472,7 @@
                     <label
                       class="block text-sm font-medium mb-2"
                       for="line-frequency"
-                      >대시보드 출력설정</label
+                      >{{ t("config.channelPanel.dashoutput") }}</label
                     >
                   <select
                     :value="getInputDict().ptInfo.dash"
