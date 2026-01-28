@@ -1,12 +1,12 @@
 {
   "Title": "Start SV-500!",
-      "glossary": {
-      "title": "Glossary",
-      "searchPlaceholder": "Search terms...",
-      "searchResults": "Results: {count}",
-      "noResults": "No results found",
-      "tryDifferent": "Try a different search term"
-    },
+  "glossary": {
+    "title": "Glossary",
+    "searchPlaceholder": "Search terms...",
+    "searchResults": "Results: {count}",
+    "noResults": "No results found",
+    "tryDifferent": "Try a different search term"
+  },
   "common": {
     "positive": "Positive",
     "nagative": "Nagative",
@@ -128,11 +128,11 @@
       "validating": "Validating configuration settings..."
     },
     "diagnosis": {
-      "title": "Diagnosis Config",
-      "results": "Diagnosis Configuration Results",
+      "title": "Equipment Config",
+      "results": "Equipment Configuration Results",
       "nameplate": "Nameplate Configuration",
       "parameters": "Asset Parameters",
-      "settings": "Diagnosis Settings",
+      "settings": "Equipment Settings",
       "profile": "Advanced Profile",
       "configSuccess": "All Configurations Successful",
       "configFailed": "Configuration Failed",
@@ -140,7 +140,7 @@
       "fixErrors": "Please fix the errors and try again.",
       "configuring": "Configuring nameplate settings...",
       "settingParams": "Setting asset parameters...",
-      "savingSettings": "Saving diagnosis settings...",
+      "savingSettings": "Saving equipment settings...",
       "savingProfile": "Saving advanced profile..."
     },
     "buttons": {
@@ -239,7 +239,6 @@
     "sitemap": "Dashboard",
     "meter": {
       "title": "Meter",
-  
       "singletitle": "Voltage/Current/Frequency",
       "subtitle_main": "Channel 1",
       "subtitle_sub": "Channel 2",
@@ -427,7 +426,6 @@
       "fe4": "High"
     }
   },
-
   "report": {
     "accordionTitle1": "Equipment",
     "accordionTitle2": "Power Quality",
@@ -447,10 +445,10 @@
     "modal": {
       "download": "Download",
       "downloadReport": "Download Report",
-      "downloadDesc1": "Download the currently displayed diagnostic data as a Word document.",
+      "downloadDesc1": "Download the currently displayed equipment data as a Word document.",
       "downloadIncludes": "Includes:",
       "downloadItem1": "Asset Information",
-      "downloadItem2": "Diagnostic Chart",
+      "downloadItem2": "Equipment Status Chart",
       "downloadItem3": "Detail Analysis",
       "downloadItem4": "Trend Charts",
       "downloadDate": "Report Date",
@@ -461,13 +459,13 @@
       "weeklyReport": "Weekly Report",
       "weeklyReportDesc": "Download an integrated Word report containing all data for the selected week.",
       "assetInfo": "Asset Information",
-      "equipmentDiag": "Equipment Diagnosis Results",
-      "pqDiag": "Power Quality Diagnosis Results",
+      "equipmentDiag": "Equipment Status Results",
+      "pqDiag": "Power Quality Status Results",
       "en50160": "EN50160 Analysis Results",
       "energyAnalysis": "Energy Consumption Analysis",
       "trendCharts": "Trend Charts for Each Item",
-      "generating":"Report is creating...",
-      "generatingDesc":"Processing charts and data. Please wait a moment."
+      "generating": "Report is creating...",
+      "generatingDesc": "Processing charts and data. Please wait a moment."
     },
     "info": {
       "ct_direction1": "CT1 Direction",
@@ -488,7 +486,7 @@
       "monthlyEngUsage": "Monthly Energy Usage",
       "installation": "installation place",
       "EN50160": "EN50160 Report",
-      "Diagnosis": "Equipment",
+      "Diagnosis": "Equipment Status",
       "Energy": "Active Energy",
       "Energy2": "Energy & Load Rate Trend",
       "parameter": "Trend of Power Quality Parameters",
@@ -533,7 +531,7 @@
       "low": "Low",
       "info": {
         "equip": "Equipment Information",
-        "status": "Diagnostic Information",
+        "status": "Equipment Status",
         "pq": "Power Quality Information",
         "energy": "Total Energy"
       },
@@ -560,7 +558,6 @@
       "iticyscale": "% of Base Voltage"
     }
   },
-
   "pq": {
     "sitemap": {
       "title": "Power Quality",
@@ -671,8 +668,8 @@
       "title": "Trend",
       "main": "Channel 1",
       "sub": "Channel 2",
-      "notice1":"Frequency",
-      "notice2":"Current"
+      "notice1": "Frequency",
+      "notice2": "Current"
     },
     "date": {
       "StartDate": "Start Date",
@@ -692,7 +689,7 @@
     "tabTitle": {
       "Meter": "Meter",
       "Power Quality": "PowerQuality",
-      "Diagnosis": "Diagnostic",
+      "Diagnosis": "Equipment Status",
       "Parameters": "Parameters",
       "Energy": "Energy"
     },
@@ -706,13 +703,13 @@
     "comfirmtext1": "The changed settings will delete all previous calculations for",
     "comfirmtext2": "Would you like to proceed?",
     "apply": "Apply",
-    "nameplates":"Nameplates",
-    "nameplatesConfiguration":"Nameplate Configuration",
-    "parameters":"Parameters/Thresholds",
-    "parametersConfiguration":"Parameter Configuration",
-    "addbearing":"Add Bearing",
-    "eventSetup":"Event Setup",
-    "trendSetup":"Trend Setup",
+    "nameplates": "Nameplates",
+    "nameplatesConfiguration": "Nameplate Configuration",
+    "parameters": "Parameters/Thresholds",
+    "parametersConfiguration": "Parameter Configuration",
+    "addbearing": "Add Bearing",
+    "eventSetup": "Event Setup",
+    "trendSetup": "Trend Setup",
     "sitemap": {
       "title": "Configuration",
       "Main Channel": "Channel 1",
@@ -789,7 +786,7 @@
         "hours": "Hours"
       },
       "dig": {
-        "title": "Diagnostic Setup",
+        "title": "Equipment Monitoring Setup",
         "advanced": "Advanced",
         "dburl": "DBUrl",
         "dbToken": "DBToken",
@@ -808,9 +805,9 @@
     "channelPanel": {
       "selEnable": "Enable",
       "selPQ": "PowerQuality",
-      "tempR":"Temp R",
-      "tempS":"Temp S",
-      "tempT":"Temp T",
+      "tempR": "Temp R",
+      "tempS": "Temp S",
+      "tempT": "Temp T",
       "dashoutput": "Dashboard Output Settings",
       "alarmCard": {
         "title": "Alarm",
@@ -823,7 +820,7 @@
         "value": "Level"
       },
       "Diagnosis": {
-        "title": "Diagnostic asset management",
+        "title": "Equipment Management",
         "AddAsset": "Add Asset",
         "UnregisterAsset": "Unregister Asset",
         "registerAsset": "Register Asset",
@@ -861,9 +858,7 @@
       "confirm": "Proceed with reinstallation",
       "cancel": "Cancel"
     },
-
-
     "save": "Save Changes",
-    "testSet": "Test Diagnosis setting"
+    "testSet": "Test Equipment Status Settings"
   }
 }

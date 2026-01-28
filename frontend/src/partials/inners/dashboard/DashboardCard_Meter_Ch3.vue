@@ -86,15 +86,13 @@
         <div class="detail-card unbalance-detail">
           <div class="detail-header">
             <h3 class="detail-title">
-              <span class="detail-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
-  <!-- 3상 막대 (높이 다르게 - 불평형 표현) -->
-  <rect x="4" y="12" width="5" height="12" rx="1" fill="#6366f1"/>
-  <rect x="11.5" y="6" width="5" height="18" rx="1" fill="#6366f1"/>
-  <rect x="19" y="9" width="5" height="15" rx="1" fill="#6366f1"/>
-  
-  <!-- 균형 기준선 -->
-  <line x1="2" y1="14" x2="26" y2="14" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="2 2"/>
-</svg></span>
+              <span class="detail-icon">
+                <svg class="w-[22.4px] h-[22.4px]" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#a855f7" d="M26,10c1.1,0,2-0.9,2-2c0-1.1-0.9-2-2-2h-8V4c0-1.1-0.9-2-2-2s-2,0.9-2,2v2H6C4.9,6,4,6.9,4,8
+                    c0,1.1,0.9,2,2,2L0,22c0.5,3.4,3.4,6,7,6s6.5-2.6,7-6L8,10h6h4h6l-6,12c0.5,3.4,3.4,6,7,6s6.5-2.6,7-6L26,10z M2.2,22L7,12.5
+                    l4.8,9.5H2.2z M20.2,22l4.8-9.5l4.8,9.5H20.2z"/>
+                </svg>
+              </span>
                {{ t('dashboard.pq.unbalance') }}
             </h3>
    

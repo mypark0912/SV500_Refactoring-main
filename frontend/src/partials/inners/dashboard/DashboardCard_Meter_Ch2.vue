@@ -90,7 +90,13 @@
         <div class="detail-card unbalance-detail">
           <div class="detail-header">
             <h3 class="detail-title">
-              <span class="detail-icon">⚖️</span>
+                            <span class="detail-icon">
+                <svg class="w-[22.4px] h-[22.4px]" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#a855f7" d="M26,10c1.1,0,2-0.9,2-2c0-1.1-0.9-2-2-2h-8V4c0-1.1-0.9-2-2-2s-2,0.9-2,2v2H6C4.9,6,4,6.9,4,8
+                    c0,1.1,0.9,2,2,2L0,22c0.5,3.4,3.4,6,7,6s6.5-2.6,7-6L8,10h6h4h6l-6,12c0.5,3.4,3.4,6,7,6s6.5-2.6,7-6L26,10z M2.2,22L7,12.5
+                    l4.8,9.5H2.2z M20.2,22l4.8-9.5l4.8,9.5H20.2z"/>
+                </svg>
+              </span>
                {{ t('dashboard.pq.unbalance') }}
             </h3>
    
