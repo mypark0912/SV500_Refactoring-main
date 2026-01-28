@@ -199,7 +199,7 @@
             <ServiceCard v-if="'mqClient' in sysStatus" :item="'MQTTClient'" :mode="'Service'" :state="ChannelState" :version="versionDict['MQTTClient']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartSystems'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'SmartAPI'" :mode="'Service'" :state="ChannelState" :version="versionDict['SmartSystems']" @service-done="showMessage"/>
-            <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" />
+            <ServiceDetail v-if="devMode != 'device0' && checkSmartflag" :data="errorSmart" :msg="errorMsg" />
             <!--ServiceCard :item="'System'" :mode="'Service'" :state="ChannelState" @service-done="showMessage"/>
             <ServiceCard v-if="devMode != 'device0'" :item="'Backup Download'" :mode="'Download'" @service-done="showMessage"/-->
           </div>
@@ -434,6 +434,7 @@
       const initInfluxStatus = ref('');
       const checkSmartflag = ref(false);
       const errorSmart = ref([]);
+      const errorMsg = ref('');
       const versionDict = ref({});
       const updateInflux = ref(null);
       const feedbackModalOpen = ref(false);
@@ -514,10 +515,13 @@
           const response = await axios.get("/setting/checkSmartStatus");
           if (response.data.success){
             const stData = response.data.data;
-            if (stData["RunTimeErrors"].length > 0){
+            if(stData["State"] == 0){
               checkSmartflag.value = true;
-              errorSmart.value = stData["RunTimeErrors"];
-            }
+              errorMsg.value = stData["Message"];
+              if (stData["RunTimeErrors"].length > 0){
+                errorSmart.value = stData["RunTimeErrors"];
+              }
+            }            
           }else{
             console.log(response.data.msg);
             //message.value = "System Check API is not respond"
@@ -770,6 +774,7 @@
         saveIPAddress,
         init,
         frpStatus,
+        errorMsg,
       }
 
     }

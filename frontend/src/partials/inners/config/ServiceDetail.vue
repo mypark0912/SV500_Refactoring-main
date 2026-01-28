@@ -12,8 +12,8 @@
           
           <div class="flex flex-col space-y-2">
             <!-- 에러가 없을 때 -->
-            <div v-if="errorList.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
-              No errors detected
+            <div v-if="msg != ''" class="text-center py-4 text-gray-500 dark:text-gray-400">
+              {{ msg }}
             </div>
             
             <!-- 에러 목록 (최근 5개만 표시) -->
@@ -61,7 +61,8 @@
     props:{
         data:{
             type:Array,
-        }
+        },
+        msg:String,
     },
     setup(props) {
       // 더미 에러 데이터 (하드코딩)
@@ -92,7 +93,7 @@
     //     }
     //   ])
       const errorList = ref(props.data);
-      
+      const msg = ref(props.msg);
       onMounted(() => {
         // TODO: API 호출 로직 추가
         console.log(props.data);
@@ -100,6 +101,7 @@
   
       return {
         errorList,
+        msg,
       }
     }
   }
