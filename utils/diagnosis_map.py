@@ -88,13 +88,22 @@ class AlarmStatusMatcher:
         }
         return status_map.get(status, "Unknown")
 
+    def parse_config_list(self, config_list: List[Dict]) -> Dict[str, int]:
+        """리스트 형태의 설정을 딕셔너리로 변환"""
+        config = {}
+        for item in config_list:
+            name = self._normalize_name(item["name"])
+            config[name] = item["level"]
+        return config
+
     def diagnose(
             self,
-            status_info: Dict,
+            status_info: List[Dict],
             bar_graph: List[Dict]
     ) -> Dict:
         # 설정 파싱
-        config = self.parse_status_info(status_info)
+        # config = self.parse_status_info(status_info)
+        config = self.parse_config_list(status_info)
 
         # API 응답 파싱
         response = self.parse_api_response(bar_graph)
