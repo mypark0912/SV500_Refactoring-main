@@ -1,3 +1,4 @@
+from cmath import isnan
 from functools import wraps
 from fastapi import APIRouter, Request, HTTPException
 import os, httpx, re, logging, gc, psutil, csv
@@ -4403,9 +4404,9 @@ def get_hourEnergy(channel: str, date: str = None):
         start_iso = start_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_iso = end_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        print(f"Local timezone offset: {local_utc_offset}")
-        print(f"Query range (Local): {start_time_local} to {end_time_local}")
-        print(f"Query range (UTC): {start_iso} to {end_iso}")
+        # print(f"Local timezone offset: {local_utc_offset}")
+        # print(f"Query range (Local): {start_time_local} to {end_time_local}")
+        # print(f"Query range (UTC): {start_iso} to {end_iso}")
 
         # InfluxDB 쿼리: 시간별 평균값 계산
         query = f'''
@@ -4456,11 +4457,11 @@ def get_hourEnergy(channel: str, date: str = None):
                     'date': timestamp_local.strftime("%Y-%m-%d"),  # 날짜 확인용
                 })
 
-        print(f"Got {len(hourly_data)} hourly records from InfluxDB for {target_date.date()}")
+        # print(f"Got {len(hourly_data)} hourly records from InfluxDB for {target_date.date()}")
 
         # 디버깅: 첫 몇 개 레코드 출력
-        if hourly_data:
-            print(f"Sample data: {hourly_data[:3]}")
+        # if hourly_data:
+        #     print(f"Sample data: {hourly_data[:3]}")
 
         # 로컬 시간 기준으로 누락된 시간 채우기
         if len(hourly_data) > 0:

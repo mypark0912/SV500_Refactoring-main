@@ -48,7 +48,7 @@
             <div class="temp-grid">
               <div v-for="(temp, index) in displayData.Temp" :key="index" class="temp-row">
                 <span class="phase-label">{{ ['R', 'S', 'T'][index] }}</span>
-                <span class="value-number">{{ temp }}</span>
+                <span class="value-number">{{ Number(temp) < -900 ? '-': Number(temp).toFixed(2) }}</span>
                 <span class="value-unit">℃</span>
               </div>
             </div>

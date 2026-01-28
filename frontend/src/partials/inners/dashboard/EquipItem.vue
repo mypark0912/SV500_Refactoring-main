@@ -33,7 +33,7 @@
               <template v-if="hasTempData">
                 <div v-for="(label, index) in ['R', 'S', 'T']" :key="index" class="metric-box temperature">
                   <div class="metric-main">
-                    <span class="metric-value">{{ transData.Temp?.[index]?.toFixed(2) ?? '-' }}</span>
+                    <span class="metric-value">{{ Number(transData.Temp?.[index]) < -900 ? '-':Number(transData.Temp?.[index]).toFixed(2) }}</span>
                     <span class="metric-unit">℃</span>
                   </div>
                   <div class="metric-label">Temp {{ label }}</div>

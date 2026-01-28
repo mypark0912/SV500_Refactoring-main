@@ -99,9 +99,7 @@
           <div class="metric-content">
             <div class="metric-label">Primary Temp {{ label }}</div>
             <div class="metric-main">
-              <span class="metric-value">{{
-                primaryTempData?.[index]?.toFixed(2) ?? "-"
-              }}</span>
+              <span class="metric-value">{{ Number(primaryTempData?.[index]) < -900 ? '-': Number(primaryTempData?.[index]).toFixed(2)}}</span>
               <span class="metric-unit">℃</span>
             </div>
           </div>
@@ -119,9 +117,7 @@
           <div class="metric-content">
             <div class="metric-label">Secondary Temp {{ label }}</div>
             <div class="metric-main">
-              <span class="metric-value">{{
-                transData.Temp?.[index]?.toFixed(2) ?? "-"
-              }}</span>
+              <span class="metric-value">{{ Number(transData.Temp?.[index]) < -900 ? '-': Number(transData.Temp?.[index]).toFixed(2) }}</span>
               <span class="metric-unit">℃</span>
             </div>
           </div>
