@@ -1191,7 +1191,7 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
             result[f"{prefix}_kva"] = int(channel_data.get("n_kva", 0))
 
 @router.get('/checkSettingFile') #check setup.json
-def check_setupfile(request: Request):
+async def check_setupfile(request: Request):
     """
     우선순위:
     1. setup.json 파일 확인 (최우선)
@@ -1257,6 +1257,8 @@ def check_setupfile(request: Request):
             else:
                 setting["General"]["deviceInfo"]["mac_address"] = deviceMac
 
+            save_redis_setup(setting)
+            await save_influx_status()
             redis_state.client.hset("System", "setup", json.dumps(setting))
             if "mode" in setting:
                 redis_state.client.hset("System", "mode", setting["mode"])
@@ -1292,13 +1294,17 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         else:
             main_d = 15*60
         main_s = int(main_channel_data["sampling"]["period"])*60
+        if "dash" in main_channel_data["ptInfo"]:
+            dashSetup = int(main_channel_data["ptInfo"]["dash"])
+        else:
+            dashSetup = 1
         main_data = {
             "PT_WiringMode":int(main_channel_data["ptInfo"]["wiringmode"]),
             "RatedFrequency": int(main_channel_data["ptInfo"]["linefrequency"]),
             "RatedVoltage": int(main_channel_data["ptInfo"]["vnorminal"]),
             "RatedCurrent": int(main_channel_data["ctInfo"]["inorminal"]),
             "RatedKVA": int(main_channel_data["n_kva"]),
-            "DashPT":int(main_channel_data["ptInfo"]["dash"])
+            "DashPT": dashSetup
         }
     else:
         main_c = 0
@@ -1313,13 +1319,17 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         else:
             sub_d = 15 * 60
         sub_s = int(sub_channel_data["sampling"]["period"])*60
+        if "dash" in sub_channel_data["ptInfo"]:
+            dashSetup = int(sub_channel_data["ptInfo"]["dash"])
+        else:
+            dashSetup = 1
         sub_data = {
             "PT_WiringMode": int(sub_channel_data["ptInfo"]["wiringmode"]),
             "RatedFrequency": int(sub_channel_data["ptInfo"]["linefrequency"]),
             "RatedVoltage": int(sub_channel_data["ptInfo"]["vnorminal"]),
             "RatedCurrent": int(sub_channel_data["ctInfo"]["inorminal"]),
             "RatedKVA": int(sub_channel_data["n_kva"]),
-            "DashPT": int(sub_channel_data["ptInfo"]["dash"])
+            "DashPT": dashSetup
         }
     else:
         sub_c = 0
@@ -2773,14 +2783,15 @@ def apply():
     with open(FILE_PATH, "w", encoding="utf-8") as f:
         json.dump(saveData, f, indent=4)
 
-    if len(saveData["channel"]) > 0:
-        for ch in saveData["channel"]:
-            if "channel" in ch and "alarm" in ch:
-                initialize_alarm_configs(ch["channel"], ch["alarm"])
+    save_redis_setup(saveData)
+    # if len(saveData["channel"]) > 0:
+    #     for ch in saveData["channel"]:
+    #         if "channel" in ch and "alarm" in ch:
+    #             initialize_alarm_configs(ch["channel"], ch["alarm"])
 
-    procData = save_StartCurrent_DemandInterval_SamplingPeriod(saveData)
-    dash_alarms_data = save_alarm_configs_to_redis(saveData)
-    ai_data = save_ai_configs_to_redis(saveData)
+    # procData = save_StartCurrent_DemandInterval_SamplingPeriod(saveData)
+    # dash_alarms_data = save_alarm_configs_to_redis(saveData)
+    # ai_data = save_ai_configs_to_redis(saveData)
     result = compare_channel_changes(prevData, saveData)
 
     restartdevice = False
@@ -2790,6 +2801,42 @@ def apply():
         restartdevice = True
 
     redis_state.client.hset("System", "setup", json.dumps(saveData))
+
+
+    # redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
+    # redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
+    # redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
+    # redis_state.client.hset("Equipment", "ChannelData", json.dumps(procData["Channel"]))
+    #
+    # if dash_alarms_data:
+    #     redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
+    # else:
+    #     redis_state.client.hdel("Equipment", "DashAlarms")
+    #
+    # if ai_data:
+    #     redis_state.client.hset("Equipment", "AIConfig", json.dumps(ai_data))
+    # else:
+    #     redis_state.client.hdel("Equipment", "AIConfig")
+
+    return {"status": "1", "data": saveData, "restartDevice": restartdevice}
+
+async def save_influx_status():
+    ret = await check_influxStatus()
+    if ret['status'] == 2:
+        redis_state.client.hset("influx_init", "status", "COMPLETE")
+    else:
+        redis_state.client.hset("influx_init", "status", "IDLE")
+
+def save_redis_setup(setupData):
+    if len(setupData["channel"]) > 0:
+        for ch in setupData["channel"]:
+            if "channel" in ch and "alarm" in ch:
+                initialize_alarm_configs(ch["channel"], ch["alarm"])
+
+    procData = save_StartCurrent_DemandInterval_SamplingPeriod(setupData)
+    dash_alarms_data = save_alarm_configs_to_redis(setupData)
+    ai_data = save_ai_configs_to_redis(setupData)
+
     redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
     redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
     redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
@@ -2804,9 +2851,6 @@ def apply():
         redis_state.client.hset("Equipment", "AIConfig", json.dumps(ai_data))
     else:
         redis_state.client.hdel("Equipment", "AIConfig")
-
-    return {"status": "1", "data": saveData, "restartDevice": restartdevice}
-
 
 def save_frpc_config(subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
     try:
