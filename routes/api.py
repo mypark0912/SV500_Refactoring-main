@@ -1571,7 +1571,7 @@ async def get_realtime(assettype, asset, request: Request):
         else:
             # PowerSupply 관련 데이터
             if assettype == 'MotorFeed':
-                target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
+                target_names = ["VoltageSwitchingHarmonics", "VfdCapacitor", "CurrentSwitchingHarmonics"]
                 for item in data["Data"]:
                     if item["Name"] in target_names:
                         datalist.append({
@@ -1606,7 +1606,7 @@ async def get_realtimesingle(channel,assettype, asset):
         else:
             # PowerSupply 관련 데이터
             if assettype == 'MotorFeed':
-                target_names = ["SwitchingFrequency", "DCLink", "Rectifier"]
+                target_names = ["VoltageSwitchingHarmonics", "VfdCapacitor", "CurrentSwitchingHarmonics"]
                 for item in data["Data"]:
                     if item["Name"] in target_names:
                         datalist.append({
