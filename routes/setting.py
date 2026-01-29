@@ -9,7 +9,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS
+from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
 from routes.api import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading
@@ -3385,19 +3385,19 @@ async def test_wave(asset, request:Request):
         print(f"Exception: {type(e).__name__}: {e}")
         return {"success": False, "error": "No Data"}
 
-def service_exists(name):
-    """서비스 파일이 존재하는지 확인"""
-    try:
-        result = subprocess.run(
-            ['systemctl', 'list-unit-files', name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=2
-        )
-        return name in result.stdout
-    except:
-        return False
+# def service_exists(name):
+#     """서비스 파일이 존재하는지 확인"""
+#     try:
+#         result = subprocess.run(
+#             ['systemctl', 'list-unit-files', name],
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#             text=True,
+#             timeout=2
+#         )
+#         return name in result.stdout
+#     except:
+#         return False
 
 def is_service_enabled(name):
     """서비스 부팅 시 자동 시작 여부 확인 (enabled/disabled)"""

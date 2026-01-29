@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists
 from datetime import datetime
 router = APIRouter()
 
@@ -439,3 +439,101 @@ def get_log(page: int = 1, page_size: int = 10):
     except Exception as e:
         print(f"GET_POST ERROR: {e}")
         return {"result": 0, "msg": str(e)}
+
+
+@router.get('/applog/recent/{item}')
+def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
+    LOG_PATH = {
+        "SmartSystems": "/usr/local/smartsystems/log",
+        "Core": "/usr/local/sv500/logs/core",
+        "WebServer": "/usr/local/sv500/logs/web",
+        "A35": "/usr/local/sv500/logs/a35",
+    }
+
+    JOURNAL_SERVICES = {
+        "frpc": "frpc",
+        "mqClient": "mqClient",
+    }
+
+    try:
+        # Journal 로그 처리
+        if item in JOURNAL_SERVICES:
+            service_name = JOURNAL_SERVICES[item]
+
+            # 서비스 존재 여부 확인
+            if not service_exists(f"{service_name}.service"):
+                return {"success": False, "message": f"{item} 서비스가 설치되지 않음"}
+
+            result = subprocess.run(
+                ['journalctl', '-u', service_name, '-n', str(lines), '--no-pager', '-o', 'short'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            log_lines = result.stdout.strip().split('\n') if result.stdout.strip() else []
+            # "-- No entries --" 등 제거
+            log_lines = [l for l in log_lines if l and not l.startswith('--')]
+
+            if not log_lines:
+                return {"success": False, "message": "로그 없음"}
+
+            return {
+                "success": True,
+                "source": "journal",
+                "service": service_name,
+                "lines": log_lines,
+                "count": len(log_lines)
+            }
+
+        # 파일 기반 로그 처리
+        if item not in LOG_PATH:
+            return {"success": False, "message": "잘못된 항목"}
+
+        if not os.path.exists(LOG_PATH[item]):
+            return {"success": False, "message": "로그 디렉토리 없음"}
+
+        # 크기가 0보다 큰 로그 파일만 필터링
+        log_files = [
+            f for f in os.listdir(LOG_PATH[item])
+            if f.endswith('.log') and os.path.getsize(os.path.join(LOG_PATH[item], f)) > 0
+        ]
+
+        # SmartSystems: 로그 타입별 필터링
+        if item == "SmartSystems" and log_type != "all":
+            if log_type == "ss":
+                log_files = [f for f in log_files if f.startswith('SS')]
+            elif log_type == "api":
+                log_files = [f for f in log_files if f.startswith('RestAPI')]
+
+        if not log_files:
+            return {"success": False, "message": "로그 파일 없음"}
+
+        # 수정 시간 기준 최신 파일
+        latest_file = max(
+            log_files,
+            key=lambda f: os.path.getmtime(os.path.join(LOG_PATH[item], f))
+        )
+
+        file_path = os.path.join(LOG_PATH[item], latest_file)
+
+        # 최근 N줄 읽기 (tail)
+        result = subprocess.run(
+            ['tail', '-n', str(lines), file_path],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        log_lines = result.stdout.strip().split('\n') if result.stdout else []
+
+        return {
+            "success": True,
+            "source": "file",
+            "file": latest_file,
+            "lines": log_lines,
+            "count": len(log_lines)
+        }
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}

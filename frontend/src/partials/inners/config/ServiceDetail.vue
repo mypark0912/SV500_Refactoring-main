@@ -4,7 +4,7 @@
       <div class="flex flex-col h-full p-5">
         <div class="grow">
           <header class="flex items-center justify-between mb-4">
-            <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">Smart System Error List</h3>
+            <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">Smart System Status</h3>
             <span class="text-sm rounded-full px-3 py-1 bg-red-500/20 text-red-700 font-semibold">
               {{ errorList.length }} Errors
             </span>
@@ -12,10 +12,12 @@
           
           <div class="flex flex-col space-y-2">
             <!-- 에러가 없을 때 -->
-            <div v-if="msg != ''" class="text-center py-4 text-gray-500 dark:text-gray-400">
-              {{ msg }}
+            <div v-if="msg.state == 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
+              {{ msg.msg }}
             </div>
-            
+            <div v-else class="text-center py-4 text-gray-500 dark:text-gray-400">
+              No Errors
+            </div>
             <!-- 에러 목록 (최근 5개만 표시) -->
             <div 
               v-for="(error, index) in errorList.slice(0, 5)" 
@@ -62,7 +64,9 @@
         data:{
             type:Array,
         },
-        msg:String,
+        msg:{
+          type:Object,
+        }
     },
     setup(props) {
       // 더미 에러 데이터 (하드코딩)
@@ -96,7 +100,7 @@
       const msg = ref(props.msg);
       onMounted(() => {
         // TODO: API 호출 로직 추가
-        console.log(props.data);
+        //console.log(props.data);
       })
   
       return {

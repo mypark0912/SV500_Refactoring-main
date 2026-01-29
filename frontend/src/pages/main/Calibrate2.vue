@@ -72,7 +72,7 @@
   //import UsersTabsCard from '../../partials/community/CaliCard.vue'
   import CaliSidebar from '../../partials/inners/config/CaliSideBar2.vue'
   import CaliPanel from '../../partials/inners/config/CaliPanel2.vue'
-  import ServicePanel from '../../partials/inners/config/ServicePanel.vue'
+  import ServicePanel from '../../partials/inners/config/ServicePanel_New.vue'
   import Maintenance from '../../partials/inners/config/MaintenancePanel.vue'
   import LogView from '../../partials/inners/config/LogPanel.vue' 
   import System from '../../partials/inners/config/CommandPanel.vue'
