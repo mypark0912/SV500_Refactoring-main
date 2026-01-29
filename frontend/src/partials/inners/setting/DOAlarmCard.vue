@@ -57,7 +57,7 @@
           </svg>
         </div>
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
-          {{ type === 'diagnostic' ? 'Diagnostic / PQ Status' : 'Faults / Events Status' }}
+          {{ type === 'diagnostic' ? 'Equipment / PQ Status' : 'Faults / Events Status' }}
         </h3>
       </header>
     </div>
@@ -131,14 +131,14 @@
                     "
                   >
                     <template v-if="activeTab === 'diagnostic'">
-                      <option :value="2">Warning</option>
-                      <option :value="3">Inspect</option>
-                      <option :value="4">Repair</option>
+                      <option :value="2">{{ t("diagnosis.tabContext.st2") }}</option>
+                      <option :value="3">{{ t("diagnosis.tabContext.st3") }}</option>
+                      <option :value="4">{{ t("diagnosis.tabContext.st4") }}</option>
                     </template>
                     <template v-else>
-                      <option :value="2">Low</option>
-                      <option :value="3">Medium</option>
-                      <option :value="4">High</option>
+                      <option :value="2">{{ type === 'diagnostic'? t("diagnosis.tabContext.pqfe2") : t("diagnosis.tabContext.fe2") }}</option>
+                      <option :value="3">{{ type === 'diagnostic'? t("diagnosis.tabContext.pqfe3") : t("diagnosis.tabContext.fe3") }}</option>
+                      <option :value="4">{{ type === 'diagnostic'? t("diagnosis.tabContext.pqfe4") : t("diagnosis.tabContext.fe4") }}</option>
                     </template>
                   </select>
                 </div>
@@ -153,9 +153,9 @@
 
 <script setup>
 import { ref, computed, inject, watch, onMounted, nextTick } from "vue";
-
+import { useI18n } from "vue-i18n";
 const isDataLoaded = ref(false);
-
+const { t } = useI18n();
 const props = defineProps({
   channel: { type: String, default: '' },
   type: { type: String, default: 'diagnostic' } // 'diagnostic' | 'faults'
@@ -168,7 +168,7 @@ const subData = inject('channel_sub');
 const tabs = computed(() => {
   if (props.type === 'diagnostic') {
     return [
-      { id: 'diagnostic', label: 'Diagnostic' },
+      { id: 'diagnostic', label: 'Equipment' },
       { id: 'pq', label: 'PQ' }
     ];
   } else {
