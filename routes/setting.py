@@ -246,10 +246,10 @@ async def complete_influx_setup():
         else:
             logging.info("✅ Downsampling buckets and tasks configured")
 
-        bucket_result2 = await create_influx_bucket("ntek30", 30)
-
-        if not bucket_result2["success"]:
-            logging.warning(f"⚠️ Bucket creation failed: {bucket_result2['message']}")
+        # bucket_result2 = await create_influx_bucket("ntek30", 30)
+        #
+        # if not bucket_result2["success"]:
+        #     logging.warning(f"⚠️ Bucket creation failed: {bucket_result2['message']}")
         # 다른 서비스 재시작
         if sysMode != 'device0':
             sysService('restart', 'SmartSystems')
@@ -3647,6 +3647,7 @@ ip monitor link | while read line; do
             if echo "$line" | grep -q "state UP"; then
                 sleep {restart_delay}
                 systemctl restart frpc
+                systemctl restart mqClient
             fi
         fi
     done
