@@ -109,6 +109,7 @@ export default {
     const sysData = ref(null);
     const smartData = ref(null);
     const location = computed(()=> setupStore.getDevLocation);
+    const channelSetting = computed(()=> setupStore.getChannelSetting);
     let updateInterval = null;
     const deviceTime = ref(null);
     const timeStatus = ref(true);  // true: 정상, false: 24시간 이상 차이
@@ -124,7 +125,8 @@ export default {
           // 정상일 때도 services 데이터 전달하려면
           sysData.value = response.data.services || {};
         }
-        smartData.value = response.data.smartStatus;
+        if (channelSetting.value.MainDiagnosis || channelSetting.value.SubDiagnosis)
+          smartData.value = response.data.smartStatus;
         //onsole.log(smartData.value);
       }catch (error) {
         console.log("데이터 가져오기 실패:", error);
@@ -203,6 +205,7 @@ export default {
       timeStatus,      // ✅ 추가
       onTimeSynced,    // ✅ 추가
       smartData,
+      channelSetting,
     }
   }  
 }

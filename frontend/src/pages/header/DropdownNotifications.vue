@@ -183,7 +183,6 @@ export default {
     const smartData = computed(()=> {
       const ret = props.smart;
       if (props.smart){
-        console.log('props:', ret);
         return ret
       }
     });
