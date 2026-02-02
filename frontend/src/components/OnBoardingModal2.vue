@@ -209,32 +209,46 @@
                 >
                   {{ t('common.cancel') }}
                 </button>
-                <div
-                  v-if="isRestarting"
-                  class="flex items-center text-sm text-blue-600"
-                >
-                  <svg
-                    class="animate-spin w-4 h-4 mr-2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  {{ restartMessage }}
-                </div>
+<div
+  v-if="isRestarting || restartMessage"
+  class="flex items-center text-sm"
+  :class="isRestarting ? 'text-blue-600' : 'text-red-600'"
+>
+  <svg
+    v-if="isRestarting"
+    class="animate-spin w-4 h-4 mr-2"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      class="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    ></circle>
+    <path
+      class="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+  <svg
+    v-else
+    class="w-4 h-4 mr-2"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+      clip-rule="evenodd"
+    />
+  </svg>
+  {{ restartMessage }}
+</div>
                 <button
                   type="button"
                   class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white"
@@ -1198,30 +1212,32 @@
               
               if (needsComm_main.value && needsComm_sub.value) {
                 triggerTarget = 2;
-                console.log("[DEBUG] Main, Sub 둘 다 commission 필요");
+                //console.log("[DEBUG] Main, Sub 둘 다 commission 필요");
               } else if (needsComm_main.value) {
                 triggerTarget = 0;
-                console.log("[DEBUG] Main만 commission 필요");
+                //console.log("[DEBUG] Main만 commission 필요");
               } else if (needsComm_sub.value) {
                 triggerTarget = 1;
-                console.log("[DEBUG] Sub만 commission 필요");
+                //console.log("[DEBUG] Sub만 commission 필요");
               }
     
-              console.log(`[DEBUG] trigger 실행 - target: ${triggerTarget}`);
+              //console.log(`[DEBUG] trigger 실행 - target: ${triggerTarget}`);
               isRestarting.value = true;
               restartMessage.value = t('onboardingModal.messages.acquiringWaveform');
     
               const response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
-              console.log("[DEBUG] trigger 응답:", response.data);
+              //console.log("[DEBUG] trigger 응답:", response.data);
     
-              isRestarting.value = false;
+              
     
               if (!response.data.success) {
-                restartMessage.value = response.data.message || t('onboardingModal.messages.triggerFailed');
+                restartMessage.value =  t('onboardingModal.messages.timeout') ;// response.data.message || t('onboardingModal.messages.triggerFailed');
+                isRestarting.value = false;
                 return;
               }
-    
-              console.log("[DEBUG] Step 1 완료 - 다음 단계 결정");
+              
+
+              //console.log("[DEBUG] Step 1 완료 - 다음 단계 결정");
               
               if (needsComm_main.value) {
                 console.log("[DEBUG] Main Test로 이동");
@@ -1231,7 +1247,7 @@
                 await getCommision("main");
               }
               else if (needsComm_sub.value) {
-                console.log("[DEBUG] Sub Test로 이동");
+                //console.log("[DEBUG] Sub Test로 이동");
                 isLoadingSub.value = true;
                 subTestLoaded.value = false;
                 currentStep.value = 3;
@@ -1242,12 +1258,12 @@
             }
     
             if (currentStep.value === 2 && mainTestResult.value.err > 0) {
-              console.log("[DEBUG] Main Test에 에러 있음 - 진행 불가");
+              //console.log("[DEBUG] Main Test에 에러 있음 - 진행 불가");
               return;
             }
     
             if (currentStep.value === 3 && subTestResult.value.err > 0) {
-              console.log("[DEBUG] Sub Test에 에러 있음 - 진행 불가");
+              //console.log("[DEBUG] Sub Test에 에러 있음 - 진행 불가");
               return;
             }
     
@@ -1264,18 +1280,18 @@
     
         const handleMainTestNext = async () => {
           if (mainTestResult.value.err > 0) {
-            console.log("[DEBUG] Main Test 에러 - 진행 불가");
+            //console.log("[DEBUG] Main Test 에러 - 진행 불가");
             return;
           }
     
           if (needsComm_sub.value) {
-            console.log("[DEBUG] Sub commission 필요 - Sub Test로 이동");
+            //console.log("[DEBUG] Sub commission 필요 - Sub Test로 이동");
             isLoadingSub.value = true;
             subTestLoaded.value = false;
             currentStep.value = 3;
             await getCommision("sub");
           } else {
-            console.log("[DEBUG] Sub commission 불필요 - Complete로 이동");
+            //console.log("[DEBUG] Sub commission 불필요 - Complete로 이동");
             currentStep.value = 4;
           }
         };
@@ -1322,6 +1338,8 @@
             if (newValue) {
               await GetSettingData();
               currentStep.value = 1;
+              restartMessage.value = "";  
+              isRestarting.value = false; 
               await checkRestart();
             }
           }

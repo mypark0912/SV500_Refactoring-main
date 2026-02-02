@@ -104,7 +104,8 @@
       "acquiringWaveform": "파형 파일 획득 중...",
       "triggerFailed": "트리거 실패",
       "waitingRestart": "펌웨어 재시작 대기 중",
-      "commissioningFailed": "커미셔닝 실패"
+      "commissioningFailed": "커미셔닝 실패",
+      "timeout": "시간이 초과되었습니다. 다시 시도해 주세요."
     }
   },
   "saveModal": {

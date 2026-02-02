@@ -104,7 +104,8 @@
       "acquiringWaveform": "Acquiring waveform file...",
       "triggerFailed": "Trigger failed",
       "waitingRestart": "Waiting for restart firmware",
-      "commissioningFailed": "Failed Commissioning"
+      "commissioningFailed": "Failed Commissioning",
+      "timeout": "timed out. Please try again."
     }
   },
   "saveModal": {
