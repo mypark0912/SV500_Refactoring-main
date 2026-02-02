@@ -3088,12 +3088,18 @@ async def restartdevice(timeout: int = 30):
         redis_state.client.hset("Service", "restart", 1)
 
         # save = 0 될 때까지 대기
+        stable_flag = False
         for _ in range(timeout * 10):  # 0.1초 간격
             await asyncio.sleep(0.1)
 
             save_flag = redis_state.client.hget("Service", "save")
             if save_flag is not None and int(save_flag) == 0:
-                return {"success": True, "message": "Restart completed"}
+                stable_flag = True
+                break
+
+        if stable_flag:
+            await asyncio.sleep(5)
+            return {"success": True, "message": "Restart completed"}
 
         return {"success": False, "error": f"Timeout ({timeout}s) - save flag not cleared"}
 
@@ -4149,6 +4155,7 @@ async def trigger_waveform(
                 }
             else:
                 # 생성조차 감지 못함 = 진짜 타임아웃
+                print(f"[WARNING] 파일 생성 감지 실패")
                 return {
                     "success": False,
                     "message": f"타임아웃 ({timeout}초) - 파일 생성 감지 실패",
