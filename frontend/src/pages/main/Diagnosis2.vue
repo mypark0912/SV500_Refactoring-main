@@ -114,11 +114,12 @@ export default {
       { name: 'Status', label: 'Dignosis Status'},
       { name: 'PowerQuality', label: 'PowerQuality' },
       { name: 'Event', label: 'Event' },
+      { name: 'Fault', label: 'Fault' },
     ];
     
-    if (isAdmin.value) {
-      baseTabs.push({ name: 'Fault', label: 'Fault' });
-    }
+    // if (isAdmin.value) {
+    //   baseTabs.push({ name: 'Fault', label: 'Fault' });
+    // }
     
     return baseTabs;
   });

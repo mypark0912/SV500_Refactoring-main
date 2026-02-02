@@ -55,7 +55,7 @@
 
         <!-- Header: Right side -->
         <div class="flex items-center space-x-3">
-          <Notifications align="right" :status="sysIcon" :data="sysData" />
+          <Notifications align="right" :status="sysIcon" :data="sysData" :smart="smartData" />
           <DeviceTime 
             align="right" 
             :status="timeStatus" 
@@ -107,6 +107,7 @@ export default {
     //const location  = ref('');
     const sysIcon = ref(false);
     const sysData = ref(null);
+    const smartData = ref(null);
     const location = computed(()=> setupStore.getDevLocation);
     let updateInterval = null;
     const deviceTime = ref(null);
@@ -118,11 +119,13 @@ export default {
         sysIcon.value = response.data.status;
         if (!response.data.status) {
           sysData.value = response.data.services;
+          
         } else {
           // 정상일 때도 services 데이터 전달하려면
           sysData.value = response.data.services || {};
         }
-
+        smartData.value = response.data.smartStatus;
+        //onsole.log(smartData.value);
       }catch (error) {
         console.log("데이터 가져오기 실패:", error);
       } 
@@ -199,6 +202,7 @@ export default {
       deviceTime,      // ✅ 추가
       timeStatus,      // ✅ 추가
       onTimeSynced,    // ✅ 추가
+      smartData,
     }
   }  
 }

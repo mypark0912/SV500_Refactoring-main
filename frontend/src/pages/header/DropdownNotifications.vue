@@ -67,12 +67,53 @@
               class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
             >
               <div class="block py-2 px-4">
-                <span class="block text-sm text-gray-500 dark:text-gray-400 text-center">
+                <span class="block text-sm text-gray-500 dark:text-gray-400">
                   ✅ All Service is running
                 </span>
               </div>
             </li>
           </ul>
+          <template v-if="smartData">
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase pt-1.5 pb-2 px-4">
+              Smart Status
+            </div>
+            <ul>
+              <li 
+                v-for="(error, index) in smartData['RunTimeErrors']" 
+                :key="index"
+                class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
+              >
+                <div class="block py-2 px-4">
+                  <span class="block text-sm mb-2">
+                    ❌ <span class="font-medium text-red-600 dark:text-red-400">{{ error }}</span>
+                  </span>
+                  <span class="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                    {{ smartData['ServiceStartTime'] }}
+                  </span>
+                </div>
+              </li>
+              <li 
+                v-if="smartData['State'] == 1"
+                class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
+              >
+                <div class="block py-2 px-4">
+                  <span class="block text-sm text-gray-500 dark:text-gray-400">
+                    ✅ All Status is OK
+                  </span>
+                </div>
+              </li>
+              <li 
+                v-else
+                class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
+              >
+                <div class="block py-2 px-4">
+                  <span class="block text-sm">
+                    ❌ <span class="font-medium text-red-600 dark:text-red-400">{{ smartData['Message'] }}</span>
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </template>
         <!--ul
           ref="dropdown"
           @focusin="dropdownOpen = true"
@@ -124,7 +165,11 @@ export default {
     status: Boolean,
     data: {
       type: Object,
-      default: () => ({}),  // ✅ 함수로 변경
+      default: () => ({}),  // ✅ 함수로 변경,
+    },
+    smart:{
+      type: Object,
+      default: () => ({}),  // ✅ 함수로 변경,
     }
   },
   setup(props) {
@@ -134,6 +179,14 @@ export default {
     
     // ✅ props.data를 직접 사용 (computed로)
     const sysData = computed(() => props.data)
+
+    const smartData = computed(()=> {
+      const ret = props.smart;
+      if (props.smart){
+        console.log('props:', ret);
+        return ret
+      }
+    });
     
     // ✅ 상태 아이콘 CSS
     const stIconCss = computed(() => {
@@ -196,6 +249,7 @@ export default {
       inactiveServicesCount,
       getCurrentTime,
       inactiveServices,
+      smartData,
     }
   }
 }

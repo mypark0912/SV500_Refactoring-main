@@ -138,11 +138,11 @@
           />
           
           <!-- SmartSystem 에러 상세 -->
-          <ServiceDetail
+          <!--ServiceDetail
             v-if="devMode !== 'device0'"
             :data="errorSmart"
             :msg="stateSmart"
-          />
+          /-->
         </div>
       </section>
 
@@ -391,7 +391,7 @@ export default {
     const updateInflux = ref(null);
     const isResetAll = ref(false);
     const serviceLoadingMessage = ref('');
-    const checkSmartflag = ref(false);
+    //const checkSmartflag = ref(false);
     const errorSmart = ref([]);
     const stateSmart = ref({});
     const feedbackModalOpen = ref(false);
@@ -446,11 +446,11 @@ export default {
           sysStatus.value = response.data.data;
           versionDict.value = response.data.versions;
 
-          if (!sysStatus.value['smartsystem']) {
-            checkSmart(sysStatus.value);
-          } else {
-            checkSmartflag.value = false;
-          }
+          // if (!sysStatus.value['smartsystem']) {
+          //   checkSmartflag.value = true;
+          // } else {
+          //   checkSmartflag.value = false;
+          // }
         } else {
           message.value = 'System Check API is not respond';
         }
@@ -459,32 +459,25 @@ export default {
       }
     };
 
-    const checkSmart = async (data) => {
-      if (!data['smartsystem']) {
-        try {
-          const response = await axios.get('/setting/checkSmartStatus');
-          if (response.data.success) {
-            const stData = response.data.data;
-            stateSmart.value = {
-                'state': stData['State'],
-                'msg': stData['Message']
-            };
-            if (stData['RunTimeErrors'].length > 0) {
-                errorSmart.value = stData['RunTimeErrors'];
-              }
-            // if (stData['State'] === 0) {
-            //   checkSmartflag.value = true;
-            //   errorMsg.value = stData['Message'];
-            //   if (stData['RunTimeErrors'].length > 0) {
-            //     errorSmart.value = stData['RunTimeErrors'];
-            //   }
-            // }
-          }
-        } catch (error) {
-          // ignore
-        }
-      }
-    };
+    // const checkSmart = async (data) => {
+    //   if (!data['smartsystem']) {
+    //     try {
+    //       const response = await axios.get('/setting/checkSmartStatus');
+    //       if (response.data.success) {
+    //         const stData = response.data.data;
+    //         stateSmart.value = {
+    //             'state': stData['State'],
+    //             'msg': stData['Message']
+    //         };
+    //         if (stData['RunTimeErrors'].length > 0) {
+    //             errorSmart.value = stData['RunTimeErrors'];
+    //           }
+    //       }
+    //     } catch (error) {
+    //       // ignore
+    //     }
+    //   }
+    // };
 
     const getInfluxStatus = async () => {
       try {
@@ -588,8 +581,8 @@ export default {
       }
     };
 
-    onMounted(() => {
-      SysCheck();
+    onMounted(async() => {
+      await SysCheck();
       getInfluxStatus();
       checkInfluxStatus();
       checkFrp();
@@ -605,7 +598,7 @@ export default {
       updateInflux,
       isResetAll,
       serviceLoadingMessage,
-      checkSmartflag,
+      //checkSmartflag,
       errorSmart,
       stateSmart,
       feedbackModalOpen,

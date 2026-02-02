@@ -8,11 +8,13 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 from states.global_state import influx_state, redis_state, os_spec
 from fastapi.responses import FileResponse
-from  utils.redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
+from utils.redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
 from utils.RedisBinary import RedisDataType
 from utils.DemandMap import DemandDataFormatter
 from utils.util import is_service_active
 from utils.diagnosis_map import AlarmStatusMatcher
+from utils.util import parameter_options
+from routes.setting import check_SmartStatus
 from concurrent.futures import ThreadPoolExecutor
 import asyncio, math
 
@@ -156,59 +158,6 @@ class TrendRequest(BaseModel):
     startDate: Optional[str] = None
     endDate: Optional[str] = None
     fields: Optional[List[str]] = None  # 필드 목록
-
-
-parameter_options = [
-    "None",
-    "Temperature",
-    "Frequency",
-    "Phase Voltage L1",
-    "Phase Voltage L2",
-    "Phase Voltage L3",
-    "Phase Voltage Average",
-    "Phase Voltage L12",
-    "Phase Voltage L23",
-    "Phase Voltage L31",
-    "Line Voltage Average",
-    "Voltage Unbalance(Uo)",
-    "Voltage Unbalance(Uu)",
-    "Phase Current L1",
-    "Phase Current L2",
-    "Phase Current L3",
-    "Phase Current Average",
-    "Phase Current Total",
-    "Phase Current Neutral",
-    "Active Power L1",
-    "Active Power L2",
-    "Active Power L3",
-    "Active Power Total",
-    "Reactive Power L1",
-    "Reactive Power L2",
-    "Reactive Power L3",
-    "Reactive Power Total",
-    "D1",
-    "D2",
-    "D3",
-    "D",
-    "Apparent Power L1",
-    "Apparent Power L2",
-    "Apparent Power L3",
-    "Apparent Power Total",
-    "Power Factor L1",
-    "Power Factor L2",
-    "Power Factor L3",
-    "Power Factor Total",
-    "THD Voltage L1",
-    "THD Voltage L2",
-    "THD Voltage L3",
-    "THD Voltage L12",
-    "THD Voltage L23",
-    "THD Voltage L31",
-    "THD Current L1",
-    "THD Current L2",
-    "THD Current L3"
-]
-
 
 @router.get('/getChannelSetting/{channel}')  # report_info
 def getChannelSetting(channel):
@@ -3734,7 +3683,7 @@ def get_energy(channel):
 #     return {"success": True}
 
 @router.get('/getSystemStatus')
-def get_service():
+async def get_service():
     # redis_state.client.select(0)
     setupdict = json.loads(redis_state.client.hget("System", "setup"))
     if setupdict['mode'] == 'device0':
@@ -3771,7 +3720,12 @@ def get_service():
         statusDict[key] = is_service_active(value)
         if not statusDict[key]:
             status = False
-    return {"status": status, "services":statusDict}
+
+    smartData = await check_SmartStatus()
+
+    if smartData["data"]["State"] == 0:
+        status = False
+    return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
 
 
 def get_bucket_by_duration(start_date: str, end_date: str) -> str:

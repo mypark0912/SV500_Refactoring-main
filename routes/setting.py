@@ -10,7 +10,7 @@ from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 from typing import Dict, Any, List
 from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
-from routes.api import parameter_options
+from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading
 import asyncio, time
