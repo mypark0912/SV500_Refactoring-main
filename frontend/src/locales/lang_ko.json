@@ -31,8 +31,8 @@
   "onboardingModal": {
     "steps": {
       "restartCheck": "재시작 확인",
-      "mainTest": "메인 테스트",
-      "subTest": "서브 테스트",
+      "mainTest": "채널 1 테스트",
+      "subTest": "채널 2 테스트",
       "complete": "완료"
     },
     "restartCheck": {
@@ -45,14 +45,14 @@
       "noRestart": "재시작이 필요하지 않습니다. \"다음\"을 클릭하여 진행하세요."
     },
     "mainTest": {
-      "title": "메인 테스트 결과",
-      "loading": "메인 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
-      "report": "메인 장치 리포트"
+      "title": "채널1 테스트 결과",
+      "loading": "채널1 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
+      "report": "채널1 장치 리포트"
     },
     "subTest": {
-      "title": "서브 테스트 결과",
-      "loading": "서브 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
-      "report": "서브 장치 리포트"
+      "title": "채널2 테스트 결과",
+      "loading": "채널2 테스트 결과를 불러오는 중...이 과정은 20초 이상 소요될 수 있습니다.",
+      "report": "채널2 장치 리포트"
     },
     "test": {
       "assetType": "자산 유형",
@@ -82,8 +82,8 @@
       "title": "설정 완료",
       "summary": "설정 요약",
       "restartCheck": "재시작 확인",
-      "mainTest": "메인 테스트",
-      "subTest": "서브 테스트",
+      "mainTest": "채널 1 테스트",
+      "subTest": "채널 2 테스트",
       "overallStatus": "전체 상태",
       "completed": "완료됨",
       "passed": "통과",
@@ -99,8 +99,8 @@
     "messages": {
       "restartingFirmware": "펌웨어 재시작 중...",
       "restartFailed": "펌웨어 재시작 실패",
-      "checkingMainCommission": "메인 커미셔닝 확인 중...",
-      "checkingSubCommission": "서브 커미셔닝 확인 중...",
+      "checkingMainCommission": "채널1 커미셔닝 확인 중...",
+      "checkingSubCommission": "채널2 커미셔닝 확인 중...",
       "acquiringWaveform": "파형 파일 획득 중...",
       "triggerFailed": "트리거 실패",
       "waitingRestart": "펌웨어 재시작 대기 중",

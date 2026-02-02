@@ -31,8 +31,8 @@
   "onboardingModal": {
     "steps": {
       "restartCheck": "Restart Check",
-      "mainTest": "Main Test",
-      "subTest": "Sub Test",
+      "mainTest": "Ch1 Test",
+      "subTest": "Ch2 Test",
       "complete": "Complete"
     },
     "restartCheck": {
@@ -45,14 +45,14 @@
       "noRestart": "No restart required. Click \"Next\" to proceed."
     },
     "mainTest": {
-      "title": "Main Test Result",
-      "loading": "Loading main test result...This process may take 20 seconds or longer.",
-      "report": "Main Device Report"
+      "title": "Ch1 Test Result",
+      "loading": "Loading ch1 test result...This process may take 20 seconds or longer.",
+      "report": "Ch1 Device Report"
     },
     "subTest": {
-      "title": "Sub Test Result",
-      "loading": "Loading sub test result...This process may take 20 seconds or longer.",
-      "report": "Sub Device Report"
+      "title": "Ch2 Test Result",
+      "loading": "Loading ch2 test result...This process may take 20 seconds or longer.",
+      "report": "Ch2 Device Report"
     },
     "test": {
       "assetType": "Asset Type",
@@ -82,8 +82,8 @@
       "title": "Complete Setup",
       "summary": "Configuration Summary",
       "restartCheck": "Restart Check",
-      "mainTest": "Main Test",
-      "subTest": "Sub Test",
+      "mainTest": "Ch1 Test",
+      "subTest": "Ch2 Test",
       "overallStatus": "Overall Status",
       "completed": "COMPLETED",
       "passed": "PASSED",
