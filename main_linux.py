@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 import uvicorn, time, sys
 from utils.RedisBinary import BinaryDataProcessor, register_waveform_config
 from utils.MaxMinDataHandler import MaxMinDataHandler
-from routes.api import executor
+from routes.setting import init_setup
 
 sys.dont_write_bytecode = True
 
@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
     # if os.path.exists(file_path):
     #     init_influx()
     init_redis()
-
+    init_setup()
     # await http_state.initialize()
 
     if redis_state.binary_client:

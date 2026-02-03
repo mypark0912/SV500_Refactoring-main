@@ -58,6 +58,57 @@ def read_mac_plain(filepath):
         # 구분자 없이 반환
         return mac_bytes.hex().lower()  # 더 간단한 방법
 
+def init_setup():
+    """부팅 시 Redis에 기본 setup만 넣어주기 (mqClient용)"""
+    if not redis_state.client:
+        logging.error("Redis 미연결, init_mqtt_setup 스킵")
+        return
+
+    if redis_state.client.hexists("System", "setup"):
+        logging.info("System setup 이미 존재함, 스킵")
+        return
+
+    file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+    default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+
+    try:
+        if not os.path.exists(file_path):
+            if os.path.exists(default_file_path):
+                shutil.copy(default_file_path, file_path)
+            else:
+                logging.error("setup.json, default.json 둘 다 없음")
+                return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+        except json.JSONDecodeError:
+            shutil.copy(default_file_path, file_path)
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+
+        # MAC 주소 업데이트
+        deviceMac = get_mac_address()
+        if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
+            setting["General"]["deviceInfo"]["mac_address"] = deviceMac
+
+        if os_spec.os != 'Windows':
+            mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+            if os.path.exists(mac_file_path):
+                ser = read_mac_plain(mac_file_path)
+                if ser != '':
+                    setting["General"]["deviceInfo"]["serial_number"] = ser
+
+        save_redis_setup(setting)
+        redis_state.client.hset("System", "setup", json.dumps(setting))
+        if "mode" in setting:
+            redis_state.client.hset("System", "mode", setting["mode"])
+
+        logging.info("부팅 시 기본 setup Redis 저장 완료")
+
+    except Exception as e:
+        logging.error(f"init_mqtt_setup 실패: {e}")
+
 @router.get('/getMac')
 def getMacAddr():
     devMac = get_mac_address()
@@ -1123,12 +1174,11 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
 
 @router.get('/checkSettingFile') #check setup.json
 async def check_setupfile(request: Request):
-    """
-    우선순위:
-    1. setup.json 파일 확인 (최우선)
-    2. 파일이 없으면 default.json으로 생성
-    3. Redis에 없으면 파일에서 로드하여 Redis에 저장
-    """
+    # 우선순위:
+    # 1. setup.json 파일 확인 (최우선)
+    # 2. 파일이 없으면 default.json으로 생성
+    # 3. Redis에 없으면 파일에서 로드하여 Redis에 저장
+    # """
     file_path = os.path.join(SETTING_FOLDER, 'setup.json')
     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
     deviceMac = get_mac_address()
@@ -1138,15 +1188,10 @@ async def check_setupfile(request: Request):
         if os.path.exists(mac_file_path):
             ser = read_mac_plain(mac_file_path)
 
-            # if ser != deviceMac:
-            #     deviceMac = ser
-
     if redis_state.client is None:
         return {"result": "0", "error": "Redis not available"}
 
     try:
-        # redis_state.client.select(0)
-
         # 1. 먼저 setup.json 파일 확인 및 생성
         if not os.path.exists(file_path):
             # setup.json이 없으면 default.json으로 생성
@@ -2659,7 +2704,7 @@ def save_frpc_service(frpc_binary_path, frpc_config_path, service_path="/etc/sys
         # 서비스 파일 내용 생성
         service_content = f'''[Unit]
 Description=FRP Client
-After=network-online.target
+After=network-online.target 
 Wants=network-online.target
 
 [Service]
@@ -2822,7 +2867,8 @@ async def restartdevice(timeout: int = 30):
     try:
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
-
+        if is_service_active("mqClient"):
+            sysService("restart","MQTTClient")
         # save = 0 될 때까지 대기
         stable_flag = False
         for _ in range(timeout * 10):  # 0.1초 간격
@@ -3235,7 +3281,7 @@ def check_mqtt():
                         time.sleep(0.5) #execService("enable", "mqClient",0.5)
                         ret["start"] = sysService("start","MQTTClient")
                 else:
-                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_publisher","/home/root/mqClient")
+                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_publisher","/home/root/mqClient", after="network.target redis.service webserver.service", restart="on-failure")
                     ret["reload"] = execService('daemon-reload')  # 이거 추가!
                     time.sleep(0.3)
                     ret["enable"] = sysService("enable","MQTTClient")
