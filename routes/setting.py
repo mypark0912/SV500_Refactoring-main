@@ -306,75 +306,6 @@ async def create_influx_bucket(bucket_name:str, retention:int):
         return {"success": False, "message": str(e)}
 
 
-# async def create_downsampling_buckets():
-#     """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d)"""
-#     try:
-#         config = aesState.getInflux()
-#         token = aesState.decrypt(config["cipher"])
-#
-#         buckets = [
-#             {
-#                 "name": "ntek_1h",
-#                 "retention_seconds": 90 * 24 * 60 * 60,  # 90일
-#                 "description": "1시간 평균 데이터"
-#             },
-#             {
-#                 "name": "ntek_1d",
-#                 "retention_seconds": 730 * 24 * 60 * 60,  # 2년
-#                 "description": "1일 평균/합계 데이터"
-#             }
-#         ]
-#
-#         results = []
-#
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             for bucket_info in buckets:
-#                 bucket_data = {
-#                     "orgID": config['org_id'],
-#                     "name": bucket_info["name"],
-#                     "retentionRules": []
-#                 }
-#
-#                 # retention 설정 (0이면 무제한)
-#                 if bucket_info["retention_seconds"] > 0:
-#                     bucket_data["retentionRules"] = [
-#                         {
-#                             "type": "expire",
-#                             "everySeconds": bucket_info["retention_seconds"]
-#                         }
-#                     ]
-#
-#                 response = await client.post(
-#                     f"http://127.0.0.1:8086/api/v2/buckets",
-#                     headers={"Authorization": f"Token {token}"},
-#                     json=bucket_data
-#                 )
-#
-#                 if response.status_code == 201:
-#                     retention_info = f"{bucket_info['retention_seconds'] // (24 * 60 * 60)} days" if bucket_info[
-#                                                                                                          'retention_seconds'] > 0 else "infinite"
-#                     logging.info(f"✅ Bucket '{bucket_info['name']}' created (retention: {retention_info})")
-#                     results.append({"bucket": bucket_info["name"], "success": True})
-#                 elif response.status_code == 422:
-#                     # 이미 존재하는 버킷
-#                     logging.info(f"ℹ️ Bucket '{bucket_info['name']}' already exists")
-#                     results.append({"bucket": bucket_info["name"], "success": True, "existed": True})
-#                 else:
-#                     error_msg = response.json().get("message", response.text)
-#                     logging.error(f"❌ Bucket '{bucket_info['name']}' creation failed: {error_msg}")
-#                     results.append({"bucket": bucket_info["name"], "success": False, "error": error_msg})
-#
-#         success_count = sum(1 for r in results if r["success"])
-#         return {
-#             "success": success_count > 0,
-#             "message": f"Created/verified {success_count}/{len(buckets)} buckets",
-#             "results": results
-#         }
-#
-#     except Exception as e:
-#         logging.error(f"❌ Downsampling buckets creation error: {e}")
-#         return {"success": False, "message": str(e)}
-#
 async def create_downsampling_buckets():
     """다운샘플링용 버킷 생성 (ntek_1h, ntek_1d, ntek30)"""
     try:
@@ -2325,53 +2256,6 @@ async def reg_Asset(channel, assetName, assetType):
     else:
         return {"success":False}
 
-# def make_applyStatus():
-#     equipStatus = {
-#         "restartFW": False,
-#         "commisionAsset": {
-#             "Main": {
-#                 "Name": '',
-#                 "result": False,
-#             },
-#             "Sub": {
-#                 "Name": '',
-#                 "result": False,
-#             }
-#         }
-#     }
-#     return equipStatus
-
-# def set_applyStatus(channel, assetName):
-#     if redis_state.client.hexists("Equipment", "applyStatus"):
-#         applyst = redis_state.client.hget("Equipment", "applyStatus")
-#         equipStatus = json.loads(applyst)
-#     else:
-#         equipStatus = make_applyStatus()
-#     if equipStatus["commisionAsset"].get(channel):
-#         if equipStatus["commisionAsset"][channel]["Name"] == '':
-#             equipStatus["commisionAsset"][channel]["Name"] = assetName
-#             equipStatus["commisionAsset"][channel]["result"] = False
-#         elif equipStatus["commisionAsset"][channel]["Name"] == assetName:
-#             equipStatus["commisionAsset"][channel]["result"] = False
-#     else:
-#         equipStatus["commisionAsset"][channel] = {
-#             "Name": assetName,
-#             "result": False
-#         }
-#     redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
-#
-#
-# def remove_applyStatus(channel, assetName):
-#     if redis_state.client.hexists("Equipment", "applyStatus"):
-#         applyst = redis_state.client.hget("Equipment", "applyStatus")
-#         equipStatus = json.loads(applyst)
-#
-#         if equipStatus["commisionAsset"].get(channel):
-#             if equipStatus["commisionAsset"][channel]["Name"] == assetName:
-#                 equipStatus["commisionAsset"][channel]["Name"] = ''
-#                 equipStatus["commisionAsset"][channel]["result"] = False
-#
-#         redis_state.client.hset("Equipment", "applyStatus", json.dumps(equipStatus))
 
 def save_alarm_configs_to_redis(setting_dict: dict):
     dash_alarms_data = {}
@@ -2606,112 +2490,6 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
     return result
 
 
-# @router.post('/savefileNew')  # ⭐ {channel} 제거
-# async def saveSetting2(request: Request):
-#     deviceMac = get_mac_address()
-#     ser = ''
-#
-#     if os_spec.os != 'Windows':
-#         mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
-#         if os.path.exists(mac_file_path):
-#             ser = read_mac_plain(mac_file_path)
-#
-#     # redis_state.client.select(0)
-#     if redis_state.client.hexists("Service", "setting"):
-#         checkflag = redis_state.client.hget("Service", "setting")
-#         if int(checkflag) == 1:
-#             return {"status": "0", "error": "Modbus setting is activated"}
-#
-#     try:
-#         FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
-#
-#         # 클라이언트로부터 전체 설정 데이터 받기
-#         data = await request.json()
-#         if not data:
-#             return {"status": "0", "error": "No data provided"}
-#
-#         # 기본 구조 확인
-#         if "General" not in data:
-#             data["General"] = {}
-#         if "channel" not in data or not isinstance(data["channel"], list):
-#             data["channel"] = []
-#
-#         # MAC 주소 및 시리얼 번호 업데이트
-#         if "deviceInfo" not in data["General"]:
-#             data["General"]["deviceInfo"] = {}
-#
-#         data["General"]["deviceInfo"]["mac_address"] = deviceMac
-#
-#         if ser != '':
-#             data["General"]["deviceInfo"]["serial_number"] = ser
-#         else:
-#             data["General"]["deviceInfo"]["serial_number"] = deviceMac
-#
-#         # 각 채널의 ctInfo.inorminal 값 처리
-#
-#         for ch in data["channel"]:
-#             if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
-#                 ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
-#
-#
-#         prevSetup = redis_state.client.hget("System", "setup")
-#         prevData = json.loads(prevSetup)
-#
-#         # 파일에 저장
-#         with open(FILE_PATH, "w", encoding="utf-8") as f:
-#             json.dump(data, f, indent=4)
-#
-#         # 알람 설정 초기화
-#         if len(data["channel"]) > 0:
-#             for ch in data["channel"]:
-#                 if "channel" in ch and "alarm" in ch:
-#                     initialize_alarm_configs(ch["channel"], ch["alarm"])
-#
-#         # Redis에 저장
-#         # saveCurrent = saveStartCurrent(data)
-#         procData = save_StartCurrent_DemandInterval_SamplingPeriod(data)
-#         dash_alarms_data = save_alarm_configs_to_redis(data)
-#         result = compare_channel_changes(prevData, data)
-#         restartAsset = False
-#         restartdevice = False
-#         if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"]["status"] == 'config_changed':
-#             restartdevice = True
-#         elif result["Main"]["status"] == 'asset_only' or result["Sub"]["status"] == 'asset_only':
-#             restartAsset = True
-#
-#         checkResult = check_ApplyStatus()
-#
-#         if not restartAsset:
-#             commision_asset = checkResult.get("commisionAsset", {})
-#
-#             for channel in ["Main", "Sub"]:
-#                 channel_data = commision_asset.get(channel, {})
-#                 if channel_data.get("Name") and not channel_data.get("result", False):
-#                     restartAsset = True
-#                     break  # 하나라도 해당되면 바로 종료
-#
-#         if not restartdevice:
-#             if not checkResult["restartFW"]:
-#                 restartdevice = True
-#
-#         redis_state.client.hset("System", "setup", json.dumps(data))
-#         redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
-#         redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
-#         redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
-#
-#         if dash_alarms_data:
-#             redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
-#         else:
-#             redis_state.client.hdel("Equipment", "DashAlarms")
-#
-#         return {"status": "1", "data": data, "restartDevice": restartdevice, "restartAsset": restartAsset}
-#
-#     except Exception as e:
-#         print("Error:", e)
-#         import traceback
-#         traceback.print_exc()
-#         return {"status": "0", "error": str(e)}
-
 @router.post('/savefileNew')  # ⭐ {channel} 제거
 async def saveSetting2(request: Request):
     deviceMac = get_mac_address()
@@ -2784,14 +2562,7 @@ def apply():
         json.dump(saveData, f, indent=4)
 
     save_redis_setup(saveData)
-    # if len(saveData["channel"]) > 0:
-    #     for ch in saveData["channel"]:
-    #         if "channel" in ch and "alarm" in ch:
-    #             initialize_alarm_configs(ch["channel"], ch["alarm"])
 
-    # procData = save_StartCurrent_DemandInterval_SamplingPeriod(saveData)
-    # dash_alarms_data = save_alarm_configs_to_redis(saveData)
-    # ai_data = save_ai_configs_to_redis(saveData)
     result = compare_channel_changes(prevData, saveData)
 
     restartdevice = False
@@ -2801,22 +2572,6 @@ def apply():
         restartdevice = True
 
     redis_state.client.hset("System", "setup", json.dumps(saveData))
-
-
-    # redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
-    # redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
-    # redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
-    # redis_state.client.hset("Equipment", "ChannelData", json.dumps(procData["Channel"]))
-    #
-    # if dash_alarms_data:
-    #     redis_state.client.hset("Equipment", "DashAlarms", json.dumps(dash_alarms_data))
-    # else:
-    #     redis_state.client.hdel("Equipment", "DashAlarms")
-    #
-    # if ai_data:
-    #     redis_state.client.hset("Equipment", "AIConfig", json.dumps(ai_data))
-    # else:
-    #     redis_state.client.hdel("Equipment", "AIConfig")
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
@@ -3035,13 +2790,7 @@ async def restartasset():
             async with httpx.AsyncClient(timeout=setting_timeout) as client:
                 response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
                 data = response.json()
-                # if response.status_code in [400, 401, 500]:
-                #     flag = await checkLoginAPI(request)
-                #     if not flag:
-                #         return {"success": False, "error": "Restful API Login Failed"}
-                #     else:
-                #         response = await client.get(f"http://{os_spec.restip}:5000/api/isServiceRestartNeeded")
-                #         data = response.json()
+
             if data['ServiceRestartRequired']:
                 return {"status": "1", "success": True}
             else:
@@ -3052,19 +2801,6 @@ async def restartasset():
         print("Error:", e)
         return {"status": "0", "success": False, "error": "Redis Error"}
 
-# @router.get('/restartdevice')
-# def restartdevice():
-#     redis_state.client.select(0)
-#     if redis_state.client.hexists("Service", "setting"):
-#         checkflag = redis_state.client.hget("Service", "setting")
-#         if int(checkflag) == 1:
-#             return {"success": False, "error": "Modbus setting is activated"}
-#     try:
-#         redis_state.client.hset("Service", "save", 1)
-#         redis_state.client.hset("Service", "restart", 1)
-#         return {"success": True}
-#     except Exception as e:
-#         return {"success": False, "error": "Redis Error"}
 
 @router.get('/restartdevice')
 async def restartdevice(timeout: int = 30):
@@ -3171,14 +2907,7 @@ async def get_assetconfig(asset, request:Request):
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getNameplate?name="+asset)
         data = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getNameplate?name={asset}")
-    #             data = response.json()
-    #     superlist = set_structNameplate(data)
+
     if len(data) > 0:
         return {"success": True, "data": data}
     else:
@@ -3209,36 +2938,6 @@ async def check_assetconfig(asset: str, request: Request):
         logging.error(str(e))
         return {"status": "0","success": False, "error": str(e)}
 
-# @router.post("/checkAssetConfig/{asset}")
-# async def check_assetconfig(asset:str, request:Request):
-#     data = await request.json()
-#     if not data:
-#         return {"status": "0", "error": "No data provided"}
-#     try:
-#         # response = await  http_state.client.post(f"/checkNameplate?name={asset}", json=data)
-#         # result = response.json()
-#         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-#             response = await client.post(f"http://{os_spec.restip}:5000/api/checkNameplate?name={asset}", json=data)
-#             result = response.json()
-#         #     if 'status' in result and result['status'] == 500:
-#         #         flag = await checkLoginAPI(request)
-#         #         if not flag:
-#         #             return {"success": False, "error": "Restful API Login Failed"}
-#         #         else:
-#         #             response = await client.post(f"http://{os_spec.restip}:5000/api/setNameplate?name={asset}", json=data)
-#         #             result = response.json()
-#     except Exception as e:
-#         print("Error:", e)
-#         return {"status": "0", "error": str(e)}
-#
-#     if 'resetRequired' in result:
-#         return {"success":True, "result":result['resetRequired']}
-#     else:
-#         return {"success": False, "error": "No Data"}
-    # if len(result) > 0:
-    #     return {"success":True, "result":result['resetRequired']}
-    # else:
-    #     return {"success": False, "error": "No Data"}
 
 @router.post("/setAssetConfig/{asset}")
 async def set_assetconfig(asset:str, request:Request):
@@ -3251,13 +2950,7 @@ async def set_assetconfig(asset:str, request:Request):
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setNameplate?name={asset}", json=data)
             result = response.json()
-        #     if 'status' in result and result['status'] == 500:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.post(f"http://{os_spec.restip}:5000/api/setNameplate?name={asset}", json=data)
-        #             result = response.json()
+
     except Exception as e:
         print("Error:", e)
         return {"status": "0", "error": [str(e)]}
@@ -3272,18 +2965,11 @@ async def set_assetconfig(asset:str, request:Request):
 
 @router.get("/getAssetParams/{asset}")  #Setting Vue : get Asset info
 async def get_assetParams(asset, request:Request):
-    # response = await  http_state.client.get(f"/getParameters?name="+asset)
-    # data = response.json()
+
     async with httpx.AsyncClient(timeout=setting_timeout) as client:
         response = await client.get(f"http://{os_spec.restip}:5000/api/getParameters?name="+asset)
         data = response.json()
-    #     if response.status_code in [400, 401, 500]:
-    #         flag = await checkLoginAPI(request)
-    #         if not flag:
-    #             return {"success": False, "error": "Restful API Login Failed"}
-    #         else:
-    #             response = await client.get(f"http://{os_spec.restip}:5000/api/getParameters?name={asset}")
-    #             data = response.json()
+
     if len(data) > 0:
         return {"success": True, "data": data }
     else:
@@ -3295,18 +2981,11 @@ async def set_assetParams(asset:str, request:Request):
     if not data:
         return {"status":"1","success": False, "error": ["No data provided"]}
     try:
-        # response = await  http_state.client.post(f"/setParameters?name={asset}", json=data)
-        # result = response.json()
+
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://{os_spec.restip}:5000/api/setParameters?name={asset}", json=data)
             result = response.json()
-        #     if 'status' in result and result['status'] == 500:
-        #         flag = await checkLoginAPI(request)
-        #         if not flag:
-        #             return {"success": False, "error": "Restful API Login Failed"}
-        #         else:
-        #             response = await client.post(f"http://{os_spec.restip}:5000/api/setParameters?name={asset}", json=data)
-        #             result = response.json()
+
     except Exception as e:
         print("Error:", e)
         return {"status":"0", "success": False, "error": [str(e)]}
@@ -3339,16 +3018,6 @@ async def test_asset(channel, asset):
         result["Channel"] = data["Channel"]
         result["Commissions"] = data["Commissions"]
 
-        # if redis_state.client.hexists("Equipment","applyStatus"):
-        #     applyst = redis_state.client.hget("Equipment","applyStatus")
-        #     applycontext = json.loads(applyst)
-        #     if applycontext["commisionAsset"][channel]["Name"] == asset:
-        #         if len(result["Commissions"]) > 0:
-        #             applycontext["commisionAsset"][channel]["result"] = False
-        #         else:
-        #             applycontext["commisionAsset"][channel]["result"] = True
-
-        #     redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
 
         if len(data) > 0:
             return {"success": True, "data": result}
@@ -3361,17 +3030,7 @@ async def test_asset(channel, asset):
 @router.get("/testwave/{asset}")
 async def test_wave(asset, request:Request):
     try:
-        # HTTP 클라이언트 상태 확인
-        # if http_state.error:
-        #     return {"success": False, "error": http_state.error}
-        #
-        # # 클라이언트 가져오기
-        # client = http_state.client
-        # if not client:
-        #     return {"success": False, "error": "HTTP client not initialized"}
-        #
-        # response = await http_state.client.get(f"/getWaveform?name={asset}")
-        # data = response.json()
+
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.get(f"http://{os_spec.restip}:5000/api/getWaveform?name={asset}")
             data = response.json()
@@ -3391,19 +3050,7 @@ async def test_wave(asset, request:Request):
         print(f"Exception: {type(e).__name__}: {e}")
         return {"success": False, "error": "No Data"}
 
-# def service_exists(name):
-#     """서비스 파일이 존재하는지 확인"""
-#     try:
-#         result = subprocess.run(
-#             ['systemctl', 'list-unit-files', name],
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             text=True,
-#             timeout=2
-#         )
-#         return name in result.stdout
-#     except:
-#         return False
+
 
 def is_service_enabled(name):
     """서비스 부팅 시 자동 시작 여부 확인 (enabled/disabled)"""
@@ -3427,13 +3074,7 @@ async def check_SmartStatus():
             data = response.json()
 
             return {"success": True, "data":data}
-        # data = {
-        #     "State": "Stop",
-        #     "Message": "Smart Systems RestAPI Service is successfully initialized and running",
-        #     "ServiceStartTime": "2025-11-13T03:22:48.2809239+09:00",
-        #     "RunTimeErrors": ["Corrupted smart systems files.","No asset defined in smart system."]
-        # }
-        # return {"success": True, "data": data}
+
     except Exception as e:
         return {"success": False, "msg":str(e)}
 
@@ -3615,13 +3256,6 @@ def check_mqtt():
                     sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
                     sysService("start", "frpc")
                     sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
-
-                    # sysService("enable", "frpc")
-                    # save_frpc_restart_monitor()
-                    # sysService("enable","frpc-monitor")
-                    # execService('daemon-reload')
-                    # sysService("start","frpc")
-                    # sysService("start","frpc-monitor")
 
             else:
                 redis_state.client.hset("System", "MQTT", 0)

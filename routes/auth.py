@@ -246,80 +246,7 @@ def getVersionSave(Opmode):
                            smart_version='1.0.0')
     save_post(install, 0, 0)
 
-# @router.post('/joinAdmin')
-# def join_admin(data: SignupAdmin):
-#     devType = data.devType
-#     name = data.username
-#     account = data.account
-#     password = data.password
-#     email = data.email
-#     adminPass = data.adminPass
-#     lang = data.lang
-#
-#     if devType < 3:
-#         mode = f"device{devType}"
-#         if devType == 0:
-#             diag = 'No'
-#         else:
-#             diag = 'Yes'
-#     else:
-#         diag = 'No'
-#         mode = "server"
-#
-#     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
-#     shutil.copy(default_file_path, SETUP_PATH)
-#     with open(SETUP_PATH, "r", encoding="utf-8") as f:
-#         setting = json.load(f)
-#         setting["mode"] = mode
-#         setting["lang"] = lang
-#         setting["General"]["deviceInfo"]["mac_address"] = get_mac_address()
-#         setting["General"]["deviceInfo"]["serial_number"] = get_mac_address()
-#
-#     with open(SETUP_PATH, "w", encoding="utf-8") as ef:
-#         json.dump(setting, ef, indent=2)
-#
-#     redis_state.client.execute_command("SELECT", 0)
-#     redis_state.client.hset("System", "setup", json.dumps(setting))
-#     redis_state.client.hset("System", "mode", mode)
-#     redis_state.client.hset("Service", "save", 1)
-#     redis_state.client.hset("Service", "restart", 1)
-#     redis_state.client.select(1)
-#     redis_state.client.flushdb()
-#     if aesState.checkAdmin(adminPass):
-#         try:
-#             conn = get_db_connection()
-#             conn.row_factory = sqlite3.Row
-#             cursor = conn.cursor()
-#             hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-#             cursor.execute(
-#                 "INSERT INTO `user` (account,username, password, email, role, api) VALUES (?, ?, ?, ?, ?, ?)",
-#                 (account, name, hashed_password, email, '3', diag)
-#             )
-#             conn.commit()
-#             conn.close()
-#             client_admin = SignupUser(
-#                 username='client_admin',
-#                 account='client_admin',
-#                 password='1234',
-#                 email='ntek@nteksys.com',
-#                 role='2'
-#             )
-#             client_guest = SignupUser(
-#                 username='client_guest',
-#                 account='client_guest',
-#                 password='1234',
-#                 email='ntek@nteksys.com',
-#                 role='0'
-#             )
-#             join(client_admin)
-#             join(client_guest)
-#             getVersionSave(mode)
-#             return {"passOK": "1"}
-#         except Exception as e:
-#             print(str(e))
-#             return {"passOK": "0", "msg": str(e)}
-#     else:
-#         return {"passOK": "0", "msg": 'Admin Password is Wrong'}
+
 
 @router.post('/joinAdmin')
 def join_admin(data: SignupAdmin):
@@ -436,25 +363,7 @@ def check_session(request: Request):
     else:
         return {"loggedIn": True, "username": user, "userRole":userRole, "mode":devMode}
 
-# @router.get('/fetchlangset')
-# def get_langset(request: Request):
-#     lang = 'en'
-#     langs = request.session.get("lang", "eng")
-#     if langs :
-#         if langs == 'kor':
-#             lang = 'ko'
-#         else:
-#             lang = 'en'
-#     else:
-#         lang = 'en'
-#     file_path = LANG_FILES.get(lang, LANG_FILES["en"])  # 기본값 영어
-#     readpath = os.path.join(SETTING_FOLDER, file_path)
-#     try:
-#         with open(readpath, "r", encoding="utf-8") as f:
-#             lang_data = json.load(f)
-#         return {"success": True, "data": lang_data}
-#     except FileNotFoundError:
-#         return {"success": False, "error": "Language file not found"}
+
 
 @router.get('/getUser')
 def getUser(request: Request):
@@ -570,8 +479,7 @@ async def getAPIUsers():
 async def changeLevelAPI(username, role):
     async with httpx.AsyncClient() as client:
         try:
-            # response = await client.get(
-            #     f"http://{os_spec.restip}:5000/api/changeUserLevel?username={username}&level={role}")
+
             data = {
                 "username":username,
                 "level":int(role)
@@ -590,8 +498,7 @@ async def changeLevelAPI(username, role):
 async def deleteAPI(account):
     async with httpx.AsyncClient() as client:
         try:
-            # response = await client.get(
-            #     f"http://{os_spec.restip}:5000/api/deleteUser?username={account}")
+
             data = {
                 "username":account
             }
@@ -633,8 +540,7 @@ async def joinAPI(account, newPass, role):
                 "password":newPass,
                 "level":int(role)
             }
-            # response = await client.get(
-            #     f"http://{os_spec.restip}:5000/api/createUser?username={account}&password={newPass}&level={role}")
+
             response = await client.post(f"http://{os_spec.restip}:5000/api/createUser", json=data)
             datas = response.json()
             if response.status_code in [400, 401, 500]:
@@ -659,8 +565,7 @@ async def loginAPI(account, newPass, role):
                     "password": newPass,
                     "level": role
                 }
-            # response = await client.get(
-            #     f"http://{os_spec.restip}:5000/api/login?username={account}&password={newPass}")
+
             response = await client.post(f"http://{os_spec.restip}:5000/api/login", json=data)
             datas = response.json()
             if response.status_code in [400, 401, 500]:
@@ -921,10 +826,7 @@ def join(data: SignupUser):
     password = data.password
     email = data.email
     role = data.role
-    # if check_useDiagnosis() and role == '0':
-    #     apis = 'Yes'
-    # else:
-    #     apis = 'No'
+
     if not account:
         return {"passOK": "0"}
     try:
@@ -955,112 +857,6 @@ def get_mode_from_redis(redis_client) -> str:
     return ""
 
 
-# @router.post('/checkLogins')
-# async def checkLogins(request: Request, data: Login):
-#     # data = request.json()
-#     name = data.account
-#     password = data.password
-#     lang = data.lang
-#     flag = 0  # flag = 0 초기, 1 성공,2 API 로그인 실패, 3 API 로그인 계정 없음, 4 비번 오류, 5 계정 오류,
-#     if not name:
-#         return {"passOK": str(flag)}
-#     try:
-#         conn = get_db_connection()
-#         conn.row_factory = sqlite3.Row
-#         cursor = conn.cursor()
-#         table_name = "user"
-#         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
-#         exists = cursor.fetchone()
-#         role = ''
-#         if exists:
-#             cursor.execute("SELECT * FROM user where account=?", (name,))
-#             rows = cursor.fetchone()
-#             if rows:
-#                 if bcrypt.checkpw(password.encode("utf-8"), rows["password"].encode("utf-8")):
-#                     request.session["user"] = name
-#                     request.session["lang"] = lang
-#                     request.session["userRole"] = rows["role"]
-#                     request.session["api"] = rows["api"]
-#                     role = rows["role"]
-#
-#                     flag = 1
-#                     if role == '3':
-#                         mode = get_mode_from_redis(redis_state.client)
-#                         if mode and mode != 'device0':
-#                             if rows["api"] == 'Yes':
-#                                 ssflag = is_service_active('smartsystemsservice')
-#                                 sraflag = is_service_active('smartsystemsrestapiservice')
-#                                 if ssflag and sraflag:
-#                                     tmpResult = await loginAPI(name, password, role)
-#                                     if tmpResult == 1:
-#                                         flag = 1
-#                                     else:
-#                                         flag = 2
-#                                 else:
-#                                     flag = 1
-#                             else:
-#                                 flag = 1
-#                         else:
-#                             flag = 1
-#                     elif check_useDiagnosis():
-#                         if role == '2':
-#                             if rows["api"] == 'Yes':
-#                                 ssflag = is_service_active('smartsystemsservice')
-#                                 sraflag = is_service_active('smartsystemsrestapiservice')
-#                                 if ssflag and sraflag:
-#                                     tmpResult = await loginAPI(name, password, role)
-#                                     if tmpResult == 1:
-#                                         flag = 1
-#                                     else:
-#                                         flag = 2
-#                                 else:
-#                                     flag = 1
-#                             else:
-#                                 flag = 1
-#                         else:
-#                             if role == '0':
-#                                 apiName = 'operator'
-#                             else:
-#                                 apiName = 'guest'
-#                             cursor.execute("SELECT * FROM user WHERE account=?", (apiName,))
-#                             rows = cursor.fetchone()
-#                             if rows:
-#                                 loginEnable = True
-#                             else:
-#                                 loginEnable = False
-#                             if loginEnable:
-#                                 tmpResult = await loginAPI(apiName, apiName, role)
-#                                 if tmpResult == 1:
-#                                     flag = 1
-#                                 else:
-#                                     flag = 2
-#                             else:
-#                                 flag = 3
-#                 else:
-#                     flag = 4
-#             else:
-#                 print(f"❌ 로그인 실패")
-#                 flag = 5
-#         else:
-#             flag = 0
-#         conn.commit()
-#         conn.close()
-#         redis_state.client.execute_command("SELECT", 0)
-#         if redis_state.client.hexists("System", "mode"):
-#             mode = redis_state.client.hget("System", "mode")
-#             request.session["devMode"] = mode
-#         else:
-#             mode = 'device0'
-#             request.session["devMode"] = 'device0'
-#         if flag == 1:
-#             # print(f"🔐 로그인 성공: {name}, 역할: {role}, 언어: {lang}")
-#             return {"passOK": str(flag), "data": {"lang": lang, "userRole": role}, "mode": mode}
-#         else:
-#             # print(f"❌ 로그인 실패: {name}, 역할: {role}, 언어: {lang}")
-#             return {"passOK": str(flag)}
-#     except Exception as e:
-#         print(str(e))
-#         return {"passOK": "0"}
 
 @router.get('/checkAccount')
 async def checkAccount():
