@@ -1234,11 +1234,12 @@ async def check_setupfile(request: Request):
                 setting["General"]["deviceInfo"]["mac_address"] = deviceMac
 
             save_redis_setup(setting)
-            await save_influx_status()
             redis_state.client.hset("System", "setup", json.dumps(setting))
             if "mode" in setting:
                 redis_state.client.hset("System", "mode", setting["mode"])
 
+        if not redis_state.client.exists("influx_init"):
+            await save_influx_status()
         for idx, ch in enumerate(setting["channel"]):
             setting["channel"][idx]["ctInfo"]["inorminal"] = float(setting["channel"][idx]["ctInfo"]["inorminal"])/1000
 
