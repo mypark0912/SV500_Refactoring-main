@@ -125,8 +125,10 @@ export default {
           // 정상일 때도 services 데이터 전달하려면
           sysData.value = response.data.services || {};
         }
-        if (channelSetting.value.MainDiagnosis || channelSetting.value.SubDiagnosis)
-          smartData.value = response.data.smartStatus;
+        if (channelSetting.value.MainDiagnosis || channelSetting.value.SubDiagnosis){
+          if(response.data.smartStatus)
+            smartData.value = response.data.smartStatus;
+        }
         //onsole.log(smartData.value);
       }catch (error) {
         console.log("데이터 가져오기 실패:", error);

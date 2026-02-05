@@ -3722,10 +3722,13 @@ async def get_service():
             status = False
 
     smartData = await check_SmartStatus()
+    if smartData["success"]:
+        if smartData["data"]["State"] == 0:
+            status = False
 
-    if smartData["data"]["State"] == 0:
-        status = False
-    return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
+        return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
+    else:
+        return {"status": status, "services": statusDict, "smartStatus": None}
 
 
 def get_bucket_by_duration(start_date: str, end_date: str) -> str:
