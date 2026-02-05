@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Request
 from states.global_state import redis_state
 import os, csv, sqlite3, shutil, logging
 import ujson as json
@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists, saveLog
 from datetime import datetime
 router = APIRouter()
 
@@ -272,25 +272,23 @@ async def get_device_time():
         return {"success": False }
 
 @router.post("/calibrate/setSystemTime")
-async def set_system_time(request: TimeSetRequest):
+async def set_system_time(data: TimeSetRequest, request: Request):
+    saveLog("Set Time", request)
     try:
-        tz_cmd = f"timedatectl set-timezone {request.timezone}"
+        tz_cmd = f"timedatectl set-timezone {data.timezone}"
         subprocess.run(tz_cmd, shell=True, check=True)
-        date_cmd = f"date -s '{request.datetime_str}'"
+        date_cmd = f"date -s '{data.datetime_str}'"
         result = subprocess.run(date_cmd, shell=True, check=True, capture_output=True, text=True)
-        print(f"System time set to: {request.datetime_str}")
+        print(f"System time set to: {data.datetime_str}")
 
-        # 3. 하드웨어 시계 동기화
         subprocess.run("hwclock -w", shell=True, check=True)
-
-        # 4. 현재 시간 확인
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
 
         return {
             "success": True,
             "message": "System time updated",
             "current_time": current.stdout.strip(),
-            "timezone": request.timezone
+            "timezone": data.timezone
         }
     except Exception as e:
         logging.error(f"Error: {e}")
