@@ -2628,7 +2628,20 @@ def apply(request: Request):
 
     redis_state.client.hset("System", "setup", json.dumps(saveData))
 
+    apply_sntp_setting(saveData["General"]["sntpInfo"])
+
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
+
+@router.get("applyNetwork")
+def apply_network():
+    if redis_state.client.hexists("System", "setup"):
+        setup = redis_state.client.hget("System", "setup")
+        setupData = json.loads(setup)
+        netData = setupData["General"]["tcpip"]
+        ret = apply_network_setting(netData)
+        return {"result": True, "ip": ret["ip"]}
+    else:
+        return {"result":False}
 
 async def save_influx_status():
     ret = await check_influxStatus()
@@ -2636,6 +2649,106 @@ async def save_influx_status():
         redis_state.client.hset("influx_init", "status", "COMPLETE")
     else:
         redis_state.client.hset("influx_init", "status", "IDLE")
+
+def mask_to_cidr(mask: str) -> int:
+    return sum(bin(int(x)).count("1") for x in mask.split("."))
+
+
+def get_current_ip(IFACE):
+    import re
+    result = subprocess.run(
+        ["ip", "addr", "show", IFACE],
+        capture_output=True, text=True
+    )
+    match = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/(\d+)", result.stdout)
+    if match:
+        return {"ip": match.group(1), "cidr": match.group(2)}
+    return None
+
+def apply_network_setting(net_data):
+    NETWORK_FILE = "/etc/systemd/network/10-static-end1.network"
+    IFACE = "end1"
+    dhcp = int(net_data.get("dhcp", 0))
+    ip = net_data["ip_address"]
+    mask = net_data["subnet_mask"]
+    gateway = net_data["gateway"]
+    cidr = mask_to_cidr(mask)
+
+    DHCP_TEMPLATE = """[Match]
+Name=end1
+[Network]
+DHCP=ipv4
+[DHCP]
+UseDNS=true
+UseRoutes=true
+"""
+
+    STATIC_TEMPLATE = """[Match]
+Name=end1
+[Network]
+#DHCP=ipv4
+Address={ip}/{cidr}
+Gateway={gw}
+[DHCP]
+UseDNS=true
+UseRoutes=true
+"""
+
+    shutil.copy(NETWORK_FILE, f"{NETWORK_FILE}.bak_{datetime.now():%Y%m%d_%H%M%S}")
+
+    if dhcp == 1:
+        with open(NETWORK_FILE, "w") as f:
+            f.write(DHCP_TEMPLATE)
+        os.system("systemctl restart systemd-networkd")
+
+        try:
+            result = subprocess.run(
+                ["udhcpc", "-i", IFACE, "-t", "3", "-T", "5", "-n", "-q"],
+                capture_output=True, timeout=20
+            )
+            current = get_current_ip(IFACE)
+            if result.returncode == 0 and current:
+                return {"result": True, "mode": "dhcp", "ip": current["ip"]}
+        except subprocess.TimeoutExpired:
+            pass
+
+        # DHCP 실패 → static fallback
+        content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
+        with open(NETWORK_FILE, "w") as f:
+            f.write(content)
+        os.system("systemctl restart systemd-networkd")
+        return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
+
+    else:
+        content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
+        with open(NETWORK_FILE, "w") as f:
+            f.write(content)
+        os.system("systemctl restart systemd-networkd")
+        return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
+
+def apply_sntp_setting(sntp_data):
+    TIMESYNCD_CONF = "/etc/systemd/timesyncd.conf"
+    tz = sntp_data.get("timezone", "")
+    ntp_server = sntp_data.get("host", "")
+
+    if tz:
+        subprocess.run(["timedatectl", "set-timezone", tz])
+
+    ntpflag = False
+    if ntp_server:
+        with open(TIMESYNCD_CONF, "w") as f:
+            f.write("[Time]\n")
+            f.write(f"NTP={ntp_server}\n")
+        ntpflag = True
+
+    if ntpflag:
+        subprocess.run(["systemctl", "enable", "systemd-timesyncd"])
+        subprocess.run(["systemctl", "restart", "systemd-timesyncd"])
+    else:
+        subprocess.run(["systemctl", "stop", "systemd-timesyncd"])
+        subprocess.run(["systemctl", "disable", "systemd-timesyncd"])
+
+    return {"result": True}
 
 def save_redis_setup(setupData):
     if len(setupData["channel"]) > 0:
