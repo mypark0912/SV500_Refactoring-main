@@ -132,7 +132,8 @@ async def check_influxStatus():
         return ret
 
 @router.get('/initDB')
-async def initInflux(background_tasks: BackgroundTasks):
+async def initInflux(request: Request,background_tasks: BackgroundTasks):
+    saveLog("InfluxDB Init", request)
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     data = {
         "username": "admin",
@@ -536,7 +537,8 @@ async def setup_downsampling():
 
 
 @router.get('/setup-downsampling')
-async def setup_downsampling_endpoint():
+async def setup_downsampling_endpoint(request: Request):    
+    saveLog("InfluxDB Update", request)
     """
     다운샘플링 버킷과 Task를 생성합니다.
     (업데이트 후 1회 실행용)
@@ -2590,7 +2592,14 @@ async def saveSetting2(request: Request):
 
 
 @router.get('/apply')
-def apply():
+def apply(request: Request):
+    try:
+        saveLog("Apply Settings", request)
+        print(f"[DEBUG] saveLog completed successfully")
+    except Exception as e:
+        print(f"[ERROR] saveLog failed: {e}")
+        import traceback
+        traceback.print_exc()
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
