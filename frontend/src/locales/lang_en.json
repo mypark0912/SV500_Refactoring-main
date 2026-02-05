@@ -752,6 +752,7 @@
       "useWaveFormFTP": "Waveform FTP",
       "useSNTP": "SNTP",
       "info": "Waveform and event files will be stored locally",
+      "dhcp": "IP address will be assigned automatically by DHCP server.",
       "devInformation": {
         "title": "Device Information",
         "name": "Name",

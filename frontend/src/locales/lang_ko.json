@@ -749,6 +749,7 @@
       "useWaveFormFTP": "파형 FTP",
       "useSNTP": "SNTP",
       "info": "파형 파일과 이벤트 파일이 현재 장치에 저장됩니다",
+      "dhcp": "IP 주소는 DHCP 서버에 의해 자동으로 할당됩니다.",
       "devInformation": {
         "title": "장치 정보",
         "name": "이름",

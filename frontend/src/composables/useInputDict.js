@@ -29,6 +29,7 @@ export function useInputDict() {
       subnet_mask: "",
       gateway: "",
       dnsserver: "",
+      dhcp: 0,
     },
     modbus: {
       isserial: false,

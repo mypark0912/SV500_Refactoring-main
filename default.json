@@ -18,7 +18,8 @@
       "ip_address": "192.168.2.10",
       "subnet_mask": "255.255.255.0",
       "gateway": "0.0.0.0",
-      "dnsserver": "8.8.8.8"
+      "dnsserver": "8.8.8.8",
+      "dhcp": 0
     },
     "modbus": {
       "isserial": false,
