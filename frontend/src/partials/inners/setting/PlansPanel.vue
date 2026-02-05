@@ -312,57 +312,91 @@
               </header>
             </div>
             <div class="px-4 py-4 space-y-3">
-              <div>
-                <label class="block text-sm font-medium mb-2" for="ip-address">
-                  {{ t("config.plansPanel.communication.ip")
-                  }}<!--IP Address-->
-                </label>
-                <input
-                  v-model="inputDict.tcpip.ip_address"
-                  class="form-input w-full"
-                  type="text"
-                  maxlength="20"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-2" for="subnet-mask">
-                  {{ t("config.plansPanel.communication.sm")
-                  }}<!--Subnet Mask-->
-                </label>
-                <input
-                  v-model="inputDict.tcpip.subnet_mask"
-                  class="form-input w-full"
-                  type="text"
-                  maxlength="20"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-2" for="gateway">
-                  {{ t("config.plansPanel.communication.gw")
-                  }}<!--Gateway--></label
+              <!-- DHCP Toggle -->
+              <div class="flex items-center justify-between">
+                <label class="block text-sm font-medium">DHCP</label>
+                <div
+                  class="relative inline-flex items-center cursor-pointer"
+                  @click="inputDict.tcpip.dhcp = inputDict.tcpip.dhcp === 1 ? 0 : 1"
                 >
-                <input
-                  v-model="inputDict.tcpip.gateway"
-                  class="form-input w-full"
-                  type="text"
-                  maxlength="20"
-                />
+                  <div
+                    class="w-11 h-6 rounded-full transition-colors duration-200"
+                    :class="inputDict.tcpip.dhcp === 1 ? 'bg-sky-500' : 'bg-gray-300 dark:bg-gray-600'"
+                  ></div>
+                  <div
+                    class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                    :class="inputDict.tcpip.dhcp === 1 ? 'translate-x-5' : 'translate-x-0'"
+                  ></div>
+                </div>
               </div>
 
-              <div>
-                <label class="block text-sm font-medium mb-2" for="dns-server">
-                  {{ t("config.plansPanel.communication.dns")
-                  }}<!--DNS Server--></label
-                >
-                <input
-                  v-model="inputDict.tcpip.dnsserver"
-                  class="form-input w-full"
-                  type="text"
-                  maxlength="20"
-                />
+              <!-- DHCP 활성화 시 안내 메시지 -->
+              <div
+                v-if="inputDict.tcpip.dhcp === 1"
+                class="flex items-center px-3 py-2 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-700/50 rounded-md"
+              >
+                <svg class="w-4 h-4 text-sky-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-xs text-sky-700 dark:text-sky-300">
+                  {{ t("config.plansPanel.dhcp") }}
+                </span>
               </div>
+
+              <!-- Static IP 설정 (DHCP 비활성화 시에만 표시) -->
+              <template v-if="inputDict.tcpip.dhcp !== 1">
+                <div>
+                  <label class="block text-sm font-medium mb-2" for="ip-address">
+                    {{ t("config.plansPanel.communication.ip")
+                    }}<!--IP Address-->
+                  </label>
+                  <input
+                    v-model="inputDict.tcpip.ip_address"
+                    class="form-input w-full"
+                    type="text"
+                    maxlength="20"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-2" for="subnet-mask">
+                    {{ t("config.plansPanel.communication.sm")
+                    }}<!--Subnet Mask-->
+                  </label>
+                  <input
+                    v-model="inputDict.tcpip.subnet_mask"
+                    class="form-input w-full"
+                    type="text"
+                    maxlength="20"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-2" for="gateway">
+                    {{ t("config.plansPanel.communication.gw")
+                    }}<!--Gateway--></label
+                  >
+                  <input
+                    v-model="inputDict.tcpip.gateway"
+                    class="form-input w-full"
+                    type="text"
+                    maxlength="20"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-2" for="dns-server">
+                    {{ t("config.plansPanel.communication.dns")
+                    }}<!--DNS Server--></label
+                  >
+                  <input
+                    v-model="inputDict.tcpip.dnsserver"
+                    class="form-input w-full"
+                    type="text"
+                    maxlength="20"
+                  />
+                </div>
+              </template>
             </div>
           </div>
 
@@ -942,6 +976,11 @@ export default {
     // 채널 데이터를 setup 시점에 inject
     const channel_main = inject("channel_main");
     const channel_sub = inject("channel_sub");
+
+    // DHCP 기본값 초기화
+    if (inputDict.value.tcpip && inputDict.value.tcpip.dhcp === undefined) {
+      inputDict.value.tcpip.dhcp = 0;
+    }
 
     // FTP 토글 핸들러 추가
     const handleFTPToggle = (event) => {
