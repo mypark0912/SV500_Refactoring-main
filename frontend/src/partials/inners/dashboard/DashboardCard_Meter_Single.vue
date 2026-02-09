@@ -26,7 +26,7 @@
           <!-- 총 전류 -->
           <div class="summary-item">
             <div class="summary-content">
-              <div class="summary-value">{{ realtimeData?.Itot || 0 }} <span class="summary-unit">A</span></div>
+              <div class="summary-value">{{ realtimeData?.I4 || 0 }} <span class="summary-unit">A</span></div>
               <div class="summary-label">{{ t('dashboard.meter.totcurrent') }}</div>
             </div>
           </div>
