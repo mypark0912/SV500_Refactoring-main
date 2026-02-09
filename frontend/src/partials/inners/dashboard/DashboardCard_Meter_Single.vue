@@ -191,7 +191,7 @@
     @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
     @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
     @apply backdrop-blur-sm;
-    @apply transition-all duration-300 hover:shadow-xl;
+    @apply transition-all duration-300;
   }
   
   /* 헤더 섹션 */
@@ -231,7 +231,7 @@
     @apply flex items-center gap-3;
     @apply p-3 rounded-lg bg-white dark:bg-gray-800/50;
     @apply border border-gray-200 dark:border-gray-600;
-    @apply transition-all duration-200 hover:shadow-sm;
+    @apply transition-all duration-200;
   }
   
   .summary-icon {
@@ -295,7 +295,7 @@
   .detail-card {
     @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3;
     @apply border border-gray-200 dark:border-gray-600;
-    @apply transition-all duration-200 hover:shadow-sm;
+    @apply transition-all duration-200;
   }
   
   .detail-header {
@@ -371,7 +371,7 @@
     @apply bg-white dark:bg-gray-800 rounded-lg p-3;
     @apply border border-gray-200 dark:border-gray-600;
     @apply flex items-center gap-3;
-    @apply transition-all duration-200 hover:shadow-sm;
+    @apply transition-all duration-200;
   }
   
   .energy-icon {
@@ -428,12 +428,7 @@
     }
   }
   
-  /* 호버 효과 */
-  .summary-item:hover,
-  .detail-card:hover,
-  .energy-card:hover {
-    @apply transform scale-105;
-  }
+
   
   .pf-fill {
     position: relative;

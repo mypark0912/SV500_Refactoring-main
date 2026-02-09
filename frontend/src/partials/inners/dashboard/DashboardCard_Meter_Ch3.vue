@@ -296,7 +296,7 @@ export default {
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply backdrop-blur-sm;
-  @apply transition-all duration-300 hover:shadow-xl;
+  @apply transition-all duration-300;
 }
 
 /* 헤더 섹션 */
@@ -335,7 +335,7 @@ export default {
 .summary-metric {
   @apply p-4 rounded-lg bg-white dark:bg-gray-800;
   @apply border border-gray-200 dark:border-gray-700;
-  @apply shadow-sm hover:shadow-md transition-all duration-200;
+  @apply shadow-sm transition-all duration-200;
   @apply flex flex-col items-center text-center;
   @apply min-h-[80px];
 }
@@ -368,7 +368,7 @@ export default {
 .detail-card {
   @apply bg-white dark:bg-gray-800 rounded-lg;
   @apply border border-gray-200 dark:border-gray-700;
-  @apply shadow-sm hover:shadow-md transition-all duration-200;
+  @apply shadow-sm transition-all duration-200;
   @apply overflow-hidden;
   @apply min-h-[160px];
 }
