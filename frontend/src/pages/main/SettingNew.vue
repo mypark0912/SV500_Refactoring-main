@@ -591,6 +591,7 @@
           isRestartDone.value = true;
         }
         await serviceMQTT();
+        await networkApply();
       };
 
       const serviceRestart = async (cmd, item) => {
@@ -603,6 +604,17 @@
           }
         } catch (error) {
           return { result: false, msg: error };
+        }
+      };
+
+      const networkApply = async () => {
+        try {
+          const response = await axios.get(`/setting/applyNetwork`);
+          if (response.data.result) {
+            console.log(response.data.ip);
+          } 
+        } catch (error) {
+          console.log(error);
         }
       };
 

@@ -2632,7 +2632,7 @@ def apply(request: Request):
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
-@router.get("applyNetwork")
+@router.get("/applyNetwork")
 def apply_network():
     if redis_state.client.hexists("System", "setup"):
         setup = redis_state.client.hget("System", "setup")
@@ -3414,18 +3414,23 @@ def check_mqtt():
                 if int(setup["General"]["MQTT"]["Type"]) == 1:
                     subdomain = setup["General"]["MQTT"]["url"]
                     name_prefix = setup["General"]["MQTT"]["externalport"]
-                    save_frpc_config(subdomain, name_prefix)
-                    save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
-                                      "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
+                    if not service_exists("frpc"):
+                        save_frpc_config(subdomain, name_prefix)
+                        save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
+                                          "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
 
-                    execService('daemon-reload')
-                    save_frpc_restart_monitor()
-                    execService('daemon-reload')
-                    sysService("enable", "frpc")
-                    sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
-                    sysService("start", "frpc")
-                    sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
-
+                        execService('daemon-reload')
+                        save_frpc_restart_monitor()
+                        execService('daemon-reload')
+                        sysService("enable", "frpc")
+                        sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+                        sysService("start", "frpc")
+                        sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+                    else:
+                        if is_service_active("frpc"):
+                            sysService("restart", "frpc")
+                        else:
+                            sysService("start", "frpc")
             else:
                 redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
