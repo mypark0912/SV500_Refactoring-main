@@ -3725,7 +3725,8 @@ async def get_service():
     if smartData["success"]:
         if smartData["data"]["State"] == 0:
             status = False
-
+        if len(smartData["data"]["RunTimeErrors"]) > 0:
+            status = False
         return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
     else:
         return {"status": status, "services": statusDict, "smartStatus": None}
