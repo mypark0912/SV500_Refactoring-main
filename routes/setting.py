@@ -3239,7 +3239,7 @@ def is_service_enabled(name):
 async def check_SmartStatus():
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
-            response = await client.get(f"http://{os_spec.restip}:5000/api/status")
+            response = await client.get(f"http://{os_spec.restip}:5001/api/status")
             data = response.json()
 
             return {"success": True, "data":data}
