@@ -34,9 +34,10 @@ const reportData = reactive({
 })
 
 const baseChart = {
+  labels: [],  // ✅ 빈 labels 추가 (없으면 에러날 수 있음)
   datasets: [
     {
-      label: 'Series 0',
+      label: 'Swell Upper Limit',
       data: [
         { x: 0.0001, y: 500 },
         { x: 0.001, y: 200 },
@@ -55,9 +56,9 @@ const baseChart = {
       tension: 0,
     },
     {
-      label: 'Series 1',
+      label: 'Sag Lower Limit',
       data: [
-        { x: 0.02, y: 0 },
+        { x: 0.02, y: 0.5 },   // ✅ 0 → 0.5 (로그스케일에서 0 불가)
         { x: 0.02, y: 70 },
         { x: 0.5, y: 70 },
         { x: 0.5, y: 80 },

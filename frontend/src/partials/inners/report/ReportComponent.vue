@@ -337,28 +337,39 @@ export default {
       } catch (error) { tbdata.value = {} }
     }
 
-    const fetchITICData = async () => {
-      try {
-        const response = await axios.get(`/api/getITIC/${props.channel}`)
-        if (response.data.success) {
-          const data = response.data.data, ratedV = parseInt(response.data.ratedV)
-          iticDataList.value = []
-          for (let i = 0; i < data.length; i++) {
-            let phaselist = parseMask(data[i]["mask"]), levellist = [data[i]["level_l1"], data[i]["level_l2"], data[i]["level_l3"]]
-            let Yvalue = (getfinValue(phaselist, levellist, data[i].event_type) * 100) / ratedV
-            let Xvalue = data[i]["duration"] / 1000.0
-            iticDataList.value.push({
-              label: 'Selected Point', type: 'scatter', data: [{ x: Xvalue, y: Yvalue.toFixed(2) }],
-              backgroundColor: data[i].event_type == 'SWELL' ? 'green' : 'orange', pointRadius: 3, pointHoverRadius: 8, showLine: false
-            })
-          }
-        }
-      } catch (error) { console.log("ITIC 데이터 가져오기 실패:", error) }
+const fetchITICData = async () => {
+  try {
+    const response = await axios.get(`/api/getITIC/${props.channel}`)
+    if (response.data.success) {
+      const data = response.data.data, ratedV = parseInt(response.data.ratedV)
+      iticDataList.value = []
+      for (let i = 0; i < data.length; i++) {
+        let phaselist = parseMask(data[i]["mask"]), levellist = [data[i]["level_l1"], data[i]["level_l2"], data[i]["level_l3"]]
+        let Yvalue = (getfinValue(phaselist, levellist, data[i].event_type) * 100) / ratedV
+        let Xvalue = data[i]["duration"] / 1000.0
+        
+        // ✅ 숫자로 변환, 로그스케일에서 0 방지
+        let yNum = parseFloat(Yvalue.toFixed(2))
+        if (yNum <= 0) yNum = 0.5  // 로그스케일에서 0 대신 0.5%
+        if (Xvalue <= 0) Xvalue = 0.0001  // X도 0 방지
+        
+        iticDataList.value.push({
+          label: data[i].event_type == 'SWELL' ? 'Swell Event' : 'Sag Event',
+          type: 'scatter',
+          data: [{ x: Xvalue, y: yNum }],  // ✅ 숫자 타입 보장
+          backgroundColor: data[i].event_type == 'SWELL' ? 'green' : 'orange',
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          showLine: false
+        })
+      }
     }
+  } catch (error) { console.log("ITIC 데이터 가져오기 실패:", error) }
+}
 
     const linechartData = computed(() => {
       const base = JSON.parse(JSON.stringify(baseChart))
-      iticDataList.value.forEach(item => base.datasets.push(item))
+      iticDataList.value.forEach(item => base.datasets.push(item))     
       return base
     })
 
