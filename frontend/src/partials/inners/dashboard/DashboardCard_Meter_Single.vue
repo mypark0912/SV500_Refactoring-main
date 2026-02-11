@@ -16,9 +16,15 @@
       <div class="summary-section">
         <div class="summary-grid">
           <!-- 평균 전압 -->
-          <div class="summary-item">
+          <div v-if="realtimeData.DashPT == 0" class="summary-item">
             <div class="summary-content">
               <div class="summary-value">{{ realtimeData?.U4 || 0 }} <span class="summary-unit">V</span></div>
+              <div class="summary-label">{{ t('dashboard.meter.avgvoltage') }}</div>
+            </div>
+          </div>
+          <div v-else class="summary-item">
+            <div class="summary-content">
+              <div class="summary-value">{{ realtimeData?.Upp4 || 0 }} <span class="summary-unit">V</span></div>
               <div class="summary-label">{{ t('dashboard.meter.avgvoltage') }}</div>
             </div>
           </div>
@@ -49,7 +55,7 @@
             <div class="detail-header">
               <h4 class="detail-title">{{ t('dashboard.meter.voltage') }}</h4>
             </div>
-            <div class="detail-values">
+            <div v-if="realtimeData.DashPT == 0" class="detail-values">
               <div class="value-row">
                 <span class="phase-label">L1</span>
                 <div class="phase-value" :class="getVoltageClass(realtimeData?.U1)">
@@ -68,6 +74,29 @@
                 <span class="phase-label">L3</span>
                 <div class="phase-value" :class="getVoltageClass(realtimeData?.U3)">
                   {{ realtimeData?.U3 || 0 }} 
+                  <span class="value-unit">V</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="detail-values">
+              <div class="value-row">
+                <span class="phase-label">L1</span>
+                <div class="phase-value" :class="getVoltageClass(realtimeData?.Upp1)">
+                  {{ realtimeData?.Upp1 || 0 }} 
+                  <span class="value-unit">V</span>
+                </div>
+              </div>
+              <div class="value-row">
+                <span class="phase-label">L2</span>
+                <div class="phase-value" :class="getVoltageClass(realtimeData?.Upp2)">
+                  {{ realtimeData?.Upp2 || 0 }} 
+                  <span class="value-unit">V</span>
+                </div>
+              </div>
+              <div class="value-row">
+                <span class="phase-label">L3</span>
+                <div class="phase-value" :class="getVoltageClass(realtimeData?.Upp3)">
+                  {{ realtimeData?.Upp3 || 0 }} 
                   <span class="value-unit">V</span>
                 </div>
               </div>
