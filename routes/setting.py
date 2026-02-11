@@ -3427,10 +3427,16 @@ def check_mqtt():
                         sysService("start", "frpc")
                         sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
                     else:
-                        if is_service_active("frpc"):
-                            sysService("restart", "frpc")
+                        if is_service_enabled("frpc"):
+                            if is_service_active("frpc"):
+                                sysService("restart", "frpc")
+                            else:
+                                sysService("start", "frpc")
                         else:
+                            sysService("enable", "frpc")
+                            sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
                             sysService("start", "frpc")
+                            sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
             else:
                 redis_state.client.hset("System", "MQTT", 0)
                 if service_exists("mqClient"):
@@ -3438,6 +3444,14 @@ def check_mqtt():
                         if is_service_active("mqClient"):
                             ret["stop"] = sysService("stop","MQTTClient")
                         ret["disable"] = sysService("disable","MQTTClient")
+                if service_exists("frpc"):
+                    if is_service_enabled("frpc"):
+                        if is_service_active("frpc"):
+                            sysService("stop","frpc")
+                        if is_service_active("frpc-restart-monitor"):
+                            sysService("stop", "frpc-restart-monitor")
+                        sysService("disable","frpc")
+                        sysService("disable", "frpc-restart-monitor")
     return {"passOK":1, "result": ret}
 
 
@@ -3641,16 +3655,29 @@ async def check_sysStatus():
 
         if redis_state.client.hexists("System","MQTT"):
             if int(redis_state.client.hget("System","MQTT")) == 1 and service_exists("mqClient.service"):
-                servicedict = {
-                    'smartsystem': 'smartsystemsservice',
-                    'smartapi': 'smartsystemsrestapiservice',
-                    'redis': 'redis',
-                    'influxdb': 'influxdb',
-                    'core': 'core',
-                    'webserver': 'webserver',
-                    'a35': 'sv500A35',
-                    'mqClient':'mqClient'
-                }
+                if service_exists("frpc.service"):
+                    servicedict = {
+                        'smartsystem': 'smartsystemsservice',
+                        'smartapi': 'smartsystemsrestapiservice',
+                        'redis': 'redis',
+                        'influxdb': 'influxdb',
+                        'core': 'core',
+                        'webserver': 'webserver',
+                        'a35': 'sv500A35',
+                        'mqClient':'mqClient',
+                        'frpc':'frpc'
+                    }
+                else:
+                    servicedict = {
+                        'smartsystem': 'smartsystemsservice',
+                        'smartapi': 'smartsystemsrestapiservice',
+                        'redis': 'redis',
+                        'influxdb': 'influxdb',
+                        'core': 'core',
+                        'webserver': 'webserver',
+                        'a35': 'sv500A35',
+                        'mqClient': 'mqClient'
+                    }
             else:
                 servicedict = {
                     'smartsystem' : 'smartsystemsservice',

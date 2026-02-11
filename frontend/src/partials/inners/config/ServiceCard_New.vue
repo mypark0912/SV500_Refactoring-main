@@ -150,7 +150,7 @@ export default {
     const serviceOp = async (cmd) => {
       try {
         const response = await axios.get(`/setting/SysService/${cmd}/${item.value}`);
-        
+        //console.log(response.data);
         if (response.data.success) {
           message.value = `${item.value} ${cmd}!`;
         } else {
