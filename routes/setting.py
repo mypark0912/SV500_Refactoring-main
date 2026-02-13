@@ -2696,17 +2696,32 @@ UseDNS=true
 UseRoutes=true
 """
 
-    # shutil.copy(NETWORK_FILE, f"{NETWORK_FILE}.bak_{datetime.now():%Y%m%d_%H%M%S}")
+    # ⭐ 새 설정 생성
+    if dhcp == 1:
+        new_content = DHCP_TEMPLATE
+    else:
+        new_content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
+
+    # ⭐ 기존 설정과 비교 — 변경 없으면 스킵
+    try:
+        with open(NETWORK_FILE, "r") as f:
+            current_content = f.read()
+        if current_content.strip() == new_content.strip():
+            current = get_current_ip(IFACE)
+            return {"result": True, "mode": "unchanged", "ip": current["ip"] if current else ip}
+    except FileNotFoundError:
+        pass
+
+    # ⭐ 변경 있을 때만 아래 실행
+    with open(NETWORK_FILE, "w") as f:
+        f.write(new_content)
+
+    # ⭐ 연쇄 재시작 방지
+    os.system("systemctl stop frpc-restart-monitor")
+    time.sleep(0.5)
+    os.system("systemctl restart systemd-networkd")
 
     if dhcp == 1:
-        with open(NETWORK_FILE, "w") as f:
-            f.write(DHCP_TEMPLATE)
-
-        os.system("systemctl stop frpc-restart-monitor")
-        time.sleep(0.5)
-        os.system("systemctl restart systemd-networkd")
-
-        # systemd-networkd가 DHCP 완료할 때까지 대기
         for i in range(10):
             time.sleep(2)
             current = get_current_ip(IFACE)
@@ -2723,18 +2738,8 @@ UseRoutes=true
         os.system("systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
     else:
-        content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
-        with open(NETWORK_FILE, "w") as f:
-            f.write(content)
-
-        os.system("systemctl stop frpc-restart-monitor")
-        time.sleep(0.5)
-        os.system("systemctl restart systemd-networkd")
-        time.sleep(3)  # 네트워크 안정화 대기
+        time.sleep(3)
         os.system("systemctl start frpc-restart-monitor")
-
-        # os.system("systemctl restart systemd-networkd")
-
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
 
 def apply_sntp_setting(sntp_data):
@@ -2742,22 +2747,48 @@ def apply_sntp_setting(sntp_data):
     tz = sntp_data.get("timezone", "")
     ntp_server = sntp_data.get("host", "")
 
+    # ⭐ 타임존 변경 비교 — 변경 있을 때만 적용
     if tz:
-        subprocess.run(["timedatectl", "set-timezone", tz])
+        try:
+            result = subprocess.run(["timedatectl", "show", "--property=Timezone"],
+                                    capture_output=True, text=True)
+            current_tz = result.stdout.strip().replace("Timezone=", "")
+            if current_tz != tz:
+                subprocess.run(["timedatectl", "set-timezone", tz])
+        except Exception:
+            subprocess.run(["timedatectl", "set-timezone", tz])
 
+    # ⭐ NTP 설정 변경 비교
     ntpflag = False
     if ntp_server:
-        with open(TIMESYNCD_CONF, "w") as f:
-            f.write("[Time]\n")
-            f.write(f"NTP={ntp_server}\n")
-        ntpflag = True
+        new_content = f"[Time]\nNTP={ntp_server}\n"
+        try:
+            with open(TIMESYNCD_CONF, "r") as f:
+                current_content = f.read()
+            if current_content.strip() != new_content.strip():
+                with open(TIMESYNCD_CONF, "w") as f:
+                    f.write(new_content)
+                ntpflag = True
+            # ⭐ 내용 같으면 ntpflag = False → 서비스 재시작 안 함
+        except FileNotFoundError:
+            with open(TIMESYNCD_CONF, "w") as f:
+                f.write(new_content)
+            ntpflag = True
+    else:
+        # ⭐ NTP 서버 없으면 비활성화 (이미 비활성화면 스킵)
+        try:
+            result = subprocess.run(["systemctl", "is-enabled", "systemd-timesyncd"],
+                                    capture_output=True, text=True)
+            if result.stdout.strip() == "enabled":
+                subprocess.run(["systemctl", "stop", "systemd-timesyncd"])
+                subprocess.run(["systemctl", "disable", "systemd-timesyncd"])
+        except Exception:
+            pass
+        return {"result": True}
 
     if ntpflag:
         subprocess.run(["systemctl", "enable", "systemd-timesyncd"])
         subprocess.run(["systemctl", "restart", "systemd-timesyncd"])
-    else:
-        subprocess.run(["systemctl", "stop", "systemd-timesyncd"])
-        subprocess.run(["systemctl", "disable", "systemd-timesyncd"])
 
     return {"result": True}
 
