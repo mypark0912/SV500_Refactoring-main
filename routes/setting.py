@@ -2633,15 +2633,17 @@ def apply(request: Request):
     return {"status": "1", "data": saveData, "restartDevice": restartdevice}
 
 @router.get("/applyNetwork")
-def apply_network():
+def apply_network(background_tasks: BackgroundTasks):
     if redis_state.client.hexists("System", "setup"):
         setup = redis_state.client.hget("System", "setup")
         setupData = json.loads(setup)
         netData = setupData["General"]["tcpip"]
-        ret = apply_network_setting(netData)
-        return {"result": True, "ip": ret["ip"]}
+
+        # 현재 IP 먼저 읽어서 응답
+        background_tasks.add_task(apply_network_setting, netData)
+        return {"result": True, "message": "적용 중..."}
     else:
-        return {"result":False}
+        return {"result": False}
 
 async def save_influx_status():
     ret = await check_influxStatus()
@@ -2694,36 +2696,45 @@ UseDNS=true
 UseRoutes=true
 """
 
-    shutil.copy(NETWORK_FILE, f"{NETWORK_FILE}.bak_{datetime.now():%Y%m%d_%H%M%S}")
+    # shutil.copy(NETWORK_FILE, f"{NETWORK_FILE}.bak_{datetime.now():%Y%m%d_%H%M%S}")
 
     if dhcp == 1:
         with open(NETWORK_FILE, "w") as f:
             f.write(DHCP_TEMPLATE)
+
+        os.system("systemctl stop frpc-restart-monitor")
+        time.sleep(0.5)
         os.system("systemctl restart systemd-networkd")
 
-        try:
-            result = subprocess.run(
-                ["udhcpc", "-i", IFACE, "-t", "3", "-T", "5", "-n", "-q"],
-                capture_output=True, timeout=20
-            )
+        # systemd-networkd가 DHCP 완료할 때까지 대기
+        for i in range(10):
+            time.sleep(2)
             current = get_current_ip(IFACE)
-            if result.returncode == 0 and current:
+            if current:
+                os.system("systemctl start frpc-restart-monitor")
                 return {"result": True, "mode": "dhcp", "ip": current["ip"]}
-        except subprocess.TimeoutExpired:
-            pass
 
         # DHCP 실패 → static fallback
         content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
         with open(NETWORK_FILE, "w") as f:
             f.write(content)
         os.system("systemctl restart systemd-networkd")
+        time.sleep(3)
+        os.system("systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
-
     else:
         content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
         with open(NETWORK_FILE, "w") as f:
             f.write(content)
+
+        os.system("systemctl stop frpc-restart-monitor")
+        time.sleep(0.5)
         os.system("systemctl restart systemd-networkd")
+        time.sleep(3)  # 네트워크 안정화 대기
+        os.system("systemctl start frpc-restart-monitor")
+
+        # os.system("systemctl restart systemd-networkd")
+
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
 
 def apply_sntp_setting(sntp_data):
@@ -3350,7 +3361,7 @@ def delete_cert(filename: str):
         return {'passOK': 0, 'error': str(e)}
 
 @router.get("/checkMQTT")
-def check_mqtt():
+def check_mqtt(background_tasks: BackgroundTasks):
     if redis_state.client.hexists("System", "setup"):
         setup = json.loads(redis_state.client.hget("System", "setup"))
     else:
@@ -3363,96 +3374,121 @@ def check_mqtt():
         except Exception as e:
             return {"passOK": 0}
 
+    if not setup or "MQTT" not in setup.get("General", {}):
+        return {"passOK": 1, "result": {}}
+
+    background_tasks.add_task(_apply_mqtt_services, setup)
+    return {"passOK": 1, "result": "processing"}
+
+
+def _apply_mqtt_services(setup):
     ret = {}
-    if setup:
-        if "MQTT" in setup["General"]:
-            if int(setup["General"]["MQTT"]["Use"]) == 1:
-                redis_state.client.hset("System","MQTT", 1)
-                if int(setup["General"]["MQTT"]["Type"]) == 0:
-                    file_path = os.path.join(SETTING_FOLDER, 'mqtt.json')
-                    if not os.path.exists(file_path):
-                        jsonData = {
-                            "host": setup["General"]["MQTT"]["host"],
-                            "port": int(setup["General"]["MQTT"]["port"]),
-                            "device_id": setup["General"]["MQTT"]["device_id"],
-                            "username": setup["General"]["MQTT"]["username"],
-                            "password": setup["General"]["MQTT"]["password"]
-                        }
+    try:
+        if int(setup["General"]["MQTT"]["Use"]) == 1:
+            redis_state.client.hset("System", "MQTT", 1)
 
-                    else:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            jsonData = json.load(f)
-
-                        # setup 값으로 덮어쓰기
-                        jsonData["host"] = setup["General"]["MQTT"]["host"]
-                        jsonData["port"] = int(setup["General"]["MQTT"]["port"])
-                        jsonData["device_id"] = setup["General"]["MQTT"]["device_id"]
-                        jsonData["username"] = setup["General"]["MQTT"]["username"]
-                        jsonData["password"] = setup["General"]["MQTT"]["password"]
-
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump(jsonData, f, indent=2, ensure_ascii=False)
-
-                if service_exists("mqClient"):
-                    if is_service_enabled("mqClient"):
-                        if not is_service_active("mqClient"):
-                            ret["start"] = sysService("start","MQTTClient")  #execService("start","mqClient",0.3)
-                        else:
-                            ret["restart"] = sysService("restart","MQTTClient") #execService("restart", "mqClient", 0.1)
-                    else:
-                        ret["enable"] = sysService("enable","MQTTClient")
-                        time.sleep(0.5) #execService("enable", "mqClient",0.5)
-                        ret["start"] = sysService("start","MQTTClient")
+            if int(setup["General"]["MQTT"]["Type"]) == 0:
+                file_path = os.path.join(SETTING_FOLDER, 'mqtt.json')
+                if not os.path.exists(file_path):
+                    jsonData = {
+                        "host": setup["General"]["MQTT"]["host"],
+                        "port": int(setup["General"]["MQTT"]["port"]),
+                        "device_id": setup["General"]["MQTT"]["device_id"],
+                        "username": setup["General"]["MQTT"]["username"],
+                        "password": setup["General"]["MQTT"]["password"]
+                    }
                 else:
-                    ret["service"] = create_service_file("mqClient","MQTT Client","/home/root/mqClient/mqtt_publisher","/home/root/mqClient", after="network.target redis.service webserver.service", restart="on-failure")
-                    ret["reload"] = execService('daemon-reload')  # 이거 추가!
-                    time.sleep(0.3)
-                    ret["enable"] = sysService("enable","MQTTClient")
-                    time.sleep(0.5 )
-                    ret["start"] = sysService("start","MQTTClient") #execService("start", "mqClient",0.3)
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        jsonData = json.load(f)
+                    jsonData["host"] = setup["General"]["MQTT"]["host"]
+                    jsonData["port"] = int(setup["General"]["MQTT"]["port"])
+                    jsonData["device_id"] = setup["General"]["MQTT"]["device_id"]
+                    jsonData["username"] = setup["General"]["MQTT"]["username"]
+                    jsonData["password"] = setup["General"]["MQTT"]["password"]
 
-                if int(setup["General"]["MQTT"]["Type"]) == 1:
-                    subdomain = setup["General"]["MQTT"]["url"]
-                    name_prefix = setup["General"]["MQTT"]["externalport"]
-                    if not service_exists("frpc"):
-                        save_frpc_config(subdomain, name_prefix)
-                        save_frpc_service("/home/root/frp_0.66.0_linux_arm64/frpc",
-                                          "/home/root/frp_0.66.0_linux_arm64/frpc.toml")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(jsonData, f, indent=2, ensure_ascii=False)
 
-                        execService('daemon-reload')
-                        save_frpc_restart_monitor()
-                        execService('daemon-reload')
-                        sysService("enable", "frpc")
-                        sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
-                        sysService("start", "frpc")
-                        sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+            # mqClient 서비스 제어
+            if service_exists("mqClient"):
+                if is_service_enabled("mqClient"):
+                    if not is_service_active("mqClient"):
+                        ret["start"] = sysService("start", "MQTTClient")
                     else:
-                        if is_service_enabled("frpc"):
-                            if is_service_active("frpc"):
-                                sysService("restart", "frpc")
-                            else:
-                                sysService("start", "frpc")
-                        else:
-                            sysService("enable", "frpc")
-                            sysService("enable", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
-                            sysService("start", "frpc")
-                            sysService("start", "frpc-restart-monitor")  # 정확한 서비스 이름 확인
+                        ret["restart"] = sysService("restart", "MQTTClient")
+                else:
+                    ret["enable"] = sysService("enable", "MQTTClient")
+                    time.sleep(0.5)
+                    ret["start"] = sysService("start", "MQTTClient")
             else:
-                redis_state.client.hset("System", "MQTT", 0)
-                if service_exists("mqClient"):
-                    if is_service_enabled("mqClient"):
-                        if is_service_active("mqClient"):
-                            ret["stop"] = sysService("stop","MQTTClient")
-                        ret["disable"] = sysService("disable","MQTTClient")
-                if service_exists("frpc"):
+                ret["service"] = create_service_file(
+                    "mqClient", "MQTT Client",
+                    "/home/root/mqClient/mqtt_publisher",
+                    "/home/root/mqClient",
+                    after="network.target redis.service webserver.service",
+                    restart="on-failure"
+                )
+                ret["reload"] = execService('daemon-reload')
+                time.sleep(0.3)
+                ret["enable"] = sysService("enable", "MQTTClient")
+                time.sleep(0.5)
+                ret["start"] = sysService("start", "MQTTClient")
+
+            # FRP 서비스 제어 (Type == 1)
+            if int(setup["General"]["MQTT"]["Type"]) == 1:
+                subdomain = setup["General"]["MQTT"]["url"]
+                name_prefix = setup["General"]["MQTT"]["externalport"]
+                if not service_exists("frpc.service"):
+                    save_frpc_config(subdomain, name_prefix)
+                    save_frpc_service(
+                        "/home/root/frp_0.66.0_linux_arm64/frpc",
+                        "/home/root/frp_0.66.0_linux_arm64/frpc.toml"
+                    )
+                    execService('daemon-reload')
+                    save_frpc_restart_monitor()
+                    execService('daemon-reload')
+                    sysService("enable", "frpc")
+                    time.sleep(0.5)
+                    sysService("enable", "frpc-restart-monitor")
+                    time.sleep(0.5)
+                    sysService("start", "frpc")
+                    time.sleep(0.5)
+                    sysService("start", "frpc-restart-monitor")
+                else:
                     if is_service_enabled("frpc"):
                         if is_service_active("frpc"):
-                            sysService("stop","frpc")
-                        if is_service_active("frpc-restart-monitor"):
-                            sysService("stop", "frpc-restart-monitor")
-                        sysService("disable","frpc")
-                        sysService("disable", "frpc-restart-monitor")
-    return {"passOK":1, "result": ret}
+                            sysService("restart", "frpc")
+                        else:
+                            sysService("start", "frpc")
+                    else:
+                        sysService("enable", "frpc")
+                        time.sleep(0.5)
+                        sysService("enable", "frpc-restart-monitor")
+                        time.sleep(0.5)
+                        sysService("start", "frpc")
+                        time.sleep(0.5)
+                        sysService("start", "frpc-restart-monitor")
+
+        else:
+            redis_state.client.hset("System", "MQTT", 0)
+            if service_exists("mqClient.service"):
+                if is_service_enabled("mqClient"):
+                    if is_service_active("mqClient"):
+                        ret["stop"] = sysService("stop", "MQTTClient")
+                        time.sleep(0.5)
+                    ret["disable"] = sysService("disable", "MQTTClient")
+            if service_exists("frpc.service"):
+                if is_service_enabled("frpc"):
+                    if is_service_active("frpc"):
+                        sysService("stop", "frpc")
+                    if is_service_active("frpc-restart-monitor"):
+                        sysService("stop", "frpc-restart-monitor")
+                    sysService("disable", "frpc")
+                    time.sleep(0.5)
+                    sysService("disable", "frpc-restart-monitor")
+
+    except Exception as e:
+        logging.error(f"MQTT service apply error: {e}")
 
 
 def save_frpc_restart_monitor(
