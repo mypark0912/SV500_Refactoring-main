@@ -1280,10 +1280,31 @@ export default {
             diagnosis_detail.value[channelKey].assetName = "";
             diagnosis_detail.value[channelKey].tableData = [];
             diagnosis_detail.value[channelKey].paramData = [];
+
+            resetDiagnosisRelatedSettings();
           }
         }
       },
     );
+    //Reset when diagnosis is disabled for this channel
+    watch(
+      () => isCurrentChannelDiagnosisActive.value,
+      (newVal, oldVal) => {
+        if (oldVal && !newVal) {
+          resetDiagnosisRelatedSettings();
+        }
+      }
+    );
+    // Reset Configure Status, DO Alarm, and AI Setup to disabled
+    const resetDiagnosisRelatedSettings = () => {
+      const currentDict = getInputDict();
+      
+      currentDict.confStatus = 0;  // Disable Configure Status
+      currentDict.useDO = 0;       // Disable DO Alarm
+      currentDict.useAI = 0;       // Disable AI Setup
+      
+      console.log(`[${channel.value}] Reset diagnosis-related settings: confStatus, useDO, useAI → 0`);
+    };
     onMounted(async () => {
       await nextTick();
 
