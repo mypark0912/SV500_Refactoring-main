@@ -4454,8 +4454,13 @@ def get_monthlyEnergy(channel: str, year: str = None):
         start_iso = start_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_iso = end_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+        # 로컬 타임존 오프셋을 Flux offset으로 변환 (UTC+9 → -9h → 윈도우가 로컬 월 기준으로 정렬)
+        offset_hours = int(local_utc_offset.total_seconds() / 3600)
+        flux_offset = f"-{offset_hours}h" if offset_hours >= 0 else f"{abs(offset_hours)}h"
+
         print(f"Monthly query range (Local): {start_time_local} to {end_time_local}")
         print(f"Monthly query range (UTC): {start_iso} to {end_iso}")
+        print(f"Flux aggregateWindow offset: {flux_offset}")
 
         # InfluxDB 쿼리: 월별 합계값 계산
         query = f'''
@@ -4464,7 +4469,7 @@ def get_monthlyEnergy(channel: str, year: str = None):
             |> filter(fn: (r) => r["_measurement"] == "energy_consumption")
             |> filter(fn: (r) => r.channel == "{channel}")
             |> filter(fn: (r) => r["_field"] == "kwh_import_consumption")
-            |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false, timeSrc: "_start")
+            |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false, offset: {flux_offset}, timeSrc: "_start")
             |> sort(columns: ["_time"], desc: false)
             |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
         '''
