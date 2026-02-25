@@ -379,14 +379,30 @@ async def create_downsampling_buckets():
 
 
 async def create_downsampling_tasks():
-    """다운샘플링 Task 생성"""
+    """다운샘플링 Task 생성 (로컬 타임존 자동 감지)"""
     try:
         config = aesState.getInflux()
         token = aesState.decrypt(config["cipher"])
-        org_name = "ntek"  # 조직 이름
+        org_name = "ntek"
+
+        # 로컬 타임존 UTC offset 자동 계산
+        from datetime import datetime, timezone
+        local_now = datetime.now().astimezone()
+        utc_offset_hours = int(local_now.utcoffset().total_seconds() / 3600)
+
+        # aggregateWindow offset (UTC 자정을 로컬 자정으로 이동)
+        agg_offset = f"-{utc_offset_hours}h" if utc_offset_hours > 0 else f"{abs(utc_offset_hours)}h"
+
+        # cron 실행 시간 (로컬 자정 = UTC 몇 시?)
+        # UTC+9 → UTC 15시, UTC-5 → UTC 5시
+        cron_hour = (24 - utc_offset_hours) % 24
+
+        logging.info(f"🕐 Local UTC offset: +{utc_offset_hours}h, "
+                     f"agg_offset: {agg_offset}, "
+                     f"cron_hour: {cron_hour} UTC")
 
         tasks = [
-            # Task 1: trend 5분 → 1시간 평균
+            # Task 1: trend 5분 → 1시간 평균 (시간대 영향 없음)
             {
                 "name": "downsample_trend_to_1h",
                 "flux": f'''
@@ -402,52 +418,52 @@ from(bucket: "ntek")
                 "description": "Downsample trend data to 1h average"
             },
 
-            # Task 2: trend 1시간 → 1일 평균
+            # Task 2: trend 1시간 → 1일 평균 (로컬 자정 기준)
             {
                 "name": "downsample_trend_to_1d",
                 "flux": f'''
-option task = {{name: "downsample_trend_to_1d", cron: "10 0 * * *"}}
+option task = {{name: "downsample_trend_to_1d", cron: "10 {cron_hour} * * *"}}
 
 from(bucket: "ntek_1h")
   |> range(start: -1d)
   |> filter(fn: (r) => r["_measurement"] == "trend")
-  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false, offset: {agg_offset})
   |> to(bucket: "ntek_1d", org: "{org_name}")
 ''',
-                "cron": "10 0 * * *",
-                "description": "Downsample trend data to 1d average"
+                "cron": f"10 {cron_hour} * * *",
+                "description": "Downsample trend data to 1d average (local TZ)"
             },
 
-            # Task 3: energy_consumption 1시간 → 1일 합계
+            # Task 3: energy_consumption → 1일 합계 (로컬 자정 기준)
             {
                 "name": "downsample_energy_consumption_to_1d",
                 "flux": f'''
-option task = {{name: "downsample_energy_consumption_to_1d", cron: "15 0 * * *"}}
+option task = {{name: "downsample_energy_consumption_to_1d", cron: "15 {cron_hour} * * *"}}
 
 from(bucket: "ntek")
   |> range(start: -1d)
   |> filter(fn: (r) => r["_measurement"] == "energy_consumption")
-  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false, offset: {agg_offset})
   |> to(bucket: "ntek_1d", org: "{org_name}")
 ''',
-                "cron": "15 0 * * *",
-                "description": "Downsample energy_consumption to 1d sum"
+                "cron": f"15 {cron_hour} * * *",
+                "description": "Downsample energy_consumption to 1d sum (local TZ)"
             },
 
-            # Task 4: energy_cumulative 1시간 → 1일 마지막 값
+            # Task 4: energy_cumulative → 1일 마지막 값 (로컬 자정 기준)
             {
                 "name": "downsample_energy_cumulative_to_1d",
                 "flux": f'''
-option task = {{name: "downsample_energy_cumulative_to_1d", cron: "20 0 * * *"}}
+option task = {{name: "downsample_energy_cumulative_to_1d", cron: "20 {cron_hour} * * *"}}
 
 from(bucket: "ntek")
   |> range(start: -1d)
   |> filter(fn: (r) => r["_measurement"] == "energy_cumulative")
-  |> aggregateWindow(every: 1d, fn: last, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: last, createEmpty: false, offset: {agg_offset})
   |> to(bucket: "ntek_1d", org: "{org_name}")
 ''',
-                "cron": "20 0 * * *",
-                "description": "Downsample energy_cumulative to 1d last value"
+                "cron": f"20 {cron_hour} * * *",
+                "description": "Downsample energy_cumulative to 1d last value (local TZ)"
             }
         ]
 
@@ -475,7 +491,6 @@ from(bucket: "ntek")
                     logging.info(f"✅ Task '{task_info['name']}' created (ID: {task_id})")
                     results.append({"task": task_info["name"], "success": True, "id": task_id})
                 elif response.status_code == 422:
-                    # 이미 존재하는 Task
                     logging.info(f"ℹ️ Task '{task_info['name']}' already exists")
                     results.append({"task": task_info["name"], "success": True, "existed": True})
                 else:
@@ -494,6 +509,58 @@ from(bucket: "ntek")
         logging.error(f"❌ Downsampling tasks creation error: {e}")
         return {"success": False, "message": str(e)}
 
+async def recreate_downsampling_tasks():
+    """기존 다운샘플링 Task 삭제 후 재생성 (로컬 타임존 적용)"""
+    try:
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+
+        task_names = [
+            "downsample_trend_to_1h",
+            "downsample_trend_to_1d",
+            "downsample_energy_consumption_to_1d",
+            "downsample_energy_cumulative_to_1d"
+        ]
+
+        # 1. 기존 task 삭제
+        deleted = []
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            response = await client.get(
+                "http://127.0.0.1:8086/api/v2/tasks",
+                headers={"Authorization": f"Token {token}"},
+                params={"orgID": config['org_id']}
+            )
+
+            if response.status_code == 200:
+                all_tasks = response.json().get("tasks", [])
+                for task in all_tasks:
+                    if task["name"] in task_names:
+                        del_resp = await client.delete(
+                            f"http://127.0.0.1:8086/api/v2/tasks/{task['id']}",
+                            headers={"Authorization": f"Token {token}"}
+                        )
+                        success = del_resp.status_code == 204
+                        deleted.append({"name": task["name"], "success": success})
+                        logging.info(f"{'✅' if success else '❌'} Task '{task['name']}' 삭제")
+            else:
+                logging.error(f"❌ Task 조회 실패: {response.status_code}")
+                return {"success": False, "message": f"Task 조회 실패: {response.status_code}"}
+
+        logging.info(f"🗑️ 삭제 완료: {len(deleted)}개 task")
+
+        # 2. 새 task 생성
+        create_result = await create_downsampling_tasks()
+
+        return {
+            "success": create_result["success"],
+            "message": "Task 재생성 완료",
+            "deleted": deleted,
+            "created": create_result.get("results", [])
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Task 재생성 실패: {e}")
+        return {"success": False, "message": str(e)}
 
 async def setup_downsampling():
     """다운샘플링 전체 설정 (버킷 + Task)"""
@@ -535,6 +602,10 @@ async def setup_downsampling():
         logging.error(f"❌ Downsampling setup error: {e}")
         return {"success": False, "message": str(e)}
 
+@router.put('/recreateDownsamplingTasks')
+async def api_recreate_downsampling_tasks():
+    result = await recreate_downsampling_tasks()
+    return result
 
 @router.get('/setup-downsampling')
 async def setup_downsampling_endpoint(request: Request):    
