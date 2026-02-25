@@ -65,7 +65,7 @@
         <!-- 로딩 상태 -->
         <div v-if="heatmapLoading" class="text-center py-8">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-          <p class="mt-2 text-gray-500">히트맵 데이터 로딩 중...</p>
+          <p class="mt-2 text-gray-500">Loading...</p>
         </div>
 
         <!-- 히트맵 차트 -->
@@ -117,7 +117,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed,watch } from 'vue'
 import * as echarts from 'echarts'
 import { useI18n } from 'vue-i18n'
 import { useReportData } from "@/composables/ReportDict";
@@ -133,7 +133,7 @@ export default {
   },
   setup(props) {
     // 반응형 데이터
-    const { t } = useI18n();
+    const { t,locale } = useI18n();
     const {
         reportData,
         getLoadFactorCalculated,
@@ -217,7 +217,12 @@ export default {
     const createTestHeatmap = () => {
       //console.log('테스트 히트맵 생성');
       
-      const days = ['월', '화', '수', '목', '금', '토', '일'];
+      const days = [
+  t('report.cardContext.days.mon'), t('report.cardContext.days.tue'),
+  t('report.cardContext.days.wed'), t('report.cardContext.days.thu'),
+  t('report.cardContext.days.fri'), t('report.cardContext.days.sat'),
+  t('report.cardContext.days.sun')
+];
       const hours = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
       
       const testData = [];
@@ -356,9 +361,9 @@ export default {
           position: 'top',
           formatter: function (params) {
             const hour = hours[params.data[0]] || '00';
-            const day = days[params.data[1]] || '알 수 없음';
+            const day = days[params.data[1]] || '-';
             const value = params.data[2] || 0;
-            return `${day} ${hour}:00<br/>부하율: ${value.toFixed(1)}%`;
+            return `${day} ${hour}:00<br/>${t('report.cardContext.loadRate')}: ${value.toFixed(1)}%`;
           }
         },
         grid: { height: '50%', top: '10%' },
@@ -391,14 +396,14 @@ export default {
               '#fbbf24', '#f59e0b', '#f97316', '#ef4444', '#dc2626'
             ]
           },
-          text: ['높음', '낮음'],
+          text: [t('report.cardContext.high'), t('report.cardContext.low')],
           textStyle: {
             color: '#333',
             fontSize: 12
           }
         },
         series: [{
-          name: '부하율',
+          name: t('report.cardContext.loadRate'),
           type: 'heatmap',
           data: chartData,
           label: { 
@@ -584,7 +589,7 @@ const createDualAxisChart = () => {
       formatter: function (params) {
         let result = params[0].axisValueLabel + '<br/>';
         params.forEach(function (item) {
-          if (item.seriesName === '전력량') {
+          if (item.seriesIndex === 0) {
             result += item.marker + item.seriesName + ': ' + item.value + ' kWh<br/>';
           } else {
             result += item.marker + item.seriesName + ': ' + item.value + '%<br/>';
@@ -726,7 +731,14 @@ const createDualAxisChart = () => {
         heatmapChartInstance?.resize();
       });
     });
-
+watch(locale, () => {
+  if (dualAxisChartInstance) {
+    createDualAxisChart();
+  }
+  if (heatmapChartInstance && apiHeatmapData.value.length > 0) {
+    createApiHeatmapChart();
+  }
+});
     onUnmounted(() => {
       dualAxisChartInstance?.dispose()
       heatmapChartInstance?.dispose()
