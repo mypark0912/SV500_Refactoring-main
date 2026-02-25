@@ -875,7 +875,7 @@ export default {
       try {
         const response = await axios.get('/config/calibrate/gettime');
         const deviceDate = new Date(response.data.deviceTime);
-        deviceTime.value = deviceDate.toLocaleString('ko-KR', {
+        deviceTime.value = deviceDate.toLocaleString(navigator.language, {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',

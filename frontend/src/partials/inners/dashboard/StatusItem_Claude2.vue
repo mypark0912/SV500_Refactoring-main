@@ -119,7 +119,7 @@ const getCurrentStatusText = () => {
 
 // 현재 시간 포맷팅
 const getCurrentTime = () => {
-  return currentTime.value.toLocaleTimeString('ko-KR', {
+  return currentTime.value.toLocaleTimeString(navigator.language, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'

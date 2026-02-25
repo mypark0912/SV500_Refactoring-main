@@ -520,7 +520,7 @@ const createDualAxisChart = () => {
     //console.log('전력량 데이터가 없어서 더미 데이터 사용');
     times = timeSeriesData.value.map(item => {
       const time = new Date(item.time);
-      return time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      return time.toLocaleTimeString(navigator.language, { hour: '2-digit', minute: '2-digit' });
     });
     powerData = timeSeriesData.value.map(() => 0); // ✅ 모든 값을 0으로 변경
   }

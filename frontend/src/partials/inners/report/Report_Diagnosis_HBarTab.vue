@@ -297,7 +297,7 @@ export default {
     const formatTimestamp = (timestamp) => {
       if (!timestamp) return '';
       const date = new Date(timestamp);
-      return date.toLocaleString('ko-KR', {
+      return date.toLocaleString(navigator.language, {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',

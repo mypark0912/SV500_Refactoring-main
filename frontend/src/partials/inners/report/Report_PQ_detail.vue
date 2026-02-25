@@ -165,7 +165,7 @@ export default {
           {
             type: 'category',
             boundaryGap: false,
-            data: times.map(time => time.toLocaleTimeString('ko-KR', {
+            data: times.map(time => time.toLocaleTimeString(navigator.language, {
               hour: '2-digit',
               minute: '2-digit'
             }))
