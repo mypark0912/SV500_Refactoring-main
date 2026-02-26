@@ -22,8 +22,9 @@
       "dhcp": 0
     },
     "modbus": {
-      "isserial": false,
+      "tcp_log":0,
       "tcp_port": 502,
+      "serial_log":0,
       "modbus_id": 1,
       "baud_rate": 0,
       "parity": 0,
@@ -79,7 +80,8 @@
       },
       "demand": {
         "target": 1,
-        "demand_interval": 15
+        "demand_interval": 15,
+        "collect":0
       },
       "ptInfo": {
         "wiringmode": 1,
@@ -359,7 +361,8 @@
       },
       "demand": {
         "target": 1,
-        "demand_interval": 15
+        "demand_interval": 15,
+        "collect":0
       },
       "ptInfo": {
         "wiringmode": 1,

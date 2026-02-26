@@ -442,6 +442,22 @@
                 {{ t("config.plansPanel.modbus.tcp")
                 }}<!--TCP Port-->
               </div>
+              <div class="flex items-center justify-between">
+                <label class="block text-sm font-medium">TCP Log enable</label>
+                <div
+                  class="relative inline-flex items-center cursor-pointer"
+                  @click="inputDict.modbus.tcp_log = inputDict.modbus.tcp_log === 1 ? 0 : 1"
+                >
+                  <div
+                    class="w-11 h-6 rounded-full transition-colors duration-200"
+                    :class="inputDict.modbus.tcp_log === 1 ? 'bg-sky-500' : 'bg-gray-300 dark:bg-gray-600'"
+                  ></div>
+                  <div
+                    class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                    :class="inputDict.modbus.tcp_log === 1 ? 'translate-x-5' : 'translate-x-0'"
+                  ></div>
+                </div>
+              </div>
 
               <div>
                 <label class="block text-sm font-medium mb-2" for="tcp-port"
@@ -475,6 +491,22 @@
               >
                 {{ t("config.plansPanel.modbus.snInfor")
                 }}<!--Serial Information-->
+              </div>
+              <div class="flex items-center justify-between">
+                <label class="block text-sm font-medium">Serial Log enable</label>
+                <div
+                  class="relative inline-flex items-center cursor-pointer"
+                  @click="inputDict.modbus.serial_log = inputDict.modbus.serial_log === 1 ? 0 : 1"
+                >
+                  <div
+                    class="w-11 h-6 rounded-full transition-colors duration-200"
+                    :class="inputDict.modbus.serial_log === 1 ? 'bg-sky-500' : 'bg-gray-300 dark:bg-gray-600'"
+                  ></div>
+                  <div
+                    class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                    :class="inputDict.modbus.serial_log === 1 ? 'translate-x-5' : 'translate-x-0'"
+                  ></div>
+                </div>
               </div>
               <div class="flex space-x-3">
                 <div class="flex-1">

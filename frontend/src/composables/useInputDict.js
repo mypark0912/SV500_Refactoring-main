@@ -32,8 +32,9 @@ export function useInputDict() {
       dhcp: 0,
     },
     modbus: {
-      isserial: false,
+      tcp_log:0,
       tcp_port: "",
+      serial_log:0,
       modbus_id: "",
       baud_rate: 0,
       parity: 0,
@@ -118,6 +119,7 @@ export function useInputDict() {
     demand: {
       target: "",
       demand_interval: "15",
+      collect:0,
     },
     
     ptInfo: {
@@ -197,6 +199,7 @@ export function useInputDict() {
     demand: {
       target: 0,
       demand_interval: 15,
+      collect:0,
     },
     
     ptInfo: {

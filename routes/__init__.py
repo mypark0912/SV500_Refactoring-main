@@ -5,6 +5,7 @@ from .master import router as master_router
 from .setting import router as setting_router
 from .config import router as config_router
 from .report import router as report_router
+from .demand import router as demand_router
 
 api_router = APIRouter()
 
@@ -14,3 +15,4 @@ api_router.include_router(master_router, prefix="/master", tags=["Master"])
 api_router.include_router(setting_router, prefix="/setting", tags=["Setting"])
 api_router.include_router(config_router, prefix="/config", tags=["Config"])
 api_router.include_router(report_router, prefix="/report", tags=["Report"])
+api_router.include_router(demand_router, prefix="/demand", tags=["Demand"])

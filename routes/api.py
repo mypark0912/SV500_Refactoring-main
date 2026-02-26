@@ -4052,6 +4052,112 @@ async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = Non
         )
 
 
+def query_demand_trend_data(
+        channel: str,
+        start_date: str = None,
+        end_date: str = None
+):
+    """
+    동기 디맨드 트렌드 쿼리 함수 (executor에서 실행됨)
+    """
+    if influx_state.query_api is None:
+        raise Exception("query_api not available")
+
+    query_api = influx_state.query_api
+
+    # 버킷 선택 (기간 기반)
+    if start_date and end_date:
+        bucket = get_bucket_by_duration(start_date, end_date)
+        range_filter = f'from(bucket: "{bucket}") |> range(start: time(v: "{start_date}"), stop: time(v: "{end_date}"))'
+    else:
+        bucket = "ntek"
+        range_filter = f'from(bucket: "{bucket}") |> range(start: -2d)'
+
+    query = (
+        f'{range_filter} '
+        f'|> filter(fn: (r) => r["_measurement"] == "demand" and r["channel"] == "{channel}") '
+        f'|> sort(columns: ["_time"], desc: false) '
+        f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+    )
+
+    tables = query_api.query(org='ntek', query=query)
+
+    results = []
+    last_date = None
+
+    for table in tables:
+        for record in table.records:
+            results.append(record.values)
+
+            if record.get_time():
+                utc_time = record.get_time()
+                local_time = utc_time.astimezone()
+                last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    return {
+        "results": results,
+        "last_date": last_date,
+        "count": len(results)
+    }
+
+
+@router.get('/getDemandTrend/{channel}')
+async def getDemandTrend(channel: str, startDate: str = None, endDate: str = None):
+    """
+    디맨드 트렌드 데이터 조회 (비동기 처리)
+
+    Parameters:
+    - channel: 채널명
+    - startDate: 시작 날짜 (ISO format, optional)
+    - endDate: 종료 날짜 (ISO format, optional)
+    """
+    if influx_state.client is None:
+        raise HTTPException(status_code=503, detail="InfluxDB client not initialized")
+
+    if influx_state.error:
+        raise HTTPException(status_code=503, detail="InfluxDB error state")
+
+    try:
+        print(f"⚡ 디맨드 트렌드 조회 시작 (채널: {channel})")
+        if startDate and endDate:
+            print(f"📅 날짜 범위: {startDate} ~ {endDate}")
+        else:
+            print(f"📅 기본 범위: -2d")
+
+        result = await run_influx_query(
+            query_demand_trend_data,
+            channel=channel,
+            start_date=startDate,
+            end_date=endDate,
+            timeout=60
+        )
+
+        results = result["results"]
+        last_date = result["last_date"]
+
+        print(f"✅ 완료: {len(results)}개 레코드")
+        print(f"📊 마지막 날짜: {last_date}")
+        print(f"=" * 60)
+
+        return {
+            "result": True,
+            "data": results,
+            "date": last_date,
+            "count": len(results)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ 디맨드 트렌드 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Demand trend query failed: {str(e)}"
+        )
+
+
 def fill_missing_hours_safe(hourly_data, start_time, end_time):
     """
     누락된 시간을 0으로 채우는 헬퍼 함수 (안전 버전)

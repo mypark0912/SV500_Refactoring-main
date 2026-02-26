@@ -14,7 +14,7 @@ from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading
 import asyncio, time
-
+from .demand import check_demand_downsampling_status, create_demand_downsampling_tasks
 import sqlite3
 
 # Path 객체 절대경로
@@ -1193,6 +1193,8 @@ def parse_settings(setting):
         "assetNickname_sub": "",
         "assetdriveType_main":"",
         "assetdriveType_sub": "",
+        "demand_collect_main": 0,
+        "demand_collect_sub": 0,
         "main_kva": -1,
         "sub_kva": -1,
         "pf_sign": -1,
@@ -1234,6 +1236,9 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
     """채널 데이터를 파싱하여 결과에 추가"""
     result[f"enable_{prefix}"] = bool(channel_data.get("Enable", 0))
     result[f"pq_{prefix}"] = bool(channel_data.get("PowerQuality", 0))
+
+    demand = channel_data.get("demand", {})
+    result[f"demand_collect_{prefix}"] = int(demand.get("collect", 0)) if "collect" in demand else 0
 
     if diag_enabled:
         asset_info = channel_data.get("assetInfo", {})
@@ -1343,6 +1348,10 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
             main_d = int(main_channel_data["demand"]["demand_interval"])*60
         else:
             main_d = 15*60
+        if "collect" in main_channel_data["demand"] and int(main_channel_data["demand"]["collect"]) != 0:
+            main_d_collect = 1
+        else:
+            main_d_collect = 0
         main_s = int(main_channel_data["sampling"]["period"])*60
         if "dash" in main_channel_data["ptInfo"]:
             dashSetup = int(main_channel_data["ptInfo"]["dash"])
@@ -1360,6 +1369,7 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         main_c = 0
         main_d = 15*60
         main_s = 0
+        main_d_collect = 0
         main_data = {}
     sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
     if sub_channel_data:
@@ -1368,6 +1378,10 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
             sub_d = int(sub_channel_data["demand"]["demand_interval"])*60
         else:
             sub_d = 15 * 60
+        if "collect" in sub_channel_data["demand"] and int(sub_channel_data["demand"]["collect"]) != 0:
+            sub_d_collect = 1
+        else:
+            sub_d_collect = 0
         sub_s = int(sub_channel_data["sampling"]["period"])*60
         if "dash" in sub_channel_data["ptInfo"]:
             dashSetup = int(sub_channel_data["ptInfo"]["dash"])
@@ -1386,7 +1400,10 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         sub_d = 15*60
         sub_s = 0
         sub_data = {}
+        sub_d_collect = 0
+
     return {"StartCurrent":{"main": main_c, "sub": sub_c},"Demand":{"main": main_d, "sub": sub_d},
+            "Demand_Collect" : {"main": main_d_collect, "sub": sub_d_collect},
             "Sampling":{"main": main_s, "sub": sub_s}, "Channel": {"main": main_data, "sub":sub_data}}
 
 @router.get('/getSetting')
@@ -2663,7 +2680,7 @@ async def saveSetting2(request: Request):
 
 
 @router.get('/apply')
-def apply(request: Request):
+async def apply(request: Request):
     try:
         saveLog("Apply Settings", request)
         print(f"[DEBUG] saveLog completed successfully")
@@ -2687,7 +2704,12 @@ def apply(request: Request):
     with open(FILE_PATH, "w", encoding="utf-8") as f:
         json.dump(saveData, f, indent=4)
 
-    save_redis_setup(saveData)
+    procData = save_redis_setup(saveData)
+
+    if int(procData["Demand_Collect"]["main"]) == 1 or int(procData["Demand_Collect"]["sub"]) == 1:
+        ret = await check_demand_downsampling_status()
+        if not ret.get("result"):
+            await create_demand_downsampling_tasks()
 
     result = compare_channel_changes(prevData, saveData)
 
@@ -2887,6 +2909,8 @@ def save_redis_setup(setupData):
         redis_state.client.hset("Equipment", "AIConfig", json.dumps(ai_data))
     else:
         redis_state.client.hdel("Equipment", "AIConfig")
+
+    return procData
 
 def save_frpc_config(subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
     try:

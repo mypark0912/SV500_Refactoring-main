@@ -713,6 +713,68 @@ const makeKey = (param, phase) => {
   return `${param} ${suffixMap[phase]}`
 }
 
+const loadDemandTrendData = async (channel, rangeType = 'hourly') => {
+  try {
+    const response = await axios.get(`/demand/trend/${channel}`, {
+      params: {
+        range_type: rangeType,
+      }
+    });
+    if (response.data) {
+      reportData.demandTrendData = response.data;
+      reportData.isLoaded.demandTrend = true;
+    }
+    return reportData.demandTrendData;
+  } catch (error) {
+    console.error('Demand trend 데이터 로딩 실패:', error);
+    return null;
+  }
+}
+
+const loadDemandHeatmapData = async (channel) => {
+  try {
+    const response = await axios.get(`/demand/heatmap/${channel}`);
+    if (response.data) {
+      reportData.demandHeatmapData = response.data;
+      reportData.isLoaded.demandHeatmap = true;
+    }
+    return reportData.demandHeatmapData;
+  } catch (error) {
+    console.error('Demand heatmap 데이터 로딩 실패:', error);
+    return null;
+  }
+}
+
+const loadDemandLoadFactorMonthly = async (channel, months = 12) => {
+  try {
+    const response = await axios.get(`/demand/load-factor-monthly/${channel}`, {
+      params: { months }
+    });
+    if (response.data) {
+      reportData.demandLoadFactorMonthlyData = response.data;
+      reportData.isLoaded.demandLoadFactorMonthly = true;
+    }
+    return reportData.demandLoadFactorMonthlyData;
+  } catch (error) {
+    console.error('Demand load factor monthly 데이터 로딩 실패:', error);
+    return null;
+  }
+}
+
+const loadDemandSummary = async (channel) => {
+  try {
+    const response = await axios.get(`/demand/summary/${channel}`);
+    if (response.data) {
+      reportData.demandSummaryData = response.data;
+      reportData.isLoaded.demandSummary = true;
+    }
+    return reportData.demandSummaryData;
+  } catch (error) {
+    console.error('Demand summary 데이터 로딩 실패:', error);
+    return null;
+  }
+}
+
   return {
     reportData,
     baseChart,
@@ -732,5 +794,9 @@ const makeKey = (param, phase) => {
     getfinValue,
     makeKey,
     saveReportData,
+    loadDemandTrendData,
+    loadDemandHeatmapData,
+    loadDemandLoadFactorMonthly,
+    loadDemandSummary,
   }
 }

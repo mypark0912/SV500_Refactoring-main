@@ -691,6 +691,30 @@
                     </option>
                   </select>
                 </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1.5" for="model"
+                    >{{ t("config.plansPanel.demand.collect")
+                    }}<!--Interval--></label
+                  >
+                  <select
+                    :value="getInputDict().demand.collect"
+                    @change="
+                      updateNestedField(
+                        'demand',
+                        'collect',
+                        Number($event.target.value),
+                      )
+                    "
+                    class="form-select w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option :value="1">
+                     Yes
+                    </option>
+                    <option :value="0">
+                      No
+                    </option>                  
+                  </select>
+                </div>
               </div>
             </div>
             <AlarmCard :parameterOptions="parameterOptions" />

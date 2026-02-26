@@ -90,7 +90,8 @@
                         <!-- 차트 컨테이너 -->
                         <div class="flex flex-col space-y-2">                                         
                             <TrendTab v-if="activeTab === 'Meter'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>       
-                            <TrendTab v-if="activeTab === 'Energy'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>  
+                            <TrendTab v-if="activeTab === 'Energy'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
+                            <TrendTab v-if="activeTab === 'Demand'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
                             <TrendTab v-if="activeTab === 'PowerQuality'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>   
                             <TrendTab v-if="activeTab === 'Diagnosis'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
                             <TrendTab v-if="activeTab === 'Parameters'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
@@ -199,7 +200,15 @@ export default {
       
       // Energy 탭은 항상 표시
       tabList.push({ name: "Energy", label: "Energy" });
-      
+
+      // Demand 탭은 demandCollect 활성 시 표시
+      const demandCollect = channel.value === 'Main'
+        ? setupStore.getDemandCollectMain
+        : setupStore.getDemandCollectSub;
+      if (demandCollect === 1) {
+        tabList.push({ name: "Demand", label: "Demand" });
+      }
+
       // Diagnosis가 활성화된 경우 추가 탭들
       if(DigEnable.value){
         tabList.push(

@@ -30,6 +30,8 @@ export const useSetupStore = defineStore('setup', () => {
   const pf_sign = ref(-1);
   const va_type = ref(-1);
   const unbalance = ref(-1);
+  const demandCollectMain = ref(0);
+  const demandCollectSub = ref(0);
 
   const devLocation = ref(localStorage.getItem('devLocation') || '')
 
@@ -172,6 +174,8 @@ export const useSetupStore = defineStore('setup', () => {
         setPf_sign(response.data.pf_sign);
         setVa_type(response.data.va_type);
         setUnbalance(response.data.unbalance);
+        demandCollectMain.value = response.data.demand_collect_main ?? 0;
+        demandCollectSub.value = response.data.demand_collect_sub ?? 0;
         setSetup(true)
         setApplySetup(true)
       } else {
@@ -234,6 +238,8 @@ export const useSetupStore = defineStore('setup', () => {
   const getPf_sign = computed(() => pf_sign.value)
   const getVa_type = computed(() => va_type.value)
   const getUnbalance = computed(() => unbalance.value)
+  const getDemandCollectMain = computed(() => demandCollectMain.value)
+  const getDemandCollectSub = computed(() => demandCollectSub.value)
 
 
   return {
@@ -254,6 +260,8 @@ export const useSetupStore = defineStore('setup', () => {
     pf_sign,
     va_type,
     unbalance,
+    demandCollectMain,
+    demandCollectSub,
 
     setCalib,
     setSetup,
@@ -285,6 +293,8 @@ export const useSetupStore = defineStore('setup', () => {
     getPf_sign,
     getVa_type,
     getUnbalance,
+    getDemandCollectMain,
+    getDemandCollectSub,
     $reset,
   }
 })

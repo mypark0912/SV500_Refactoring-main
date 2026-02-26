@@ -190,7 +190,10 @@
       "Channel": "チャンネル状態",
       "PowerQuality": "電力品質",
       "Diagnosis": "診断状態",
-      "Energy": "電力量"
+      "Energy": "電力量",
+      "DemandPowerTrend": "デマンド電力トレンド",
+      "DemandPatternAnalysis": "デマンドパターン分析",
+      "DemandLoadFactorMonthly": "月別デマンド負荷率トレンド"
     },
     "cardContext": {
       "th_title": "項目",
@@ -219,6 +222,22 @@
         "Last Month": "先月",
         "Import": "受電",
         "Export": "発電"
+      },
+      "peakDemand": "ピークデマンド",
+      "averageDemand": "平均デマンド",
+      "demandLoadFactor": "デマンド負荷率",
+      "peakLoadRate": "ピーク負荷率",
+      "demand": "デマンド",
+      "high": "高い",
+      "low": "低い",
+      "days": {
+        "sun": "日",
+        "mon": "月",
+        "tue": "火",
+        "wed": "水",
+        "thu": "木",
+        "fri": "金",
+        "sat": "土"
       }
     }
   },
@@ -342,7 +361,9 @@
     "tabTitle": {
       "Meter": "計測",
       "Power Quality": "電力品質",
-      "Diagnosis": "診断"
+      "Diagnosis": "診断",
+      "Energy": "電力量",
+      "Demand": "デマンド"
     },
     "treetable": {
       "Item": "項目",

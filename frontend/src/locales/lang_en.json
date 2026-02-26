@@ -496,7 +496,10 @@
       "THD1": "Voltage THD",
       "THD2": "Current THD",
       "distortionRate": "Distortion Rate",
-      "reportData": "Report Data"
+      "reportData": "Report Data",
+      "DemandPowerTrend": "Demand Power Trend",
+      "DemandPatternAnalysis": "Demand Pattern Analysis",
+      "DemandLoadFactorMonthly": "Monthly Demand Load Factor Trend"
     },
     "cardContext": {
       "th_title": "Item",
@@ -557,7 +560,12 @@
         "title1": "Power Quality - EN 50160 Report"
       },
       "iticxscale": "Time (sec)",
-      "iticyscale": "% of Base Voltage"
+      "iticyscale": "% of Base Voltage",
+      "peakDemand": "Peak Demand",
+      "averageDemand": "Average Demand",
+      "demandLoadFactor": "Demand Load Factor",
+      "peakLoadRate": "Peak Load Rate",
+      "demand": "Demand"
     }
   },
   "pq": {
@@ -693,7 +701,8 @@
       "Power Quality": "PowerQuality",
       "Diagnosis": "Equipment Status",
       "Parameters": "Parameters",
-      "Energy": "Energy"
+      "Energy": "Energy",
+      "Demand": "Demand"
     },
     "treetable": {
       "Item": "Item",
@@ -786,7 +795,8 @@
         "title": "Demand",
         "interval": "Interval",
         "minutes": "Minutes",
-        "hours": "Hours"
+        "hours": "Hours",
+        "collect":"Trend collection"
       },
       "dig": {
         "title": "Equipment Monitoring Setup",

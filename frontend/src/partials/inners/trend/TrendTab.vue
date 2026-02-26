@@ -70,6 +70,19 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
+            <a
+              v-else-if="tap == `Demand`"
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawDemandChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
             <div v-else-if="tap == `Diagnosis`" class="flex items-center justify-between mt-1">
               <div class="flex items-center gap-4 mt-1 px-1">
                 <label class="flex items-center space-x-2">
@@ -202,6 +215,12 @@
         v-if="tap == `Energy`"
         :chart-data="energyOption.lineData"
         :chart-labels="energyOption.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `Demand`"
+        :chart-data="demandOption.lineData"
+        :chart-labels="demandOption.lineLabels"
         :chartLastDate="lastDate"
       />
     </div>
@@ -402,6 +421,28 @@ export default {
       },
     ];
 
+    // Demand 탭 전용 트리 데이터
+    const demandTreeData = [
+      {
+        ID: 50,
+        Name: "Demand",
+        Title: "Demand",
+        Titles: { en: "Demand", ko: "수요전력", ja: "デマンド" },
+        isParent: true,
+        children: [
+          { ID: 51, Name: "CD_P_import", Title: "Active Power Demand", Titles: { en: "Active Power Demand", ko: "유효전력 디맨드", ja: "有効電力デマンド" } },
+          { ID: 52, Name: "CD_Q_import", Title: "Reactive Power Demand", Titles: { en: "Reactive Power Demand", ko: "무효전력 디맨드", ja: "無効電力デマンド" } },
+          { ID: 53, Name: "CD_S", Title: "Apparent Power Demand", Titles: { en: "Apparent Power Demand", ko: "피상전력 디맨드", ja: "皮相電力デマンド" } },
+        ],
+      },
+    ];
+
+    const demandParamMap = {
+      "CD_P_import": ["CD_P_import"],
+      "CD_Q_import": ["CD_Q_import"],
+      "CD_S": ["CD_S"],
+    };
+
     const meterParamMap = {
       Temperature: ["Temp"],
       Frequency: ["Freq"],
@@ -563,6 +604,8 @@ export default {
           }
         } else if (tap.value === "Energy") {
           items.value = energyTreeData;
+        } else if (tap.value === "Demand") {
+          items.value = demandTreeData;
         }
         // items loaded
       } catch (error) {
@@ -846,12 +889,15 @@ export default {
 
         labels.push(...responseData.map((row) => row._time));
 
+        const powerFields = new Set(["P4", "Q4", "S4"]);
+
         selectedParams.forEach((param) => {
           const keys = paramMap[param];
           if (!keys) return;
 
           keys.forEach((key) => {
-            const data = responseData.map((row) => row[key]);
+            const divider = powerFields.has(key) ? 1000 : 1;
+            const data = responseData.map((row) => row[key] != null ? row[key] / divider : row[key]);
             datasets.push({
               name: nameToTitleMap[key] || key,
               data: data,
@@ -895,13 +941,11 @@ export default {
           const responseData = response.data.data;
           lastDate.value = response.data.date;
           if (!Array.isArray(responseData)) {
-            // Energy 응답 데이터가 배열이 아님
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
 
           if (responseData.length === 0) {
-            // Energy 데이터가 비어있음
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
@@ -913,7 +957,6 @@ export default {
           try {
             labels.push(...responseData.map((row) => row._time));
           } catch (timeError) {
-            // 시간 라벨 생성 실패
             energyOption.value = { lineLabels: [], lineData: [] };
             return;
           }
@@ -927,7 +970,6 @@ export default {
           selectedParams.forEach((param) => {
             const keys = energyParamMap[param];
             if (!keys) {
-              // Energy 파라미터 매핑을 찾을 수 없음
               return;
             }
 
@@ -950,12 +992,88 @@ export default {
             lineData: datasets,
           };
         } else {
-          // Energy API 응답 실패
           energyOption.value = { lineLabels: [], lineData: [] };
         }
       } catch (error) {
-        // Energy 데이터 가져오기 실패
         energyOption.value = { lineLabels: [], lineData: [] };
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // Demand 차트 그리기
+    const demandOption = ref({ lineLabels: [], lineData: [] });
+
+    const drawDemandChart = async () => {
+      if (!checkedNames.value || checkedNames.value.length === 0) {
+        demandOption.value = { lineLabels: [], lineData: [] };
+        return;
+      }
+
+      isLoading.value = true;
+
+      try {
+        let url = `/api/getDemandTrend/${channel.value}`;
+        const response = await axios.get(url, {
+          params: {
+            startDate: formatToISOString(props.startdate, 2),
+            endDate: formatToISOString(props.enddate, 3),
+          },
+        });
+
+        if (response.data.result) {
+          const responseData = response.data.data;
+          lastDate.value = response.data.date;
+          if (!Array.isArray(responseData)) {
+            demandOption.value = { lineLabels: [], lineData: [] };
+            return;
+          }
+
+          if (responseData.length === 0) {
+            demandOption.value = { lineLabels: [], lineData: [] };
+            return;
+          }
+
+          const datasets = [];
+          const labels = [];
+          const selectedParams = checkedNames.value;
+
+          try {
+            labels.push(...responseData.map((row) => row._time));
+          } catch (timeError) {
+            demandOption.value = { lineLabels: [], lineData: [] };
+            return;
+          }
+
+          selectedParams.forEach((param) => {
+            const keys = demandParamMap[param];
+            if (!keys) {
+              return;
+            }
+
+            keys.forEach((key) => {
+              try {
+                const data = responseData.map((row) => row[key] != null ? row[key] / 1000 : row[key]);
+                datasets.push({
+                  name: nameToTitleMap[key] || key,
+                  data: data,
+                  isThreshold: false,
+                });
+              } catch (dataError) {
+                // Demand 데이터 생성 실패
+              }
+            });
+          });
+
+          demandOption.value = {
+            lineLabels: labels,
+            lineData: datasets,
+          };
+        } else {
+          demandOption.value = { lineLabels: [], lineData: [] };
+        }
+      } catch (error) {
+        demandOption.value = { lineLabels: [], lineData: [] };
       } finally {
         isLoading.value = false;
       }
@@ -1411,6 +1529,7 @@ export default {
       fetchData();
       buildNameToTitleMap(trendTreeData);
       buildNameToTitleMap(energyTreeData);
+      buildNameToTitleMap(demandTreeData);
     });
 
     return {
@@ -1428,6 +1547,8 @@ export default {
       onCheckChange,
       drawMeterChart,
       drawEnergyChart,
+      drawDemandChart,
+      demandOption,
       drawDiagnosisChart,
       drawDiagnosisChartByName,
       trendTreeData,

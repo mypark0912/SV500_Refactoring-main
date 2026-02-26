@@ -496,7 +496,10 @@
       "weeklyLoadDistribution": "주간 부하율 분포 통계",
       "THD1": "전압 고조파왜곡률",
       "THD2": "전류 고조파왜곡률",
-      "distortionRate": "왜곡률"
+      "distortionRate": "왜곡률",
+      "DemandPowerTrend": "수요전력 추이",
+      "DemandPatternAnalysis": "수요전력 패턴 분석",
+      "DemandLoadFactorMonthly": "월별 수요전력 부하율 추이"
     },
     "cardContext": {
       "th_title": "항목",
@@ -554,7 +557,12 @@
         "Export": "발전"
       },
       "iticxscale": "시간 (초)",
-      "iticyscale": "기준전압 대비 (%)"
+      "iticyscale": "기준전압 대비 (%)",
+      "peakDemand": "피크 수요전력",
+      "averageDemand": "평균 수요전력",
+      "demandLoadFactor": "수요전력 부하율",
+      "peakLoadRate": "피크 부하율",
+      "demand": "수요전력"
     }
   },
   "pq": {
@@ -690,7 +698,8 @@
       "Power Quality": "전력 품질",
       "Diagnosis": "설비 상태",
       "Parameters": "파라미터",
-      "Energy": "전력량"
+      "Energy": "전력량",
+      "Demand": "수요전력"
     },
     "treetable": {
       "Item": "항목",
@@ -783,7 +792,8 @@
         "title": "수요 전력",
         "interval": "측정 간격",
         "minutes": "분",
-        "hours": "시간"
+        "hours": "시간",
+        "collect":"트렌드 수집 여부"
       },
       "dig": {
         "title": "설비 감시 설정",

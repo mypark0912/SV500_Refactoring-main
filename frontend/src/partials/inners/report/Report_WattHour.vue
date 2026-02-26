@@ -62,6 +62,7 @@
     </div>
   </div> 
       <Report_kwh_detail v-if="assettypes == 'Transformer'" :channel="channel"/>
+      <DemandAnalysis v-if="assettypes == 'Transformer' && isDemandCollect == 1" :channel="channel" />
         <!-- <BarChart v-if="Object.keys(chartData).length > 0" :data="chartData" width="595" height="248" /> -->
       </div>
   </template>
@@ -71,6 +72,7 @@
   //import LineChart from '../charts/LineChart_ITIC.vue'
   import BarChart from '../../../charts/connect/BarChart01_Energy.vue'
   import Report_kwh_detail from './Report_kwh_detail.vue'
+  import DemandAnalysis from './DemandAnalysis.vue'
   import { tailwindConfig } from '../../../utils/Utils'
   import { useReportData } from "@/composables/ReportDict";
   import { useSetupStore } from '@/store/setup'
@@ -83,6 +85,7 @@
         //LineChart,
         BarChart,
         Report_kwh_detail,
+        DemandAnalysis,
     },
     props: {
       data: {
@@ -123,7 +126,12 @@
         { label: 'Daily', value: 'daily' },
         { label: 'Monthly', value: 'monthly' },
       ])
-      
+      const isDemandCollect = computed(()=> {
+        if(channel.value == 'Main')
+          return setupStore.getDemandCollectMain;
+        else
+          return setupStore.getDemandCollectSub;
+      });
       const generateHourlyLabels = () => {
         return Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`)
       }
@@ -513,6 +521,7 @@
         loadEnergyDailyData, // ✅ 함수명 수정
         loadEnergyMonthlyData,
         assettypes,
+        isDemandCollect,
       }
     }
   }
