@@ -16,7 +16,7 @@
     <Dashboard_TransInfo_final v-if="computedType === 'Transformer' && channelState.MainDiagnosis"
       :channel="channel" 
     />
-    <Dashboard_TransInfo_final v-else-if="computedType === 'Transformer' && channelState.Diagnosis"
+    <Dashboard_TransInfo_final v-else-if="computedType === 'Transformer' && channelState.SubDiagnosis"
       :channel="channel" 
     />
     
