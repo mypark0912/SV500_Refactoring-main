@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { watch, ref, computed } from 'vue'
+import { watch, ref, computed,onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRealtimeStore } from '@/store/realtime' 
 import axios from "axios";
@@ -111,7 +111,8 @@ export default {
       return store.getChannelData(channelName) || {}
     })
     const chartData = ref([]);
-
+    const pollTimer = ref(null);
+  
     const getTHD = async () => {
       try {
         const response = await axios.get(`/api/getRealTimeTHD/${asset.value}`)
@@ -180,14 +181,37 @@ export default {
     }
 
     // props.data 감시
+    const startPolling = () => {
+      stopPolling()
+      getTHD() // 즉시 1회 호출
+      pollTimer.value = setInterval(getTHD, 5 * 60 * 1000) // 5분
+    }
+
+    const stopPolling = () => {
+      if (pollTimer.value) {
+        clearInterval(pollTimer.value)
+        pollTimer.value = null
+      }
+    }
+
+    // chartItems computed는 이전과 동일 ...
+
     watch(
       () => props.asset,
-      async(newData) => {
-        if(isInverter.value)
-          await getTHD();
+      () => {
+        if (isInverter.value) {
+          startPolling()
+        } else {
+          stopPolling()
+          chartData.value = []
+        }
       },
-      { immediate: true }
+      { immediate: true, deep: true }
     )
+
+    onBeforeUnmount(() => {
+      stopPolling()
+    })
 
     return {
       channel,

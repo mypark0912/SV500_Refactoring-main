@@ -140,7 +140,7 @@
             </h3>
           </div>
           <div class="harmonics-container">
-            <DashboardCard_THD   :data="data2"
+            <DashboardCard_THD  :data="data2" :asset="assetConfig"
               :height="120"
               @data-change="onDataChange"  />
           </div>
@@ -169,13 +169,13 @@ export default {
   setup(props) {
     const { t } = useI18n();
     const setupStore = useSetupStore();
-    const channel = ref(props.channel);
+    const channel = computed(()=> props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub')
     
     const store = useRealtimeStore();
 
     const data2 = computed(() => {
-      const channelName = props.channel?.toLowerCase() === 'main' ? 'Main' : 'Sub'
-      const data = store.getChannelData(channelName)
+      //const channelName = 
+      const data = store.getChannelData(channel.value)
       
       // console.log(`[${props.channel}] data2 computed 실행:`, {
       //   U4: data?.U4,
@@ -207,6 +207,13 @@ export default {
   //     });
 
     const unbalMode = computed(()=> setupStore.getUnbalance);
+    const assetConfig = computed(()=> {
+      const configdict = setupStore.getAssetConfig;
+      let config = {};
+      config['name'] = channel.value == 'Main'? configdict.assetName_main:configdict.assetName_sub;
+      config['driveType'] = channel.value == 'Main'? configdict.assetdriveType_main:configdict.assetdriveType_sub;
+      return config;
+    });
     // 전체 시스템 상태 판정
 
     const getOverallStatus = () => {
@@ -289,6 +296,7 @@ export default {
       onChartReady,
       onDataChange,
       unbalMode,
+      assetConfig,
     };
   },
 };

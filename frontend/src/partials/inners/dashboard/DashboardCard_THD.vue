@@ -26,12 +26,16 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-
+import { computed, ref, watch,onBeforeUnmount } from 'vue'
+import axios from 'axios'
 export default {
   name: 'CSSBarChart',
   props: {
     data: {
+      type: Object,
+      default: () => ({})
+    },
+    asset:{
       type: Object,
       default: () => ({})
     },
@@ -54,31 +58,124 @@ export default {
   },
   emits: ['data-change'],
   setup(props, { emit }) {
-    
-    const chartItems = computed(() => {
-      const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
-      const maxValue = Math.max(...values, 10) // 최소 10으로 설정
-      
-      const items = props.labels.map((label, index) => {
-        const value = values[index].toFixed(1)
-        const height = (values[index] / maxValue) * 100
-        
-        return {
-          label,
-          value,
-          height: Math.max(height, 5), // 최소 5% 높이
-          colorClass: `bar-${props.colors[index]}`
+    const chartData = ref([]);
+    const pollTimer = ref(null);
+    const getTHD = async () => {
+      try {
+        const assetName = props.asset?.Name || props.asset?.name || ''
+        if (!assetName) return
+        const response = await axios.get(`/api/getRealTimeTHD/${assetName}`)
+        if (response.data.success) {
+          chartData.value = response.data.data
         }
-      })
-      
-      // 데이터 변경 이벤트 발생
-      emit('data-change', { data: items })
-      
-      return items
+      } catch (err) {
+        console.error('❌ THD 데이터 실패:', err)
+      }
+    }
+    const isInverter = computed(()=> props.asset['driveType'] == 'DOL'?false:true);
+        const chartItems = computed(() => {
+      if (isInverter.value) {
+        // API 데이터 사용
+        const values = chartData.value.map(item => parseFloat(item.Value || 0))
+        const maxValue = Math.max(...values, 10)
+
+        const items = chartData.value.map((item, index) => {
+          const value = parseFloat(item.Value || 0).toFixed(1)
+          const height = (parseFloat(item.Value || 0) / maxValue) * 100
+          return {
+            label: props.labels[index] || item.Title,
+            value,
+            height: Math.max(height, 5),
+            colorClass: `bar-${props.colors[index % props.colors.length]}`
+          }
+        })
+
+        emit('data-change', { data: items })
+        return items
+      } else {
+        // 기존 store 데이터 사용
+        const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
+        const maxValue = Math.max(...values, 10)
+
+        const items = props.labels.map((label, index) => {
+          const value = values[index].toFixed(1)
+          const height = (values[index] / maxValue) * 100
+          return {
+            label,
+            value,
+            height: Math.max(height, 5),
+            colorClass: `bar-${props.colors[index]}`
+          }
+        })
+
+        emit('data-change', { data: items })
+        return items
+      }
     })
 
+    // asset 변경 감시 + 초기 호출
+    const startPolling = () => {
+      stopPolling()
+      getTHD() // 즉시 1회 호출
+      pollTimer.value = setInterval(getTHD, 5 * 60 * 1000) // 5분
+    }
+
+    const stopPolling = () => {
+      if (pollTimer.value) {
+        clearInterval(pollTimer.value)
+        pollTimer.value = null
+      }
+    }
+
+    // chartItems computed는 이전과 동일 ...
+
+    watch(
+      () => props.asset,
+      () => {
+        if (isInverter.value) {
+          startPolling()
+        } else {
+          stopPolling()
+          chartData.value = []
+        }
+      },
+      { immediate: true, deep: true }
+    )
+
+    onBeforeUnmount(() => {
+      stopPolling()
+    })
+
+    // const chartItems = computed(() => {
+    //   const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
+    //   const maxValue = Math.max(...values, 10) // 최소 10으로 설정
+      
+    //   const items = props.labels.map((label, index) => {
+    //     const value = values[index].toFixed(1)
+    //     const height = (values[index] / maxValue) * 100
+        
+    //     return {
+    //       label,
+    //       value,
+    //       height: Math.max(height, 5), // 최소 5% 높이
+    //       colorClass: `bar-${props.colors[index]}`
+    //     }
+    //   })
+      
+    //   // 데이터 변경 이벤트 발생
+    //   emit('data-change', { data: items })
+      
+    //   return items
+    // })
+
+    // onMounted(async()=>{
+    //   if (isInverter.value)
+    //     await getTHD();
+    // });
+
     return {
-      chartItems
+      chartItems,
+      isInverter
     }
   }
 }
