@@ -1490,6 +1490,28 @@ async def get_realtime_harmonics(channel,asset):
     else:
         return {"success": False}
 
+@router.get("/getRealTimeTHD/{asset}")  # Diagnosis, Report Vue : get Asset info
+@gc_after_large_data(threshold_mb=30)
+async def get_realtime(asset):
+
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        response = await client.get(f"http://{os_spec.restip}:5000/api/getRealTimeData?name=" + asset)
+        data = response.json()
+
+    if data:
+        datalist = list()
+        for item in data["Data"]:
+            if item["Name"] in ["thdv", "thdi", "tddi"]:
+                datalist.append({
+                    "Assembly": item["AssemblyID"],
+                    "Title": item["Title"],
+                    "Value": item["Value"],
+                    "Unit": item["Unit"]
+                })
+        return {"success": True, "data": datalist}
+    else:
+        return {"success": False, "error": "No Data"}
+
 @router.get("/getRealTime/{assettype}/{asset}")  # Diagnosis, Report Vue : get Asset info
 @gc_after_large_data(threshold_mb=30)
 async def get_realtime(assettype, asset, request: Request):

@@ -5,11 +5,11 @@
     <DashboardCard_Meter_Single v-else-if="channelState.SubEnable" :channel="channel" />
     
     <DashboardCard_PQ_Claude 
-      v-if="channelState.MainEnable" 
+      v-if="channelState.MainEnable" :asset="computedAssetName" :isInv = "isInverter"
       :channel="computedChannel"  
     />
     <DashboardCard_PQ_Claude 
-      v-else-if="channelState.SubEnable" 
+      v-else-if="channelState.SubEnable" :asset="computedAssetName" :isInv = "isInverter"
       :channel="computedChannel"  
     />
     
@@ -85,8 +85,17 @@ export default {
       else
         return 'Sub'
     })
-    console.log(computedChannel.value);
+    //console.log(computedChannel.value);
     const computedType = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetType_main: AssetInfo.value.assetType_sub)
+    const computedAssetName = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetName_main: AssetInfo.value.assetName_sub)
+    const isInverter = computed(()=>{
+      const drivetype = computedChannel.value == 'Main' ? AssetInfo.value.assetdriveType_main: AssetInfo.value.assetdriveType_sub;
+      //console.log('drivetype =', drivetype);
+      if (drivetype == "DOL")
+        return false;
+      else
+        return true;
+    })
     //const mainData = inject('meterDictMain');
     //const subData = inject('meterDictSub');
     return {
@@ -96,6 +105,8 @@ export default {
       computedType,
       computedChannel,
       AssetInfo,
+      computedAssetName,
+      isInverter,
     }
   }
 }
