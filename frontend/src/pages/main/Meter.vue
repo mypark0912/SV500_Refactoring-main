@@ -59,9 +59,9 @@
             </div>
             </div>
 
-            <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.thdData" :data="powerThd.thdData" :channel="channel" :title="'THD'" />
+            <MeterDetail2 v-if=" !isVFD && Object.keys(powerThd).length > 0 && powerThd.thdData" :data="powerThd.thdData" :channel="channel" :title="'THD'" />
+            <MeterThdVfd v-else :channel="channel" :assetName="currentAssetName" />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.demandDataP" :data="powerThd.demandDataP" :channel="channel" :title="'Demand'" />
-            
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.powerData" :data="powerThd.powerData" :channel="channel" :title="'Power'" />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.demandDataI" :data="powerThd.demandDataI" :channel="channel" :title="'Demand I'" />
 
@@ -85,7 +85,7 @@ import Header from '../common/Header.vue'
 import Footer from "../common/Footer.vue";
 
 import CanvasAngle2 from '../../partials/inners/meter/CanvasAngle4.vue'
-
+import MeterThdVfd from '../../partials/inners/meter/MeterTHD_VFD.vue'
 import MeterKwh from '../../partials/inners/meter/MeterKwh.vue'
 import MeterDetail2 from '../../partials/inners/meter/MeterDetail2.vue'
 import { useSetupStore } from '@/store/setup'
@@ -101,6 +101,7 @@ export default {
     CanvasAngle2,
     MeterKwh,
     MeterDetail2,
+    MeterThdVfd,
   },
   setup(props) {
     const { t } = useI18n();
@@ -119,9 +120,10 @@ export default {
     let updateInterval_oneh = null;
     let timeout_fifthm = 15*60*1000;
     
+    const assetConfig = computed(()=> setupStore.getAssetConfig);
     const assetName = computed(()=> {
-      const mainName = setupStore.getAssetConfig.assetNickname_main;
-      const subName = setupStore.getAssetConfig.assetNickname_sub;
+      const mainName = assetConfig.assetNickname_main;
+      const subName = assetConfig.assetNickname_sub;
       if(channel.value == 'Main' || channel.value == 'main'){
         if (mainName != ''){
             return  "("+ mainName+")";
@@ -135,6 +137,17 @@ export default {
           return "";
         }
       }
+    })
+
+    const isVFD = computed(() => {
+      const isMain = channel.value === 'Main' || channel.value === 'main'
+      return isMain 
+        ? assetConfig.value.assetdriveType_main === 'VFD' 
+        : assetConfig.value.assetdriveType_sub === 'VFD'
+    })
+    const currentAssetName = computed(() => {
+      const isMain = channel.value === 'Main' || channel.value === 'main'
+      return isMain ? assetConfig.value.assetName_main : assetConfig.value.assetName_sub
     })
 
     const setup = computed(() => setupStore.getSetup);
@@ -342,6 +355,8 @@ export default {
       //demandData, // 새로 추가
       setup,
       unbal,
+      isVFD,
+      currentAssetName,
     }  
   }
 }
