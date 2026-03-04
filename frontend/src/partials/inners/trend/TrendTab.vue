@@ -873,7 +873,7 @@ export default {
       isLoading.value = true;
 
       try {
-        const url = `/api/getMeterTrend/${channel.value}/${saveCsv.value}`;
+        const url = `/api/getMeterTrend/${channel.value}/0`;
 
         const response = await axios.post(url, {
           startDate: formatToISOString(props.startdate, 2),
@@ -910,6 +910,23 @@ export default {
           lineLabels: labels,
           lineData: datasets,
         };
+
+        // CSV 다운로드
+        if (saveCsv.value === 1 && responseData.length > 0) {
+          const headers = Object.keys(responseData[0]);
+          const csvContent = [
+            headers.join(','),
+            ...responseData.map(row => headers.map(h => row[h] ?? '').join(','))
+          ].join('\n');
+
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `meter_trend_${channel.value}_${selectedFields.join('_')}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
       } catch (error) {
         // 데이터 가져오기 실패
         if (error.response?.data?.error) {

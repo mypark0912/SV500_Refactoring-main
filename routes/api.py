@@ -2848,9 +2848,9 @@ def getMeterRedis2(channel, mode):
 
         # thd 계산도 그대로
         thd = redis_data.get("thd", {})
-        meterdata["thdu total"] = sum([try_float(thd.get(k)) for k in ["THD_U1", "THD_U2", "THD_U3"]])
-        meterdata["thdi total"] = sum([try_float(thd.get(k)) for k in ["THD_I1", "THD_I2", "THD_I3"]])
-        meterdata["tddi total"] = sum([try_float(thd.get(k)) for k in ["TDD_I1", "TDD_I2", "TDD_I3"]])
+        meterdata["thdu total"] = sum([try_float(thd.get(k)) for k in ["THD_U1", "THD_U2", "THD_U3"]])/3
+        meterdata["thdi total"] = sum([try_float(thd.get(k)) for k in ["THD_I1", "THD_I2", "THD_I3"]])/3
+        meterdata["tddi total"] = sum([try_float(thd.get(k)) for k in ["TDD_I1", "TDD_I2", "TDD_I3"]])/3
 
         ai_result = get_ai(channel)
         meterdata["Temp2"] = ai_result.get("data", [])
@@ -3911,10 +3911,6 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
         else:
             fields_str = "all"
 
-        saved_file = None
-        if save_csv == 1 and results:
-            saved_file = await save_trend_to_csv(fields_str,channel, results)
-
         # 전체 시간
         total_duration = (datetime.now() - start_time).total_seconds()
         print(f"✅ 완료: {len(results)}개 레코드, {total_duration:.3f}초 (버킷: {bucket_used})")
@@ -3927,8 +3923,7 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
             "count": len(results),
             "fields": request.fields if request.fields else "default",
             "bucket_used": bucket_used,
-            "duration_seconds": round(total_duration, 3),
-            "csv_file": saved_file  # 저장된 파일 경로 포함
+            "duration_seconds": round(total_duration, 3)
         }
 
     except HTTPException:
