@@ -2566,7 +2566,7 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
     general_fields_to_compare = [
         "va_type", "pf_sign", "unbalance",
         "deviceInfo", "tcpip", "modbus",
-        "useFuction", "ftpInfo", "sntpInfo"
+        "useFuction", "ftpInfo", "sntpInfo", "MQTT"
     ]
 
     general_changed_fields = []

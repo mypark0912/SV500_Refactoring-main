@@ -122,8 +122,8 @@ export default {
     
     const assetConfig = computed(()=> setupStore.getAssetConfig);
     const assetName = computed(()=> {
-      const mainName = assetConfig.assetNickname_main;
-      const subName = assetConfig.assetNickname_sub;
+      const mainName = assetConfig.value.assetNickname_main;
+      const subName = assetConfig.value.assetNickname_sub;
       if(channel.value == 'Main' || channel.value == 'main'){
         if (mainName != ''){
             return  "("+ mainName+")";
