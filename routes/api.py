@@ -3706,7 +3706,7 @@ def get_energy(channel):
 
 @router.get('/getSystemStatus')
 async def get_service():
-    # redis_state.client.select(0)
+    use_diagnosis = False
     setupdict = json.loads(redis_state.client.hget("System", "setup"))
     if setupdict['mode'] == 'device0':
         itemdict = {
@@ -3727,6 +3727,7 @@ async def get_service():
                 "WebServer": "webserver",
                 "A35": "sv500A35",
             }
+            use_diagnosis = True
         else:
             itemdict = {
                 "Redis": "redis",
@@ -3736,6 +3737,7 @@ async def get_service():
                 "A35": "sv500A35",
             }
 
+
     statusDict = {}
     status = True
     for key, value in itemdict.items():
@@ -3743,15 +3745,16 @@ async def get_service():
         if not statusDict[key]:
             status = False
 
-    smartData = await check_SmartStatus()
-    if smartData["success"]:
-        if smartData["data"]["State"] == 0:
-            status = False
-        if len(smartData["data"]["RunTimeErrors"]) > 0:
-            status = False
-        return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
-    else:
-        return {"status": status, "services": statusDict, "smartStatus": None}
+    if use_diagnosis:
+        smartData = await check_SmartStatus()
+        if smartData["success"]:
+            if smartData["data"]["State"] == 0:
+                status = False
+            if len(smartData["data"]["RunTimeErrors"]) > 0:
+                status = False
+            return {"status": status, "services":statusDict, "smartStatus": smartData["data"]}
+
+    return {"status": status, "services": statusDict, "smartStatus": None}
 
 
 def get_bucket_by_duration(start_date: str, end_date: str) -> str:
