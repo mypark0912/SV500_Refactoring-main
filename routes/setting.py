@@ -947,6 +947,250 @@ async def download_backup(backup_type: str):
         return {"success": False, "message": str(e)}
 
 
+@router.get("/backup/parquet/report/list")
+async def list_report_files():
+    """Report parquet 파일 목록 조회 (en50160 기준, diagnosis 유무 표시)"""
+    try:
+        reports_dir = Path("/usr/local/sv500/reports")
+        if not reports_dir.exists():
+            return {"success": False, "message": "Reports directory not found"}
+
+        result = {}
+        for ch_dir in sorted(reports_dir.iterdir()):
+            if not ch_dir.is_dir():
+                continue
+            channel = ch_dir.name
+            items = []
+            for f in sorted(ch_dir.glob("en50160_weekly_*.parquet")):
+                date_str = f.stem.replace("en50160_weekly_", "")
+                diag_files = list(ch_dir.glob(f"diagnosis_report_*_{date_str}.parquet"))
+                items.append({
+                    "date": date_str,
+                    "en50160": f.name,
+                    "diagnosis": diag_files[0].name if diag_files else None,
+                })
+            if items:
+                result[channel] = items
+
+        return {"success": True, "data": result}
+    except Exception as e:
+        logging.error(f"❌ Report list error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/backup/parquet/report/download")
+async def download_report_parquet(channel: str, date: str):
+    """Report parquet 다운로드 (en50160 + diagnosis 있으면 tar.gz 압축)"""
+    try:
+        reports_dir = Path("/usr/local/sv500/reports") / channel
+        if not reports_dir.exists():
+            return {"success": False, "message": f"Channel directory not found: {channel}"}
+
+        en50160_file = reports_dir / f"en50160_weekly_{date}.parquet"
+        if not en50160_file.exists():
+            return {"success": False, "message": f"EN50160 file not found: {date}"}
+
+        diag_files = list(reports_dir.glob(f"diagnosis_report_*_{date}.parquet"))
+
+        # en50160만 있으면 단일 파일 다운로드
+        if not diag_files:
+            return FileResponse(
+                path=str(en50160_file),
+                filename=en50160_file.name,
+                media_type='application/octet-stream'
+            )
+
+        # 둘 다 있으면 tar.gz 압축
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        temp_dir = tempfile.mkdtemp()
+        collect_dir = os.path.join(temp_dir, f"report_{channel}_{date}")
+        os.makedirs(collect_dir, exist_ok=True)
+
+        shutil.copy2(str(en50160_file), collect_dir)
+        for df in diag_files:
+            shutil.copy2(str(df), collect_dir)
+
+        backup_name = f"report_{channel}_{date}_{timestamp}"
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
+        result = subprocess.run(
+            ['tar', '--ignore-failed-read', '-czf', tar_file,
+             '-C', temp_dir, os.path.basename(collect_dir)],
+            capture_output=True, text=True, timeout=300
+        )
+        if result.returncode > 1:
+            raise subprocess.CalledProcessError(result.returncode, ['tar'], result.stdout, result.stderr)
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=BackgroundTask(cleanup)
+        )
+
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout"}
+    except Exception as e:
+        logging.error(f"❌ Report download error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/backup/parquet/trend/list")
+async def list_trend_files():
+    """DiagnosisTrend CSV 파일 목록 조회"""
+    try:
+        trend_dir = Path("/usr/local/sv500/trendcsv")
+        if not trend_dir.exists():
+            return {"success": False, "message": "Trend directory not found"}
+
+        files = sorted([f.name for f in trend_dir.glob("*.csv")], reverse=True)
+        return {"success": True, "data": files}
+    except Exception as e:
+        logging.error(f"❌ Trend list error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/backup/parquet/trend/download")
+async def download_trend_file(filename: str):
+    """DiagnosisTrend CSV 파일 개별 다운로드"""
+    try:
+        filepath = Path("/usr/local/sv500/trendcsv") / filename
+        if not filepath.exists() or filepath.suffix != '.csv':
+            return {"success": False, "message": f"File not found: {filename}"}
+
+        return FileResponse(
+            path=str(filepath),
+            filename=filename,
+            media_type='application/octet-stream'
+        )
+    except Exception as e:
+        logging.error(f"❌ Trend download error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/backup/parquet/report/download-all")
+async def download_all_reports():
+    """Report parquet 전체 tar.gz 다운로드"""
+    try:
+        reports_dir = Path("/usr/local/sv500/reports")
+        if not reports_dir.exists() or not any(reports_dir.rglob("*.parquet")):
+            return {"success": False, "message": "No report files found"}
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        temp_dir = tempfile.mkdtemp()
+        collect_dir = os.path.join(temp_dir, "reports")
+
+        for ch_dir in reports_dir.iterdir():
+            if not ch_dir.is_dir():
+                continue
+            parquet_files = list(ch_dir.glob("*.parquet"))
+            if parquet_files:
+                ch_dest = os.path.join(collect_dir, ch_dir.name)
+                os.makedirs(ch_dest, exist_ok=True)
+                for f in parquet_files:
+                    shutil.copy2(str(f), ch_dest)
+
+        backup_name = f"backup_report_all_{timestamp}"
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
+        result = subprocess.run(
+            ['tar', '--ignore-failed-read', '-czf', tar_file, '-C', temp_dir, 'reports'],
+            capture_output=True, text=True, timeout=300
+        )
+        if result.returncode > 1:
+            raise subprocess.CalledProcessError(result.returncode, ['tar'], result.stdout, result.stderr)
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=BackgroundTask(cleanup)
+        )
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout"}
+    except Exception as e:
+        logging.error(f"❌ Report download-all error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/backup/parquet/trend/download-all")
+async def download_all_trends():
+    """DiagnosisTrend CSV 전체 tar.gz 다운로드"""
+    try:
+        trend_dir = Path("/usr/local/sv500/trendcsv")
+        if not trend_dir.exists() or not any(trend_dir.glob("*.csv")):
+            return {"success": False, "message": "No trend files found"}
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        temp_dir = tempfile.mkdtemp()
+        collect_dir = os.path.join(temp_dir, "trendcsv")
+        os.makedirs(collect_dir, exist_ok=True)
+
+        for f in trend_dir.glob("*.csv"):
+            shutil.copy2(str(f), collect_dir)
+
+        backup_name = f"backup_trend_all_{timestamp}"
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
+        result = subprocess.run(
+            ['tar', '--ignore-failed-read', '-czf', tar_file, '-C', temp_dir, 'trendcsv'],
+            capture_output=True, text=True, timeout=300
+        )
+        if result.returncode > 1:
+            raise subprocess.CalledProcessError(result.returncode, ['tar'], result.stdout, result.stderr)
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        def cleanup():
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                if os.path.exists(tar_file):
+                    os.remove(tar_file)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"{backup_name}.tar.gz",
+            media_type='application/gzip',
+            background=BackgroundTask(cleanup)
+        )
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "Backup timeout"}
+    except Exception as e:
+        logging.error(f"❌ Trend download-all error: {e}")
+        return {"success": False, "message": str(e)}
+
+
 async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
     """InfluxDB + logs 통합 백업"""
     try:

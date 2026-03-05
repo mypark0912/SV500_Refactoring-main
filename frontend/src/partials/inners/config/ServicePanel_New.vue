@@ -86,6 +86,18 @@
               </svg>
               &nbsp; Set Default IP
             </button>
+            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <button
+              class="btn h-9 px-5 bg-teal-900 text-teal-100 hover:bg-teal-800 dark:bg-teal-100 dark:text-teal-800 dark:hover:bg-white flex items-center"
+              @click.stop="openParquetModal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              &nbsp; PARQUET Download
+            </button>
           </div>
         </div>
         
@@ -353,6 +365,175 @@
       :service="logModalService"
       @close="logModalOpen = false"
     />
+
+    <!-- Parquet Download Modal -->
+    <ModalBasic
+      id="parquet-modal"
+      :modalOpen="parquetModalOpen"
+      @close-modal="parquetModalOpen = false"
+      title="PARQUET Download"
+    >
+      <div style="min-width: 560px;">
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200 dark:border-gray-700/60">
+          <button
+            class="px-5 py-3 text-sm font-medium transition-colors"
+            :class="parquetTab === 'report'
+              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-500'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+            @click="switchParquetTab('report')"
+          >
+            Report
+          </button>
+          <button
+            class="px-5 py-3 text-sm font-medium transition-colors"
+            :class="parquetTab === 'trend'
+              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-500'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+            @click="switchParquetTab('trend')"
+          >
+            DiagnosisTrend
+          </button>
+        </div>
+
+        <div class="px-5 py-4" style="max-height: 450px; overflow-y: auto;">
+          <!-- Loading -->
+          <div v-if="parquetLoading" class="flex items-center justify-center py-8">
+            <svg class="animate-spin h-6 w-6 text-teal-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm text-gray-500 dark:text-gray-400">Loading...</span>
+          </div>
+
+          <!-- ========== Report Tab ========== -->
+          <template v-else-if="parquetTab === 'report'">
+            <div v-if="Object.keys(reportFiles).length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+              No report files found.
+            </div>
+            <div v-else>
+              <div class="flex justify-end mb-3">
+                <button
+                  class="btn-sm bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 flex items-center"
+                  @click="downloadAllReports"
+                  :disabled="parquetDownloading"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Download All
+                </button>
+              </div>
+              <div v-for="(items, channel) in reportFiles" :key="channel" class="mb-4">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
+                  Channel: {{ channel }}
+                </h4>
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-gray-50 dark:bg-gray-700">
+                        <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Date</th>
+                        <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">EN50160</th>
+                        <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Diagnosis</th>
+                        <th class="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-300 w-24">Download</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                      <tr v-for="item in items" :key="item.date" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="px-3 py-2 text-gray-800 dark:text-gray-200 font-mono">{{ formatDate(item.date) }}</td>
+                        <td class="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs truncate max-w-[160px]" :title="item.en50160">{{ item.en50160 }}</td>
+                        <td class="px-3 py-2 text-xs truncate max-w-[160px]" :title="item.diagnosis || ''">
+                          <span v-if="item.diagnosis" class="text-gray-600 dark:text-gray-400">{{ item.diagnosis }}</span>
+                          <span v-else class="text-gray-400 dark:text-gray-600">-</span>
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                          <button
+                            class="inline-flex items-center text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+                            @click="downloadReport(channel, item.date)"
+                            :disabled="parquetDownloading"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ========== DiagnosisTrend Tab ========== -->
+          <template v-else-if="parquetTab === 'trend'">
+            <div v-if="trendFiles.length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+              No trend files found.
+            </div>
+            <div v-else>
+              <div class="flex justify-end mb-3">
+                <button
+                  class="btn-sm bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 flex items-center"
+                  @click="downloadAllTrends"
+                  :disabled="parquetDownloading"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Download All
+                </button>
+              </div>
+              <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50 dark:bg-gray-700">
+                    <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">File Name</th>
+                    <th class="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-300 w-24">Download</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                  <tr v-for="file in trendFiles" :key="file" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ file }}</td>
+                    <td class="px-3 py-2 text-center">
+                      <button
+                        class="inline-flex items-center text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+                        @click="downloadTrend(file)"
+                        :disabled="parquetDownloading"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7 10 12 15 17 10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700/60">
+          <div class="flex justify-end">
+            <button
+              class="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-white"
+              @click.stop="parquetModalOpen = false"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalBasic>
   </div>
 </template>
 
@@ -401,6 +582,14 @@ export default {
     // 로그 모달 상태
     const logModalOpen = ref(false);
     const logModalService = ref('');
+
+    // Parquet 모달 상태
+    const parquetModalOpen = ref(false);
+    const parquetTab = ref('report');
+    const reportFiles = ref({});
+    const trendFiles = ref([]);
+    const parquetLoading = ref(false);
+    const parquetDownloading = ref(false);
 
     const devMode = computed(() => authStore.getOpMode);
 
@@ -562,6 +751,126 @@ export default {
       }
     };
 
+    const fetchReportList = async () => {
+      parquetLoading.value = true;
+      try {
+        const response = await axios.get('/setting/backup/parquet/report/list');
+        reportFiles.value = response.data.success ? response.data.data : {};
+      } catch (error) {
+        console.error('Report list failed:', error);
+        reportFiles.value = {};
+      } finally {
+        parquetLoading.value = false;
+      }
+    };
+
+    const fetchTrendList = async () => {
+      parquetLoading.value = true;
+      try {
+        const response = await axios.get('/setting/backup/parquet/trend/list');
+        trendFiles.value = response.data.success ? response.data.data : [];
+      } catch (error) {
+        console.error('Trend list failed:', error);
+        trendFiles.value = [];
+      } finally {
+        parquetLoading.value = false;
+      }
+    };
+
+    const openParquetModal = () => {
+      parquetModalOpen.value = true;
+      parquetTab.value = 'report';
+      fetchReportList();
+    };
+
+    const switchParquetTab = (tab) => {
+      parquetTab.value = tab;
+      if (tab === 'report') fetchReportList();
+      else fetchTrendList();
+    };
+
+    const formatDate = (d) => {
+      if (d && d.length === 8) return `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+      return d;
+    };
+
+    const triggerDownload = (blob, filename) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    };
+
+    const downloadReport = async (channel, date) => {
+      try {
+        parquetDownloading.value = true;
+        const response = await axios.get('/setting/backup/parquet/report/download', {
+          params: { channel, date },
+          responseType: 'blob',
+        });
+        const contentType = response.headers['content-type'] || '';
+        const filename = contentType.includes('gzip')
+          ? `report_${channel}_${date}.tar.gz`
+          : `en50160_weekly_${date}.parquet`;
+        triggerDownload(new Blob([response.data]), filename);
+      } catch (error) {
+        console.error('Report download failed:', error);
+        alert('Download failed');
+      } finally {
+        parquetDownloading.value = false;
+      }
+    };
+
+    const downloadAllReports = async () => {
+      try {
+        parquetDownloading.value = true;
+        const response = await axios.get('/setting/backup/parquet/report/download-all', {
+          responseType: 'blob',
+        });
+        triggerDownload(new Blob([response.data]), `backup_report_all.tar.gz`);
+      } catch (error) {
+        console.error('Report download-all failed:', error);
+        alert('Download failed');
+      } finally {
+        parquetDownloading.value = false;
+      }
+    };
+
+    const downloadAllTrends = async () => {
+      try {
+        parquetDownloading.value = true;
+        const response = await axios.get('/setting/backup/parquet/trend/download-all', {
+          responseType: 'blob',
+        });
+        triggerDownload(new Blob([response.data]), `backup_trend_all.tar.gz`);
+      } catch (error) {
+        console.error('Trend download-all failed:', error);
+        alert('Download failed');
+      } finally {
+        parquetDownloading.value = false;
+      }
+    };
+
+    const downloadTrend = async (filename) => {
+      try {
+        parquetDownloading.value = true;
+        const response = await axios.get('/setting/backup/parquet/trend/download', {
+          params: { filename },
+          responseType: 'blob',
+        });
+        triggerDownload(new Blob([response.data]), filename);
+      } catch (error) {
+        console.error('Trend download failed:', error);
+        alert('Download failed');
+      } finally {
+        parquetDownloading.value = false;
+      }
+    };
+
     const saveIPAddress = async () => {
       try {
         const data = { ip: ipAddress.value };
@@ -606,6 +915,12 @@ export default {
       frpStatus,
       logModalOpen,
       logModalService,
+      parquetModalOpen,
+      parquetTab,
+      reportFiles,
+      trendFiles,
+      parquetLoading,
+      parquetDownloading,
       showMessage,
       openLogModal,
       formatSize,
@@ -615,6 +930,13 @@ export default {
       updateInfluxBucket,
       ResetAll,
       saveIPAddress,
+      openParquetModal,
+      switchParquetTab,
+      formatDate,
+      downloadReport,
+      downloadAllReports,
+      downloadTrend,
+      downloadAllTrends,
     };
   },
 };
