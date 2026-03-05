@@ -32,9 +32,9 @@ export default {
     const darkMode = useDark();
     const { textColor, gridColor } = chartColors;
     const thresholdColorMap = {
-      warning: "#ffff00", // 노랑
-      repair: "#ff0000", // 빨강
-      inspect: "#ff7f00", // 주황
+      attention: "#ffff00", // 노랑
+      inspect: "#ff0000", // 빨강
+      caution: "#ff7f00", // 주황
     };
     const titleText = computed(()=>{
       if (props.chartLastDate != "")

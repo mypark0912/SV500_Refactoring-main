@@ -1,7 +1,7 @@
 <template>
     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-    <td class="px-4 py-1">
-        <div :style="{ paddingLeft: level * 20 + 'px' }" class="flex items-center text-sm" :class="{'font-bold': isParent}">
+    <td class="px-4 py-1 align-top">
+        <div :style="{ paddingLeft: level * 20 + 'px' }" class="flex items-start text-sm" :class="{'font-bold': isParent}">
         <button
             v-if="item.children"
             @click="expanded = !expanded"
@@ -16,10 +16,15 @@
         {{ itemTitle }}
         </div>
     </td>
-    <td class="px-4 py-1 text-sm"> {{ item.Value }} </td>
-    <td class="px-4 py-1"><div class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center" :class="getStatusColor2(getStatusText(item.Status))">
-      {{ getStatusCText(getStatusText(item.Status)) }}</div></td>
-    <td v-if="mode !='Event'" class="px-4 py-1 text-sm"> {{ descStr }} </td>
+    <td class="px-4 py-1 text-sm align-top"> {{ item.Value }} </td>
+    <td class="px-4 py-1 align-top">
+    
+        <div class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center" :class="getStatusColor2(getStatusText(item.Status))">
+          {{ getStatusCText(getStatusText(item.Status)) }}
+        </div>
+   
+    </td>
+    <td v-if="mode !='Event'" class="px-4 py-1 text-sm align-top"> {{ descStr }} </td>
     </tr>
     <template v-if="item.children && expanded">
         <TreeRow
@@ -35,7 +40,7 @@
   <script setup>
   import { ref, computed, onMounted, watch } from 'vue'
   import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/20/solid'
-  import { useI18n } from 'vue-i18n'  // ✅ 추가
+  import { useI18n } from 'vue-i18n'
   const props = defineProps({
     item: { type: Object, required: true },
     level: { type: Number, default: 0 },
@@ -52,7 +57,7 @@
   const descStr = ref('')
   const itemTitle = ref('')
   onMounted(()=>{
-    expanded.value = false; //props.expanded;
+    expanded.value = false;
     mode.value = props.mode;
   });
 
@@ -69,17 +74,12 @@
   }
 }, { immediate: true });
 
-  // const printDescription = (status, value) => {
-  //   return status ?  value:'-';
-  // }
   const getStatusColor2 = (status) => {
         switch (status) {
           case 'OK': return 'bg-green-500/20 text-green-700 font-semibold dark:bg-green-600/40 dark:text-green-300';
           case 'Low': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
           case 'Medium': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
           case 'High': return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300';
-          // case 'Medium': return 'bg-orange-500/20 text-orange-700 font-semibold dark:bg-orange-600/40 dark:text-orange-300';
-          // case 'High': return 'bg-red-500/20 text-red-700 font-semibold dark:bg-red-600/40 dark:text-red-300';
           default: return 'bg-gray-500/20 text-gray-700 font-semibold dark:bg-gray-600/40 dark:text-gray-300';
         }
       }; 
@@ -103,43 +103,5 @@
           default: return 'No Data';
         }
       }
-
-
-//   const formatValue = (value) => {
-//     return (value == null || value == NaN || value == 'NaN') ? '-' : parseFloat(value).toFixed(2);
-//   }
-
-  // const getStatusColorFault = (status) => {
-  //       switch (status) {
-  //         case 'None': return 'bg-green-500/20 text-green-700 font-semibold';
-  //         case 'Fault': return 'bg-red-500/20 text-red-700 font-semibold';
-  //         default: return 'bg-gray-500/20 text-gray-700 font-semibold';
-  //       }
-  //     };
-
-  //     const getStatusTextFault = (status) => {
-  //       switch (status) {
-  //         case 0: return 'None';
-  //         case 1: return 'Fault';
-  //         default: return 'No Data';
-  //       }
-  //     }
-
-  //     const getStatusColorEvent = (status) => {
-  //       switch (status) {
-  //         case 'None': return 'bg-green-500/20 text-green-700 font-semibold';
-  //         case 'Occured': return 'bg-red-500/20 text-red-700 font-semibold';
-  //         default: return 'bg-gray-500/20 text-gray-700 font-semibold';
-  //       }
-  //     };
-
-  //     const getStatusTextEvent = (status) => {
-  //       switch (status) {
-  //         case 0: return 'None';
-  //         case 1: return 'Occured';
-  //         default: return 'No Data';
-  //       }
-  //     }
   
   </script>
-  
