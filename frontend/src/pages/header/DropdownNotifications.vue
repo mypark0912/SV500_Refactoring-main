@@ -93,17 +93,7 @@
                 </div>
               </li>
               <li 
-                v-if="smartData['State'] == 1"
-                class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
-              >
-                <div class="block py-2 px-4">
-                  <span class="block text-sm text-gray-500 dark:text-gray-400">
-                    ✅ All Status is OK
-                  </span>
-                </div>
-              </li>
-              <li 
-                v-else
+                v-if="smartData['State'] == 0"
                 class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
               >
                 <div class="block py-2 px-4">
@@ -112,6 +102,17 @@
                   </span>
                 </div>
               </li>
+              <li 
+                v-else-if="smartData['State'] == 1 && smartData['RunTimeErrors'].length == 0"
+                class="border-b border-gray-200 dark:border-gray-700/60 last:border-0"
+              >
+                <div class="block py-2 px-4">
+                  <span class="block text-sm text-gray-500 dark:text-gray-400">
+                    ✅ All Status is OK
+                  </span>
+                </div>
+              </li>
+
             </ul>
           </template>
         <!--ul
