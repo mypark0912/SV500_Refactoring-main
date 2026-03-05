@@ -1223,12 +1223,12 @@ export default {
           ) {
             const ThresholdString = [
               "Out of Range(Down side)",
-              "Repair",
               "Inspect",
-              "Warning",
-              "Warning",
+              "Caution",
+              "Attention",
+              "Attention",
+              "Caution",
               "Inspect",
-              "Repair",
               "Out of Range(Upper side)",
             ];
 
@@ -1437,12 +1437,12 @@ export default {
           ) {
             const ThresholdString = [
               "Out of Range(Down side)",
-              "Repair",
               "Inspect",
-              "Warning",
-              "Warning",
+              "Caution",
+              "Attention",
+              "Attention",
+              "Caution",
               "Inspect",
-              "Repair",
               "Out of Range(Upper side)",
             ];
 
