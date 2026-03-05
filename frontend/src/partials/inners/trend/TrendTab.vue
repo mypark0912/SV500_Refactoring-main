@@ -57,8 +57,18 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
+            <div v-else-if="tap == `Energy` && isNtek" class="flex items-center justify-between mt-1">
+              <label class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="saveCsv"
+                :true-value="1"
+                :false-value="0"
+                class="form-checkbox text-violet-500"
+              />
+              <span class="text-sm">save CSV</span>
+            </label>
             <a
-              v-else-if="tap == `Energy`"
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
@@ -70,8 +80,46 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
+            </div>
             <a
-              v-else-if="tap == `Demand`"
+              v-else-if="tap == `Energy` && !isNtek "
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawEnergyChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
+            <div v-else-if="tap == `Demand` && isNtek" class="flex items-center justify-between mt-1">
+              <label class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="saveCsv"
+                :true-value="1"
+                :false-value="0"
+                class="form-checkbox text-violet-500"
+              />
+              <span class="text-sm">save CSV</span>
+            </label>
+            <a
+              class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+              href="#0"
+              :class="{ 'opacity-50 pointer-events-none': isLoading }"
+              @click.prevent="drawDemandChart"
+            >
+              {{
+                isLoading
+                  ? t("trend.TrendTab.loading")
+                  : t("trend.TrendTab.Plot")
+              }}
+            </a>
+            </div>
+            <a
+              v-else-if="tap == `Demand` && !isNtek"
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
@@ -809,6 +857,22 @@ export default {
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
 
+    const saveCsvfromData = (responseData, filename) => {
+      const headers = Object.keys(responseData[0]);
+      const csvContent = [
+        headers.join(','),
+        ...responseData.map(row => headers.map(h => row[h] ?? '').join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
     const drawMeterChart = async () => {
       if (!checkedNames.value || checkedNames.value.length === 0) {
         meterOption.value = { lineLabels: [], lineData: [] };
@@ -913,19 +977,22 @@ export default {
 
         // CSV 다운로드
         if (saveCsv.value === 1 && responseData.length > 0) {
-          const headers = Object.keys(responseData[0]);
-          const csvContent = [
-            headers.join(','),
-            ...responseData.map(row => headers.map(h => row[h] ?? '').join(','))
-          ].join('\n');
+          const filename = `meter_trend_${channel.value}_${selectedFields.join('_')}.csv`
+          saveCsvfromData( responseData, filename);
 
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `meter_trend_${channel.value}_${selectedFields.join('_')}.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
+          // const headers = Object.keys(responseData[0]);
+          // const csvContent = [
+          //   headers.join(','),
+          //   ...responseData.map(row => headers.map(h => row[h] ?? '').join(','))
+          // ].join('\n');
+
+          // const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          // const url = URL.createObjectURL(blob);
+          // const a = document.createElement('a');
+          // a.href = url;
+          // a.download = `meter_trend_${channel.value}_${selectedFields.join('_')}.csv`;
+          // a.click();
+          // URL.revokeObjectURL(url);
         }
       } catch (error) {
         // 데이터 가져오기 실패
@@ -1008,6 +1075,10 @@ export default {
             lineLabels: labels,
             lineData: datasets,
           };
+          if (saveCsv.value === 1 && responseData.length > 0) {
+              const filename = `energy_trend_${channel.value}.csv`;
+              saveCsvfromData(responseData, filename);
+            }
         } else {
           energyOption.value = { lineLabels: [], lineData: [] };
         }
@@ -1086,6 +1157,11 @@ export default {
             lineLabels: labels,
             lineData: datasets,
           };
+
+          if (saveCsv.value === 1 && responseData.length > 0) {
+            const filename = `demandpower_trend_${channel.value}.csv`;
+            saveCsvfromData(responseData, filename);
+          }
         } else {
           demandOption.value = { lineLabels: [], lineData: [] };
         }
