@@ -59,8 +59,17 @@
             </div>
             </div>
 
-            <MeterDetail2 v-if=" !isVFD && Object.keys(powerThd).length > 0 && powerThd.thdData" :data="powerThd.thdData" :channel="channel" :title="'THD'" />
-            <MeterThdVfd v-else :channel="channel" :assetName="currentAssetName" />
+            <!--MeterDetail2 v-if="!isVFD && Object.keys(powerThd).length > 0 && powerThd.thdData" :data="powerThd.thdData" :channel="channel" :title="'THD'" />
+            <MeterThdVfd v-else :channel="channel" :assetName="currentAssetName" /-->
+            <MeterDetail2 
+              v-if="!isVFD && Object.keys(powerThd).length > 0 && powerThd.thdData" 
+              :data="powerThd.thdData" :channel="channel" :title="'THD'" 
+            />
+            <MeterThdVfd 
+              v-else-if="isVFD" 
+              :channel="channel" 
+              :assetName="currentAssetName" 
+            />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.demandDataP" :data="powerThd.demandDataP" :channel="channel" :title="'Demand'" />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.powerData" :data="powerThd.powerData" :channel="channel" :title="'Power'" />
             <MeterDetail2 v-if="Object.keys(powerThd).length > 0 && powerThd.demandDataI" :data="powerThd.demandDataI" :channel="channel" :title="'Demand I'" />
