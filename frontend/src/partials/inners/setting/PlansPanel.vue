@@ -744,6 +744,22 @@
                   </div>
                 </div>
                 <!-- Type -->
+                <div v-if="inputDict.MQTT.Use === 1 && inputDict.MQTT.Type >= 1" class="flex items-center justify-between">
+                  <label class="block text-sm font-medium">LTE Use</label>
+                  <div
+                    class="relative inline-flex items-center cursor-pointer"
+                    @click="inputDict.MQTT.lteuse = inputDict.MQTT.lteuse === 1 ? 0 : 1"
+                  >
+                    <div
+                      class="w-11 h-6 rounded-full transition-colors duration-200"
+                      :class="inputDict.MQTT.lteuse === 1 ? 'bg-sky-500' : 'bg-gray-300 dark:bg-gray-600'"
+                    ></div>
+                    <div
+                      class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                      :class="inputDict.MQTT.lteuse === 1 ? 'translate-x-5' : 'translate-x-0'"
+                    ></div>
+                  </div>
+                </div>
                 <div class="flex-1" v-if="inputDict.MQTT.Use === 1">
                   <label class="block text-sm font-medium mb-1.5">Type</label>
                   <select

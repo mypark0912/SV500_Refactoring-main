@@ -71,7 +71,8 @@ export function useInputDict() {
       username:"",
       password:"",
       externalport:"",
-      url:""
+      url:"",
+      lteuse:0
     }
   });
 
