@@ -5,6 +5,18 @@
        <header class="header-content">
          <h2 class="card-title">{{ t('dashboard.diagnosis.title') }}</h2>
          <div class="channel-info">
+          <div v-if="isModule" class="module-badges">
+            <div
+              v-for="mod in moduleStatuses"
+              :key="mod.devId"
+              class="do-module-badge"
+              :class="mod.online ? 'badge-on' : 'badge-off'"
+              :title="`DevID: ${mod.devId}`"
+            >
+              <span class="do-dot"></span>
+              <span class="do-name">{{ mod.m_name }}</span>
+            </div>
+          </div>
            <span class="channel-text">
              {{ channel.toLowerCase() == 'main' ? t('dashboard.diagnosis.subtitle_main') : t('dashboard.diagnosis.subtitle_sub') }}
            </span>
@@ -66,6 +78,8 @@
        devStatus: -2,
        updateTime:'',
      });
+     const isModule = ref(false);
+     const moduleStatuses = ref([]);
     //  const stData = ref({
     //    devName:'',
     //    devType:'',
@@ -197,6 +211,31 @@
     //      }
     //  };
 
+    const fetchModuleStatus = async () => {
+      try {
+        const response = await axios.get(`/api/getModuleStatus/${channel.value}`);
+        console.log(response.data);
+        if(response.data.exist){
+          isModule.value = true;
+          if (Array.isArray(response.data.data)) {
+            // devId 중복 제거
+            const seen = new Set();
+            moduleStatuses.value = response.data.data.filter(m => {
+              if (seen.has(m.devId)) return false;
+              seen.add(m.devId);
+              return true;
+            });
+            console.log(moduleStatuses.value);
+          }
+        }else{
+          isModule.value = false;
+        }
+      } catch (error) {
+        isModule.value = false;
+        console.log("모듈 상태 가져오기 실패:", error);
+      }
+    };
+
      const fetchDashData = async () => {
           if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
             console.log("⏳ asset 준비 안됨. fetchData 대기중");
@@ -253,6 +292,7 @@
     // fetchData();
     // fetchPQData();
     fetchDashData();
+    fetchModuleStatus();
 
     // 타이머 재설정
     if (updateInterval) {
@@ -262,7 +302,9 @@
     
     // 새 타이머 설정
     updateInterval = setInterval(async () => {
-      await fetchDashData(); //fetchData();
+      await fetchDashData();
+      await fetchModuleStatus();
+      //fetchData();
       // if(assetTypes.value != 'Transformer'){
       //   await fetchRealData();
       // }
@@ -337,6 +379,8 @@
        pqData,
        assetTypes,
        t,
+       moduleStatuses,
+       isModule,
      }    
    }
  }
@@ -368,7 +412,7 @@
 }
 
 .channel-info {
-  @apply flex items-center;
+  @apply flex flex-row items-center gap-2;
 }
 
 .channel-text {
@@ -377,5 +421,20 @@
 
 .content-section {
   @apply px-5 pt-5;
+}
+
+.do-module-badge {
+  @apply inline-flex items-center gap-2 mr-1;
+  @apply px-1.5 py-0.5 rounded-full;
+  @apply text-xs font-medium border;   /* text-xs 로 맞춤 */
+  @apply whitespace-nowrap;
+}
+
+.badge-on .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-green-500;
+}
+
+.badge-off .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-gray-400;
 }
 </style>

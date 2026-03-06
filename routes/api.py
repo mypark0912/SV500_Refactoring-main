@@ -1145,6 +1145,14 @@ async def getStatus_legacy(data, channel):
         return {"status": -2, "runhours": runhours}
 
 
+@router.get("/getModuleStatus/{channel}")
+def getMDStatus(channel):
+    data = [
+      {"m_name": "DO_1", "devId": 1, "online": True},
+      {"m_name": "Temper", "devId": 100, "online": False}
+    ]
+    return {"exist":True, "data":data}
+
 @router.get("/getPQStatus/{asset}/{channel}")  # Master Dashboard PQ Status
 @gc_after_large_data(threshold_mb=30)
 async def getPQStatus(asset, channel, request: Request):
@@ -1414,7 +1422,12 @@ async def get_dashStatus(asset, channel):
 
             # ✅ 설정이 비어있으면 레거시 로직 사용
             if not config_list:
-                retDict[category] = legacy_data.get(category, {"status": 1, "item": "All"})
+                flagdict = check_useDO(channel)
+                if flagdict.get("use"):
+                    nosetup = decide_nosetup(data)
+                    retDict[category] = nosetup.get(category, {"status": 1, "item": "All"})
+                else:
+                    retDict[category] = legacy_data.get(category, {"status": 1, "item": "All"})
                 continue
 
             # ✅ 설정이 있으면 AlarmStatusMatcher 사용
