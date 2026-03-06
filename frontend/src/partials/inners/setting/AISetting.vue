@@ -239,16 +239,16 @@
         <div
           class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
         >
-          <p class="text-xs text-blue-800 dark:text-blue-200">
-            <strong>Note:</strong>
-            • FC: Function Code (03=Read Holding Registers, 04=Read Input Registers, 16=Write Multiple Registers)
-            <br />
-            • Data Type: UINT16, UINT32, Float, F002 (F002=Float value/100)
-            <br />
-            • Destination: 목적지 주소 (온도 R상, 온도 S상, 온도 T상)
-            <br />
-            • Scale: 스케일 값 (예: 0.01, 0.1, 1.0, 100.0)
-          </p>
+        <p class="text-xs text-blue-800 dark:text-blue-200">
+          <strong>Note:</strong>
+          • FC: Function Code (03=Read Holding Registers, 04=Read Input Registers, 16=Write Multiple Registers)
+          <br />
+          • Data Type: UINT16, UINT32, Float, F002 (F002=Float value/100)
+          <br />
+          • Destination: Target address (Temp R-phase, Temp S-phase, Temp T-phase)
+          <br />
+          • Scale: Scale factor (e.g. 0.01, 0.1, 1.0, 100.0)
+        </p>
         </div>
 
         <!-- 하단 정보 -->
