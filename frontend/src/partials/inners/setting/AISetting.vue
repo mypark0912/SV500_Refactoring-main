@@ -298,8 +298,8 @@ const createDefaultRow = (id) => ({
 });
 
 const defaultConfig = [
-  { id: 1, enable: 1, m_name: 'Temper', devId: 100, startAddr: 14, count: 28, dataType: 2, destination: 0, period: 1000, fc: 3, scale: 1.0 },
-  { id: 2, enable: 1, m_name: 'Temper', devId: 100, startAddr: 90, count: 12, dataType: 2, destination: 1, period: 1000, fc: 3, scale: 1.0 },
+  { id: 1, enable: 1, m_name: 'Temper', devId: 100, startAddr: 0, count: 6, dataType: 3, destination: 0, period: 1000, fc: 4, scale: 1.0 }
+
 ];
 
 const loadFromChannel = () => {
