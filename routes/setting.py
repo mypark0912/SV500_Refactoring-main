@@ -2645,7 +2645,6 @@ def save_alarm_configs_to_redis(setting_dict: dict):
         channel_name = channel_config.get("channel")
         asset_info = channel_config.get("assetInfo", {})
         status_info = channel_config.get("status_Info", {})
-        # use_do = channel_config.get("useDO", 0)  # 채널별 useDO
         confStatus = channel_config.get("confStatus", 0)  # 채널별 useDO
         if not channel_name:
             continue
@@ -2659,6 +2658,8 @@ def save_alarm_configs_to_redis(setting_dict: dict):
             "assetType": asset_info.get("type", ""),
             "assetName": asset_info.get("name", ""),
             "assetNickName": asset_info.get("nickname", ""),
+            "devId" : status_info.get("devId", 0),
+            "m_name": status_info.get("m_name", ""),
             "diagnosis": status_info.get("diagnosis", []),
             "pq": status_info.get("pq", [])
         }
@@ -2667,7 +2668,6 @@ def save_alarm_configs_to_redis(setting_dict: dict):
 
 def save_ai_configs_to_redis(setting_dict: dict):
     ai_data = {}
-
     # 각 채널 순회
     for channel_config in setting_dict.get("channel", []):
         channel_name = channel_config.get("channel")
@@ -3136,8 +3136,36 @@ def save_redis_setup(setupData):
                 initialize_alarm_configs(ch["channel"], ch["alarm"])
 
     procData = save_StartCurrent_DemandInterval_SamplingPeriod(setupData)
-    dash_alarms_data = save_alarm_configs_to_redis(setupData)
-    ai_data = save_ai_configs_to_redis(setupData)
+    flagdict = {"confStatus":False, "confDO":False, "confAI":False }
+    for channel_config in setupData.get("channel", []):
+        channel_name = channel_config.get("channel")
+        confStatus = channel_config.get("confStatus", 0)
+        use_do = channel_config.get("useDO", 0)
+        use_ai = channel_config.get("useAI", 0)
+        if confStatus == 1:
+            flagdict["confStatus"] = True
+        if use_do == 1:
+            flagdict["confDO"] = True
+        if use_ai == 1:
+            flagdict["confAI"] = True
+
+        if channel_name:
+            devices = []
+            status_info = channel_config.get("status_Info", {})
+            if status_info.get("m_name"):
+                devices.append({"m_name": status_info["m_name"], "devId": status_info.get("devId", 0)})
+            for ai_item in channel_config.get("ai_modbus", []):
+                if ai_item.get("m_name"):
+                    devices.append({"m_name": ai_item["m_name"], "devId": ai_item.get("devId", 0)})
+            if devices:
+                redis_state.client.hset("SerialModbus", channel_name, json.dumps(devices))
+
+    dash_alarms_data = {}
+    ai_data = {}
+    if flagdict["confStatus"]:
+        dash_alarms_data = save_alarm_configs_to_redis(setupData)
+    if flagdict["confAI"]:
+        ai_data = save_ai_configs_to_redis(setupData)
 
     redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
     redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
@@ -3156,14 +3184,17 @@ def save_redis_setup(setupData):
 
     return procData
 
-def save_frpc_config(subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
+def save_frpc_config(lte, subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
     try:
         # 디렉토리가 없으면 생성
         import os
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         proxyname = f"device-web-{prefix}"
+        ftpname = f"device-ssh-{prefix}"
+        ftpport = 12000 + int(prefix)
         # TOML 내용 생성
-        toml_content = f'''serverAddr = "13.125.5.143"
+        if lte == 0:
+            toml_content = f'''serverAddr = "13.125.5.143"
 serverPort = 7000
 auth.token = "NTEK_system_20260116_mypark"
 transport.tls.enable = true
@@ -3175,7 +3206,26 @@ localIP = "127.0.0.1"
 localPort = 4000
 subdomain = "{subdomain}"
 '''
+        else:
+            toml_content = f'''serverAddr = "13.125.5.143"
+serverPort = 7000
+auth.token = "NTEK_system_20260116_mypark"
+transport.tls.enable = true
 
+[[proxies]]
+name = "{proxyname}"
+type = "http"
+localIP = "127.0.0.1"
+localPort = 4000
+subdomain = "{subdomain}"
+
+[[proxies]]
+name = "{ftpname}"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = {ftpport}
+'''
         # 파일 저장
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(toml_content)
@@ -3808,8 +3858,9 @@ def _apply_mqtt_services(setup):
             if int(setup["General"]["MQTT"]["Type"]) == 1:
                 subdomain = setup["General"]["MQTT"]["url"]
                 name_prefix = setup["General"]["MQTT"]["externalport"]
+                useLte = int(setup["General"]["MQTT"]["lteuse"])
                 if not service_exists("frpc.service"):
-                    save_frpc_config(subdomain, name_prefix)
+                    save_frpc_config(useLte, subdomain, name_prefix)
                     save_frpc_service(
                         "/home/root/frp_0.66.0_linux_arm64/frpc",
                         "/home/root/frp_0.66.0_linux_arm64/frpc.toml"

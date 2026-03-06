@@ -1310,6 +1310,41 @@ async def get_state_legacy(data, channel):
 
     return retDict
 
+def check_useDO(channel):
+    redis_data = redis_state.client.hget("SerialModbus", channel)
+    dash_alarms = json.loads(redis_data)
+    DOInfo = {}
+    if channel == 'Main':
+        doName = "DO_1"
+    else:
+        doName = "DO_2"
+    if dash_alarms:
+        for config in dash_alarms:
+            if doName in config["m_name"]:
+                DOInfo["name"] = config["m_name"]
+                DOInfo["id"] = config["devId"]
+                DOInfo["use"] = True
+                break
+    return DOInfo
+
+def decide_nosetup(data):
+    retDict = {}
+    state_list = ['Diagnostic', 'PQ', 'Events', 'Faults']
+    for category in state_list:
+        status_items = [
+            {"Title": item["Title"], "Status": item["Status"]}
+            for item in data.get(category, [])
+            if "Status" in item and "Title" in item
+        ]
+
+        # 해당 카테고리에 데이터가 없거나 모든 값이 0이면 Nodata
+        if not status_items or all(item["Status"] == 0 for item in status_items):
+            retDict[category] = {"status": -2, "item": "No Data"}
+        else:
+            # 데이터가 있으면 OK
+            retDict[category] = {"status": 1, "item": "All"}
+
+    return retDict
 
 @router.get("/getDashSatatus/{asset}/{channel}")
 async def get_dashStatus(asset, channel):
@@ -1323,27 +1358,36 @@ async def get_dashStatus(asset, channel):
             eventTree = data.get("Events", [])
 
         # 2. Redis에서 DashAlarms 설정 가져오기
-        # redis_state.client.select(0)
         redis_data = redis_state.client.hget("Equipment", "DashAlarms")
 
         # 데이터 검증
         if not data or not isinstance(data, dict):
             return {"status": -1}
 
-        # 설정이 없으면 기존 로직 사용
+        # 설정이 없으면: DO 사용 여부에 따라 분기
         if not redis_data:
-            print(f"{channel} - Not Redis : get_state_legacy")
-            legacy = await get_state_legacy(data, channel)
-            return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
+            flagdict = check_useDO(channel)
+            if flagdict.get("use"):
+                # DO 사용: Nodata는 Nodata, 나머지는 OK
+                nosetup = decide_nosetup(data)
+                return {"status": 0, "data": nosetup, "eventTree": eventTree, "runhours": runhours}
+            else:
+                # DO 미사용: 기존 레거시 로직
+                legacy = await get_state_legacy(data, channel)
+                return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
 
         dash_alarms = json.loads(redis_data)
         channel_config = dash_alarms.get(channel)
 
-        # 해당 채널 설정이 없으면 기존 로직 사용
+        # 해당 채널 설정이 없으면: DO 사용 여부에 따라 분기
         if not channel_config:
-            print(f"{channel} - Not Channel : get_state_legacy")
-            legacy = await get_state_legacy(data, channel)
-            return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
+            flagdict = check_useDO(channel)
+            if flagdict.get("use"):
+                nosetup = decide_nosetup(data)
+                return {"status": 0, "data": nosetup, "eventTree": eventTree, "runhours": runhours}
+            else:
+                legacy = await get_state_legacy(data, channel)
+                return {"status": 0, "data": legacy, "eventTree": eventTree, "runhours": runhours}
 
     except Exception as e:
         print(str(e))
@@ -1415,7 +1459,6 @@ def get_running(channel):
     else:
         redisKey = 'runhour_sub'
 
-    redis_state.client_db1.select(1)
     if redis_state.client_db1.exists(redisKey):
         total = redis_state.client_db1.hget(redisKey, "tot")
         current = redis_state.client_db1.hget(redisKey, "cur")
