@@ -1263,7 +1263,7 @@ async def get_state_legacy(data, channel):
     if not data or not isinstance(data, dict):
         return {"status": -1}
 
-    state_list = ['Diagnostic', 'PQ', 'Events', 'Faults']
+    state_list = ['Diagnostic', 'PQ']
     retDict = dict()
 
     for category in state_list:
@@ -1329,7 +1329,7 @@ def check_useDO(channel):
 
 def decide_nosetup(data):
     retDict = {}
-    state_list = ['Diagnostic', 'PQ', 'Events', 'Faults']
+    state_list = ['Diagnostic', 'PQ']
     for category in state_list:
         status_items = [
             {"Title": item["Title"], "Status": item["Status"]}
@@ -1395,7 +1395,7 @@ async def get_dashStatus(asset, channel):
 
     # 3. 카테고리별로 처리 (설정 있으면 AlarmStatusMatcher, 없으면 레거시)
     try:
-        state_list = ['Diagnostic', 'PQ', 'Events', 'Faults']
+        state_list = ['Diagnostic', 'PQ']
         matcher = AlarmStatusMatcher()
         status_info = {
             "Diagnostic": channel_config.get("diagnosis", []),

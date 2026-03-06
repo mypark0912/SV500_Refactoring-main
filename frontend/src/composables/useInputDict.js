@@ -180,8 +180,6 @@ export function useInputDict() {
       "devId": 1,
       "diagnosis":[],
       "pq":[],
-      "faults": [],
-      "events": []
     },
     ai_modbus:[]
   });
@@ -262,8 +260,6 @@ export function useInputDict() {
       "devId": 2,
       "diagnosis":[],
       "pq":[],
-      "faults": [],
-      "events": []
     },
     ai_modbus:[]
   });
