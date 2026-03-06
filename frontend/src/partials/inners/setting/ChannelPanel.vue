@@ -756,12 +756,7 @@
               :key="currentDiagnosis + '-' + channel"
             />
             <AISetting :channel="channel" />
-            <DOAlarmCard
-              v-if="isConfigureStatus"
-              :channel="channel"
-              type="diagnostic"
-            />
-            <DOAlarmCard v-if="isUseDOAlarm" :channel="channel" type="faults" />
+            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" />
           </div>
         </div>
       </section>
