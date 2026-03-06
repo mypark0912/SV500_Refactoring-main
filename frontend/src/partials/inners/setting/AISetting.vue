@@ -66,59 +66,40 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b-2 border-gray-300 dark:border-gray-600">
-                <th
-                  class="px-2 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 w-14"
-                >
+                <th class="px-2 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 w-14">
                   Index
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Enable
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
+                  AI Type
+                </th>
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Dev ID
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Start<br />Address
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Count
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Data<br />Type
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Destination
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Period<br />(ms)
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   FC
                 </th>
-                <th
-                  class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50"
-                >
+                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50">
                   Scale
                 </th>
-                <th
-                  class="px-2 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 w-20"
-                >
+                <th class="px-2 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 w-20">
                   Action
                 </th>
               </tr>
@@ -130,9 +111,7 @@
                 class="border-b border-gray-200 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
                 <!-- Index -->
-                <td
-                  class="px-2 py-2 text-center text-xs text-gray-800 dark:text-gray-200 font-medium"
-                >
+                <td class="px-2 py-2 text-center text-xs text-gray-800 dark:text-gray-200 font-medium">
                   {{ idx + 1 }}
                 </td>
                 <!-- Enable -->
@@ -143,6 +122,15 @@
                     @change="row.enable = $event.target.checked ? 1 : 0"
                     class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
                   />
+                </td>
+                <!-- AI Type -->
+                <td class="px-2 py-2 text-center">
+                  <select
+                    v-model="row.m_name"
+                    class="w-24 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option value="Temper">Temper</option>
+                  </select>
                 </td>
                 <!-- Dev ID -->
                 <td class="px-2 py-2 text-center">
@@ -190,9 +178,9 @@
                     v-model.number="row.destination"
                     class="w-24 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
                   >
-                    <option :value="0">{{t("config.channelPanel.tempR")}}</option>
-                    <option :value="1">{{t("config.channelPanel.tempS")}}</option>
-                    <option :value="2">{{t("config.channelPanel.tempT")}}</option>
+                    <option :value="0">{{ t("config.channelPanel.tempR") }}</option>
+                    <option :value="1">{{ t("config.channelPanel.tempS") }}</option>
+                    <option :value="2">{{ t("config.channelPanel.tempT") }}</option>
                   </select>
                 </td>
                 <!-- Period (ms) -->
@@ -278,9 +266,10 @@
 <script setup>
 import { ref, inject, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-// 고유 ID 생성용 카운터
+
 let nextId = 1;
 const { t } = useI18n();
+
 const props = defineProps({
   channel: { type: String, default: '' }
 });
@@ -288,18 +277,16 @@ const props = defineProps({
 const mainData = inject('channel_main');
 const subData = inject('channel_sub');
 
-// 현재 채널 데이터 computed
-const currentChannelData = computed(() => {
-  return props.channel === 'Main' ? mainData.value : subData.value;
-});
+const currentChannelData = computed(() =>
+  props.channel === 'Main' ? mainData.value : subData.value
+);
 
-// Modbus 설정 데이터
 const modbusConfig = ref([]);
 
-// 기본 행 생성 함수
 const createDefaultRow = (id) => ({
-  id: id,
+  id,
   enable: 0,
+  m_name: 'Temper',
   devId: 0,
   startAddr: 0,
   count: 0,
@@ -308,46 +295,20 @@ const createDefaultRow = (id) => ({
   period: 1000,
   fc: 0,
   scale: 1.0,
-  min: 0.0,
-  max: 500.0
 });
 
-// 초기 기본값
 const defaultConfig = [
-  {
-    id: 1,
-    enable: 1,
-    devId: 100,
-    startAddr: 14,
-    count: 28,
-    dataType: 2,
-    destination: 0,
-    period: 1000,
-    fc: 3,
-    scale: 1.0,
-  },
-  {
-    id: 2,
-    enable: 1,
-    devId: 100,
-    startAddr: 90,
-    count: 12,
-    dataType: 2,
-    destination: 1,
-    period: 1000,
-    fc: 3,
-    scale: 1.0,
-  },
+  { id: 1, enable: 1, m_name: 'Temper', devId: 100, startAddr: 14, count: 28, dataType: 2, destination: 0, period: 1000, fc: 3, scale: 1.0 },
+  { id: 2, enable: 1, m_name: 'Temper', devId: 100, startAddr: 90, count: 12, dataType: 2, destination: 1, period: 1000, fc: 3, scale: 1.0 },
 ];
 
-// ai_modbus에서 데이터 로드
 const loadFromChannel = () => {
   const aiModbus = currentChannelData.value?.ai_modbus;
   if (aiModbus && Array.isArray(aiModbus) && aiModbus.length > 0) {
-    // 기존 데이터가 있으면 로드
     modbusConfig.value = aiModbus.map((item, idx) => ({
       id: item.id || idx + 1,
       enable: item.enable ?? 0,
+      m_name: item.m_name ?? 'Temper',
       devId: item.devId ?? 0,
       startAddr: item.startAddr ?? 0,
       count: item.count ?? 0,
@@ -359,47 +320,29 @@ const loadFromChannel = () => {
     }));
     nextId = Math.max(...modbusConfig.value.map(r => r.id)) + 1;
   } else {
-    // 없으면 기본값 사용
     modbusConfig.value = JSON.parse(JSON.stringify(defaultConfig));
     nextId = 3;
   }
 };
 
-// modbusConfig 변경 시 ai_modbus에 동기화
 const syncToChannel = () => {
   if (currentChannelData.value) {
     currentChannelData.value.ai_modbus = JSON.parse(JSON.stringify(modbusConfig.value));
   }
 };
 
-// 컴포넌트 마운트 시 데이터 로드
-onMounted(() => {
-  loadFromChannel();
-});
+onMounted(() => { loadFromChannel(); });
 
-// 채널 변경 시 데이터 다시 로드
-watch(() => props.channel, () => {
-  loadFromChannel();
-});
+watch(() => props.channel, () => { loadFromChannel(); });
 
-// modbusConfig 변경 감지하여 동기화
-watch(modbusConfig, () => {
-  syncToChannel();
-}, { deep: true });
+watch(modbusConfig, () => { syncToChannel(); }, { deep: true });
 
-// 행 추가
-const addRow = () => {
-  modbusConfig.value.push(createDefaultRow(nextId++));
-};
+const addRow = () => { modbusConfig.value.push(createDefaultRow(nextId++)); };
 
-// 행 삭제
 const removeRow = (index) => {
-  if (modbusConfig.value.length > 1) {
-    modbusConfig.value.splice(index, 1);
-  }
+  if (modbusConfig.value.length > 1) modbusConfig.value.splice(index, 1);
 };
 
-// 초기값으로 리셋
 const handleReset = () => {
   if (confirm("Are you sure you want to reset to default configuration?")) {
     nextId = 3;
@@ -407,11 +350,9 @@ const handleReset = () => {
   }
 };
 
-// useAI 상태 확인
 const isUseAIEnabled = computed(() => {
-  const channelUseAI =
-    currentChannelData.value?.useAI === 1 || currentChannelData.value?.useAI === true;
-  return channelUseAI;
+  const d = currentChannelData.value;
+  return d?.useAI === 1 || d?.useAI === true;
 });
 </script>
 
@@ -420,13 +361,11 @@ input[type="number"]:focus,
 select:focus {
   outline: none;
 }
-
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 input[type="number"] {
   -moz-appearance: textfield;
 }
