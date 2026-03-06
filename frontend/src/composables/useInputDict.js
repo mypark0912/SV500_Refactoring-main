@@ -176,6 +176,8 @@ export function useInputDict() {
     useDO:0,
     useAI:0,
     status_Info:{
+      "m_name": "DO_1",
+      "devId": 1,
       "diagnosis":[],
       "pq":[],
       "faults": [],
@@ -256,6 +258,8 @@ export function useInputDict() {
     useDO:0,
     useAI:0,
     status_Info:{
+      "m_name": "DO_2",
+      "devId": 2,
       "diagnosis":[],
       "pq":[],
       "faults": [],
