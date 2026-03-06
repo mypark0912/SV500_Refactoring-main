@@ -336,11 +336,7 @@ onMounted(() => { loadFromChannel(); });
 watch(() => props.channel, () => { loadFromChannel(); });
 
 watch(modbusConfig, () => { syncToChannel(); }, { deep: true });
-watch(devId, (val) => {
-  if (channelData.value?.status_Info) {
-    channelData.value.status_Info.devId = val;
-  }
-}, { immediate: true });
+
 const addRow = () => { modbusConfig.value.push(createDefaultRow(nextId++)); };
 
 const removeRow = (index) => {
