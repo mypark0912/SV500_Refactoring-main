@@ -1056,7 +1056,7 @@ async def list_trend_files():
         if not trend_dir.exists():
             return {"success": False, "message": "Trend directory not found"}
 
-        files = sorted([f.name for f in trend_dir.glob("*.csv")], reverse=True)
+        files = sorted([f.name for f in trend_dir.glob("*.parquet")], reverse=True)
         return {"success": True, "data": files}
     except Exception as e:
         logging.error(f"❌ Trend list error: {e}")
@@ -1068,7 +1068,7 @@ async def download_trend_file(filename: str):
     """DiagnosisTrend CSV 파일 개별 다운로드"""
     try:
         filepath = Path("/usr/local/sv500/trendcsv") / filename
-        if not filepath.exists() or filepath.suffix != '.csv':
+        if not filepath.exists() or filepath.suffix != '.parquet':
             return {"success": False, "message": f"File not found: {filename}"}
 
         return FileResponse(
