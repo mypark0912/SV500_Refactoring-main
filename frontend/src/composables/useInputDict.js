@@ -19,7 +19,6 @@ export function useInputDict() {
     },
     deviceInfo: {
       name: "",
-      // device_model: "SV-500",
       location:"",
       serial_number: "",
       mac_address: "",
@@ -32,15 +31,21 @@ export function useInputDict() {
       dhcp: 0,
     },
     modbus: {
-      tcp_log:0,
+      tcp_log: 0,
       tcp_port: "",
-      serial_log:0,
+      serial_log: 0,
       modbus_id: "",
       baud_rate: 0,
       parity: 0,
-      data_bits:7,
-      stop_bits:1,
-      rtu_use:0
+      data_bits: 7,
+      stop_bits: 1,
+      rtu_use: 0,
+      serialtype: [
+        { id: 1, type: 0, devId: 1 },
+        { id: 2, type: 0, devId: 2 },
+        { id: 3, type: 0, devId: 3 },
+        { id: 4, type: 0, devId: 4 },
+      ],
     },
     
     pf_sign: 0,
@@ -56,10 +61,7 @@ export function useInputDict() {
       upload_sub: "",
     },
     sntpInfo: {
-      // date: "",
-      // time: "",
       host: "",
-      // period: "",
       timezone: "",
     },
     MQTT :{
@@ -75,17 +77,6 @@ export function useInputDict() {
       lteuse:0
     }
   });
-
-  // const status_Info = reactive({
-  //   "Main":{
-  //     "diagnosis":[],
-  //     "pq":[]
-  //   },
-  //   "Sub":{
-  //     "diagnosis":[],
-  //     "pq":[]
-  //   }
-  // });
 
   const diagnosis_detail = ref({
     main:{
@@ -122,7 +113,6 @@ export function useInputDict() {
       demand_interval: "15",
       collect:0,
     },
-    
     ptInfo: {
       wiringmode: 0,
       linefrequency: 60,
@@ -202,7 +192,6 @@ export function useInputDict() {
       demand_interval: 15,
       collect:0,
     },
-    
     ptInfo: {
       wiringmode: 0,
       linefrequency: 60,
@@ -271,8 +260,7 @@ export function useInputDict() {
     );
   });
 
-  
- const currentDiagnosis = computed(() => ({
+  const currentDiagnosis = computed(() => ({
     Main: inputDict.value.useFuction.diagnosis_main,
     Sub: inputDict.value.useFuction.diagnosis_sub,
   }));
@@ -280,11 +268,9 @@ export function useInputDict() {
   const diagnosisData = ref({});
   const advancedData = ref({});
 
-  //const Diagnosis_inputDict = ref({});
-
   const selectedTrendSetup = ref({
-    period: 5, // 기본값을 5분으로 설정
-    params: ["None","None","None","None","None","None","None","None"], // 첫 번째는 Energy로 고정
+    period: 5,
+    params: ["None","None","None","None","None","None","None","None"],
   });
 
   const changeDiagnosis = ref({
@@ -292,7 +278,6 @@ export function useInputDict() {
     nameplate : false,
     parameter : false
   });
-
 
   const parameterOptions = [
       "None",
@@ -356,7 +341,7 @@ export function useInputDict() {
       const pad = (num, size = 2) => String(num).padStart(size, "0");
 
       const year = date.getFullYear();
-      const month = pad(date.getMonth() + 1); // 월은 0부터 시작
+      const month = pad(date.getMonth() + 1);
       const day = pad(date.getDate());
       let hours, minutes, seconds, milliseconds;
 
@@ -381,7 +366,6 @@ export function useInputDict() {
         seconds = pad(59);
         milliseconds = pad(99, 2);
       }
-      // 타임존 오프셋 계산
       const timezoneOffset = -date.getTimezoneOffset();
       const offsetSign = timezoneOffset >= 0 ? "+" : "-";
       const offsetHours = pad(Math.abs(Math.floor(timezoneOffset / 60)));
@@ -407,6 +391,5 @@ export function useInputDict() {
     selectedTrendSetup,
     changeDiagnosis,
     diagnosis_detail,
-    //status_Info,
   };
 }
