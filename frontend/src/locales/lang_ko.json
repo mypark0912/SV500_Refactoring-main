@@ -776,7 +776,7 @@
       },
       "modbus": {
         "title": "Modbus",
-        "tcp": "TCP 포트",
+        "tcp": "포트",
         "tcpTO": "응답 대기시간 (ms)",
         "snInfor": "직렬 통신 정보",
         "rtuid": "RTU/ID",
