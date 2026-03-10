@@ -359,6 +359,7 @@ export default {
           { ID: 4, Name: "PF1", Title: "Power Factor L1", Titles: { en: "Power Factor L1", ko: "역률 L1", ja: "力率 L1" } },
           { ID: 5, Name: "PF2", Title: "Power Factor L2", Titles: { en: "Power Factor L2", ko: "역률 L2", ja: "力率 L2" } },
           { ID: 6, Name: "PF3", Title: "Power Factor L3", Titles: { en: "Power Factor L3", ko: "역률 L3", ja: "力率 L3" } },
+          { ID: 60, Name: "PF4", Title: "Total Power Factor", Titles: { en: "Total Power Factor", ko: "역률 합계", ja: "力率 L3" } },
         ],
       },
       {
@@ -396,6 +397,8 @@ export default {
           { ID: 17, Name: "I1", Title: "Current L1", Titles: { en: "Current L1", ko: "전류 L1", ja: "電流 L1" } },
           { ID: 18, Name: "I2", Title: "Current L2", Titles: { en: "Current L2", ko: "전류 L2", ja: "電流 L2" } },
           { ID: 19, Name: "I3", Title: "Current L3", Titles: { en: "Current L3", ko: "전류 L3", ja: "電流 L3" } },
+          { ID: 58, Name: "I4", Title: "Average Current", Titles: { en: "Average Current ", ko: "전류 평균", ja: "電流 L4" } },
+          { ID: 59, Name: "Ig", Title: "Leakage Current", Titles: { en: "Leakage Current ", ko: "누설 전류", ja: "電流" } },
         ],
       },
       {
@@ -895,6 +898,8 @@ export default {
         I1: ["I1"],
         I2: ["I2"],
         I3: ["I3"],
+        I4: ["I4"],
+        Ig: ["Ig"],
         P4: ["P4"],
         Q4: ["Q4"],
         S4: ["S4"],
@@ -902,6 +907,7 @@ export default {
         PF1: ["PF1"],
         PF2: ["PF2"],
         PF3: ["PF3"],
+        PF4: ["PF4"],
         vunbal: ["Ubal1"],
         curunbal: ["Ibal1"],
         THD_U1: ["THD_U1"],
