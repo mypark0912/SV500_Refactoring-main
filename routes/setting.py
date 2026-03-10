@@ -3130,7 +3130,7 @@ def apply_sntp_setting(sntp_data):
     return {"result": True}
 
 def save_redis_setup(setupData):
-    if setupData["General"]["modbus"]["rtu_ruse"] == 1:
+    if setupData["General"]["modbus"]["rtu_use"] == 1:
         serialUse = True
         redis_state.client.hset("SerialModbus","ModuleInfo", json.dumps(setupData["General"]["modbus"].get("serialinfo")))
     else:
