@@ -455,7 +455,7 @@
     </div>
     <!-- 행 -->
     <div
-      v-for="item in inputDict.modbus.serialtype"
+      v-for="item in inputDict.modbus.serialinfo"
       :key="item.id"
       class="grid text-center text-sm border-t border-gray-200 dark:border-gray-700"
       style="grid-template-columns: 55px 1fr 80px"
@@ -764,12 +764,12 @@ export default {
 
     const ensureSerialtype = () => {
       if (!inputDict.value.modbus) return;
-      if (!inputDict.value.modbus.serialtype || inputDict.value.modbus.serialtype.length === 0) {
-        inputDict.value.modbus.serialtype = defaultSerialtype.map(item => ({ ...item }));
+      if (!inputDict.value.modbus.serialinfo || inputDict.value.modbus.serialinfo.length === 0) {
+        inputDict.value.modbus.serialinfo = defaultSerialtype.map(item => ({ ...item }));
       }
     };
 
-    // 서버에서 데이터 로드 후에도 serialtype이 없으면 채워넣기
+    // 서버에서 데이터 로드 후에도 serialinfo 없으면 채워넣기
     watch(
       () => inputDict.value.modbus,
       () => { ensureSerialtype(); },

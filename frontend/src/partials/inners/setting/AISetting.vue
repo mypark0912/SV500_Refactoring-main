@@ -126,21 +126,22 @@
                 <!-- AI Type -->
                 <td class="px-2 py-2 text-center">
                   <select
-                    v-model="row.m_name"
+                    v-model.number="row.m_name"
                     class="w-24 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
                   >
-                    <option value="Temper">Temper</option>
+                    <option :value="0">ExtIO</option>
+                    <option :value="1">P300-C</option>
                   </select>
                 </td>
                 <!-- Dev ID -->
                 <td class="px-2 py-2 text-center">
-                  <input
-                    type="number"
+                  <select
                     v-model.number="row.devId"
-                    class="w-16 px-1.5 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
-                    min="0"
-                    max="255"
-                  />
+                    class="w-16 px-1 py-1 text-xs text-center border rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option v-if="p300DevIds.length === 0" :value="0" disabled>-</option>
+                    <option v-for="devId in p300DevIds" :key="devId" :value="devId">{{ devId }}</option>
+                  </select>
                 </td>
                 <!-- Start Address -->
                 <td class="px-2 py-2 text-center">
@@ -239,16 +240,18 @@
         <div
           class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
         >
-        <p class="text-xs text-blue-800 dark:text-blue-200">
-          <strong>Note:</strong>
-          • FC: Function Code (03=Read Holding Registers, 04=Read Input Registers, 16=Write Multiple Registers)
-          <br />
-          • Data Type: UINT16, UINT32, Float, F002 (F002=Float value/100)
-          <br />
-          • Destination: Target address (Temp R-phase, Temp S-phase, Temp T-phase)
-          <br />
-          • Scale: Scale factor (e.g. 0.01, 0.1, 1.0, 100.0)
-        </p>
+          <p class="text-xs text-blue-800 dark:text-blue-200">
+            <strong>Note:</strong>
+            • FC: Function Code (03=Read Holding Registers, 04=Read Input Registers, 16=Write Multiple Registers)
+            <br />
+            • Data Type: UINT16, UINT32, Float, F002 (F002=Float value/100)
+            <br />
+            • Destination: Target address (Temp R-phase, Temp S-phase, Temp T-phase)
+            <br />
+            • Scale: Scale factor (e.g. 0.01, 0.1, 1.0, 100.0)
+            <br />
+            • Dev ID: Populated from General &gt; Modbus Serial Type (P300-C entries only)
+          </p>
         </div>
 
         <!-- 하단 정보 -->
@@ -256,6 +259,10 @@
           <div class="text-sm text-gray-600 dark:text-gray-400">
             Total Configurations:
             <span class="font-semibold">{{ modbusConfig.length }}</span>
+          </div>
+          <!-- P300-C 없을 때 경고 -->
+          <div v-if="p300DevIds.length === 0" class="text-xs text-yellow-600 dark:text-yellow-400">
+            ⚠ No P300-C devices configured in General &gt; Modbus Serial Type
           </div>
         </div>
       </div>
@@ -276,17 +283,25 @@ const props = defineProps({
 
 const mainData = inject('channel_main');
 const subData = inject('channel_sub');
+const inputDict = inject('inputDict');
 
 const currentChannelData = computed(() =>
   props.channel === 'Main' ? mainData.value : subData.value
 );
+
+// General > modbus.serialinfo 중 type=1(P300-C)인 것들의 devId 목록
+const p300DevIds = computed(() => {
+  return (inputDict?.value?.modbus?.serialinfo ?? [])
+    .filter(item => item.type === 1)
+    .map(item => item.devId);
+});
 
 const modbusConfig = ref([]);
 
 const createDefaultRow = (id) => ({
   id,
   enable: 0,
-  m_name: 'Temper',
+  m_name: 0,
   devId: 0,
   startAddr: 0,
   count: 0,
@@ -298,8 +313,7 @@ const createDefaultRow = (id) => ({
 });
 
 const defaultConfig = [
-  { id: 1, enable: 1, m_name: 'Temper', devId: 100, startAddr: 0, count: 6, dataType: 3, destination: 0, period: 1000, fc: 4, scale: 1.0 }
-
+  { id: 1, enable: 1, m_name: 0, devId: 0, startAddr: 0, count: 6, dataType: 3, destination: 0, period: 1000, fc: 4, scale: 1.0 }
 ];
 
 const loadFromChannel = () => {
@@ -308,7 +322,7 @@ const loadFromChannel = () => {
     modbusConfig.value = aiModbus.map((item, idx) => ({
       id: item.id || idx + 1,
       enable: item.enable ?? 0,
-      m_name: item.m_name ?? 'Temper',
+      m_name: item.m_name ?? 0,
       devId: item.devId ?? 0,
       startAddr: item.startAddr ?? 0,
       count: item.count ?? 0,

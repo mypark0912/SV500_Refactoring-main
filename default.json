@@ -31,7 +31,7 @@
       "data_bits": 7,
       "stop_bits": 1,
       "rtu_use": 0,
-      "serialtype": [
+      "serialinfo": [
         { "id": 1, "type": 0, "devId": 1 },
         { "id": 2, "type": 0, "devId": 2 },
         { "id": 3, "type": 0, "devId": 3 },
