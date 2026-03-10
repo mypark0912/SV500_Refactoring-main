@@ -310,7 +310,7 @@
               </div>
               <div class="px-4 py-4 space-y-3">
                 <div class="flex items-center justify-between">
-                  <label class="block text-sm font-medium">TCP Log enable</label>
+                  <label class="block text-sm font-medium">Log enable</label>
                   <div
                     class="relative inline-flex items-center cursor-pointer"
                     @click="inputDict.modbus.tcp_log = inputDict.modbus.tcp_log === 1 ? 0 : 1"
@@ -360,7 +360,7 @@
                 <!-- Serial Log enable + 사용 한 줄 -->
                 <div class="flex gap-3">
                   <div class="flex-1">
-                    <label class="block text-sm font-medium mb-2">Serial Log enable</label>
+                    <label class="block text-sm font-medium mb-2">Log enable</label>
                     <div
                       class="relative inline-flex items-center cursor-pointer"
                       @click="inputDict.modbus.serial_log = inputDict.modbus.serial_log === 1 ? 0 : 1"
