@@ -165,9 +165,7 @@ export function useInputDict() {
     confStatus:0,
     useDO:0,
     useAI:0,
-    status_Info:{
-      "m_name": "DO_1",
-      "devId": 1,
+    status_Info:{ 
       "diagnosis":[],
       "pq":[],
     },
@@ -245,8 +243,6 @@ export function useInputDict() {
     useDO:0,
     useAI:0,
     status_Info:{
-      "m_name": "DO_2",
-      "devId": 2,
       "diagnosis":[],
       "pq":[],
     },

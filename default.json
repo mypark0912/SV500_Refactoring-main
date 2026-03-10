@@ -30,7 +30,13 @@
       "parity": 0,
       "data_bits": 7,
       "stop_bits": 1,
-      "rtu_use": 0
+      "rtu_use": 0,
+      "serialtype": [
+        { "id": 1, "type": 0, "devId": 1 },
+        { "id": 2, "type": 0, "devId": 2 },
+        { "id": 3, "type": 0, "devId": 3 },
+        { "id": 4, "type": 0, "devId": 4 }
+      ]
     },
     "pf_sign": 0,
     "va_type": 0,
@@ -335,9 +341,7 @@
       "confStatus": 0,
       "useDO": 0,
       "useAI": 0,
-      "status_Info": {
-        "m_name": "DO_1",
-        "devId": 1,
+      "status_Info": {  
         "diagnosis": [],
         "pq": [],
         "faults": [],
@@ -618,9 +622,7 @@
       "confStatus": 0,
       "useDO": 0,
       "useAI": 0,
-      "status_Info": {
-        "m_name": "DO_2",
-        "devId": 2,
+      "status_Info": { 
         "diagnosis": [],
         "pq": [],
         "faults": [],
