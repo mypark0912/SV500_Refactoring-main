@@ -4022,7 +4022,8 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
 def query_energy_trend_data(
         channel: str,
         start_date: str = None,
-        end_date: str = None
+        end_date: str = None,
+        mode:int = 0
 ):
     """
     동기 에너지 트렌드 쿼리 함수 (executor에서 실행됨)
@@ -4039,9 +4040,13 @@ def query_energy_trend_data(
         range_filter = 'from(bucket: "ntek") |> range(start: -5y)'
 
     # 메인 쿼리 - pivot 포함
+    if mode == 0:
+        mearsurement = "energy_consumption"
+    else:
+        mearsurement = "energy_cumulative"
     query = (
         f'{range_filter} '
-        f'|> filter(fn: (r) => r["_measurement"] == "energy_consumption" and r["channel"] == "{channel}") '
+        f'|> filter(fn: (r) => r["_measurement"] == "{mearsurement}" and r["channel"] == "{channel}") '
         f'|> sort(columns: ["_time"], desc: false) '
         f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
     )
@@ -4070,7 +4075,7 @@ def query_energy_trend_data(
 
 
 @router.get('/getEnergyTrend/{channel}')
-async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = None):
+async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = None, mode: int = 0):
     """
     에너지 트렌드 데이터 조회 (비동기 처리)
 
@@ -4099,6 +4104,7 @@ async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = Non
             channel=channel,
             start_date=startDate,
             end_date=endDate,
+            mode=mode,
             timeout=90  # 에너지 데이터는 범위가 넓을 수 있어서 90초
         )
 

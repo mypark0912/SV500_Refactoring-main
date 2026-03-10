@@ -459,12 +459,15 @@ export default {
         ID: 27,
         Name: "Energy",
         Title: "Energy",
-        Titles: { en: "Energy", ko: "에너지", ja: "エネルギー" },
+        Titles: { en: "Energy", ko: "전력량", ja: "エネルギー" },
         isParent: true,
         children: [
-          { ID: 28, Name: "kwh_import_consumption", Title: "Active Energy", Titles: { en: "Active Energy", ko: "유효 에너지", ja: "有効エネルギー" } },
-          { ID: 29, Name: "kvarh_import_consumption", Title: "Reactive Energy", Titles: { en: "Reactive Energy", ko: "무효 에너지", ja: "無効エネルギー" } },
-          { ID: 30, Name: "kvah_import_consumption", Title: "Apparent Energy", Titles: { en: "Apparent Energy", ko: "피상 에너지", ja: "皮相エネルギー" } },
+          { ID: 28, Name: "kwh_import_consumption", Title: "Active Energy", Titles: { en: "Hourly Active Energy by ", ko: "시간당 유효 전력량", ja: "有効エネルギー" } },
+          { ID: 29, Name: "kvarh_import_consumption", Title: "Reactive Energy", Titles: { en: "Hourly Reactive Energy", ko: "시간당 무효 전력량", ja: "無効エネルギー" } },
+          { ID: 30, Name: "kvah_import_consumption", Title: "Apparent Energy", Titles: { en: "Hourly Apparent Energy", ko: "시간당 피상 전력량", ja: "皮相エネルギー" } },
+          { ID: 54, Name: "kwh_import", Title: "Total active Energy", Titles: { en: "Total Active Energy", ko: "총 유효 전력량", ja: "有効エネルギー" } },
+          { ID: 55, Name: "kvarh_import", Title: "Total reactive Energy", Titles: { en: "Total Reactive Energy", ko: "총 무효 전력량", ja: "無効エネルギー" } },
+          { ID: 56, Name: "kvah_import", Title: "Total apparent Energy", Titles: { en: "Total Apparent Energy", ko: "총 피상 전력량", ja: "皮相エネルギー" } },
         ],
       },
     ];
@@ -1012,73 +1015,103 @@ export default {
 
       isLoading.value = true;
 
+      // 선택된 파라미터를 _consumption 유무로 분리
+      const consumptionParams = checkedNames.value.filter((name) => name.includes("_consumption"));
+      const cumulativeParams = checkedNames.value.filter((name) => !name.includes("_consumption"));
+
+      const energyParamMap = {
+        kwh_import_consumption: ["kwh_import_consumption"],
+        kvarh_import_consumption: ["kvarh_import_consumption"],
+        kvah_import_consumption: ["kvah_import_consumption"],
+        kwh_import: ["kwh_import"],
+        kvarh_import: ["kvarh_import"],
+        kvah_import: ["kvah_import"],
+      };
+
       try {
-        let url = `/api/getEnergyTrend/${channel.value}`;
-        const response = await axios.get(url, {
-          params: {
-            startDate: formatToISOString(props.startdate, 2),
-            endDate: formatToISOString(props.enddate, 3),
-          },
-        });
+        const url = `/api/getEnergyTrend/${channel.value}`;
+        const params = {
+          startDate: formatToISOString(props.startdate, 2),
+          endDate: formatToISOString(props.enddate, 3),
+        };
 
-        if (response.data.result) {
-          const responseData = response.data.data;
-          lastDate.value = response.data.date;
-          if (!Array.isArray(responseData)) {
-            energyOption.value = { lineLabels: [], lineData: [] };
-            return;
-          }
+        // 필요한 mode만 병렬로 API 호출
+        const requests = [];
+        if (consumptionParams.length > 0) {
+          requests.push(axios.get(url, { params: { ...params, mode: 0 } }));
+        }
+        if (cumulativeParams.length > 0) {
+          requests.push(axios.get(url, { params: { ...params, mode: 1 } }));
+        }
 
-          if (responseData.length === 0) {
-            energyOption.value = { lineLabels: [], lineData: [] };
-            return;
-          }
+        const responses = await Promise.all(requests);
 
-          const datasets = [];
-          const labels = [];
-          const selectedParams = checkedNames.value;
+        const datasets = [];
+        const labelsSet = new Set();
+        let reqIndex = 0;
 
-          try {
-            labels.push(...responseData.map((row) => row._time));
-          } catch (timeError) {
-            energyOption.value = { lineLabels: [], lineData: [] };
-            return;
-          }
+        // mode=0 (consumption) 결과 처리
+        if (consumptionParams.length > 0) {
+          const res = responses[reqIndex++];
+          if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
+            const responseData = res.data.data;
+            lastDate.value = res.data.date;
+            responseData.forEach((row) => labelsSet.add(row._time));
 
-          const energyParamMap = {
-            kwh_import_consumption: ["kwh_import_consumption"],
-            kvarh_import_consumption: ["kvarh_import_consumption"],
-            kvah_import_consumption: ["kvah_import_consumption"],
-          };
-
-          selectedParams.forEach((param) => {
-            const keys = energyParamMap[param];
-            if (!keys) {
-              return;
-            }
-
-            keys.forEach((key) => {
-              try {
-                const data = responseData.map((row) => row[key]);
-                datasets.push({
-                  name: nameToTitleMap[key] || key,
-                  data: data,
-                  isThreshold: false,
-                });
-              } catch (dataError) {
-                // Energy 데이터 생성 실패
-              }
+            consumptionParams.forEach((param) => {
+              const keys = energyParamMap[param];
+              if (!keys) return;
+              keys.forEach((key) => {
+                try {
+                  datasets.push({
+                    name: nameToTitleMap[key] || key,
+                    data: responseData.map((row) => row[key]),
+                    isThreshold: false,
+                  });
+                } catch (dataError) {}
+              });
             });
-          });
 
+            if (saveCsv.value === 1) {
+              saveCsvfromData(responseData, `energy_trend_0_${channel.value}.csv`);
+            }
+          }
+        }
+
+        // mode=1 (cumulative) 결과 처리
+        if (cumulativeParams.length > 0) {
+          const res = responses[reqIndex++];
+          if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
+            const responseData = res.data.data;
+            lastDate.value = res.data.date;
+            responseData.forEach((row) => labelsSet.add(row._time));
+
+            cumulativeParams.forEach((param) => {
+              const keys = energyParamMap[param];
+              if (!keys) return;
+              keys.forEach((key) => {
+                try {
+                  datasets.push({
+                    name: nameToTitleMap[key] || key,
+                    data: responseData.map((row) => row[key]),
+                    isThreshold: false,
+                  });
+                } catch (dataError) {}
+              });
+            });
+
+            if (saveCsv.value === 1) {
+              saveCsvfromData(responseData, `energy_trend_1_${channel.value}.csv`);
+            }
+          }
+        }
+
+        const labels = [...labelsSet];
+        if (datasets.length > 0 && labels.length > 0) {
           energyOption.value = {
             lineLabels: labels,
             lineData: datasets,
           };
-          if (saveCsv.value === 1 && responseData.length > 0) {
-              const filename = `energy_trend_${channel.value}.csv`;
-              saveCsvfromData(responseData, filename);
-            }
         } else {
           energyOption.value = { lineLabels: [], lineData: [] };
         }
