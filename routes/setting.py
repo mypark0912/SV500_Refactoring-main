@@ -3130,41 +3130,43 @@ def apply_sntp_setting(sntp_data):
     return {"result": True}
 
 def save_redis_setup(setupData):
+    if setupData["General"]["modbus"]["rtu_ruse"] == 1:
+        serialUse = True
+        redis_state.client.hset("SerialModbus","ModuleInfo", json.dumps(setupData["General"]["modbus"].get("serialinfo")))
+    else:
+        serialUse = False
     if len(setupData["channel"]) > 0:
         for ch in setupData["channel"]:
             if "channel" in ch and "alarm" in ch:
                 initialize_alarm_configs(ch["channel"], ch["alarm"])
 
     procData = save_StartCurrent_DemandInterval_SamplingPeriod(setupData)
-    flagdict = {"confStatus":False, "confDO":False, "confAI":False }
+    hasConfStatus = False
+    hasConfAI = False
     for channel_config in setupData.get("channel", []):
         channel_name = channel_config.get("channel")
-        confStatus = channel_config.get("confStatus", 0)
-        use_do = channel_config.get("useDO", 0)
-        use_ai = channel_config.get("useAI", 0)
-        if confStatus == 1:
-            flagdict["confStatus"] = True
-        if use_do == 1:
-            flagdict["confDO"] = True
-        if use_ai == 1:
-            flagdict["confAI"] = True
-
-        if channel_name:
-            devices = []
-            status_info = channel_config.get("status_Info", {})
-            if status_info.get("m_name"):
-                devices.append({"m_name": status_info["m_name"], "devId": status_info.get("devId", 0)})
-            for ai_item in channel_config.get("ai_modbus", []):
-                if ai_item.get("m_name"):
-                    devices.append({"m_name": ai_item["m_name"], "devId": ai_item.get("devId", 0)})
-            if devices:
-                redis_state.client.hset("SerialModbus", channel_name, json.dumps(devices))
+        flagdict = {"useSerial": serialUse, "confStatus":False, "confDO":False, "confAI":False }
+        if channel_config.get("Enable") == 1:
+            confStatus = channel_config.get("confStatus", 0)
+            use_do = channel_config.get("useDO", 0)
+            use_ai = channel_config.get("useAI", 0)
+            if confStatus == 1:
+                flagdict["confStatus"] = True
+                hasConfStatus = True
+            if use_do == 1:
+                flagdict["confDO"] = True
+            if use_ai == 1:
+                flagdict["confAI"] = True
+                hasConfAI = True
+            redis_state.client.hset("SerialModbus", channel_name, json.dumps(flagdict))
+        else:
+            redis_state.client.hdel("SerialModbus", channel_name)
 
     dash_alarms_data = {}
     ai_data = {}
-    if flagdict["confStatus"]:
+    if hasConfStatus:
         dash_alarms_data = save_alarm_configs_to_redis(setupData)
-    if flagdict["confAI"]:
+    if hasConfAI:
         ai_data = save_ai_configs_to_redis(setupData)
 
     redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))

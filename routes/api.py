@@ -1320,20 +1320,11 @@ async def get_state_legacy(data, channel):
 
 def check_useDO(channel):
     redis_data = redis_state.client.hget("SerialModbus", channel)
+    if not redis_data:
+        return False
     dash_alarms = json.loads(redis_data)
-    DOInfo = {}
-    if channel == 'Main':
-        doName = "DO_1"
-    else:
-        doName = "DO_2"
-    if dash_alarms:
-        for config in dash_alarms:
-            if doName in config["m_name"]:
-                DOInfo["name"] = config["m_name"]
-                DOInfo["id"] = config["devId"]
-                DOInfo["use"] = True
-                break
-    return DOInfo
+    return dash_alarms.get("confDO", False)
+
 
 def decide_nosetup(data):
     retDict = {}
@@ -1374,8 +1365,8 @@ async def get_dashStatus(asset, channel):
 
         # 설정이 없으면: DO 사용 여부에 따라 분기
         if not redis_data:
-            flagdict = check_useDO(channel)
-            if flagdict.get("use"):
+
+            if check_useDO(channel):
                 # DO 사용: Nodata는 Nodata, 나머지는 OK
                 nosetup = decide_nosetup(data)
                 return {"status": 0, "data": nosetup, "eventTree": eventTree, "runhours": runhours}
@@ -1389,8 +1380,8 @@ async def get_dashStatus(asset, channel):
 
         # 해당 채널 설정이 없으면: DO 사용 여부에 따라 분기
         if not channel_config:
-            flagdict = check_useDO(channel)
-            if flagdict.get("use"):
+            # flagdict = check_useDO(channel)
+            if check_useDO(channel):
                 nosetup = decide_nosetup(data)
                 return {"status": 0, "data": nosetup, "eventTree": eventTree, "runhours": runhours}
             else:
@@ -1422,8 +1413,8 @@ async def get_dashStatus(asset, channel):
 
             # ✅ 설정이 비어있으면 레거시 로직 사용
             if not config_list:
-                flagdict = check_useDO(channel)
-                if flagdict.get("use"):
+                # flagdict = check_useDO(channel)
+                if check_useDO(channel):
                     nosetup = decide_nosetup(data)
                     retDict[category] = nosetup.get(category, {"status": 1, "item": "All"})
                 else:
