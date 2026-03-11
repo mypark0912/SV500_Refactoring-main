@@ -3171,6 +3171,8 @@ def save_redis_setup(setupData):
         redis_state.client.hset("SerialModbus","ModuleInfo", json.dumps(setupData["General"]["modbus"].get("serialinfo")))
     else:
         serialUse = False
+        redis_state.client.delete("SerialModbus")
+
     if len(setupData["channel"]) > 0:
         for ch in setupData["channel"]:
             if "channel" in ch and "alarm" in ch:
@@ -3193,7 +3195,13 @@ def save_redis_setup(setupData):
                 flagdict["confDO"] = True
             if use_ai == 1:
                 flagdict["confAI"] = True
+                ai_info = channel_config.get("ai_modbus", {})
+                ai_infoList = []
+                for i in range(len(ai_info)):
+                    if ai_infoList[i]["enable"] == 1:
+                        ai_infoList.append({ "mtype":ai_info[i]["m_name"], "devId": ai_info[i]["devId"] })
                 hasConfAI = True
+                flagdict["ai_info"] = ai_infoList
             redis_state.client.hset("SerialModbus", channel_name, json.dumps(flagdict))
         else:
             redis_state.client.hdel("SerialModbus", channel_name)

@@ -1346,6 +1346,11 @@ def decide_nosetup(data):
 
     return retDict
 
+# @router.get("/getMDStatus/{channel}")
+# def get_mdstatus(channel):
+#     if redis_state.client.hexists("SerialModbus", channel):
+#         chandict = redis_state.client.hget("SerialModbus", channel)
+
 @router.get("/getDashSatatus/{asset}/{channel}")
 async def get_dashStatus(asset, channel):
     runhours = get_running(channel)["total"]
