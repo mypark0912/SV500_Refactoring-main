@@ -153,7 +153,7 @@ export default {
     // 고조파 차트 데이터 설정
     const dataKeys = ['thdu total', 'thdi total', 'tddi total']
     const labels = ['THD-U', 'THD-I', 'TDD-I']
-    const colors = ['purple', 'blue', 'green']
+    const colors = ['pink', 'indigo', 'teal']
 
     // 차트 아이템 계산
     const chartItems = computed(() => {
@@ -345,7 +345,7 @@ export default {
   box-sizing: border-box;
   background: conic-gradient(
     from 0.75turn,
-    #3b82f6 calc(var(--pf) * 0.5turn),
+    #10b981 calc(var(--pf) * 0.5turn),
     #e5e7eb calc(var(--pf) * 0.5turn),
     #e5e7eb 0.5turn,
     transparent 0.5turn
@@ -355,7 +355,7 @@ export default {
 :is(.dark) .gauge-body::before {
   background: conic-gradient(
     from 0.75turn,
-    #60a5fa calc(var(--pf) * 0.5turn),
+    #34d399 calc(var(--pf) * 0.5turn),
     #374151 calc(var(--pf) * 0.5turn),
     #374151 0.5turn,
     transparent 0.5turn
@@ -454,19 +454,19 @@ export default {
 }
 
 /* 바 색상 - 다크모드에서도 잘 보이도록 조정 */
-.bar-purple {
-  @apply bg-gradient-to-t from-purple-500 to-purple-400;
-  @apply dark:from-purple-400 dark:to-purple-300;
+.bar-pink {
+  @apply bg-gradient-to-t from-pink-500 to-pink-400;
+  @apply dark:from-pink-400 dark:to-pink-300;
 }
 
-.bar-blue {
-  @apply bg-gradient-to-t from-blue-500 to-blue-400;
-  @apply dark:from-blue-400 dark:to-blue-300;
+.bar-indigo {
+  @apply bg-gradient-to-t from-indigo-500 to-indigo-400;
+  @apply dark:from-indigo-400 dark:to-indigo-300;
 }
 
-.bar-green {
-  @apply bg-gradient-to-t from-green-500 to-green-400;
-  @apply dark:from-green-400 dark:to-green-300;
+.bar-teal {
+  @apply bg-gradient-to-t from-teal-500 to-teal-400;
+  @apply dark:from-teal-400 dark:to-teal-300;
 }
 
 /* 반응형 개선 */
