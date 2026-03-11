@@ -464,6 +464,38 @@ from(bucket: "ntek")
 ''',
                 "cron": f"20 {cron_hour} * * *",
                 "description": "Downsample energy_cumulative to 1d last value (local TZ)"
+            },
+
+            # Task 5: energy_trend 15분 → 1시간 평균
+            {
+                "name": "downsample_energy_trend_to_1h",
+                "flux": f'''
+option task = {{name: "downsample_energy_trend_to_1h", every: 1h, offset: 5m}}
+
+from(bucket: "ntek")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r["_measurement"] == "energy_trend")
+  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)
+  |> to(bucket: "ntek_1h", org: "{org_name}")
+''',
+                "every": "1h",
+                "description": "Downsample energy_trend data to 1h average"
+            },
+
+            # Task 6: energy_trend 1시간 → 1일 평균 (로컬 자정 기준)
+            {
+                "name": "downsample_energy_trend_to_1d",
+                "flux": f'''
+option task = {{name: "downsample_energy_trend_to_1d", cron: "25 {cron_hour} * * *"}}
+
+from(bucket: "ntek_1h")
+  |> range(start: -1d)
+  |> filter(fn: (r) => r["_measurement"] == "energy_trend")
+  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false, offset: {agg_offset})
+  |> to(bucket: "ntek_1d", org: "{org_name}")
+''',
+                "cron": f"25 {cron_hour} * * *",
+                "description": "Downsample energy_trend data to 1d average (local TZ)"
             }
         ]
 
@@ -519,7 +551,9 @@ async def recreate_downsampling_tasks():
             "downsample_trend_to_1h",
             "downsample_trend_to_1d",
             "downsample_energy_consumption_to_1d",
-            "downsample_energy_cumulative_to_1d"
+            "downsample_energy_cumulative_to_1d",
+            "downsample_energy_trend_to_1h",
+            "downsample_energy_trend_to_1d"
         ]
 
         # 1. 기존 task 삭제
@@ -696,7 +730,9 @@ async def check_downsampling_status():
             "downsample_trend_to_1h",
             "downsample_trend_to_1d",
             "downsample_energy_consumption_to_1d",
-            "downsample_energy_cumulative_to_1d"
+            "downsample_energy_cumulative_to_1d",
+            "downsample_energy_trend_to_1h",
+            "downsample_energy_trend_to_1d"
         ]
 
         bucket_status = []
@@ -3171,6 +3207,7 @@ def save_redis_setup(setupData):
 
     redis_state.client.hset("Equipment", "StartingCurrent", json.dumps(procData["StartCurrent"]))
     redis_state.client.hset("Equipment", "DemandInterval", json.dumps(procData["Demand"]))
+    redis_state.client.hset("Equipment", "DemandCollect", json.dumps(procData["Demand_Collect"]))
     redis_state.client.hset("Equipment", "SamplingPeriod", json.dumps(procData["Sampling"]))
     redis_state.client.hset("Equipment", "ChannelData", json.dumps(procData["Channel"]))
 

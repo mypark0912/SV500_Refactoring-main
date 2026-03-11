@@ -7,7 +7,7 @@ from datetime import datetime, time, timezone, timedelta
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from states.global_state import influx_state, redis_state, os_spec
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from utils.redismap import RedisMapDetail2, RedisMapped, RedisMapCalibrate
 from utils.RedisBinary import RedisDataType
 from utils.DemandMap import DemandDataFormatter
@@ -94,6 +94,7 @@ async def run_influx_query(func, *args, timeout: int = 30, **kwargs):
 
     try:
         # kwargs 처리
+        func_name = getattr(func, '__name__', str(func))
         if kwargs:
             from functools import partial
             func = partial(func, **kwargs)
@@ -105,13 +106,13 @@ async def run_influx_query(func, *args, timeout: int = 30, **kwargs):
         return result
 
     except asyncio.TimeoutError:
-        logging.warning(f"Query timeout after {timeout}s: {func.__name__}")
+        logging.warning(f"Query timeout after {timeout}s: {func_name}")
         raise HTTPException(
             status_code=504,
             detail=f"Query timeout - please try with smaller date range"
         )
     except Exception as e:
-        logging.error(f"Query error in {func.__name__}: {e}")
+        logging.error(f"Query error in {func_name}: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Query failed: {str(e)}"
@@ -4024,19 +4025,26 @@ def query_energy_trend_data(
 
     query_api = influx_state.query_api
 
-    # 쿼리 범위 설정
-    if start_date and end_date:
-        range_filter = f'from(bucket: "ntek") |> range(start: time(v: "{start_date}"), stop: time(v: "{end_date}"))'
-    else:
-        range_filter = 'from(bucket: "ntek") |> range(start: -5y)'
-
-    # 메인 쿼리 - pivot 포함
+    # 메저먼트 결정
     if mode == 0:
         mearsurement = "energy_consumption"
     elif mode == 1:
         mearsurement = "energy_cumulative"
     else:
         mearsurement = "energy_trend"
+
+    # 버킷 선택 (기간에 따라 자동 선택, energy_trend만 다운샘플링 버킷 사용)
+    if start_date and end_date and mearsurement == "energy_trend":
+        bucket = get_bucket_by_duration(start_date, end_date)
+    else:
+        bucket = "ntek"
+
+    # 쿼리 범위 설정
+    if start_date and end_date:
+        range_filter = f'from(bucket: "{bucket}") |> range(start: time(v: "{start_date}"), stop: time(v: "{end_date}"))'
+    else:
+        range_filter = f'from(bucket: "{bucket}") |> range(start: -5y)'
+
     query = (
         f'{range_filter} '
         f'|> filter(fn: (r) => r["_measurement"] == "{mearsurement}" and r["channel"] == "{channel}") '
@@ -4063,7 +4071,8 @@ def query_energy_trend_data(
     return {
         "results": results,
         "last_date": last_date,
-        "count": len(results)
+        "count": len(results),
+        "bucket_used": bucket
     }
 
 
@@ -4103,8 +4112,9 @@ async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = Non
 
         results = result["results"]
         last_date = result["last_date"]
+        bucket_used = result.get("bucket_used", "ntek")
 
-        print(f"✅ 완료: {len(results)}개 레코드")
+        print(f"✅ 완료: {len(results)}개 레코드 (버킷: {bucket_used})")
         print(f"📊 마지막 날짜: {last_date}")
         print(f"=" * 60)
 
@@ -4112,7 +4122,8 @@ async def getEnergyTrend(channel: str, startDate: str = None, endDate: str = Non
             "result": True,
             "data": results,
             "date": last_date,
-            "count": len(results)
+            "count": len(results),
+            "bucket_used": bucket_used
         }
 
     except HTTPException:
@@ -4231,6 +4242,211 @@ async def getDemandTrend(channel: str, startDate: str = None, endDate: str = Non
             status_code=500,
             detail=f"Demand trend query failed: {str(e)}"
         )
+
+
+CSV_FIELDS = {
+    "trend": [
+        'U1', 'U2', 'U3', 'U4', 'Freq',
+        'Upp1', 'Upp2', 'Upp3', 'Upp4',
+        'I1', 'I2', 'I3', 'I4', 'Itot', 'In', 'Ig',
+        'Ubal1', 'Ubal2', 'Ibal1', 'Ibal2',
+        'P1', 'P2', 'P3', 'P4', 'Q1', 'Q2', 'Q3', 'Q4', 'S1', 'S2', 'S3', 'S4',
+        'PF1', 'PF2', 'PF3', 'PF4',
+        'THD_U1', 'THD_U2', 'THD_U3', 'THD_Upp1', 'THD_Upp2', 'THD_Upp3', 'THD_I1', 'THD_I2', 'THD_I3',
+        'TDD_I1', 'TDD_I2', 'TDD_I3',
+    ],
+    "energy_trend": [
+        'total_kwh_import', 'total_kvarh_import', 'total_kvah_import',
+        'total_kwh_export', 'total_kvarh_export', 'total_kvah_export',
+    ],
+    "demand": [
+        'CD_P_import', 'CD_Q_import', 'CD_S',
+    ],
+}
+
+
+def query_raw_trend_data(channel: str, start_date: str, end_date: str, measurement: str):
+    """
+    원본(ntek) 버킷에서 다운샘플링 없이 트렌드 데이터 조회 (CSV 다운로드용)
+    """
+    if influx_state.query_api is None:
+        raise Exception("query_api not available")
+
+    fields = CSV_FIELDS.get(measurement, [])
+
+    if start_date and end_date:
+        range_filter = f'from(bucket: "ntek") |> range(start: {start_date}, stop: {end_date})'
+    else:
+        range_filter = 'from(bucket: "ntek") |> range(start: -2d)'
+
+    # 필드 필터
+    if fields:
+        fields_filter = ' or '.join([f'r["_field"] == "{f}"' for f in fields])
+        field_filter_query = f'|> filter(fn: (r) => {fields_filter})'
+    else:
+        field_filter_query = ''
+
+    query = (
+        f'{range_filter} '
+        f'|> filter(fn: (r) => r["_measurement"] == "{measurement}" and r["channel"] == "{channel}") '
+        f'{field_filter_query} '
+        f'|> sort(columns: ["_time"], desc: false) '
+        f'|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+    )
+
+    tables = influx_state.query_api.query(org='ntek', query=query)
+
+    results = []
+    for table in tables:
+        for record in table.records:
+            row = {'_time': record.get_time().astimezone().strftime('%Y-%m-%d %H:%M:%S')}
+            for key, value in record.values.items():
+                if key in ['result', 'table', '_start', '_stop', '_time', '_measurement', 'channel']:
+                    continue
+                row[key] = value
+            results.append(row)
+
+    return results
+
+
+class CsvDownloadRequest(BaseModel):
+    startDate: str
+    endDate: str
+
+
+@router.post('/downloadTrendCsv/{channel}')
+async def downloadTrendCsv(channel: str, request: CsvDownloadRequest):
+    """
+    계측/전력량/디멘드 트렌드를 원본 데이터로 CSV 다운로드 (ZIP)
+    디멘드는 Redis DemandCollect 설정에 따라 자동 포함
+    """
+    if influx_state.client is None:
+        raise HTTPException(status_code=503, detail="InfluxDB client not initialized")
+
+    if influx_state.error:
+        raise HTTPException(status_code=503, detail="InfluxDB error state")
+
+    try:
+        import io
+        import zipfile
+
+        # 타임존 없는 날짜에 로컬 타임존 추가
+        def ensure_tz(dt_str):
+            if '+' not in dt_str and not dt_str.endswith('Z'):
+                local_now = datetime.now().astimezone()
+                offset = local_now.strftime('%z')  # e.g. '+0900'
+                tz_formatted = f"{offset[:3]}:{offset[3:]}"  # '+09:00'
+                return f"{dt_str}{tz_formatted}"
+            return dt_str
+
+        start_date = ensure_tz(request.startDate)
+        end_date = ensure_tz(request.endDate)
+
+        print(f"📦 CSV ZIP 다운로드 시작 (채널: {channel})")
+        print(f"📅 날짜 범위: {start_date} ~ {end_date}")
+
+        # 디멘드 수집 여부 확인 (Redis)
+        include_demand = False
+        try:
+            if redis_state.client and redis_state.client.hexists("Equipment", "DemandCollect"):
+                demand_collect = json.loads(redis_state.client.hget("Equipment", "DemandCollect"))
+                ch_key = channel.lower()  # "main" / "sub"
+                if demand_collect.get(ch_key, 0):
+                    include_demand = True
+        except Exception as e:
+            print(f"⚠️ DemandCollect 확인 실패: {e}")
+
+        # 1. 계측 트렌드 (trend)
+        trend_data = await run_influx_query(
+            query_raw_trend_data,
+            channel=channel,
+            start_date=start_date,
+            end_date=end_date,
+            measurement="trend",
+            timeout=90
+        )
+        print(f"  trend: {len(trend_data)}개 레코드")
+
+        # 2. 15분 전력량 트렌드 (energy_trend)
+        energy_trend_data = await run_influx_query(
+            query_raw_trend_data,
+            channel=channel,
+            start_date=start_date,
+            end_date=end_date,
+            measurement="energy_trend",
+            timeout=90
+        )
+        print(f"  energy_trend: {len(energy_trend_data)}개 레코드")
+
+        # 3. 디멘드 (demand) - DemandCollect 설정에 따라 포함
+        demand_data = []
+        if include_demand:
+            demand_data = await run_influx_query(
+                query_raw_trend_data,
+                channel=channel,
+                start_date=start_date,
+                end_date=end_date,
+                measurement="demand",
+                timeout=90
+            )
+            print(f"  demand: {len(demand_data)}개 레코드")
+        else:
+            print(f"  demand: 수집 비활성 (skip)")
+
+        # ZIP 생성
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # 계측 트렌드 CSV
+            if trend_data:
+                csv_content = _make_csv_string(trend_data)
+                zf.writestr(f"meter_trend_{channel}.csv", csv_content)
+
+            # 전력량 트렌드 CSV
+            if energy_trend_data:
+                csv_content = _make_csv_string(energy_trend_data)
+                zf.writestr(f"energy_trend_{channel}.csv", csv_content)
+
+            # 디멘드 트렌드 CSV
+            if demand_data:
+                csv_content = _make_csv_string(demand_data)
+                zf.writestr(f"demand_trend_{channel}.csv", csv_content)
+
+        zip_buffer.seek(0)
+
+        start_str = request.startDate[:10].replace('-', '')
+        end_str = request.endDate[:10].replace('-', '')
+        filename = f"trend_{channel}_{start_str}_{end_str}.zip"
+
+        print(f"✅ ZIP 생성 완료: {filename}")
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ CSV ZIP 다운로드 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"CSV download failed: {str(e)}"
+        )
+
+
+def _make_csv_string(data: list) -> str:
+    """리스트 데이터를 CSV 문자열로 변환"""
+    import io
+    if not data:
+        return ""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=list(data[0].keys()))
+    writer.writeheader()
+    writer.writerows(data)
+    return output.getvalue()
 
 
 def fill_missing_hours_safe(hourly_data, start_time, end_time):

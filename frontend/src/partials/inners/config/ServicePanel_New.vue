@@ -98,6 +98,17 @@
               </svg>
               &nbsp; PARQUET Download
             </button>
+            <button
+              class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
+              @click.stop="csvModalOpen = true"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              &nbsp; CSV Download
+            </button>
           </div>
         </div>
         
@@ -534,6 +545,59 @@
         </div>
       </div>
     </ModalBasic>
+
+    <!-- CSV Download Modal -->
+    <ModalBasic
+      id="csv-modal"
+      :modalOpen="csvModalOpen"
+      @close-modal="csvModalOpen = false"
+      title="CSV Download"
+    >
+      <div class="px-5 py-4">
+        <div class="space-y-4">
+          <!-- Channel -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Channel</label>
+            <select v-model="csvChannel" class="form-select w-full px-2 py-1">
+              <option value="Main">Main</option>
+              <option value="Sub">Sub</option>
+            </select>
+          </div>
+          <!-- Date Range -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+              <input type="date" v-model="csvStartDate" class="form-input w-full px-2 py-1" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+              <input type="date" v-model="csvEndDate" class="form-input w-full px-2 py-1" />
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Leave empty for last 2 days. Downloads meter trend, energy trend, and demand (if enabled) as ZIP.
+          </p>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
+        <div class="flex flex-wrap justify-end space-x-2">
+          <button
+            class="btn-sm bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 flex items-center"
+            :disabled="csvDownloading"
+            @click.prevent="downloadTrendCsv"
+          >
+            <svg v-if="csvDownloading" class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            {{ csvDownloading ? 'Downloading...' : 'Download' }}
+          </button>
+          <button
+            class="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-white"
+            @click.stop="csvModalOpen = false"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </ModalBasic>
   </div>
 </template>
 
@@ -582,6 +646,13 @@ export default {
     // 로그 모달 상태
     const logModalOpen = ref(false);
     const logModalService = ref('');
+
+    // CSV 다운로드 모달 상태
+    const csvModalOpen = ref(false);
+    const csvChannel = ref('Main');
+    const csvStartDate = ref('');
+    const csvEndDate = ref('');
+    const csvDownloading = ref(false);
 
     // Parquet 모달 상태
     const parquetModalOpen = ref(false);
@@ -871,6 +942,49 @@ export default {
       }
     };
 
+    const downloadTrendCsv = async () => {
+      try {
+        csvDownloading.value = true;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const tzOffset = (() => {
+          const off = new Date().getTimezoneOffset();
+          const sign = off <= 0 ? '+' : '-';
+          const h = pad(Math.floor(Math.abs(off) / 60));
+          const m = pad(Math.abs(off) % 60);
+          return `${sign}${h}:${m}`;
+        })();
+
+        let startDate, endDate;
+        if (csvStartDate.value && csvEndDate.value) {
+          startDate = `${csvStartDate.value}T00:00:00${tzOffset}`;
+          endDate = `${csvEndDate.value}T23:59:59${tzOffset}`;
+        } else {
+          const now = new Date();
+          const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+          startDate = `${twoDaysAgo.getFullYear()}-${pad(twoDaysAgo.getMonth()+1)}-${pad(twoDaysAgo.getDate())}T00:00:00${tzOffset}`;
+          endDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T23:59:59${tzOffset}`;
+        }
+
+        const response = await axios.post(
+          `/api/downloadTrendCsv/${csvChannel.value}`,
+          { startDate, endDate },
+          { responseType: 'blob' }
+        );
+
+        const disposition = response.headers['content-disposition'] || '';
+        const match = disposition.match(/filename="?(.+?)"?$/);
+        const filename = match ? match[1] : `trend_${csvChannel.value}.zip`;
+        triggerDownload(new Blob([response.data]), filename);
+        csvModalOpen.value = false;
+      } catch (error) {
+        console.error('CSV download failed:', error);
+        alert('CSV Download failed');
+      } finally {
+        csvDownloading.value = false;
+      }
+    };
+
     const saveIPAddress = async () => {
       try {
         const data = { ip: ipAddress.value };
@@ -937,6 +1051,12 @@ export default {
       downloadAllReports,
       downloadTrend,
       downloadAllTrends,
+      csvModalOpen,
+      csvChannel,
+      csvStartDate,
+      csvEndDate,
+      csvDownloading,
+      downloadTrendCsv,
     };
   },
 };
