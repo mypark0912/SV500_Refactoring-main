@@ -698,7 +698,8 @@
       "Power Quality": "전력 품질",
       "Diagnosis": "설비 상태",
       "Parameters": "파라미터",
-      "Energy": "전력량",
+      "Energy1": "수전 전력량",
+      "Energy2":"전력량",
       "Demand": "수요전력"
     },
     "treetable": {

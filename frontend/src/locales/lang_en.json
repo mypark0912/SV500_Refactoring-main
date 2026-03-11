@@ -701,7 +701,8 @@
       "Power Quality": "PowerQuality",
       "Diagnosis": "Equipment Status",
       "Parameters": "Parameters",
-      "Energy": "Energy",
+      "Energy1": "Import Energy",
+      "Energy2": "Energy",
       "Demand": "Demand"
     },
     "treetable": {

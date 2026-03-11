@@ -4033,8 +4033,10 @@ def query_energy_trend_data(
     # 메인 쿼리 - pivot 포함
     if mode == 0:
         mearsurement = "energy_consumption"
-    else:
+    elif mode == 1:
         mearsurement = "energy_cumulative"
+    else:
+        mearsurement = "energy_trend"
     query = (
         f'{range_filter} '
         f'|> filter(fn: (r) => r["_measurement"] == "{mearsurement}" and r["channel"] == "{channel}") '

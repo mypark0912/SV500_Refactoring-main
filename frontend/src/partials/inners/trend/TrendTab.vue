@@ -57,17 +57,11 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
-            <div v-else-if="tap == `Energy` && isNtek" class="flex items-center justify-between mt-1">
-              <label class="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                v-model="saveCsv"
-                :true-value="1"
-                :false-value="0"
-                class="form-checkbox text-violet-500"
-              />
-              <span class="text-sm">save CSV</span>
-            </label>
+            <div v-else-if="tap == `Energy1`" class="flex items-center justify-between mt-1">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Hourly Data
+              </span>
             <a
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
@@ -81,8 +75,12 @@
               }}
             </a>
             </div>
+            <div v-else-if="tap == `Energy2`" class="flex items-center justify-between mt-1">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+                15-Min Data
+              </span>
             <a
-              v-else-if="tap == `Energy` && !isNtek "
               class="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
               href="#0"
               :class="{ 'opacity-50 pointer-events-none': isLoading }"
@@ -94,6 +92,7 @@
                   : t("trend.TrendTab.Plot")
               }}
             </a>
+            </div>
             <div v-else-if="tap == `Demand` && isNtek" class="flex items-center justify-between mt-1">
               <label class="flex items-center space-x-2">
               <input
@@ -260,7 +259,13 @@
         :chartLastDate="lastDate"
       />
       <LineChart
-        v-if="tap == `Energy`"
+        v-if="tap == `Energy1`"
+        :chart-data="energyOption.lineData"
+        :chart-labels="energyOption.lineLabels"
+        :chartLastDate="lastDate"
+      />
+      <LineChart
+        v-if="tap == `Energy2`"
         :chart-data="energyOption.lineData"
         :chart-labels="energyOption.lineLabels"
         :chartLastDate="lastDate"
@@ -460,17 +465,50 @@ export default {
     const energyTreeData = [
       {
         ID: 27,
-        Name: "Energy",
-        Title: "Energy",
-        Titles: { en: "Energy", ko: "전력량", ja: "エネルギー" },
+        Name: "Energy1_hourly",
+        Title: "Hourly Energy",
+        Titles: { en: "Hourly Energy", ko: "시간당 전력량", ja: "時間当たりエネルギー" },
         isParent: true,
         children: [
-          { ID: 28, Name: "kwh_import_consumption", Title: "Active Energy", Titles: { en: "Hourly Active Energy by ", ko: "시간당 유효 전력량", ja: "有効エネルギー" } },
+          { ID: 28, Name: "kwh_import_consumption", Title: "Active Energy", Titles: { en: "Hourly Active Energy", ko: "시간당 유효 전력량", ja: "有効エネルギー" } },
           { ID: 29, Name: "kvarh_import_consumption", Title: "Reactive Energy", Titles: { en: "Hourly Reactive Energy", ko: "시간당 무효 전력량", ja: "無効エネルギー" } },
           { ID: 30, Name: "kvah_import_consumption", Title: "Apparent Energy", Titles: { en: "Hourly Apparent Energy", ko: "시간당 피상 전력량", ja: "皮相エネルギー" } },
+        ],
+      },
+      {
+        ID: 57,
+        Name: "Energy1_cumulative",
+        Title: "Total Energy",
+        Titles: { en: "Total Cumulative Energy", ko: "총 누적 전력량", ja: "累積エネルギー" },
+        isParent: true,
+        children: [
           { ID: 54, Name: "kwh_import", Title: "Total active Energy", Titles: { en: "Total Active Energy", ko: "총 유효 전력량", ja: "有効エネルギー" } },
           { ID: 55, Name: "kvarh_import", Title: "Total reactive Energy", Titles: { en: "Total Reactive Energy", ko: "총 무효 전력량", ja: "無効エネルギー" } },
           { ID: 56, Name: "kvah_import", Title: "Total apparent Energy", Titles: { en: "Total Apparent Energy", ko: "총 피상 전력량", ja: "皮相エネルギー" } },
+        ],
+      },
+      {
+        ID: 77,
+        Name: "Energy2_import",
+        Title: "Import Energy",
+        Titles: { en: "Import Energy", ko: "수전 전력량", ja: "受電エネルギー" },
+        isParent: true,
+        children: [
+          { ID: 71, Name: "total_kwh_import", Title: "Total import active Energy", Titles: { en: "Total Import Active Energy", ko: "총 수전 유효전력량", ja: "有効エネルギー" } },
+          { ID: 72, Name: "total_kvarh_import", Title: "Total import reactive Energy", Titles: { en: "Total Import Reactive Energy", ko: "총 수전 무효전력량", ja: "無効エネルギー" } },
+          { ID: 73, Name: "total_kvah_import", Title: "Total import apparent Energy", Titles: { en: "Total Import Apparent Energy", ko: "총 수전 피상전력량", ja: "皮相エネルギー" } },
+        ],
+      },
+      {
+        ID: 78,
+        Name: "Energy2_export",
+        Title: "Export Energy",
+        Titles: { en: "Export Energy", ko: "발전 전력량", ja: "発電エネルギー" },
+        isParent: true,
+        children: [
+          { ID: 74, Name: "total_kwh_export", Title: "Total export active Energy", Titles: { en: "Total Export Active Energy", ko: "총 발전 유효전력량", ja: "有効エネルギー" } },
+          { ID: 75, Name: "total_kvarh_export", Title: "Total export reactive Energy", Titles: { en: "Total Export Reactive Energy", ko: "총 발전 무효전력량", ja: "無効エネルギー" } },
+          { ID: 76, Name: "total_kvah_export", Title: "Total export apparent Energy", Titles: { en: "Total Export Apparent Energy", ko: "총 발전 피상전력량", ja: "皮相エネルギー" } },
         ],
       },
     ];
@@ -550,7 +588,7 @@ export default {
 
       const expanded = new Set(paramNames);
 
-      const treeData = tap.value === "Energy" ? energyTreeData : trendTreeData;
+      const treeData = (tap.value === "Energy1" || tap.value === "Energy2") ? energyTreeData : trendTreeData;
 
       // 3단계 트리 지원: 재귀적으로 자식 노드 확장
       const expandChildren = (nodes) => {
@@ -656,8 +694,10 @@ export default {
 
             items.value = deepFilterTree(trendTreeData);
           }
-        } else if (tap.value === "Energy") {
-          items.value = energyTreeData;
+        } else if (tap.value === "Energy1") {
+          items.value = energyTreeData.filter(node => node.Name === "Energy1_hourly" || node.Name === "Energy1_cumulative");
+        } else if (tap.value === "Energy2") {
+          items.value = energyTreeData.filter(node => node.Name === "Energy2_import" || node.Name === "Energy2_export");
         } else if (tap.value === "Demand") {
           items.value = demandTreeData;
         }
@@ -1021,18 +1061,26 @@ export default {
 
       isLoading.value = true;
 
-      // 선택된 파라미터를 _consumption 유무로 분리
-      const consumptionParams = checkedNames.value.filter((name) => name.includes("_consumption"));
-      const cumulativeParams = checkedNames.value.filter((name) => !name.includes("_consumption"));
+      const isEnergy2 = tap.value === "Energy2";
 
-      const energyParamMap = {
-        kwh_import_consumption: ["kwh_import_consumption"],
-        kvarh_import_consumption: ["kvarh_import_consumption"],
-        kvah_import_consumption: ["kvah_import_consumption"],
-        kwh_import: ["kwh_import"],
-        kvarh_import: ["kvarh_import"],
-        kvah_import: ["kvah_import"],
-      };
+      // Energy2는 mode=2 단일 호출, Energy1은 기존 로직 (mode 0/1)
+      const energyParamMap = isEnergy2
+        ? {
+            total_kwh_import: ["total_kwh_import"],
+            total_kvarh_import: ["total_kvarh_import"],
+            total_kvah_import: ["total_kvah_import"],
+            total_kwh_export: ["total_kwh_export"],
+            total_kvarh_export: ["total_kvarh_export"],
+            total_kvah_export: ["total_kvah_export"],
+          }
+        : {
+            kwh_import_consumption: ["kwh_import_consumption"],
+            kvarh_import_consumption: ["kvarh_import_consumption"],
+            kvah_import_consumption: ["kvah_import_consumption"],
+            kwh_import: ["kwh_import"],
+            kvarh_import: ["kvarh_import"],
+            kvah_import: ["kvah_import"],
+          };
 
       try {
         const url = `/api/getEnergyTrend/${channel.value}`;
@@ -1041,30 +1089,18 @@ export default {
           endDate: formatToISOString(props.enddate, 3),
         };
 
-        // 필요한 mode만 병렬로 API 호출
-        const requests = [];
-        if (consumptionParams.length > 0) {
-          requests.push(axios.get(url, { params: { ...params, mode: 0 } }));
-        }
-        if (cumulativeParams.length > 0) {
-          requests.push(axios.get(url, { params: { ...params, mode: 1 } }));
-        }
-
-        const responses = await Promise.all(requests);
-
         const datasets = [];
         const labelsSet = new Set();
-        let reqIndex = 0;
 
-        // mode=0 (consumption) 결과 처리
-        if (consumptionParams.length > 0) {
-          const res = responses[reqIndex++];
+        if (isEnergy2) {
+          // Energy2: mode=2 단일 호출
+          const res = await axios.get(url, { params: { ...params, mode: 2 } });
           if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
             const responseData = res.data.data;
             lastDate.value = res.data.date;
             responseData.forEach((row) => labelsSet.add(row._time));
 
-            consumptionParams.forEach((param) => {
+            checkedNames.value.forEach((param) => {
               const keys = energyParamMap[param];
               if (!keys) return;
               keys.forEach((key) => {
@@ -1079,35 +1115,79 @@ export default {
             });
 
             if (saveCsv.value === 1) {
-              saveCsvfromData(responseData, `energy_trend_0_${channel.value}.csv`);
+              saveCsvfromData(responseData, `energy_trend_2_${channel.value}.csv`);
             }
           }
-        }
+        } else {
+          // Energy1: 선택된 파라미터를 _consumption 유무로 분리
+          const consumptionParams = checkedNames.value.filter((name) => name.includes("_consumption"));
+          const cumulativeParams = checkedNames.value.filter((name) => !name.includes("_consumption"));
 
-        // mode=1 (cumulative) 결과 처리
-        if (cumulativeParams.length > 0) {
-          const res = responses[reqIndex++];
-          if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
-            const responseData = res.data.data;
-            lastDate.value = res.data.date;
-            responseData.forEach((row) => labelsSet.add(row._time));
+          // 필요한 mode만 병렬로 API 호출
+          const requests = [];
+          if (consumptionParams.length > 0) {
+            requests.push(axios.get(url, { params: { ...params, mode: 0 } }));
+          }
+          if (cumulativeParams.length > 0) {
+            requests.push(axios.get(url, { params: { ...params, mode: 1 } }));
+          }
 
-            cumulativeParams.forEach((param) => {
-              const keys = energyParamMap[param];
-              if (!keys) return;
-              keys.forEach((key) => {
-                try {
-                  datasets.push({
-                    name: nameToTitleMap[key] || key,
-                    data: responseData.map((row) => row[key]),
-                    isThreshold: false,
-                  });
-                } catch (dataError) {}
+          const responses = await Promise.all(requests);
+          let reqIndex = 0;
+
+          // mode=0 (consumption) 결과 처리
+          if (consumptionParams.length > 0) {
+            const res = responses[reqIndex++];
+            if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
+              const responseData = res.data.data;
+              lastDate.value = res.data.date;
+              responseData.forEach((row) => labelsSet.add(row._time));
+
+              consumptionParams.forEach((param) => {
+                const keys = energyParamMap[param];
+                if (!keys) return;
+                keys.forEach((key) => {
+                  try {
+                    datasets.push({
+                      name: nameToTitleMap[key] || key,
+                      data: responseData.map((row) => row[key]),
+                      isThreshold: false,
+                    });
+                  } catch (dataError) {}
+                });
               });
-            });
 
-            if (saveCsv.value === 1) {
-              saveCsvfromData(responseData, `energy_trend_1_${channel.value}.csv`);
+              if (saveCsv.value === 1) {
+                saveCsvfromData(responseData, `energy_trend_0_${channel.value}.csv`);
+              }
+            }
+          }
+
+          // mode=1 (cumulative) 결과 처리
+          if (cumulativeParams.length > 0) {
+            const res = responses[reqIndex++];
+            if (res.data.result && Array.isArray(res.data.data) && res.data.data.length > 0) {
+              const responseData = res.data.data;
+              lastDate.value = res.data.date;
+              responseData.forEach((row) => labelsSet.add(row._time));
+
+              cumulativeParams.forEach((param) => {
+                const keys = energyParamMap[param];
+                if (!keys) return;
+                keys.forEach((key) => {
+                  try {
+                    datasets.push({
+                      name: nameToTitleMap[key] || key,
+                      data: responseData.map((row) => row[key]),
+                      isThreshold: false,
+                    });
+                  } catch (dataError) {}
+                });
+              });
+
+              if (saveCsv.value === 1) {
+                saveCsvfromData(responseData, `energy_trend_1_${channel.value}.csv`);
+              }
             }
           }
         }
