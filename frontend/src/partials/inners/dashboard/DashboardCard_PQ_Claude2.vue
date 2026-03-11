@@ -12,41 +12,60 @@
       </header>
     </div>
 
-    <!-- 불평형률 & 고조파 통합 섹션 -->
+    <!-- 불평형률 & 역률 & 고조파 통합 섹션 -->
     <div class="data-section">
-      <!-- 불평형률 -->
-      <div class="data-subsection">
-        <h3 class="subsection-title">{{ t('dashboard.pq.unbalance') }}</h3>
-        <div class="unbalance-vertical">
-          <!-- 전압 불평형 -->
-          <div class="compact-item">
-            <div class="compact-header">
-              <span class="compact-label">{{ t('dashboard.meter.voltage') }}</span>
-              <span class="compact-value" :class="getUnbalanceClass(data2.Ubal1)">
-                {{ data2.Ubal1?.toFixed(1) || 0 }}%
-              </span>
+      <!-- 불평형률 + 역률 수평 배치 -->
+      <div class="horizontal-group">
+        <!-- 불평형률 -->
+        <div class="data-subsection flex-1">
+          <h3 class="subsection-title">{{ t('dashboard.pq.unbalance') }}</h3>
+          <div class="unbalance-vertical">
+            <!-- 전압 불평형 -->
+            <div class="compact-item">
+              <div class="compact-header">
+                <span class="compact-label">{{ t('dashboard.meter.voltage') }}</span>
+                <span class="compact-value" :class="getUnbalanceClass(data2.Ubal1)">
+                  {{ data2.Ubal1?.toFixed(1) || 0 }}%
+                </span>
+              </div>
+              <div class="mini-progress">
+                <div
+                  class="mini-fill bg-violet-400"
+                  :style="{ width: Math.min(data2.Ubal1 || 0, 100) + '%' }"
+                ></div>
+              </div>
             </div>
-            <div class="mini-progress">
-              <div 
-                class="mini-fill bg-violet-400"
-                :style="{ width: Math.min(data2.Ubal1 || 0, 100) + '%' }"
-              ></div>
+
+            <!-- 전류 불평형 -->
+            <div class="compact-item">
+              <div class="compact-header">
+                <span class="compact-label">{{ t('dashboard.meter.current') }}</span>
+                <span class="compact-value" :class="getUnbalanceClass(data2.Ibal1)">
+                  {{ data2.Ibal1?.toFixed(1) || 0 }}%
+                </span>
+              </div>
+              <div class="mini-progress">
+                <div
+                  class="mini-fill bg-sky-400"
+                  :style="{ width: Math.min(data2.Ibal1 || 0, 100) + '%' }"
+                ></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- 전류 불평형 -->
-          <div class="compact-item">
-            <div class="compact-header">
-              <span class="compact-label">{{ t('dashboard.meter.current') }}</span>
-              <span class="compact-value" :class="getUnbalanceClass(data2.Ibal1)">
-                {{ data2.Ibal1?.toFixed(1) || 0 }}%
-              </span>
-            </div>
-            <div class="mini-progress">
-              <div 
-                class="mini-fill bg-sky-400"
-                :style="{ width: Math.min(data2.Ibal1 || 0, 100) + '%' }"
-              ></div>
+        <!-- 역률 게이지 -->
+        <div class="data-subsection flex-1">
+          <h3 class="subsection-title">{{ t('dashboard.pq.powerfactor') }}</h3>
+          <div class="gauge-wrapper">
+            <div class="gauge">
+              <div class="gauge-body" :style="{ '--pf': Math.min((data2.PF4 || 0) / 100, 1) }">
+                <div class="gauge-cover">
+                  <span class="gauge-value" :class="getPFClass(data2.PF4)">
+                    {{ data2.PF4?.toFixed(2) || '0.00' }}<span class="gauge-unit">%</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -54,7 +73,7 @@
       
       <!-- 고조파 -->
       <div class="data-subsection">
-        <h3 class="subsection-title">{{ t('pq.tabs.harmonics') }}</h3>
+        <h3 class="subsection-title">{{ t('dashboard.pq.THD') }}</h3>
         
         <!-- CSS 바 차트 -->
         <div class="css-bar-chart">
@@ -180,6 +199,14 @@ export default {
       return 'text-green-600 dark:text-green-400 font-medium'
     }
 
+    // 역률 상태 클래스
+    const getPFClass = (value) => {
+      if (!value) return 'text-gray-500 dark:text-gray-400'
+      if (value >= 0.95) return 'text-green-600 dark:text-green-400'
+      if (value >= 0.9) return 'text-yellow-600 dark:text-yellow-400'
+      return 'text-red-600 dark:text-red-400'
+    }
+
     // props.data 감시
     const startPolling = () => {
       stopPolling()
@@ -218,6 +245,7 @@ export default {
       data2,
       t,
       getUnbalanceClass,
+      getPFClass,
       chartItems,
       hasData,
       asset,
@@ -279,9 +307,89 @@ export default {
   @apply w-2 h-2 bg-blue-500 rounded-full;
 }
 
+.horizontal-group {
+  @apply flex gap-4;
+}
+
 .unbalance-vertical {
   @apply space-y-5;
 }
+
+/* 역률 게이지 */
+.gauge-wrapper {
+  @apply flex flex-col items-center;
+}
+
+.gauge {
+  width: 100%;
+  max-width: 120px;
+  position: relative;
+}
+
+.gauge-body {
+  --pf: 0;
+  width: 100%;
+  padding-bottom: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.gauge-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: conic-gradient(
+    from 0.75turn,
+    #3b82f6 calc(var(--pf) * 0.5turn),
+    #e5e7eb calc(var(--pf) * 0.5turn),
+    #e5e7eb 0.5turn,
+    transparent 0.5turn
+  );
+}
+
+:is(.dark) .gauge-body::before {
+  background: conic-gradient(
+    from 0.75turn,
+    #60a5fa calc(var(--pf) * 0.5turn),
+    #374151 calc(var(--pf) * 0.5turn),
+    #374151 0.5turn,
+    transparent 0.5turn
+  );
+}
+
+.gauge-cover {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  padding-bottom: 35%;
+  background: white;
+  border-radius: 100% 100% 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+:is(.dark) .gauge-cover {
+  background: #1f2937;
+}
+
+.gauge-value {
+  position: absolute;
+  bottom: 2px;
+  @apply text-sm font-bold;
+}
+
+.gauge-unit {
+  @apply text-xs font-medium ml-0.5;
+}
+
 
 .compact-item {
   @apply space-y-1;

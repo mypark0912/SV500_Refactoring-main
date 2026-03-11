@@ -255,7 +255,7 @@
     },
     "pq": {
       "title": "Power Quality",
-      "singletitle": "Unbalance/Harmonics",
+      "singletitle": "Unbalance/THD/PF",
       "title2": "THD",
       "subtitle_main": "Channel 1",
       "subtitle_sub": "Channel 2",

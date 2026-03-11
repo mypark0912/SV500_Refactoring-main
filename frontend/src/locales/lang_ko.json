@@ -255,7 +255,7 @@
     },
     "pq": {
       "title": "전력 품질 현황",
-      "singletitle": "불평형률/고조파",
+      "singletitle": "불평형률/총고조파왜곡률/역률",
       "title2": "총 고조파 왜곡률",
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
