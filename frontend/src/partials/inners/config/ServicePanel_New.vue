@@ -29,7 +29,11 @@
               
               <button
                 v-if="updateInflux === 0"
-                class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
+                class="btn h-9 px-5 flex items-center"
+                :class="influxReady
+                  ? 'bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'"
+                :disabled="!influxReady"
                 @click="init"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" stroke-width="1.25" class="mr-2">
@@ -38,7 +42,7 @@
                   <path d="M15.536 17.586a2.123 2.123 0 0 0 -2.929 0a1.951 1.951 0 0 0 0 2.828c.809 .781 2.12 .781 2.929 0c.809 -.781 -.805 .778 0 0l1.46 -1.41l1.46 -1.419"></path>
                   <path d="M15.54 17.582l1.46 1.42l1.46 1.41c.809 .78 -.805 -.779 0 0s2.12 .781 2.929 0a1.951 1.951 0 0 0 0 -2.828a2.123 2.123 0 0 0 -2.929 0"></path>
                 </svg>
-                Influx Init
+                {{ influxReady ? 'Init Influx' : 'Wait Influxdb' }}
               </button>
               
               <button
@@ -611,7 +615,7 @@
 </template>
 
 <script>
-import { onMounted, ref, provide, computed } from 'vue';
+import { onMounted, onBeforeUnmount, ref, provide, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import axios from 'axios';
 
@@ -643,6 +647,8 @@ export default {
     const versionDict = ref({});
     const initInfluxStatus = ref('');
     const updateInflux = ref(null);
+    const influxReady = ref(false);
+    let influxReadyTimer = null;
     const isResetAll = ref(false);
     const serviceLoadingMessage = ref('');
     //const checkSmartflag = ref(false);
@@ -762,6 +768,22 @@ export default {
         const response = await axios.get('/setting/checkInfluxStatus');
         if (response.data.result) {
           updateInflux.value = response.data.status;
+          // status 0 = InitDB 전: ready 여부에 따라 폴링
+          if (response.data.status === 0) {
+            influxReady.value = response.data.ready === true;
+            if (!influxReady.value && !influxReadyTimer) {
+              influxReadyTimer = setInterval(async () => {
+                try {
+                  const res = await axios.get('/setting/checkInfluxStatus');
+                  if (res.data.ready === true) {
+                    influxReady.value = true;
+                    clearInterval(influxReadyTimer);
+                    influxReadyTimer = null;
+                  }
+                } catch (e) { /* ignore */ }
+              }, 3000);
+            }
+          }
         }
       } catch (error) {
         console.error(error);
@@ -1044,6 +1066,13 @@ export default {
       checkFrp();
     });
 
+    onBeforeUnmount(() => {
+      if (influxReadyTimer) {
+        clearInterval(influxReadyTimer);
+        influxReadyTimer = null;
+      }
+    });
+
     return {
       message,
       sysStatus,
@@ -1052,6 +1081,7 @@ export default {
       devMode,
       initInfluxStatus,
       updateInflux,
+      influxReady,
       isResetAll,
       serviceLoadingMessage,
       //checkSmartflag,

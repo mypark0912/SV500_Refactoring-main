@@ -126,7 +126,15 @@ async def checkInitDB():
 async def check_influxStatus():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     if not os.path.exists(file_path):
-        return {'result': True, 'status': 0}
+        # InitDB 전: InfluxDB가 준비 상태인지 health check
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(connect=2.0, read=3.0, write=2.0, pool=3.0)) as hc:
+                health = await hc.get("http://127.0.0.1:8086/health")
+                health_data = health.json()
+                is_ready = health_data.get("status") == "pass"
+                return {'result': True, 'status': 0, 'ready': is_ready}
+        except Exception:
+            return {'result': True, 'status': 0, 'ready': False}
     else:
         ret = await check_downsampling_status()
         return ret
@@ -938,7 +946,7 @@ async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
 
 
 @router.get('/initDB/status')
-async def get_init_status():
+def get_init_status():
     # redis_state.client.select(0)
     status = redis_state.client.hget("influx_init", "status") or "IDLE"
     return {"status": status}
@@ -4133,7 +4141,19 @@ async def check_sysStatus():
 
         return {"success": True, "data": data, "disk": [disk1]}
     else:
-        version_dict = getVersions()
+        # 버전 정보, SmartVersion, A35 버전, 서비스 존재 여부를 병렬로 조회
+        version_dict_fut = asyncio.to_thread(getVersions)
+        smart_version_fut = check_SmartVersion()
+        a35_fut = asyncio.to_thread(check_a35version)
+        mqtt_exists_fut = asyncio.to_thread(service_exists, "mqClient.service")
+        frpc_exists_fut = asyncio.to_thread(service_exists, "frpc.service")
+        mqtt_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "MQTT")
+
+        version_dict, apiResult, a35Dict, has_mqtt_service, has_frpc, has_mqtt_flag = await asyncio.gather(
+            version_dict_fut, smart_version_fut, a35_fut,
+            mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut
+        )
+
         key_map = {
             'fw': 'fw',
             'a35': 'A35',
@@ -4147,78 +4167,41 @@ async def check_sysStatus():
             for src_key, dst_key in key_map.items():
                 versionDict[dst_key] = version_dict[src_key]
 
-        apiResult = await check_SmartVersion()
-
         if apiResult:
             versionDict['SmartSystems'] = apiResult['Version']
 
-        a35Dict = check_a35version()
-        if not a35Dict is None:
+        if a35Dict is not None:
             versionDict['fw'] = a35Dict['fw']
             versionDict['A35'] = a35Dict['A35']
 
-        if redis_state.client.hexists("System","MQTT"):
-            if int(redis_state.client.hget("System","MQTT")) == 1 and service_exists("mqClient.service"):
-                if service_exists("frpc.service"):
-                    servicedict = {
-                        'smartsystem': 'smartsystemsservice',
-                        'smartapi': 'smartsystemsrestapiservice',
-                        'redis': 'redis',
-                        'influxdb': 'influxdb',
-                        'core': 'core',
-                        'webserver': 'webserver',
-                        'a35': 'sv500A35',
-                        'mqClient':'mqClient',
-                        'frpc':'frpc'
-                    }
-                else:
-                    servicedict = {
-                        'smartsystem': 'smartsystemsservice',
-                        'smartapi': 'smartsystemsrestapiservice',
-                        'redis': 'redis',
-                        'influxdb': 'influxdb',
-                        'core': 'core',
-                        'webserver': 'webserver',
-                        'a35': 'sv500A35',
-                        'mqClient': 'mqClient'
-                    }
-            else:
-                servicedict = {
-                    'smartsystem' : 'smartsystemsservice',
-                    'smartapi': 'smartsystemsrestapiservice',
-                    'redis': 'redis',
-                    'influxdb': 'influxdb',
-                    'core': 'core',
-                    'webserver':'webserver',
-                    'a35':'sv500A35'
-                }
-        else:
-            if service_exists("mqClient.service"):
-                servicedict = {
-                    'smartsystem': 'smartsystemsservice',
-                    'smartapi': 'smartsystemsrestapiservice',
-                    'redis': 'redis',
-                    'influxdb': 'influxdb',
-                    'core': 'core',
-                    'webserver': 'webserver',
-                    'a35': 'sv500A35',
-                    'mqClient': 'mqClient'
-                }
-            else:
-                servicedict = {
-                    'smartsystem': 'smartsystemsservice',
-                    'smartapi': 'smartsystemsrestapiservice',
-                    'redis': 'redis',
-                    'influxdb': 'influxdb',
-                    'core': 'core',
-                    'webserver': 'webserver',
-                    'a35': 'sv500A35'
-                }
-        service_status = {}
+        # 서비스 목록 결정
+        base_services = {
+            'smartsystem': 'smartsystemsservice',
+            'smartapi': 'smartsystemsrestapiservice',
+            'redis': 'redis',
+            'influxdb': 'influxdb',
+            'core': 'core',
+            'webserver': 'webserver',
+            'a35': 'sv500A35'
+        }
 
-        # 각 서비스의 상태 확인
-        for key, service_name in servicedict.items():
-            service_status[key] = is_service_active(service_name)
+        mqtt_enabled = has_mqtt_flag and int(redis_state.client.hget("System", "MQTT")) == 1
+        if mqtt_enabled and has_mqtt_service:
+            base_services['mqClient'] = 'mqClient'
+            if has_frpc:
+                base_services['frpc'] = 'frpc'
+        elif not has_mqtt_flag and has_mqtt_service:
+            base_services['mqClient'] = 'mqClient'
+
+        # 각 서비스 상태를 병렬로 확인
+        async def check_service(key, name):
+            active = await asyncio.to_thread(is_service_active, name)
+            return key, active
+
+        results = await asyncio.gather(
+            *[check_service(k, v) for k, v in base_services.items()]
+        )
+        service_status = dict(results)
 
         usage = psutil.disk_usage('/')
         disk1 = {
