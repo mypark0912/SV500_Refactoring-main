@@ -175,9 +175,9 @@
                     </label>
                   </div>
 
-                  <!-- Component Selection - 수정된 부분 -->
+                  <!-- Component Selection -->
                   <div
-                    v-if="mtype == 0 || mtype == 1"
+                    v-if="mtype == 1"
                     class="flex flex-wrap gap-4"
                   >
                     <!-- FW -->
@@ -239,15 +239,68 @@
                       />
                       <span class="ml-2">SmartSystem</span>
                     </label>
+
+                    <!-- Build -->
+                    <label
+                      class="inline-flex items-center text-sm font-medium cursor-pointer text-gray-600 dark:text-gray-300"
+                    >
+                      <input
+                        type="checkbox"
+                        class="form-checkbox text-violet-500 border-gray-300 dark:border-gray-600 focus:ring-violet-400"
+                        v-model="selectedTarget.build"
+                      />
+                      <span class="ml-2">Build</span>
+                    </label>
+                  </div>
+
+                </div>
+
+                <!-- 설치 시 빌드 버전 선택 -->
+                <div v-if="mtype == 0" class="space-y-3">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="flex items-center space-x-2">
+                      <label class="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[60px]">Build</label>
+                      <select
+                        v-model="buildVersion"
+                        class="form-select flex-1 bg-gray-100 dark:bg-gray-700 border-transparent dark:border-transparent focus:bg-white dark:focus:bg-gray-800 placeholder-gray-500 text-sm"
+                      >
+                        <option value="">-- Select --</option>
+                        <option v-for="note in releaseNoteList" :key="note" :value="note">{{ note }}</option>
+                      </select>
+                      <button
+                        v-if="buildVersion"
+                        @click="openReleaseNote(buildVersion)"
+                        class="px-2 py-1 bg-violet-500 text-white hover:bg-violet-600 rounded text-xs whitespace-nowrap"
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Version Inputs - 3컬럼으로 수정 -->
+                <!-- Version Inputs -->
                 <div v-if="!isNoneSelected" class="space-y-3">
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Build Version (read-only) -->
+                    <div
+                      v-if="selectedTarget.build"
+                      class="flex items-center space-x-2"
+                    >
+                      <label
+                        class="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[60px]"
+                        >Build</label
+                      >
+                      <input
+                        class="form-input flex-1 bg-gray-100 dark:bg-gray-700 border-transparent dark:border-transparent placeholder-gray-500 text-sm"
+                        type="text"
+                        :value="buildVersion"
+                        readonly
+                      />
+                    </div>
+
                     <!-- FW Version -->
                     <div
-                      v-if="selectedTarget.fw"
+                      v-if="selectedTarget.fw || selectedTarget.build"
                       class="flex items-center space-x-2"
                     >
                       <label
@@ -260,12 +313,13 @@
                         placeholder="1.0.0"
                         v-model="versions.fw"
                         :maxlength="20"
+                        :readonly="selectedTarget.build"
                       />
                     </div>
 
                     <!-- A35 Version -->
                     <div
-                      v-if="selectedTarget.a35"
+                      v-if="selectedTarget.a35 || selectedTarget.build"
                       class="flex items-center space-x-2"
                     >
                       <label
@@ -278,12 +332,13 @@
                         placeholder="1.0.0"
                         v-model="versions.a35"
                         :maxlength="20"
+                        :readonly="selectedTarget.build"
                       />
                     </div>
 
                     <!-- Web Version -->
                     <div
-                      v-if="selectedTarget.web"
+                      v-if="selectedTarget.web || selectedTarget.build"
                       class="flex items-center space-x-2"
                     >
                       <label
@@ -296,12 +351,13 @@
                         placeholder="1.0.0"
                         v-model="versions.web"
                         :maxlength="20"
+                        :readonly="selectedTarget.build"
                       />
                     </div>
 
                     <!-- Core Version -->
                     <div
-                      v-if="selectedTarget.core"
+                      v-if="selectedTarget.core || selectedTarget.build"
                       class="flex items-center space-x-2"
                     >
                       <label
@@ -314,12 +370,13 @@
                         placeholder="1.0.0"
                         v-model="versions.core"
                         :maxlength="20"
+                        :readonly="selectedTarget.build"
                       />
                     </div>
 
                     <!-- SmartSystem Version -->
                     <div
-                      v-if="selectedTarget.smartsystem"
+                      v-if="selectedTarget.smartsystem || selectedTarget.build"
                       class="flex items-center space-x-2"
                     >
                       <label
@@ -332,6 +389,7 @@
                         placeholder="1.0.0"
                         v-model="versions.smartsystem"
                         :maxlength="20"
+                        :readonly="selectedTarget.build"
                       />
                     </div>
                   </div>
@@ -380,6 +438,7 @@
                 :key="item.id + '-' + contents.length"
                 :item="item"
                 @editTitle="handleEdit"
+                @viewRelease="openReleaseNote"
               />
             </div>
 
@@ -440,19 +499,41 @@
       </section>
       <section></section>
     </div>
+
+    <!-- Release Note Modal -->
+    <ModalBasic
+      id="release-modal"
+      :modalOpen="releaseModalOpen"
+      @close-modal="releaseModalOpen = false"
+      :title="'Release Note - ' + releaseModalVersion"
+    >
+      <div class="p-5" style="min-width: 500px; max-height: 70vh; overflow-y: auto;">
+        <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed font-sans">{{ releaseModalContent }}</pre>
+      </div>
+      <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700/60 text-right">
+        <button
+          @click="releaseModalOpen = false"
+          class="btn-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+        >
+          Close
+        </button>
+      </div>
+    </ModalBasic>
   </div>
 </template>
 
 <script>
 import { useI18n } from "vue-i18n";
 import JobListItem from "./maintenanceItem.vue";
-import { ref, computed, onMounted, reactive, watchEffect } from "vue";
+import ModalBasic from "../../../pages/common/ModalBasic.vue";
+import { ref, computed, onMounted, reactive, watchEffect, watch } from "vue";
 import axios from "axios";
 
 export default {
   name: "MaintenancePanel",
   components: {
     JobListItem,
+    ModalBasic,
   },
   setup() {
     const { t } = useI18n();
@@ -474,6 +555,43 @@ export default {
     });
 
     const mtype = ref(-1);
+    const buildVersion = ref('');
+
+    // 릴리즈노트 관련
+    const releaseNoteList = ref([]);
+    const releaseModalOpen = ref(false);
+    const releaseModalVersion = ref('');
+    const releaseModalContent = ref('');
+
+    const fetchReleaseNoteList = async () => {
+      try {
+        const response = await axios.get('/config/getReleaseNotes');
+        if (response.data.success) {
+          releaseNoteList.value = response.data.data;
+        }
+      } catch (e) {
+        console.error('릴리즈노트 목록 조회 실패:', e);
+      }
+    };
+
+    const openReleaseNote = async (version) => {
+      try {
+        const response = await axios.get(`/config/getReleaseNote/${version}`);
+        if (response.data.success) {
+          releaseModalVersion.value = version;
+          // frontmatter 제거 (--- ... --- 사이)
+          let content = response.data.content;
+          content = content.replace(/^---[\s\S]*?---\s*/, '');
+          releaseModalContent.value = content.trim();
+          releaseModalOpen.value = true;
+        } else {
+          alert('릴리즈노트를 찾을 수 없습니다.');
+        }
+      } catch (e) {
+        console.error('릴리즈노트 조회 실패:', e);
+        alert('릴리즈노트 조회 실패');
+      }
+    };
 
     // 선택 타겟 - 5개로 확장
     const selectedTarget = reactive({
@@ -482,6 +600,25 @@ export default {
       web: false,
       core: false,
       smartsystem: false,
+      build: false,
+    });
+
+    // Build 체크 시 최신 버전 자동 입력
+    watch(() => selectedTarget.build, (checked) => {
+      if (checked && releaseNoteList.value.length > 0) {
+        buildVersion.value = releaseNoteList.value[0];
+      } else if (!checked) {
+        buildVersion.value = '';
+      }
+    });
+
+    // 설치(mtype==0) 선택 시 자동 처리
+    watch(() => mtype.value, (val) => {
+      if (val == 0) {
+        if (releaseNoteList.value.length > 0) {
+          buildVersion.value = releaseNoteList.value[0];
+        }
+      }
     });
 
     // Pagination state
@@ -490,6 +627,9 @@ export default {
 
     // utype 계산 - 5개 컴포넌트
     const utype = computed(() => {
+      if (selectedTarget.build) {
+        return "fw,a35,web,core,smartsystem";
+      }
       const types = [];
       if (selectedTarget.fw) types.push("fw");
       if (selectedTarget.a35) types.push("a35");
@@ -505,7 +645,8 @@ export default {
         !selectedTarget.a35 &&
         !selectedTarget.web &&
         !selectedTarget.core &&
-        !selectedTarget.smartsystem
+        !selectedTarget.smartsystem &&
+        !selectedTarget.build
       );
     });
 
@@ -560,6 +701,7 @@ export default {
 
     onMounted(() => {
       getContents();
+      fetchReleaseNoteList();
     });
 
     // utype 적용 함수 - 5개 컴포넌트
@@ -570,6 +712,7 @@ export default {
       selectedTarget.web = types.includes("web");
       selectedTarget.core = types.includes("core");
       selectedTarget.smartsystem = types.includes("smartsystem");
+      selectedTarget.build = false;
     }
 
     const handleEdit = (item) => {
@@ -586,6 +729,8 @@ export default {
       versions.value.web = item.w_version || "";
       versions.value.core = item.c_version || "";
       versions.value.smartsystem = item.smart_version || "";
+      buildVersion.value = item.build_version || "";
+      selectedTarget.build = !!item.build_version;
     };
 
     const save = async () => {
@@ -599,6 +744,7 @@ export default {
         w_version: versions.value.web,
         c_version: versions.value.core,
         smart_version: versions.value.smartsystem,
+        build_version: buildVersion.value,
       };
       if(title.value.trim() === "") {
         alert("❌ Title is required!");
@@ -630,6 +776,7 @@ export default {
             core: "",
             smartsystem: "",
           };
+          buildVersion.value = "";
           applyUtype("");
           await getContents();
         } else {
@@ -691,6 +838,7 @@ export default {
             core: "",
             smartsystem: "",
           };
+          buildVersion.value = "";
           applyUtype("");
           await getContents();
           if (contents.value.length == 0) {
@@ -727,6 +875,12 @@ export default {
       visiblePages,
       goToPage,
       t,
+      buildVersion,
+      releaseNoteList,
+      releaseModalOpen,
+      releaseModalVersion,
+      releaseModalContent,
+      openReleaseNote,
     };
   },
 };

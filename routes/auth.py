@@ -209,8 +209,23 @@ def check_Db():
     else:
         return {"result": 0}
 
+def getLatestBuildVersion():
+    """release_notes 폴더에서 마지막 .md 파일명을 빌드 버전으로 반환"""
+    try:
+        from pathlib import Path
+        notes_dir = Path(__file__).resolve().parent.parent / "release_notes"
+        if not notes_dir.exists():
+            return ''
+        md_files = sorted([f.stem for f in notes_dir.glob("*.md")])
+        if md_files:
+            return md_files[-1]
+        return ''
+    except Exception:
+        return ''
+
 def getVersionSave(Opmode):
     version_dict = getVersions()
+    build_ver = getLatestBuildVersion()
     if version_dict:
         if Opmode == 'device0':
             install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
@@ -218,7 +233,8 @@ def getVersionSave(Opmode):
                            a_version=version_dict['a35'],
                            w_version=version_dict['web'],
                            c_version=version_dict['core'],
-                           smart_version=''
+                           smart_version='',
+                           build_version=build_ver
                            )
         else:
             install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
@@ -226,7 +242,8 @@ def getVersionSave(Opmode):
                            a_version=version_dict['a35'],
                            w_version=version_dict['web'],
                            c_version=version_dict['core'],
-                           smart_version=version_dict['smartsystem']
+                           smart_version=version_dict['smartsystem'],
+                           build_version=build_ver
                            )
     else:
         if Opmode == 'device0':
@@ -235,7 +252,8 @@ def getVersionSave(Opmode):
                            a_version='1.0.0',
                            w_version='1.0.0',
                            c_version='1.0.0',
-                           smart_version=''
+                           smart_version='',
+                           build_version=build_ver
                            )
         else:
             install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
@@ -243,7 +261,8 @@ def getVersionSave(Opmode):
                            a_version='1.0.0',
                            w_version='1.0.0',
                            c_version='1.0.0',
-                           smart_version='1.0.0')
+                           smart_version='1.0.0',
+                           build_version=build_ver)
     save_post(install, 0, 0)
 
 

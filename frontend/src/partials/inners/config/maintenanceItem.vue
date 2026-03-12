@@ -14,6 +14,14 @@
           <!-- Right side -->
           <div class="flex items-center space-x-4 pl-10 md:pl-0">
               <div class="text-sm text-gray-500 dark:text-gray-400 italic whitespace-nowrap">{{item.date}}</div>
+              <button
+                v-if="item.build_version"
+                @click.stop="$emit('viewRelease', item.build_version)"
+                class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1 bg-violet-500/20 text-violet-700 hover:bg-violet-500/30 cursor-pointer transition-colors"
+                :title="'Release Note: ' + item.build_version"
+              >
+                {{ item.build_version }}
+              </button>
               <div v-if="item.utype" class="text-xs inline-flex font-medium rounded-full text-center px-2.5 py-1 bg-green-500/20 text-green-700">{{item.utype}}</div>
               <svg v-if="item.mtype == 0" class="shrink-0 mr-2 stroke-current text-green-500 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -61,6 +69,7 @@
 export default {
   name: 'maintenanceItem',
   props: ['item'],
+  emits: ['editTitle', 'viewRelease'],
   setup(props, { emit }){
     function getVersionText(utype, appVer, webVer, fwVer, corVer, smartVer) {
       if (!utype) return '';

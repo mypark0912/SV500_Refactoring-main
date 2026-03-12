@@ -21,6 +21,7 @@ class Post(BaseModel):
     w_version: str = ""
     c_version: str = ""
     smart_version: str = ""
+    build_version: str = ""
 
 class WatchTarget(IntEnum):
     MAIN = 0
@@ -107,10 +108,18 @@ def get_db_connection():
                 w_version TEXT,
                 c_version TEXT,
                 smart_version TEXT,
+                build_version TEXT,
                 date TEXT
             )
         ''')
         conn.commit()
+
+        # build_version 컬럼 마이그레이션 (기존 DB 대응)
+        cursor.execute("PRAGMA table_info(maintenance)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'build_version' not in columns:
+            cursor.execute("ALTER TABLE maintenance ADD COLUMN build_version TEXT DEFAULT ''")
+            conn.commit()
 
         return conn
 
@@ -256,6 +265,7 @@ def save_post(data: Post, mode: int, idx:int):
     w_version = data.w_version
     c_version = data.c_version
     smart_version = data.smart_version
+    build_version = data.build_version
     today = date.today()
     formatted = today.strftime("%Y-%m-%d")
     try:
@@ -263,13 +273,13 @@ def save_post(data: Post, mode: int, idx:int):
         cursor = conn.cursor()
         if mode == 0:
             cursor.execute(
-                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version,date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, formatted)
+                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version, build_version, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, build_version, formatted)
             )
         else:
             cursor.execute(
-                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, date=? where id=?",
-                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, formatted, idx )
+                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, build_version=?, date=? where id=?",
+                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, build_version, formatted, idx )
             )
         conn.commit()
         conn.close()
