@@ -13,7 +13,7 @@
               :title="`DevID: ${mod.devId}`"
             >
               <span class="do-dot"></span>
-              <span class="do-name">{{ mod.m_name }}</span>
+              <span class="do-name">{{ mod.mtype == 0 ? 'DO' : mod.mtype == 1 ? 'P300-C' : mod.m_name }}</span>
             </div>
           </div>
          <span class="channel-text">

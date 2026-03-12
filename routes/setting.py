@@ -3198,7 +3198,7 @@ def save_redis_setup(setupData):
                 ai_info = channel_config.get("ai_modbus", {})
                 ai_infoList = []
                 for i in range(len(ai_info)):
-                    if ai_infoList[i]["enable"] == 1:
+                    if ai_info[i]["enable"] == 1:
                         ai_infoList.append({ "mtype":ai_info[i]["m_name"], "devId": ai_info[i]["devId"] })
                 hasConfAI = True
                 flagdict["ai_info"] = ai_infoList

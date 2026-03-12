@@ -1167,7 +1167,7 @@ def getMDStatus(channel):
         if mod["type"] == 0 and serialDict.get("confDO"):
             stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
             data.append({
-                "m_name": f"DO_{mod['devId']}",
+                "m_name": f"{mod['devId']}_DO",
                 "devId": mod["devId"],
                 "online": int(stData) == 1 if stData is not None else False
             })
@@ -1175,7 +1175,7 @@ def getMDStatus(channel):
         elif mod["type"] == 1 and serialDict.get("confAI") and mod["devId"] in ai_infoMap:
             stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
             data.append({
-                "m_name": ai_infoMap[mod["devId"]],
+                "m_name": f"{ai_infoMap[mod['devId']]}_P300-C",
                 "devId": mod["devId"],
                 "online": int(stData) == 1 if stData is not None else False
             })
