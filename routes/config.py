@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Request
+from fastapi.responses import FileResponse
 from states.global_state import redis_state
 import os, csv, sqlite3, shutil, logging
 import ujson as json
@@ -534,4 +535,52 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
         }
 
     except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@router.get('/getTrain')
+def get_train():
+    """collect_train.py 실행 후 학습 데이터 parquet 파일을 tar.gz로 다운로드"""
+    import tempfile
+    from starlette.background import BackgroundTask
+    TRAIN_DIR = Path("/usr/local/sv500/train")
+    try:
+        process = subprocess.Popen(
+            ["/home/root/shared_venv/bin/python3", "/home/root/core/collect_train.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        stdout, stderr = process.communicate(timeout=300)
+
+        if process.returncode != 0:
+            return {"success": False, "message": stderr.decode()}
+
+        if not TRAIN_DIR.exists() or not any(TRAIN_DIR.rglob("*.parquet")):
+            return {"success": False, "message": "생성된 학습 데이터 파일이 없습니다."}
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        temp_dir = tempfile.mkdtemp()
+        tar_file = os.path.join(temp_dir, f"train_data_{timestamp}.tar.gz")
+
+        subprocess.run(
+            ['tar', '-czf', tar_file, '-C', str(TRAIN_DIR.parent), 'train'],
+            capture_output=True, text=True, timeout=60
+        )
+
+        def cleanup():
+            try:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            except Exception:
+                pass
+
+        return FileResponse(
+            path=tar_file,
+            filename=f"train_data_{timestamp}.tar.gz",
+            media_type='application/gzip',
+            background=BackgroundTask(cleanup)
+        )
+    except subprocess.TimeoutExpired:
+        process.kill()
+        return {"success": False, "message": "프로세스 타임아웃 (300초 초과)"}
+    except Exception as e:
+        logging.error(f"getTrain Error: {e}")
         return {"success": False, "message": str(e)}

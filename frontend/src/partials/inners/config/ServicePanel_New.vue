@@ -384,6 +384,15 @@
       @close-modal="parquetModalOpen = false"
       title="PARQUET Download"
     >
+      <template #header-extra>
+        <button
+          class="px-3 py-1 text-xs font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-md transition-colors disabled:opacity-50"
+          :disabled="trainLoading"
+          @click.stop="goToGetTrain"
+        >
+          {{ trainLoading ? 'Loading...' : 'GetTrainData' }}
+        </button>
+      </template>
       <div style="min-width: 560px;">
         <!-- Tabs -->
         <div class="flex border-b border-gray-200 dark:border-gray-700/60">
@@ -848,6 +857,30 @@ export default {
       }
     };
 
+    const trainLoading = ref(false);
+    const goToGetTrain = async () => {
+      try {
+        trainLoading.value = true;
+        const response = await axios.get('/config/getTrain', {
+          responseType: 'blob',
+        });
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = 'train_data.zip';
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (match && match[1]) {
+            filename = match[1].replace(/['"]/g, '');
+          }
+        }
+        triggerDownload(new Blob([response.data]), filename);
+      } catch (error) {
+        console.error('GetTrainData 다운로드 실패:', error);
+        alert('GetTrainData 다운로드 실패');
+      } finally {
+        trainLoading.value = false;
+      }
+    };
+
     const openParquetModal = () => {
       parquetModalOpen.value = true;
       parquetTab.value = 'report';
@@ -1045,6 +1078,8 @@ export default {
       ResetAll,
       saveIPAddress,
       openParquetModal,
+      goToGetTrain,
+      trainLoading,
       switchParquetTab,
       formatDate,
       downloadReport,

@@ -24,7 +24,10 @@
         <!-- Modal header -->
         <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60">
           <div class="flex justify-between items-center">
-            <div class="font-semibold text-gray-800 dark:text-gray-100">{{ title }}</div>
+            <div class="flex items-center gap-3">
+              <span class="font-semibold text-gray-800 dark:text-gray-100">{{ title }}</span>
+              <slot name="header-extra" />
+            </div>
             <button class="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400" @click.stop="$emit('close-modal')">
               <div class="sr-only">Close</div>
               <svg class="fill-current" width="16" height="16" viewBox="0 0 16 16">
