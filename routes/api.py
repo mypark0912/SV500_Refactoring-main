@@ -1174,8 +1174,12 @@ def getMDStatus(channel):
         # AI 모듈 (type=1) - ai_info에 매핑된 모듈만
         elif mod["type"] == 1 and serialDict.get("confAI") and mod["devId"] in ai_infoMap:
             stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
+            if ai_infoMap[mod['devId']] == 1:
+                typeName = "P300-C"
+            else:
+                typeName = "Others"
             data.append({
-                "m_name": f"{ai_infoMap[mod['devId']]}_P300-C",
+                "m_name": f"{mod['devId']}_{typeName}",
                 "devId": mod["devId"],
                 "online": int(stData) == 1 if stData is not None else False
             })
