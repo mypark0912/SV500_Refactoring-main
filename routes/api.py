@@ -1148,11 +1148,40 @@ async def getStatus_legacy(data, channel):
 
 @router.get("/getModuleStatus/{channel}")
 def getMDStatus(channel):
-    data = [
-      {"m_name": "DO_1", "devId": 1, "online": True},
-      {"m_name": "Temper", "devId": 100, "online": False}
-    ]
-    return {"exist":True, "data":data}
+    if not (redis_state.client.exists("SerialModbus") and redis_state.client.hexists("SerialModbus", channel)):
+        return {"exist": False, "data": []}
+
+    serialData = redis_state.client.hget("SerialModbus", channel)
+    serialDict = json.loads(serialData)
+
+    moduleData = redis_state.client.hget("SerialModbus", "ModuleInfo")
+    if not moduleData:
+        return {"exist": False, "data": []}
+
+    moduleInfoList = json.loads(moduleData)
+    ai_infoMap = {ai["devId"]: ai["mtype"] for ai in serialDict.get("ai_info", [])}
+
+    data = []
+    for mod in moduleInfoList:
+        # DO 모듈 (type=0)
+        if mod["type"] == 0 and serialDict.get("confDO"):
+            stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
+            data.append({
+                "m_name": f"DO_{mod['devId']}",
+                "devId": mod["devId"],
+                "online": int(stData) == 1 if stData is not None else False
+            })
+        # AI 모듈 (type=1) - ai_info에 매핑된 모듈만
+        elif mod["type"] == 1 and serialDict.get("confAI") and mod["devId"] in ai_infoMap:
+            stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
+            data.append({
+                "m_name": ai_infoMap[mod["devId"]],
+                "devId": mod["devId"],
+                "online": int(stData) == 1 if stData is not None else False
+            })
+
+    return {"exist": True, "data": data}
+
 
 @router.get("/getPQStatus/{asset}/{channel}")  # Master Dashboard PQ Status
 @gc_after_large_data(threshold_mb=30)
