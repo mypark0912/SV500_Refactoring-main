@@ -4,6 +4,18 @@
      <header class="header-content">
        <h2 class="card-title">{{ t('dashboard.diagnosis.title') }}</h2>
        <div align="right" class="channel-info">
+         <div v-if="isModule" class="module-badges">
+            <div
+              v-for="mod in moduleStatuses"
+              :key="mod.devId"
+              class="do-module-badge"
+              :class="mod.online ? 'badge-on' : 'badge-off'"
+              :title="`DevID: ${mod.devId}`"
+            >
+              <span class="do-dot"></span>
+              <span class="do-name">{{ mod.m_name }}</span>
+            </div>
+          </div>
          <span class="channel-text">
            {{ channel == 'main' ? t('dashboard.diagnosis.subtitle_main'):t('dashboard.diagnosis.subtitle_sub') }}
          </span>
@@ -65,6 +77,8 @@
        devStatus: -2
      });
      const DiagEnable = ref(false);
+     const isModule = ref(false);
+     const moduleStatuses = ref([]);
      const setupStore = useSetupStore();
      const channelStatus = computed(() => setupStore.getChannelSetting);
      const asset = computed(() => setupStore.getAssetConfig);
@@ -89,7 +103,31 @@
 
      const transData = ref({});
 
-     const fetchDashData = async () => {
+     const fetchModuleStatus = async () => {
+      try {
+        const response = await axios.get(`/api/getModuleStatus/${channel.value}`);
+        console.log(response.data);
+        if(response.data.exist){
+          isModule.value = true;
+          if (Array.isArray(response.data.data)) {
+            const seen = new Set();
+            moduleStatuses.value = response.data.data.filter(m => {
+              if (seen.has(m.devId)) return false;
+              seen.add(m.devId);
+              return true;
+            });
+            console.log(moduleStatuses.value);
+          }
+        }else{
+          isModule.value = false;
+        }
+      } catch (error) {
+        isModule.value = false;
+        console.log("모듈 상태 가져오기 실패:", error);
+      }
+    };
+
+    const fetchDashData = async () => {
           if (!asset.value || (!asset.value.assetName_main && !asset.value.assetName_sub)) {
             console.log("⏳ asset 준비 안됨. fetchData 대기중");
             console.log(asset.value);
@@ -239,6 +277,7 @@
           assetTypes.value = newVal.assetType_sub;
         //fetchData();
         fetchDashData();
+        fetchModuleStatus();
         if(!assetTypes.value.includes('Transformer')){
           fetchRealData();
         }
@@ -255,6 +294,7 @@
           updateInterval = setInterval(async () => {
             console.log(`[${channel.value}] ⏰ 5분 폴링 실행`);
             await fetchDashData(); //fetchData();
+            await fetchModuleStatus();
             if(!assetTypes.value.includes('Transformer')){
               await fetchRealData();
             }
@@ -311,7 +351,9 @@
        fetchRealData,
        //alarmEnable,
        t,
-     }    
+       isModule,
+       moduleStatuses,
+     }
    }
  }
  </script>
@@ -347,6 +389,21 @@
 
 .channel-text {
   @apply text-xs font-semibold text-gray-400 dark:text-gray-300 uppercase;
+}
+
+.do-module-badge {
+  @apply inline-flex items-center gap-2 mr-1;
+  @apply px-1.5 py-0.5 rounded-full;
+  @apply text-xs font-medium border;
+  @apply whitespace-nowrap;
+}
+
+.badge-on .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-green-500;
+}
+
+.badge-off .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-gray-400;
 }
 
 .summary-section {

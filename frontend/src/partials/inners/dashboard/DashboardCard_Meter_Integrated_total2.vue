@@ -4,6 +4,20 @@
     <div class="card-header">
       <header class="header-content">
         <h2 class="card-title">{{ t("dashboard.diagnosis.title2") }}</h2>
+        <div class="channel-info">
+          <div v-if="isModule" class="module-badges">
+            <div
+              v-for="mod in moduleStatuses"
+              :key="mod.devId"
+              class="do-module-badge"
+              :class="mod.online ? 'badge-on' : 'badge-off'"
+              :title="`DevID: ${mod.devId}`"
+            >
+              <span class="do-dot"></span>
+              <span class="do-name">{{ mod.m_name }}</span>
+            </div>
+          </div>
+        </div>
       </header>
     </div>
 
@@ -165,7 +179,8 @@
 </template>
 
 <script>
-import { watch, ref, computed, onMounted, onUnmounted } from "vue";
+import { watch, ref, computed, onMounted, onUnmounted, watchEffect } from "vue";
+import axios from "axios";
 import { useI18n } from "vue-i18n";
 import DashboardCard_THD from "./DashboardCard_THD.vue";
 import StatusItem from "./StatusItem_Trans.vue";
@@ -219,6 +234,35 @@ export default {
         ? "Main"
         : "Sub";
     });
+
+    // 모듈 상태
+    const isModule = ref(false);
+    const moduleStatuses = ref([]);
+    let moduleInterval = null;
+
+    const fetchModuleStatus = async () => {
+      try {
+        const response = await axios.get(`/api/getModuleStatus/${channel.value}`);
+        console.log(response.data);
+        if(response.data.exist){
+          isModule.value = true;
+          if (Array.isArray(response.data.data)) {
+            const seen = new Set();
+            moduleStatuses.value = response.data.data.filter(m => {
+              if (seen.has(m.devId)) return false;
+              seen.add(m.devId);
+              return true;
+            });
+            console.log(moduleStatuses.value);
+          }
+        }else{
+          isModule.value = false;
+        }
+      } catch (error) {
+        isModule.value = false;
+        console.log("모듈 상태 가져오기 실패:", error);
+      }
+    };
 
     // 가동 상태
     const isRunning = ref(true);
@@ -399,6 +443,17 @@ export default {
 
     onMounted(async () => {
       await setupStore.checkSetting();
+      await fetchModuleStatus();
+      moduleInterval = setInterval(async () => {
+        await fetchModuleStatus();
+      }, 60000);
+    });
+
+    onUnmounted(() => {
+      if (moduleInterval) {
+        clearInterval(moduleInterval);
+        moduleInterval = null;
+      }
     });
 
     return {
@@ -420,6 +475,8 @@ export default {
       hasSecondaryTempData,
       LoadRate,
       computedChannel,
+      isModule,
+      moduleStatuses,
     };
   },
 };
@@ -454,8 +511,27 @@ export default {
   @apply flex items-center;
 }
 
+.channel-info {
+  @apply flex flex-row items-center gap-2;
+}
+
 .channel-text {
   @apply text-xs font-semibold text-gray-400 dark:text-gray-300 uppercase;
+}
+
+.do-module-badge {
+  @apply inline-flex items-center gap-2 mr-1;
+  @apply px-1.5 py-0.5 rounded-full;
+  @apply text-xs font-medium border;
+  @apply whitespace-nowrap;
+}
+
+.badge-on .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-green-500;
+}
+
+.badge-off .do-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-gray-400;
 }
 
 /* ========== 변압기 정보 섹션 ========== */
