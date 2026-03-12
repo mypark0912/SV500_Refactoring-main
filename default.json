@@ -343,9 +343,7 @@
       "useAI": 0,
       "status_Info": {  
         "diagnosis": [],
-        "pq": [],
-        "faults": [],
-        "events": []
+        "pq": []
       }
     },
     {
@@ -624,9 +622,7 @@
       "useAI": 0,
       "status_Info": { 
         "diagnosis": [],
-        "pq": [],
-        "faults": [],
-        "events": []
+        "pq": []
       }
     }
   ]
