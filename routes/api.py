@@ -1162,10 +1162,11 @@ def getMDStatus(channel):
     ai_infoMap = {ai["devId"]: ai["mtype"] for ai in serialDict.get("ai_info", [])}
 
     data = []
+    redkey = channel.lower()
     for mod in moduleInfoList:
         # DO 모듈 (type=0)
         if mod["type"] == 0 and serialDict.get("confDO"):
-            stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
+            stData = redis_state.client_db1.hget(f"MDStatus_{redkey}", str(mod["devId"]))
             data.append({
                 "m_name": f"{mod['devId']}_DO",
                 "devId": mod["devId"],
@@ -1173,7 +1174,7 @@ def getMDStatus(channel):
             })
         # AI 모듈 (type=1) - ai_info에 매핑된 모듈만
         elif mod["type"] == 1 and serialDict.get("confAI") and mod["devId"] in ai_infoMap:
-            stData = redis_state.client_db1.hget(f"MDStatus_{channel}", str(mod["devId"]))
+            stData = redis_state.client_db1.hget(f"MDStatus_{redkey}", str(mod["devId"]))
             if ai_infoMap[mod['devId']] == 1:
                 typeName = "P300-C"
             else:
