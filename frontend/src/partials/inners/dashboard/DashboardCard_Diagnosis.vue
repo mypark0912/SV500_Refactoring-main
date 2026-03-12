@@ -212,8 +212,9 @@
     //  };
 
     const fetchModuleStatus = async () => {
+      const chName = channel.value.toLowerCase() == 'main' ? 'Main' : 'Sub';
       try {
-        const response = await axios.get(`/api/getModuleStatus/${channel.value}`);
+        const response = await axios.get(`/api/getModuleStatus/${chName}`);
         console.log(response.data);
         if(response.data.exist){
           isModule.value = true;

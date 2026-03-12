@@ -242,7 +242,7 @@ export default {
 
     const fetchModuleStatus = async () => {
       try {
-        const response = await axios.get(`/api/getModuleStatus/${channel.value}`);
+        const response = await axios.get(`/api/getModuleStatus/${computedChannel.value}`);
         console.log(response.data);
         if(response.data.exist){
           isModule.value = true;
