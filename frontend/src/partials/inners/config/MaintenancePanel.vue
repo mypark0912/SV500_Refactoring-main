@@ -536,7 +536,7 @@ export default {
     ModalBasic,
   },
   setup() {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const sidebarOpen = ref(false);
     const id = ref(0);
     const message = ref("");
@@ -576,7 +576,7 @@ export default {
 
     const openReleaseNote = async (version) => {
       try {
-        const response = await axios.get(`/config/getReleaseNote/${version}`);
+        const response = await axios.get(`/config/getReleaseNote/${locale.value}/${version}`);
         if (response.data.success) {
           releaseModalVersion.value = version;
           // frontmatter 제거 (--- ... --- 사이)
@@ -881,6 +881,7 @@ export default {
       releaseModalVersion,
       releaseModalContent,
       openReleaseNote,
+      locale,
     };
   },
 };

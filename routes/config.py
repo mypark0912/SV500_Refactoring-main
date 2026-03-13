@@ -394,7 +394,7 @@ def get_last():
 def get_release_notes():
     """release_notes 폴더의 .md 파일 목록 반환"""
     try:
-        notes_dir = base_dir.parent / "release_notes"
+        notes_dir = base_dir.parent / "release_notes/ko"
         if not notes_dir.exists():
             return {"success": False, "data": []}
         files = sorted(
@@ -406,11 +406,11 @@ def get_release_notes():
         logging.error(f"getReleaseNotes error: {e}")
         return {"success": False, "data": []}
 
-@router.get('/getReleaseNote/{version}')
-def get_release_note(version: str):
+@router.get('/getReleaseNote/{lang}/{version}')
+def get_release_note(lang:str, version: str):
     """특정 버전의 릴리즈노트 .md 파일 내용 반환"""
     try:
-        notes_dir = base_dir.parent / "release_notes"
+        notes_dir = base_dir.parent / "release_notes" / lang
         file_path = notes_dir / f"{version}.md"
         if not file_path.exists():
             return {"success": False, "content": "", "message": "File not found"}

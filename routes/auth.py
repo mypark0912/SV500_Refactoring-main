@@ -213,7 +213,7 @@ def getLatestBuildVersion():
     """release_notes 폴더에서 마지막 .md 파일명을 빌드 버전으로 반환"""
     try:
         from pathlib import Path
-        notes_dir = Path(__file__).resolve().parent.parent / "release_notes"
+        notes_dir = Path(__file__).resolve().parent.parent / "release_notes/ko"
         if not notes_dir.exists():
             return ''
         md_files = sorted([f.stem for f in notes_dir.glob("*.md")])
