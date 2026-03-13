@@ -90,8 +90,8 @@
               </svg>
               &nbsp; Set Default IP
             </button>
-            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-            <button
+            <div v-if="isNtek" class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <button v-if="isNtek"
               class="btn h-9 px-5 bg-teal-900 text-teal-100 hover:bg-teal-800 dark:bg-teal-100 dark:text-teal-800 dark:hover:bg-white flex items-center"
               @click.stop="openParquetModal"
             >
@@ -102,7 +102,7 @@
               </svg>
               &nbsp; PARQUET Download
             </button>
-            <button
+            <button v-if="isNtek"
               class="btn h-9 px-5 bg-pink-900 text-pink-100 hover:bg-pink-800 dark:bg-pink-100 dark:text-pink-800 dark:hover:bg-white flex items-center"
               @click.stop="csvModalOpen = true"
             >
@@ -678,6 +678,7 @@ export default {
     const parquetDownloading = ref(false);
 
     const devMode = computed(() => authStore.getOpMode);
+    const isNtek = computed(() => authStore.getUser == 'ntek' ? true:false);
 
     // Provide for child components
     provide('sysStatus', sysStatus);
@@ -1122,6 +1123,7 @@ export default {
       csvEndDate,
       csvDownloading,
       downloadTrendCsv,
+      isNtek,
     };
   },
 };

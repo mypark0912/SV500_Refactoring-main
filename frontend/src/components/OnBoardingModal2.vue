@@ -931,6 +931,7 @@
             return needsComm;
           } catch (e) {
             console.error(`Error checking commission for ${chName}:`, e);
+            restartMessage.value = `${chName} Commission 확인 실패 (${e.message})`;
             return false;
           }
         };
@@ -1225,13 +1226,18 @@
               isRestarting.value = true;
               restartMessage.value = t('onboardingModal.messages.acquiringWaveform');
     
-              const response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
-              //console.log("[DEBUG] trigger 응답:", response.data);
-    
-              
-    
+              let response;
+              try {
+                response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
+              } catch (e) {
+                console.error("Trigger API failed:", e);
+                restartMessage.value = `Trigger 호출 실패 (${e.message})`;
+                isRestarting.value = false;
+                return;
+              }
+
               if (!response.data.success) {
-                restartMessage.value =  t('onboardingModal.messages.timeout') ;// response.data.message || t('onboardingModal.messages.triggerFailed');
+                restartMessage.value = response.data.message || t('onboardingModal.messages.timeout');
                 isRestarting.value = false;
                 return;
               }

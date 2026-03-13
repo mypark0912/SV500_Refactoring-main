@@ -453,7 +453,7 @@ def get_log(page: int = 1, page_size: int = 10):
         # 페이징
         offset = (page - 1) * page_size
         cursor.execute(
-            "SELECT * FROM log ORDER BY id DESC LIMIT ? OFFSET ?",
+            "SELECT id, datetime(logdate, 'localtime') as logdate, account, userRole, action FROM log ORDER BY id DESC LIMIT ? OFFSET ?",
             (page_size, offset)
         )
         rows = cursor.fetchall()
@@ -469,6 +469,21 @@ def get_log(page: int = 1, page_size: int = 10):
 
     except Exception as e:
         print(f"GET_POST ERROR: {e}")
+        return {"result": 0, "msg": str(e)}
+
+
+@router.delete('/deleteLog')
+def delete_all_logs():
+    """log 테이블의 모든 데이터 삭제"""
+    try:
+        conn = check_get_logdb()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM log")
+        conn.commit()
+        conn.close()
+        return {"result": 1, "message": "All logs deleted"}
+    except Exception as e:
+        print(f"DELETE_LOG ERROR: {e}")
         return {"result": 0, "msg": str(e)}
 
 

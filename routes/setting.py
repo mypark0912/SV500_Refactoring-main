@@ -12,7 +12,7 @@ from typing import Dict, Any, List
 from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
-import pyinotify, threading
+import pyinotify, threading, uuid
 import asyncio, time
 from .demand import check_demand_downsampling_status, create_demand_downsampling_tasks
 import sqlite3
@@ -1233,6 +1233,200 @@ async def download_all_trends():
     except Exception as e:
         logging.error(f"❌ Trend download-all error: {e}")
         return {"success": False, "message": str(e)}
+
+
+# ── 백업 태스크 관리 ──
+_backup_tasks: Dict[str, dict] = {}
+_backup_running = False
+
+BACKUP_STEPS = ["influxdb", "log", "config", "sqlite3", "compress"]
+
+
+async def _run_cmd(*args, timeout=600):
+    """비동기 subprocess 실행 헬퍼"""
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    return proc.returncode, stdout.decode(), stderr.decode()
+
+
+@router.post("/backup/start")
+async def start_backup(request: Request):
+    global _backup_running
+    if _backup_running:
+        return {"success": False, "message": "Backup already in progress"}
+
+    task_id = str(uuid.uuid4())
+    _backup_tasks[task_id] = {
+        "status": "running",
+        "steps": {s: "pending" for s in BACKUP_STEPS},
+        "current_step": None,
+        "tar_file": None,
+        "backup_name": None,
+        "error": None,
+    }
+    _backup_running = True
+
+    asyncio.create_task(_backup_all_bg(task_id, request))
+    saveLog("SV-500 Other Backup", request)
+    return {"success": True, "task_id": task_id}
+
+
+@router.get("/backup/status/{task_id}")
+async def get_backup_status(task_id: str):
+    task = _backup_tasks.get(task_id)
+    if not task:
+        return {"success": False, "message": "Task not found"}
+    return {
+        "success": True,
+        "status": task["status"],
+        "steps": task["steps"],
+        "current_step": task["current_step"],
+        "error": task["error"],
+    }
+
+
+@router.get("/backup/file/{task_id}")
+async def download_backup_file(task_id: str):
+    task = _backup_tasks.get(task_id)
+    if not task or task["status"] != "completed":
+        return {"success": False, "message": "Backup not ready"}
+
+    tar_file = task["tar_file"]
+    backup_name = task["backup_name"]
+
+    def cleanup():
+        try:
+            if os.path.exists(tar_file):
+                os.remove(tar_file)
+                logging.info(f"✅ Backup file cleaned up: {tar_file}")
+        except Exception as e:
+            logging.error(f"Cleanup error: {e}")
+        _backup_tasks.pop(task_id, None)
+
+    return FileResponse(
+        path=tar_file,
+        filename=f"{backup_name}.tar.gz",
+        media_type='application/gzip',
+        background=BackgroundTask(cleanup)
+    )
+
+
+async def _backup_all_bg(task_id: str, request: Request):
+    """백그라운드 백업 (5단계 진행 상태 업데이트)"""
+    global _backup_running
+    task = _backup_tasks[task_id]
+    BACKUP_DIR = '/usr/local/sv500/backup/influxdb'
+    LOG_PATH = '/usr/local/sv500/logs'
+
+    try:
+        config = aesState.getInflux()
+        if not config["result"]:
+            raise Exception("InfluxDB not initialized")
+
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        temp_dir = tempfile.mkdtemp(dir=BACKUP_DIR)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"backup_all_{timestamp}"
+        backup_path = os.path.join(temp_dir, backup_name)
+        os.makedirs(backup_path, exist_ok=True)
+
+        # 1. InfluxDB 백업
+        task["current_step"] = "influxdb"
+        task["steps"]["influxdb"] = "in_progress"
+        temp_influx_backup = os.path.join(temp_dir, f"temp_influx_{timestamp}")
+
+        token = aesState.decrypt(config["cipher"])
+        returncode, stdout, stderr = await _run_cmd(
+            'influx', 'backup', temp_influx_backup, '-t', token, timeout=600
+        )
+        if returncode > 1:
+            raise Exception(f"InfluxDB backup failed: {stderr}")
+        if returncode == 1:
+            logging.warning(f"⚠️ InfluxDB backup warning: {stderr}")
+
+        logging.info(f"📋 Backup stdout: {stdout}")
+        logging.info(f"📋 Backup stderr: {stderr}")
+
+        influx_backup_path = os.path.join(backup_path, "influxdb")
+        shutil.move(temp_influx_backup, influx_backup_path)
+        task["steps"]["influxdb"] = "completed"
+        logging.info("✅ InfluxDB backup completed")
+
+        # 2. Log 복사
+        task["current_step"] = "log"
+        task["steps"]["log"] = "in_progress"
+        if os.path.exists(LOG_PATH):
+            logs_backup_path = os.path.join(backup_path, "logs")
+            shutil.copytree(LOG_PATH, logs_backup_path)
+            logging.info("✅ Logs copied")
+        task["steps"]["log"] = "completed"
+
+        # 3. Config 복사 (필요한 파일만)
+        task["current_step"] = "config"
+        task["steps"]["config"] = "in_progress"
+        CONFIG_FILES = ["influx.json", "maintenance.db", "meterCal.bin", "setup.json", "user.db"]
+        config_backup_path = os.path.join(backup_path, "config")
+        os.makedirs(config_backup_path, exist_ok=True)
+        for fname in CONFIG_FILES:
+            src = os.path.join(str(SETTING_FOLDER), fname)
+            if os.path.exists(src):
+                shutil.copy2(src, os.path.join(config_backup_path, fname))
+        logging.info("✅ Config files copied")
+        task["steps"]["config"] = "completed"
+
+        # 4. SQLite3 (LogDB) 복사
+        task["current_step"] = "sqlite3"
+        task["steps"]["sqlite3"] = "in_progress"
+        LogDB_PATH = "/usr/local/sv500/logs/web/log.db"
+        if os.path.exists(LogDB_PATH):
+            logdb_backup_path = os.path.join(backup_path, "log.db")
+            shutil.copy2(LogDB_PATH, logdb_backup_path)
+            logging.info("✅ LogDB copied")
+        task["steps"]["sqlite3"] = "completed"
+
+        # 5. 압축
+        task["current_step"] = "compress"
+        task["steps"]["compress"] = "in_progress"
+        parent_dir = os.path.dirname(temp_dir)
+        tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
+
+        returncode, stdout, stderr = await _run_cmd(
+            'tar', '--ignore-failed-read', '-czf', tar_file, '-C', temp_dir, backup_name,
+            timeout=600
+        )
+        if returncode > 1:
+            raise Exception(f"tar failed: {stderr}")
+
+        if not os.path.exists(tar_file):
+            raise Exception("Backup file not created")
+
+        task["steps"]["compress"] = "completed"
+        logging.info(f"✅ All backup created: {backup_name}.tar.gz")
+
+        # 완료
+        task["status"] = "completed"
+        task["current_step"] = None
+        task["tar_file"] = tar_file
+        task["backup_name"] = backup_name
+
+        # temp_dir 정리 (tar_file은 parent_dir에 있으므로 유지)
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+
+    except asyncio.TimeoutError:
+        logging.error("❌ Backup timeout")
+        task["status"] = "failed"
+        task["error"] = "Backup timeout"
+    except Exception as e:
+        logging.error(f"❌ Backup failed: {e}")
+        task["status"] = "failed"
+        task["error"] = str(e)
+    finally:
+        _backup_running = False
 
 
 async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
