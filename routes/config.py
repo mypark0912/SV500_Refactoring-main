@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Request
 from fastapi.responses import FileResponse
-from states.global_state import redis_state
-import os, csv, sqlite3, shutil, logging
+from states.global_state import redis_state, aesState
+import os, csv, sqlite3, shutil, logging, tempfile
 import ujson as json
 import struct, subprocess
 from pathlib import Path
@@ -616,3 +616,137 @@ def get_train():
     except Exception as e:
         logging.error(f"getTrain Error: {e}")
         return {"success": False, "message": str(e)}
+
+
+@router.post('/backup/restore/influxdb')
+async def restore_influxdb(file: UploadFile = File(...)):
+    """백업된 InfluxDB tar.gz 파일을 업로드하여 복원"""
+    BACKUP_DIR = '/usr/local/sv500/backup/influxdb'
+    temp_dir = None
+    try:
+        if not file.filename.endswith('.tar.gz'):
+            return {"success": False, "message": "tar.gz 파일만 업로드 가능합니다."}
+
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        temp_dir = tempfile.mkdtemp(dir=BACKUP_DIR)
+
+        # 업로드된 파일 저장
+        tar_file = os.path.join(temp_dir, file.filename)
+        with open(tar_file, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        # tar.gz 압축 해제
+        subprocess.run(
+            ['tar', '-xzf', tar_file, '-C', temp_dir],
+            check=True,
+            timeout=120
+        )
+
+        # 압축 해제된 백업 디렉토리 찾기
+        extracted_dirs = [
+            d for d in os.listdir(temp_dir)
+            if os.path.isdir(os.path.join(temp_dir, d))
+        ]
+        if not extracted_dirs:
+            return {"success": False, "message": "백업 데이터를 찾을 수 없습니다."}
+
+        restore_path = os.path.join(temp_dir, extracted_dirs[0])
+
+        # InfluxDB 서비스 중지
+        subprocess.run(['systemctl', 'stop', 'influxdb'], check=True, timeout=30)
+        logging.info("InfluxDB service stopped for restore")
+
+        try:
+            # influx restore 실행
+            result = subprocess.run(
+                ['influx', 'restore', restore_path, '--full'],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=600
+            )
+
+            logging.info(f"InfluxDB restore stdout: {result.stdout}")
+            logging.info(f"InfluxDB restore stderr: {result.stderr}")
+            logging.info(f"InfluxDB restore completed: {file.filename}")
+
+            return {"success": True, "message": "InfluxDB 복원이 완료되었습니다."}
+        finally:
+            # 복원 성공/실패 관계없이 서비스 재시작
+            subprocess.run(['systemctl', 'start', 'influxdb'], timeout=30)
+            logging.info("InfluxDB service restarted")
+
+    except subprocess.TimeoutExpired:
+        logging.error("InfluxDB restore timeout")
+        return {"success": False, "message": "복원 타임아웃 (600초 초과)"}
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"InfluxDB restore failed: {error_msg}")
+        return {"success": False, "message": f"복원 실패: {error_msg}"}
+    except Exception as e:
+        logging.error(f"InfluxDB restore error: {e}")
+        return {"success": False, "message": str(e)}
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@router.post('/backup/restore/smartsystems')
+async def restore_smartsystems(file: UploadFile = File(...)):
+    """백업된 설정 tar.gz 파일을 업로드하여 /usr/local/smartsystems 에 복원"""
+    RESTORE_DIR = '/usr/local/smartsystems'
+    temp_dir = None
+    try:
+        if not file.filename.endswith('.tar.gz'):
+            return {"success": False, "message": "tar.gz 파일만 업로드 가능합니다."}
+
+        temp_dir = tempfile.mkdtemp()
+
+        # 업로드된 파일 저장
+        tar_file = os.path.join(temp_dir, file.filename)
+        with open(tar_file, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        # tar.gz 압축 해제
+        subprocess.run(
+            ['tar', '-xzf', tar_file, '-C', temp_dir],
+            check=True,
+            timeout=120
+        )
+
+        # 압축 해제된 백업 디렉토리 찾기
+        extracted_dirs = [
+            d for d in os.listdir(temp_dir)
+            if os.path.isdir(os.path.join(temp_dir, d))
+        ]
+        if not extracted_dirs:
+            return {"success": False, "message": "백업 데이터를 찾을 수 없습니다."}
+
+        restore_path = os.path.join(temp_dir, extracted_dirs[0])
+
+        # 압축 해제된 내용을 /usr/local/smartsystems 로 덮어쓰기
+        os.makedirs(RESTORE_DIR, exist_ok=True)
+        for item in os.listdir(restore_path):
+            src = os.path.join(restore_path, item)
+            dst = os.path.join(RESTORE_DIR, item)
+            if os.path.isdir(src):
+                if os.path.exists(dst):
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+        logging.info(f"Settings restore completed: {file.filename}")
+        return {"success": True, "message": "설정 복원이 완료되었습니다."}
+
+    except subprocess.TimeoutExpired:
+        logging.error("Settings restore timeout")
+        return {"success": False, "message": "복원 타임아웃"}
+    except Exception as e:
+        logging.error(f"Settings restore error: {e}")
+        return {"success": False, "message": str(e)}
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)

@@ -191,6 +191,42 @@ def saveLog(action: str, request: Request):
         conn.close()
 
 
+def updateLog(action: str, request: Request):
+    user = request.session.get("user")
+    userRole = request.session.get("userRole")
+
+    conn = check_get_logdb()
+    if conn is None:
+        logging.error("Database connection failed")
+        return
+
+    try:
+        cursor = conn.cursor()
+
+        # 동일 action 기록이 있으면 시간만 업데이트, 없으면 새로 삽입
+        cursor.execute("SELECT id FROM log WHERE action = ?", (action,))
+        row = cursor.fetchone()
+
+        if row:
+            cursor.execute(
+                "UPDATE log SET logdate = CURRENT_TIMESTAMP, account = ?, userRole = ? WHERE id = ?",
+                (user, userRole, row['id'])
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO log (account, userRole, action) VALUES (?, ?, ?)",
+                (user, userRole, action)
+            )
+
+        conn.commit()
+
+    except Exception as e:
+        logging.error(f"Error in updateLog: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+
 def get_mac_address():
     """지정된 네트워크 카드들의 MAC 주소 가져오기"""
 

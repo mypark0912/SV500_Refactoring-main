@@ -9,7 +9,7 @@ from datetime import datetime
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
+from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading
@@ -1242,9 +1242,6 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
         if not config["result"]:
             return {"success": False, "message": "InfluxDB not initialized"}
 
-        token = aesState.decrypt(config["cipher"])
-        org = config["org"]
-
         backup_name = f"backup_all_{timestamp}"
         backup_path = os.path.join(temp_dir, backup_name)
         os.makedirs(backup_path, exist_ok=True)
@@ -1252,15 +1249,8 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
         # ✅ 임시 InfluxDB 백업 (루트 레벨에)
         temp_influx_backup = os.path.join(temp_dir, f"temp_influx_{timestamp}")
 
-        backup_command = f"""
-export INFLUX_TOKEN='{token}'
-export INFLUX_HOST='http://localhost:8086'
-export INFLUX_ORG='{org}'
-influx backup {temp_influx_backup} --bucket ntek
-"""
-
         result = subprocess.run(
-            ['bash', '-c', backup_command],
+            ['influx', 'backup', temp_influx_backup],
             check=True,
             capture_output=True,
             text=True,
@@ -1283,7 +1273,20 @@ influx backup {temp_influx_backup} --bucket ntek
             shutil.copytree(log_dir, logs_backup_path)
             logging.info(f"✅ Logs copied")
 
-        # 3. 통합 압축
+        # 3. config 폴더 복사
+        if os.path.exists(str(SETTING_FOLDER)):
+            config_backup_path = os.path.join(backup_path, "config")
+            shutil.copytree(str(SETTING_FOLDER), config_backup_path)
+            logging.info(f"✅ Config folder copied")
+
+        # 4. LogDB 파일 복사
+        LogDB_PATH = "/usr/local/sv500/logs/web/log.db"
+        if os.path.exists(LogDB_PATH):
+            logdb_backup_path = os.path.join(backup_path, "log.db")
+            shutil.copy2(LogDB_PATH, logdb_backup_path)
+            logging.info(f"✅ LogDB copied")
+
+        # 5. 통합 압축
         #        tar_file = f"{backup_path}.tar.gz"
         parent_dir = os.path.dirname(temp_dir)
         tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
@@ -1336,22 +1339,11 @@ async def _backup_influxdb(temp_dir: str, timestamp: str):
         if not config["result"]:
             return {"success": False, "message": "InfluxDB not initialized"}
 
-        token = aesState.decrypt(config["cipher"])
-        org = config["org"]
-
         backup_name = f"backup_influxdb_{timestamp}"
         backup_path = os.path.join(temp_dir, backup_name)
 
-        backup_command = f"""
-set -e
-export INFLUX_TOKEN='{token}'
-export INFLUX_HOST='http://localhost:8086'
-export INFLUX_ORG='{org}'
-influx backup {backup_path} --bucket ntek
-"""
-
         result = subprocess.run(
-            ['bash', '-c', backup_command],
+            ['influx', 'backup', backup_path],
             check=True,
             capture_output=True,
             text=True,
@@ -2970,7 +2962,7 @@ async def saveSetting2(request: Request):
 @router.get('/apply')
 async def apply(request: Request):
     try:
-        saveLog("Apply Settings", request)
+        updateLog("Apply Settings", request)
         print(f"[DEBUG] saveLog completed successfully")
     except Exception as e:
         print(f"[ERROR] saveLog failed: {e}")
