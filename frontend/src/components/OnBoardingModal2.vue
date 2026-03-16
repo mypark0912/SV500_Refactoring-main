@@ -1,214 +1,219 @@
 <template>
-    <!-- Modal backdrop -->
-    <transition
-      enter-active-class="transition ease-out duration-200"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition ease-out duration-100"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+  <!-- Modal backdrop -->
+  <transition
+    enter-active-class="transition ease-out duration-200"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition ease-out duration-100"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-show="modalOpen"
+      class="fixed inset-0 bg-gray-900 bg-opacity-30 z-50 transition-opacity"
+      aria-hidden="true"
+    ></div>
+  </transition>
+
+  <!-- Modal dialog -->
+  <transition
+    enter-active-class="transition ease-in-out duration-200"
+    enter-from-class="opacity-0 translate-y-4"
+    enter-to-class="opacity-100 translate-y-0"
+    leave-active-class="transition ease-in-out duration-200"
+    leave-from-class="opacity-100 translate-y-0"
+    leave-to-class="opacity-0 translate-y-4"
+  >
+    <div
+      v-show="modalOpen"
+      class="fixed inset-0 z-50 overflow-hidden flex items-center my-4 justify-center px-4 sm:px-6"
+      role="dialog"
+      aria-modal="true"
     >
       <div
-        v-show="modalOpen"
-        class="fixed inset-0 bg-gray-900 bg-opacity-30 z-50 transition-opacity"
-        aria-hidden="true"
-      ></div>
-    </transition>
-  
-    <!-- Modal dialog -->
-    <transition
-      enter-active-class="transition ease-in-out duration-200"
-      enter-from-class="opacity-0 translate-y-4"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition ease-in-out duration-200"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 translate-y-4"
-    >
-      <div
-        v-show="modalOpen"
-        class="fixed inset-0 z-50 overflow-hidden flex items-center my-4 justify-center px-4 sm:px-6"
-        role="dialog"
-        aria-modal="true"
+        ref="modalContent"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto max-w-2xl w-full max-h-full"
       >
-        <div
-          ref="modalContent"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto max-w-2xl w-full max-h-full"
-        >
-          <!-- Close button -->
-          <div class="absolute top-4 right-4 z-10">
-            <button
-              class="text-gray-400 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-400"
-              @click.stop="closeModal"
+        <!-- Close button: disabled while blocking operations are in progress -->
+        <div class="absolute top-4 right-4 z-10">
+          <button
+            class="text-gray-400 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-400 transition-opacity"
+            :class="isBlocking ? 'opacity-30 cursor-not-allowed' : ''"
+            :disabled="isBlocking"
+            @click.stop="closeModal"
+          >
+            <div class="sr-only">{{ t('common.close') }}</div>
+            <svg
+              class="fill-current"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
             >
-              <div class="sr-only">{{ t('common.close') }}</div>
-              <svg
-                class="fill-current"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-              >
-                <path
-                  d="M7.95 6.536l4.242-4.243a1 1 0 111.415 1.414L9.364 7.95l4.243 4.242a1 1 0 11-1.415 1.415L7.95 9.364l-4.243 4.243a1 1 0 01-1.414-1.415L6.536 7.95 2.293 3.707a1 1 0 011.414-1.414L7.95 6.536z"
-                />
-              </svg>
-            </button>
+              <path
+                d="M7.95 6.536l4.242-4.243a1 1 0 111.415 1.414L9.364 7.95l4.243 4.242a1 1 0 11-1.415 1.415L7.95 9.364l-4.243 4.243a1 1 0 01-1.414-1.415L6.536 7.95 2.293 3.707a1 1 0 011.414-1.414L7.95 6.536z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <!-- Progress bar (not shown for device0 mode) -->
+          <div class="mb-8" v-if="OpMode !== 'device0'">
+            <div class="relative">
+              <div
+                class="absolute left-0 top-1/2 -mt-px w-full h-0.5 bg-gray-200 dark:bg-gray-700/60"
+                aria-hidden="true"
+              ></div>
+              <ul class="relative flex justify-between w-full">
+                <li v-for="(step, index) in availableSteps" :key="step.id">
+                  <div
+                    class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold transition-colors"
+                    :class="
+                      currentStepIndex >= index
+                        ? 'bg-violet-500 text-white'
+                        : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-100'
+                    "
+                  >
+                    {{ index + 1 }}
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
-  
-          <div class="p-6">
-            <!-- Progress bar (not shown for device0 mode) -->
-            <div class="mb-8" v-if="OpMode !== 'device0'">
-              <div class="relative">
-                <div
-                  class="absolute left-0 top-1/2 -mt-px w-full h-0.5 bg-gray-200 dark:bg-gray-700/60"
-                  aria-hidden="true"
-                ></div>
-                <ul class="relative flex justify-between w-full">
-                  <li v-for="(step, index) in availableSteps" :key="step.id">
-                    <div
-                      class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold transition-colors"
-                      :class="
-                        currentStepIndex >= index
-                          ? 'bg-violet-500 text-white'
-                          : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-100'
-                      "
-                    >
-                      {{ index + 1 }}
-                    </div>
-                  </li>
-                </ul>
+
+          <!-- Step 1: Restart Check -->
+          <div v-show="currentStep === 1" class="step-content">
+            <h2
+              class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
+            >
+              {{ t('onboardingModal.restartCheck.title') }}
+            </h2>
+
+            <div v-if="isCheckingRestart" class="text-center py-10">
+              <div
+                class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
+              >
+                <svg
+                  class="animate-spin w-8 h-8 text-violet-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ t('onboardingModal.restartCheck.checking') }}
               </div>
             </div>
-  
-            <!-- Step 1: Restart Check -->
-            <div v-show="currentStep === 1" class="step-content">
-              <h2
-                class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
-              >
-                {{ t('onboardingModal.restartCheck.title') }}
-              </h2>
-  
-              <div v-if="isCheckingRestart" class="text-center py-10">
-                <div
-                  class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
-                >
+
+            <div v-else class="space-y-4">
+              <!-- Restart Check Result -->
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h3 class="font-semibold mb-3 flex items-center">
                   <svg
-                    class="animate-spin w-8 h-8 text-violet-500"
-                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5 mr-2 text-blue-500"
                     fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
                     <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
-                </div>
-                <div class="text-sm text-gray-500">
-                  {{ t('onboardingModal.restartCheck.checking') }}
-                </div>
-              </div>
-  
-              <div v-else class="space-y-4">
-                <!-- Restart Check Result -->
-                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                  <h3 class="font-semibold mb-3 flex items-center">
-                    <svg
-                      class="w-5 h-5 mr-2 text-blue-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {{ t('onboardingModal.restartCheck.status') }}
+                </h3>
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.required') }}:</span>
+                    <span
+                      :class="
+                        needsRestart
+                          ? 'text-yellow-600 font-semibold'
+                          : 'text-green-600 font-semibold'
+                      "
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    {{ t('onboardingModal.restartCheck.status') }}
-                  </h3>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.required') }}:</span>
-                      <span
-                        :class="
-                          needsRestart
-                            ? 'text-yellow-600 font-semibold'
-                            : 'text-green-600 font-semibold'
-                        "
-                      >
-                        {{ needsRestart ? t('common.yes') : t('common.no') }}
-                      </span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.checkTime') }}:</span>
-                      <span class="text-gray-700 dark:text-gray-100">{{
-                        new Date().toLocaleString()
-                      }}</span>
-                    </div>
+                      {{ needsRestart ? t('common.yes') : t('common.no') }}
+                    </span>
                   </div>
-                </div>
-  
-                <!-- Restart Info -->
-                <div
-                  v-if="needsRestart"
-                  class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4"
-                >
-                  <div class="flex items-center">
-                    <svg
-                      class="w-5 h-5 text-yellow-500 mr-2"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    <span class="text-yellow-700 dark:text-yellow-400 font-medium">{{ t('onboardingModal.restartCheck.needsRestart') }}</span>
-                  </div>
-                </div>
-  
-                <!-- No Restart Message -->
-                <div
-                  v-else
-                  class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4"
-                >
-                  <div class="flex items-center">
-                    <svg
-                      class="w-5 h-5 text-green-500 mr-2"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    <span class="text-green-700 dark:text-green-400 font-medium">{{ t('onboardingModal.restartCheck.noRestart') }}</span>
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.restartCheck.checkTime') }}:</span>
+                    <span class="text-gray-700 dark:text-gray-100">{{
+                      new Date().toLocaleString()
+                    }}</span>
                   </div>
                 </div>
               </div>
-  
-              <div class="flex items-center justify-between mt-6 space-x-2">
-                <button
-                  type="button"
-                  class="btn bg-gray-500 text-white hover:bg-gray-600"
-                  @click="closeModal"
-                >
-                  {{ t('common.cancel') }}
-                </button>
+
+              <!-- Restart Info -->
+              <div
+                v-if="needsRestart"
+                class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4"
+              >
+                <div class="flex items-center">
+                  <svg
+                    class="w-5 h-5 text-yellow-500 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span class="text-yellow-700 dark:text-yellow-400 font-medium">{{ t('onboardingModal.restartCheck.needsRestart') }}</span>
+                </div>
+              </div>
+
+              <!-- No Restart Message -->
+              <div
+                v-else
+                class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4"
+              >
+                <div class="flex items-center">
+                  <svg
+                    class="w-5 h-5 text-green-500 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span class="text-green-700 dark:text-green-400 font-medium">{{ t('onboardingModal.restartCheck.noRestart') }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-6 space-x-2">
+              <!-- Cancel button: disabled while blocking operations are in progress -->
+              <button
+                type="button"
+                class="btn bg-gray-500 text-white hover:bg-gray-600"
+                :disabled="isBlocking"
+                :class="isBlocking ? 'opacity-50 cursor-not-allowed' : ''"
+                @click="closeModal"
+              >
+                {{ t('common.cancel') }}
+              </button>
 <div
   v-if="isRestarting || restartMessage"
   class="flex items-center text-sm"
@@ -249,1219 +254,1233 @@
   </svg>
   {{ restartMessage }}
 </div>
-                <button
-                  type="button"
-                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white"
-                  @click="nextStep"
-                  :disabled="isCheckingRestart"
-                >
-                  {{ t('onboardingModal.buttons.nextStep') }}
-                </button>
-              </div>
+              <button
+                type="button"
+                class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white"
+                @click="nextStep"
+                :disabled="isCheckingRestart"
+              >
+                {{ t('onboardingModal.buttons.nextStep') }}
+              </button>
             </div>
-  
-            <!-- Step 2: Main Test Result -->
-            <div
-              v-show="currentStep === 2 && diagnosis_main"
-              class="step-content"
+          </div>
+
+          <!-- Step 2: Main Test Result -->
+          <div
+            v-show="currentStep === 2 && diagnosis_main"
+            class="step-content"
+          >
+            <h2
+              class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
             >
-              <h2
-                class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
-              >
-                {{ t('onboardingModal.mainTest.title') }}
-              </h2>
-  
-              <div v-if="isLoadingMain" class="text-center py-10">
-                <div
-                  class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
-                >
-                  <svg
-                    class="animate-spin w-8 h-8 text-violet-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </div>
-                <div class="text-sm text-gray-500">
-                  {{ t('onboardingModal.mainTest.loading') }}
-                </div>
-              </div>
-  
+              {{ t('onboardingModal.mainTest.title') }}
+            </h2>
+
+            <div v-if="isLoadingMain" class="text-center py-10">
               <div
-                v-else
-                class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
+                class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
               >
-                <div class="text-sm font-semibold uppercase">
-                  {{ t('onboardingModal.mainTest.report') }}
-                </div>
-                <div class="flex flex-wrap justify-between gap-4">
-                  <div>{{ t('onboardingModal.test.assetType') }}: {{ mainTestData.AssetName || "N/A" }}</div>
-                  <div>{{ t('onboardingModal.test.serialNumber') }}: {{ mainTestData.SerialNumber || "N/A" }}</div>
-                  <div>{{ t('onboardingModal.test.channel') }}: {{ mainTestData.Channel || "N/A" }}</div>
-                </div>
-                <div class="font-semibold mb-4 mt-2">
-                  {{ t('onboardingModal.test.result', { errors: mainTestResult.err || 0, warnings: mainTestResult.warn || 0 }) }}
-                </div>
-                <div
-                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
+                <svg
+                  class="animate-spin w-8 h-8 text-violet-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
                 >
-                  <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
-                  <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
-                  <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
-                </div>
-                <div class="space-y-1">
-                  <div
-                    v-for="(item, index) in mainTestData.Commissions"
-                    :key="index"
-                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
-                  >
-                    <div class="text-left">{{ item.AssemblyID }}</div>
-                    <div class="text-left text-gray-600 dark:text-gray-100">
-                      <span v-for="(msg, i) in item.Messages" :key="i">
-                        • {{ msg }}
-                      </span>
-                    </div>
-                    <div
-                      class="text-center font-bold"
-                      :class="{
-                        'text-green-600': item.Status < 2,
-                        'text-red-600': item.Status === 3,
-                        'text-yellow-500': item.Status === 2,
-                      }"
-                    >
-                      {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
-                    </div>
-                  </div>
-                </div>
-  
-                <!-- Chart View Toggle Button -->
-                <div class="mt-4">
-                  <button
-                    @click="getWaveShow('main')"
-                    class="btn bg-violet-500 text-white hover:bg-violet-600"
-                  >
-                    <svg
-                      class="w-4 h-4 inline-block mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    {{ t('onboardingModal.test.viewCharts') }}
-                  </button>
-                </div>
-  
-                <!-- Chart View -->
-                <div v-if="showMainDiagChart" class="space-y-4">
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="option in ChartTypes"
-                      :key="option"
-                      @click.prevent="
-                        selectedMainChart = option;
-                        updateMainChart();
-                      "
-                      :class="[
-                        'btn border px-3 py-1 text-xs transition-colors duration-200 rounded-lg',
-                        selectedMainChart === option
-                          ? 'bg-violet-500 text-white border-violet-500'
-                          : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
-                      ]"
-                    >
-                      {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
-                    </button>
-                  </div>
-  
-                  <div
-                    class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
-                  >
-                    {{ t('onboardingModal.test.chartTitle', { type: selectedMainChart }) }}
-                  </div>
-  
-                  <!-- Chart Components -->
-                  <div class="max-h-[30vh] overflow-y-auto">
-                    <LineChart
-                      v-if="selectedMainChart == 'Time Domain(Voltage)'"
-                      :label="mainWaveformLabelT"
-                      :data="mainWaveformDataT"
-                      :title="'3-Phase ' + selectedMainChart"
-                      :legend="['V1', 'V2', 'V3']"
-                      :mode="'3phase'"
-                      :noData="mainWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedMainChart == 'Time Domain(Current)'"
-                      :label="mainWaveformLabelT"
-                      :data="mainWaveformDataT"
-                      :title="'3-Phase ' + selectedMainChart"
-                      :legend="['I1', 'I2', 'I3']"
-                      :mode="'3phase'"
-                      :noData="mainWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedMainChart == 'Frequency Domain(Voltage)'"
-                      :label="mainWaveformLabelT"
-                      :data="mainWaveformDataT"
-                      :title="selectedMainChart"
-                      :legend="['VFFT']"
-                      :mode="'1phase'"
-                      :noData="mainWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedMainChart == 'Frequency Domain(Current)'"
-                      :label="mainWaveformLabelT"
-                      :data="mainWaveformDataT"
-                      :title="selectedMainChart"
-                      :legend="['IFFT']"
-                      :mode="'1phase'"
-                      :noData="mainWaveformNoData"
-                    />
-                  </div>
-                </div>
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
               </div>
-  
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  type="button"
-                  class="btn bg-gray-500 text-white hover:bg-gray-600"
-                  @click="closeModal"
-                >
-                  {{ t('common.cancel') }}
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  :class="
-                    mainTestResult.err > 0
-                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
-                  "
-                  @click="handleMainTestNext"
-                  :disabled="!canProceedFromMain"
-                >
-                  {{ mainTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
-                </button>
+              <div class="text-sm text-gray-500">
+                {{ t('onboardingModal.mainTest.loading') }}
               </div>
             </div>
-  
-            <!-- Step 3: Sub Test Result -->
-            <div v-show="currentStep === 3 && diagnosis_sub" class="step-content">
-              <h2
-                class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
+
+            <div
+              v-else
+              class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
+            >
+              <div class="text-sm font-semibold uppercase">
+                {{ t('onboardingModal.mainTest.report') }}
+              </div>
+              <div class="flex flex-wrap justify-between gap-4">
+                <div>{{ t('onboardingModal.test.assetType') }}: {{ mainTestData.AssetName || "N/A" }}</div>
+                <div>{{ t('onboardingModal.test.serialNumber') }}: {{ mainTestData.SerialNumber || "N/A" }}</div>
+                <div>{{ t('onboardingModal.test.channel') }}: {{ mainTestData.Channel || "N/A" }}</div>
+              </div>
+              <div class="font-semibold mb-4 mt-2">
+                {{ t('onboardingModal.test.result', { errors: mainTestResult.err || 0, warnings: mainTestResult.warn || 0 }) }}
+              </div>
+              <div
+                class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
               >
-                {{ t('onboardingModal.subTest.title') }}
-              </h2>
-  
-              <div v-if="isLoadingSub" class="text-center py-10">
+                <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
+                <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
+                <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
+              </div>
+              <div class="space-y-1">
                 <div
-                  class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
+                  v-for="(item, index) in mainTestData.Commissions"
+                  :key="index"
+                  class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
+                >
+                  <div class="text-left">{{ item.AssemblyID }}</div>
+                  <div class="text-left text-gray-600 dark:text-gray-100">
+                    <span v-for="(msg, i) in item.Messages" :key="i">
+                      • {{ msg }}
+                    </span>
+                  </div>
+                  <div
+                    class="text-center font-bold"
+                    :class="{
+                      'text-green-600': item.Status < 2,
+                      'text-red-600': item.Status === 3,
+                      'text-yellow-500': item.Status === 2,
+                    }"
+                  >
+                    {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chart View Toggle Button: disabled while waveform is loading -->
+              <div class="mt-4">
+                <button
+                  @click="getWaveShow('main')"
+                  class="btn bg-violet-500 text-white hover:bg-violet-600"
+                  :disabled="isLoadingWaveform"
+                  :class="isLoadingWaveform ? 'opacity-50 cursor-not-allowed' : ''"
                 >
                   <svg
-                    class="animate-spin w-8 h-8 text-violet-500"
-                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 inline-block mr-2"
                     fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
                     <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
                   </svg>
-                </div>
-                <div class="text-sm text-gray-500">
-                  {{ t('onboardingModal.subTest.loading') }}
-                </div>
+                  {{ t('onboardingModal.test.viewCharts') }}
+                </button>
               </div>
-  
-              <div
-                v-else
-                class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
-              >
-                <div class="text-sm font-semibold uppercase">
-                  {{ t('onboardingModal.subTest.report') }}
-                </div>
-                <div class="flex flex-wrap justify-between gap-4">
-                  <div>{{ t('onboardingModal.test.assetType') }}: {{ subTestData.AssetName || "N/A" }}</div>
-                  <div>{{ t('onboardingModal.test.serialNumber') }}: {{ subTestData.SerialNumber || "N/A" }}</div>
-                  <div>{{ t('onboardingModal.test.channel') }}: {{ subTestData.Channel || "N/A" }}</div>
-                </div>
-                <div class="font-semibold mb-4 mt-2">
-                  {{ t('onboardingModal.test.result', { errors: subTestResult.err || 0, warnings: subTestResult.warn || 0 }) }}
-                </div>
-                <div
-                  class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
-                >
-                  <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
-                  <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
-                  <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
-                </div>
-                <div class="space-y-1">
-                  <div
-                    v-for="(item, index) in subTestData.Commissions"
-                    :key="index"
-                    class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
-                  >
-                    <div class="text-left">{{ item.AssemblyID }}</div>
-                    <div class="text-left text-gray-600 dark:text-gray-100">
-                      <span v-for="(msg, i) in item.Messages" :key="i">
-                        • {{ msg }}
-                      </span>
-                    </div>
-                    <div
-                      class="text-center font-bold"
-                      :class="{
-                        'text-green-600': item.Status < 2,
-                        'text-red-600': item.Status === 3,
-                        'text-yellow-500': item.Status === 2,
-                      }"
-                    >
-                      {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
-                    </div>
-                  </div>
-                </div>
-  
-                <!-- Chart View Toggle Button -->
-                <div class="mt-4">
+
+              <!-- Chart View -->
+              <div v-if="showMainDiagChart" class="space-y-4">
+                <div class="flex flex-wrap gap-2">
                   <button
-                    @click="getWaveShow('sub')"
-                    class="btn bg-violet-500 text-white hover:bg-violet-600"
+                    v-for="option in ChartTypes"
+                    :key="option"
+                    @click.prevent="
+                      selectedMainChart = option;
+                      updateMainChart();
+                    "
+                    :class="[
+                      'btn border px-3 py-1 text-xs transition-colors duration-200 rounded-lg',
+                      selectedMainChart === option
+                        ? 'bg-violet-500 text-white border-violet-500'
+                        : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
+                    ]"
                   >
-                    <svg
-                      class="w-4 h-4 inline-block mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    {{ t('onboardingModal.test.viewCharts') }}
+                    {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
                   </button>
                 </div>
-  
-                <!-- Sub Chart View -->
-                <div v-if="showSubDiagChart" class="space-y-4">
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="option in ChartTypes"
-                      :key="option"
-                      @click.prevent="
-                        selectedSubChart = option;
-                        updateSubChart();
-                      "
-                      :class="[
-                        'btn border px-3 py-1 text-xs transition-colors duration-200 rounded-lg',
-                        selectedSubChart === option
-                          ? 'bg-violet-500 text-white border-violet-500'
-                          : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
-                      ]"
-                    >
-                      {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
-                    </button>
-                  </div>
-  
-                  <div
-                    class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
-                  >
-                    {{ t('onboardingModal.test.chartTitle', { type: selectedSubChart }) }}
-                  </div>
-  
-                  <!-- Sub Chart Components -->
-                  <div class="max-h-[30vh] overflow-y-auto">
-                    <LineChart
-                      v-if="selectedSubChart == 'Time Domain(Voltage)'"
-                      :label="subWaveformLabelT"
-                      :data="subWaveformDataT"
-                      :title="'3-Phase ' + selectedSubChart"
-                      :legend="['V1', 'V2', 'V3']"
-                      :mode="'3phase'"
-                      :noData="subWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedSubChart == 'Time Domain(Current)'"
-                      :label="subWaveformLabelT"
-                      :data="subWaveformDataT"
-                      :title="'3-Phase ' + selectedSubChart"
-                      :legend="['I1', 'I2', 'I3']"
-                      :mode="'3phase'"
-                      :noData="subWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedSubChart == 'Frequency Domain(Voltage)'"
-                      :label="subWaveformLabelT"
-                      :data="subWaveformDataT"
-                      :title="selectedSubChart"
-                      :legend="['VFFT']"
-                      :mode="'1phase'"
-                      :noData="subWaveformNoData"
-                    />
-                    <LineChart
-                      v-if="selectedSubChart == 'Frequency Domain(Current)'"
-                      :label="subWaveformLabelT"
-                      :data="subWaveformDataT"
-                      :title="selectedSubChart"
-                      :legend="['IFFT']"
-                      :mode="'1phase'"
-                      :noData="subWaveformNoData"
-                    />
-                  </div>
+
+                <div
+                  class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
+                >
+                  {{ t('onboardingModal.test.chartTitle', { type: selectedMainChart }) }}
                 </div>
-              </div>
-  
-              <div class="flex items-center justify-between mt-6">
-                <button
-                  type="button"
-                  class="btn bg-gray-500 text-white hover:bg-gray-600"
-                  @click="closeModal"
-                >
-                  {{ t('common.cancel') }}
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  :class="
-                    subTestResult.err > 0
-                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
-                  "
-                  @click="nextStep"
-                  :disabled="!canProceedFromSub"
-                >
-                  {{ subTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
-                </button>
+
+                <!-- Chart Components -->
+                <div class="max-h-[30vh] overflow-y-auto">
+                  <LineChart
+                    v-if="selectedMainChart == 'Time Domain(Voltage)'"
+                    :label="mainWaveformLabelT"
+                    :data="mainWaveformDataT"
+                    :title="'3-Phase ' + selectedMainChart"
+                    :legend="['V1', 'V2', 'V3']"
+                    :mode="'3phase'"
+                    :noData="mainWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedMainChart == 'Time Domain(Current)'"
+                    :label="mainWaveformLabelT"
+                    :data="mainWaveformDataT"
+                    :title="'3-Phase ' + selectedMainChart"
+                    :legend="['I1', 'I2', 'I3']"
+                    :mode="'3phase'"
+                    :noData="mainWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedMainChart == 'Frequency Domain(Voltage)'"
+                    :label="mainWaveformLabelT"
+                    :data="mainWaveformDataT"
+                    :title="selectedMainChart"
+                    :legend="['VFFT']"
+                    :mode="'1phase'"
+                    :noData="mainWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedMainChart == 'Frequency Domain(Current)'"
+                    :label="mainWaveformLabelT"
+                    :data="mainWaveformDataT"
+                    :title="selectedMainChart"
+                    :legend="['IFFT']"
+                    :mode="'1phase'"
+                    :noData="mainWaveformNoData"
+                  />
+                </div>
               </div>
             </div>
-  
-            <!-- Step 4: Complete -->
-            <div v-show="currentStep === 4" class="step-content">
-              <h2
-                class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
+
+            <div class="flex items-center justify-between mt-6">
+              <!-- Cancel button: disabled while blocking operations are in progress -->
+              <button
+                type="button"
+                class="btn bg-gray-500 text-white hover:bg-gray-600"
+                :disabled="isBlocking"
+                :class="isBlocking ? 'opacity-50 cursor-not-allowed' : ''"
+                @click="closeModal"
               >
-                {{ t('onboardingModal.complete.title') }}
-              </h2>
-  
-              <div class="space-y-4">
-                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                  <h3 class="font-semibold mb-3">{{ t('onboardingModal.complete.summary') }}</h3>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.restartCheck') }}:</span>
-                      <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.completed') }}</span>
-                    </div>
-                    <div
-                      v-if="diagnosis_main"
-                      class="flex items-center justify-between"
-                    >
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.mainTest') }}:</span>
-                      <span
-                        :class="
-                          mainTestResult.err > 0
-                            ? 'text-red-600'
-                            : 'text-green-600'
-                        "
-                        class="font-semibold"
-                      >
-                        {{
-                          mainTestResult.err > 0
-                            ? t('onboardingModal.complete.errors', { count: mainTestResult.err })
-                            : t('onboardingModal.complete.passed')
-                        }}
-                      </span>
-                    </div>
-                    <div
-                      v-if="diagnosis_sub"
-                      class="flex items-center justify-between"
-                    >
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.subTest') }}:</span>
-                      <span
-                        :class="
-                          subTestResult.err > 0
-                            ? 'text-red-600'
-                            : 'text-green-600'
-                        "
-                        class="font-semibold"
-                      >
-                        {{
-                          subTestResult.err > 0
-                            ? t('onboardingModal.complete.errors', { count: subTestResult.err })
-                            : t('onboardingModal.complete.passed')
-                        }}
-                      </span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.overallStatus') }}:</span>
-                      <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.ready') }}</span>
-                    </div>
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="button"
+                class="btn"
+                :class="
+                  mainTestResult.err > 0
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
+                "
+                @click="handleMainTestNext"
+                :disabled="!canProceedFromMain"
+              >
+                {{ mainTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Sub Test Result -->
+          <div v-show="currentStep === 3 && diagnosis_sub" class="step-content">
+            <h2
+              class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
+            >
+              {{ t('onboardingModal.subTest.title') }}
+            </h2>
+
+            <div v-if="isLoadingSub" class="text-center py-10">
+              <div
+                class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-violet-100 dark:bg-violet-900/20 rounded-full"
+              >
+                <svg
+                  class="animate-spin w-8 h-8 text-violet-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ t('onboardingModal.subTest.loading') }}
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="space-y-4 text-xs text-gray-800 dark:text-gray-100"
+            >
+              <div class="text-sm font-semibold uppercase">
+                {{ t('onboardingModal.subTest.report') }}
+              </div>
+              <div class="flex flex-wrap justify-between gap-4">
+                <div>{{ t('onboardingModal.test.assetType') }}: {{ subTestData.AssetName || "N/A" }}</div>
+                <div>{{ t('onboardingModal.test.serialNumber') }}: {{ subTestData.SerialNumber || "N/A" }}</div>
+                <div>{{ t('onboardingModal.test.channel') }}: {{ subTestData.Channel || "N/A" }}</div>
+              </div>
+              <div class="font-semibold mb-4 mt-2">
+                {{ t('onboardingModal.test.result', { errors: subTestResult.err || 0, warnings: subTestResult.warn || 0 }) }}
+              </div>
+              <div
+                class="grid grid-cols-[10%_1fr_10%] gap-2 font-semibold text-gray-500 dark:text-gray-100 border-b border-gray-200 pb-1"
+              >
+                <div class="text-left">{{ t('onboardingModal.test.assemblyId') }}</div>
+                <div class="text-center">{{ t('onboardingModal.test.detail') }}</div>
+                <div class="text-center">{{ t('onboardingModal.test.status') }}</div>
+              </div>
+              <div class="space-y-1">
+                <div
+                  v-for="(item, index) in subTestData.Commissions"
+                  :key="index"
+                  class="grid grid-cols-[10%_1fr_10%] gap-2 px-1 py-1 rounded"
+                >
+                  <div class="text-left">{{ item.AssemblyID }}</div>
+                  <div class="text-left text-gray-600 dark:text-gray-100">
+                    <span v-for="(msg, i) in item.Messages" :key="i">
+                      • {{ msg }}
+                    </span>
+                  </div>
+                  <div
+                    class="text-center font-bold"
+                    :class="{
+                      'text-green-600': item.Status < 2,
+                      'text-red-600': item.Status === 3,
+                      'text-yellow-500': item.Status === 2,
+                    }"
+                  >
+                    {{ t(`onboardingModal.test.statusList.${stList[item.Status].toLowerCase()}`) }}
                   </div>
                 </div>
-  
-                <div class="text-xs text-gray-500">
-                  {{ t('onboardingModal.complete.confirmMessage') }}
+              </div>
+
+              <!-- Chart View Toggle Button: disabled while waveform is loading -->
+              <div class="mt-4">
+                <button
+                  @click="getWaveShow('sub')"
+                  class="btn bg-violet-500 text-white hover:bg-violet-600"
+                  :disabled="isLoadingWaveform"
+                  :class="isLoadingWaveform ? 'opacity-50 cursor-not-allowed' : ''"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  {{ t('onboardingModal.test.viewCharts') }}
+                </button>
+              </div>
+
+              <!-- Sub Chart View -->
+              <div v-if="showSubDiagChart" class="space-y-4">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="option in ChartTypes"
+                    :key="option"
+                    @click.prevent="
+                      selectedSubChart = option;
+                      updateSubChart();
+                    "
+                    :class="[
+                      'btn border px-3 py-1 text-xs transition-colors duration-200 rounded-lg',
+                      selectedSubChart === option
+                        ? 'bg-violet-500 text-white border-violet-500'
+                        : 'bg-white text-violet-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900',
+                    ]"
+                  >
+                    {{ t(`onboardingModal.test.chartTypes.${option.toLowerCase().replace(/[()]/g, '').replace(/ /g, '')}`) }}
+                  </button>
+                </div>
+
+                <div
+                  class="text-sm font-semibold text-gray-600 dark:text-gray-100 mt-4"
+                >
+                  {{ t('onboardingModal.test.chartTitle', { type: selectedSubChart }) }}
+                </div>
+
+                <!-- Sub Chart Components -->
+                <div class="max-h-[30vh] overflow-y-auto">
+                  <LineChart
+                    v-if="selectedSubChart == 'Time Domain(Voltage)'"
+                    :label="subWaveformLabelT"
+                    :data="subWaveformDataT"
+                    :title="'3-Phase ' + selectedSubChart"
+                    :legend="['V1', 'V2', 'V3']"
+                    :mode="'3phase'"
+                    :noData="subWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedSubChart == 'Time Domain(Current)'"
+                    :label="subWaveformLabelT"
+                    :data="subWaveformDataT"
+                    :title="'3-Phase ' + selectedSubChart"
+                    :legend="['I1', 'I2', 'I3']"
+                    :mode="'3phase'"
+                    :noData="subWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedSubChart == 'Frequency Domain(Voltage)'"
+                    :label="subWaveformLabelT"
+                    :data="subWaveformDataT"
+                    :title="selectedSubChart"
+                    :legend="['VFFT']"
+                    :mode="'1phase'"
+                    :noData="subWaveformNoData"
+                  />
+                  <LineChart
+                    v-if="selectedSubChart == 'Frequency Domain(Current)'"
+                    :label="subWaveformLabelT"
+                    :data="subWaveformDataT"
+                    :title="selectedSubChart"
+                    :legend="['IFFT']"
+                    :mode="'1phase'"
+                    :noData="subWaveformNoData"
+                  />
                 </div>
               </div>
-  
-              <!-- Modal footer -->
-              <div class="flex flex-wrap justify-between items-center mt-6">
+            </div>
+
+            <div class="flex items-center justify-between mt-6">
+              <!-- Cancel button: disabled while blocking operations are in progress -->
+              <button
+                type="button"
+                class="btn bg-gray-500 text-white hover:bg-gray-600"
+                :disabled="isBlocking"
+                :class="isBlocking ? 'opacity-50 cursor-not-allowed' : ''"
+                @click="closeModal"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="button"
+                class="btn"
+                :class="
+                  subTestResult.err > 0
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-700 dark:hover:bg-white'
+                "
+                @click="nextStep"
+                :disabled="!canProceedFromSub"
+              >
+                {{ subTestResult.err > 0 ? t('onboardingModal.test.fixErrors') : t('onboardingModal.buttons.nextStep') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 4: Complete -->
+          <div v-show="currentStep === 4" class="step-content">
+            <h2
+              class="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-6"
+            >
+              {{ t('onboardingModal.complete.title') }}
+            </h2>
+
+            <div class="space-y-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <h3 class="font-semibold mb-3">{{ t('onboardingModal.complete.summary') }}</h3>
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.restartCheck') }}:</span>
+                    <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.completed') }}</span>
+                  </div>
+                  <div
+                    v-if="diagnosis_main"
+                    class="flex items-center justify-between"
+                  >
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.mainTest') }}:</span>
+                    <span
+                      :class="
+                        mainTestResult.err > 0
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      "
+                      class="font-semibold"
+                    >
+                      {{
+                        mainTestResult.err > 0
+                          ? t('onboardingModal.complete.errors', { count: mainTestResult.err })
+                          : t('onboardingModal.complete.passed')
+                      }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="diagnosis_sub"
+                    class="flex items-center justify-between"
+                  >
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.subTest') }}:</span>
+                    <span
+                      :class="
+                        subTestResult.err > 0
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      "
+                      class="font-semibold"
+                    >
+                      {{
+                        subTestResult.err > 0
+                          ? t('onboardingModal.complete.errors', { count: subTestResult.err })
+                          : t('onboardingModal.complete.passed')
+                      }}
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-100">{{ t('onboardingModal.complete.overallStatus') }}:</span>
+                    <span class="text-green-600 font-semibold">{{ t('onboardingModal.complete.ready') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-xs text-gray-500">
+                {{ t('onboardingModal.complete.confirmMessage') }}
+              </div>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="flex flex-wrap justify-between items-center mt-6">
+              <button
+                v-if="!restartDone"
+                type="button"
+                class="btn bg-gray-500 text-white hover:bg-gray-600"
+                @click="closeModal"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <div class="ml-auto flex space-x-3">
                 <button
                   v-if="!restartDone"
-                  type="button"
-                  class="btn bg-gray-500 text-white hover:bg-gray-600"
+                  class="btn bg-violet-500 text-white hover:bg-violet-600"
+                  @click="restartValidation"
+                >
+                  {{ t('onboardingModal.buttons.restart') }}
+                </button>
+                <button
+                  v-else
+                  class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-100 dark:hover:bg-white"
                   @click="closeModal"
                 >
-                  {{ t('common.cancel') }}
+                  {{ t('onboardingModal.buttons.finish') }}
                 </button>
-                <div class="ml-auto flex space-x-3">
-                  <button
-                    v-if="!restartDone"
-                    class="btn bg-violet-500 text-white hover:bg-violet-600"
-                    @click="restartValidation"
-                  >
-                    {{ t('onboardingModal.buttons.restart') }}
-                  </button>
-                  <button
-                    v-else
-                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-100 dark:hover:bg-white"
-                    @click="closeModal"
-                  >
-                    {{ t('onboardingModal.buttons.finish') }}
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </transition>
-  </template>
+    </div>
+  </transition>
+</template>
+
+<script>
+  import { ref, onMounted, onUnmounted, watch, computed, inject } from "vue";
+  import LineChart from "../charts/connect/LineChart01_Echart2.vue";
+  import axios from "axios";
+  import { useI18n } from "vue-i18n";
   
-  <script>
-    import { ref, onMounted, onUnmounted, watch, computed, inject } from "vue";
-    import LineChart from "../charts/connect/LineChart01_Echart2.vue";
-    import axios from "axios";
-    import { useI18n } from "vue-i18n";
-    
-    export default {
-      name: "OnboardingModal",
-      components: {
-        LineChart,
+  export default {
+    name: "OnboardingModal",
+    components: {
+      LineChart,
+    },
+    props: {
+      modalOpen: {
+        type: Boolean,
+        default: false,
       },
-      props: {
-        modalOpen: {
-          type: Boolean,
-          default: false,
-        },
-        OpMode: {
-          type: String,
-          default: "device0",
-        },
-        restartDone: { type: Boolean, default: false },
-        applyMode: {
-          type: Number,
-          default: -1,
-        },
+      OpMode: {
+        type: String,
+        default: "device0",
       },
-      emits: ["close-modal", "complete-setup", "restart-validation"],
-      setup(props, { emit }) {
-        const { t } = useI18n();
-        const modalContent = ref(null);
-        const currentStep = ref(1);
-        const setupDict = ref({});
-    
-        // Restart check states
-        const needsRestart = ref(false);
-        const needsComm_main = ref(false);
-        const needsComm_sub = ref(false);
-        const isCheckingRestart = ref(false);
-    
-        // Loading states
-        const isLoadingMain = ref(false);
-        const isLoadingSub = ref(false);
-        const stList = ref(["Info", "Pass", "Warning", "Error"]);
-        const diagnosis_detail = inject("diagnosis_detail");
-    
-        const mainWaveformNoData = ref(false);
-        const subWaveformNoData = ref(false);
-    
-        const mainTestData = ref({
-          AssetName: "N/A",
-          SerialNumber: "N/A",
-          Channel: "N/A",
-          Commissions: [],
-        });
-        const isProcessing = ref(false);
-        const applyMode = computed(() => props.applyMode);
-    
-        const diagnosis_main = computed(() => {
-          if (Object.keys(setupDict.value).length == 0) return false;
-          if (setupDict.value.main.Enable) {
-            if (
-              setupDict.value.main.assetInfo.name != "" &&
-              setupDict.value.General.useFuction.diagnosis_main
-            )
-              return true;
-            else return false;
+      restartDone: { type: Boolean, default: false },
+      applyMode: {
+        type: Number,
+        default: -1,
+      },
+    },
+    emits: ["close-modal", "complete-setup", "restart-validation"],
+    setup(props, { emit }) {
+      const { t } = useI18n();
+      const modalContent = ref(null);
+      const currentStep = ref(1);
+      const setupDict = ref({});
+  
+      // Restart check states
+      const needsRestart = ref(false);
+      const needsComm_main = ref(false);
+      const needsComm_sub = ref(false);
+      const isCheckingRestart = ref(false);
+  
+      // Loading states
+      const isLoadingMain = ref(false);
+      const isLoadingSub = ref(false);
+      const stList = ref(["Info", "Pass", "Warning", "Error"]);
+      const diagnosis_detail = inject("diagnosis_detail");
+  
+      const mainWaveformNoData = ref(false);
+      const subWaveformNoData = ref(false);
+
+      // Tracks whether a waveform fetch is in progress to block cancel/close
+      const isLoadingWaveform = ref(false);
+  
+      const mainTestData = ref({
+        AssetName: "N/A",
+        SerialNumber: "N/A",
+        Channel: "N/A",
+        Commissions: [],
+      });
+      const isProcessing = ref(false);
+      const applyMode = computed(() => props.applyMode);
+  
+      const diagnosis_main = computed(() => {
+        if (Object.keys(setupDict.value).length == 0) return false;
+        if (setupDict.value.main.Enable) {
+          if (
+            setupDict.value.main.assetInfo.name != "" &&
+            setupDict.value.General.useFuction.diagnosis_main
+          )
+            return true;
+          else return false;
+        } else {
+          return false;
+        }
+      });
+  
+      const diagnosis_sub = computed(() => {
+        if (Object.keys(setupDict.value).length == 0) return false;
+        if (setupDict.value.sub.Enable) {
+          if (
+            setupDict.value.sub.assetInfo.name != "" &&
+            setupDict.value.General.useFuction.diagnosis_sub
+          )
+            return true;
+          else return false;
+        } else {
+          return false;
+        }
+      });
+  
+      const channelDiagnosis = computed(() => {
+        if (diagnosis_main.value && diagnosis_sub.value) return 2;
+        else if (diagnosis_main.value && !diagnosis_sub.value) return 0;
+        else if (!diagnosis_main.value && diagnosis_sub.value) return 1;
+        else return -1;
+      });
+  
+      const mainTestResult = ref({ err: 0, warn: 0 });
+      const mainTestLoaded = ref(false);
+      const showMainDiagChart = ref(false);
+      const mainWaveformData = ref({});
+      const mainWaveformDataT = ref([]);
+      const mainWaveformLabelT = ref([]);
+      const selectedMainChart = ref("Time Domain(Voltage)");
+  
+      const subTestData = ref({
+        AssetName: "N/A",
+        SerialNumber: "N/A",
+        Channel: "N/A",
+        Commissions: [],
+      });
+      const subTestResult = ref({ err: 0, warn: 0 });
+      const subTestLoaded = ref(false);
+      const showSubDiagChart = ref(false);
+      const subWaveformData = ref({});
+      const subWaveformDataT = ref([]);
+      const subWaveformLabelT = ref([]);
+      const selectedSubChart = ref("Time Domain(Voltage)");
+      const isRestarting = ref(false);
+      const restartMessage = ref("");
+  
+      const ChartTypes = ref([
+        "Time Domain(Voltage)",
+        "Time Domain(Current)",
+        "Frequency Domain(Voltage)",
+        "Frequency Domain(Current)",
+      ]);
+
+      // Unified blocking flag: true when any async operation must not be interrupted.
+      // Prevents cancel/close/ESC from dismissing the modal mid-operation.
+      const isBlocking = computed(() =>
+        isProcessing.value ||
+        isRestarting.value ||
+        isLoadingMain.value ||
+        isLoadingSub.value ||
+        isLoadingWaveform.value
+      );
+  
+      const checkRestart = async () => {
+        try {
+          isCheckingRestart.value = true;
+          const response = await axios.get(`/setting/apply`);
+          needsRestart.value = response.data.restartDevice || false;
+          return needsRestart.value;
+        } catch (e) {
+          console.error("Error checking restart:", e);
+          needsRestart.value = false;
+          return false;
+        } finally {
+          isCheckingRestart.value = false;
+        }
+      };
+  
+      const checkCommission = async (chName) => {
+        try {
+          const assetName = chName === 'Main' 
+            ? setupDict.value.main.assetInfo.name 
+            : setupDict.value.sub.assetInfo.name;
+  
+          console.log(`[DEBUG] checkCommission for ${chName}, asset: ${assetName}`);
+  
+          const response = await axios.get(`/setting/checkCommision/${assetName}`);
+          
+          console.log(`[DEBUG] checkCommission response for ${chName}:`, response.data);
+  
+          const needsComm = response.data.result || false;
+  
+          if (chName === 'Main') {
+            needsComm_main.value = needsComm;
           } else {
-            return false;
+            needsComm_sub.value = needsComm;
           }
-        });
-    
-        const diagnosis_sub = computed(() => {
-          if (Object.keys(setupDict.value).length == 0) return false;
-          if (setupDict.value.sub.Enable) {
+  
+          return needsComm;
+        } catch (e) {
+          console.error(`Error checking commission for ${chName}:`, e);
+          return false;
+        }
+      };
+  
+      const GetSettingData = async () => {
+        try {
+          const response = await axios.get(`/setting/getSetting`);
+          if (response.data.passOK == 1) {
+            setupDict.value = response.data.data;
+          }
+        } catch (error) {
+          console.error("Settings data loading failed:", error);
+        }
+      };
+  
+      const getWaveShow = async (channel) => {
+        if (channel == "main") showMainDiagChart.value = true;
+        else showSubDiagChart.value = true;
+        await getWaveform(channel);
+      };
+  
+      const getWaveform = async (channel) => {
+        const isMain = channel === "main" ? true : false;
+        const waveformDataRef = isMain ? mainWaveformData : subWaveformData;
+        const noDataRef = isMain ? mainWaveformNoData : subWaveformNoData;
+        const assetName = isMain
+          ? setupDict.value["main"]["assetInfo"]["name"]
+          : setupDict.value["sub"]["assetInfo"]["name"];
+  
+        const showChartRef = isMain ? showMainDiagChart : showSubDiagChart;
+
+        // Lock modal close while waveform data is being fetched
+        isLoadingWaveform.value = true;
+
+        try {
+          const response = await axios.get(`/setting/testwave/${assetName}`);
+  
+          if (response.data.success) {
             if (
-              setupDict.value.sub.assetInfo.name != "" &&
-              setupDict.value.General.useFuction.diagnosis_sub
-            )
-              return true;
-            else return false;
-          } else {
-            return false;
-          }
-        });
-    
-        const channelDiagnosis = computed(() => {
-          if (diagnosis_main.value && diagnosis_sub.value) return 2;
-          else if (diagnosis_main.value && !diagnosis_sub.value) return 0;
-          else if (!diagnosis_main.value && diagnosis_sub.value) return 1;
-          else return -1;
-        });
-    
-        const mainTestResult = ref({ err: 0, warn: 0 });
-        const mainTestLoaded = ref(false);
-        const showMainDiagChart = ref(false);
-        const mainWaveformData = ref({});
-        const mainWaveformDataT = ref([]);
-        const mainWaveformLabelT = ref([]);
-        const selectedMainChart = ref("Time Domain(Voltage)");
-    
-        const subTestData = ref({
-          AssetName: "N/A",
-          SerialNumber: "N/A",
-          Channel: "N/A",
-          Commissions: [],
-        });
-        const subTestResult = ref({ err: 0, warn: 0 });
-        const subTestLoaded = ref(false);
-        const showSubDiagChart = ref(false);
-        const subWaveformData = ref({});
-        const subWaveformDataT = ref([]);
-        const subWaveformLabelT = ref([]);
-        const selectedSubChart = ref("Time Domain(Voltage)");
-        const isRestarting = ref(false);
-        const restartMessage = ref("");
-    
-        const ChartTypes = ref([
-          "Time Domain(Voltage)",
-          "Time Domain(Current)",
-          "Frequency Domain(Voltage)",
-          "Frequency Domain(Current)",
-        ]);
-    
-        const checkRestart = async () => {
-          try {
-            isCheckingRestart.value = true;
-            const response = await axios.get(`/setting/apply`);
-            //console.log("apply response:", response.data);
-    
-            needsRestart.value = response.data.restartDevice || false;
-    
-            return needsRestart.value;
-          } catch (e) {
-            console.error("Error checking restart:", e);
-            needsRestart.value = false;
-            return false;
-          } finally {
-            isCheckingRestart.value = false;
-          }
-        };
-    
-        const checkCommission = async (chName) => {
-          try {
-            const assetName = chName === 'Main' 
-              ? setupDict.value.main.assetInfo.name 
-              : setupDict.value.sub.assetInfo.name;
-    
-            console.log(`[DEBUG] checkCommission for ${chName}, asset: ${assetName}`);
-    
-            const response = await axios.get(`/setting/checkCommision/${assetName}`);
-            
-            console.log(`[DEBUG] checkCommission response for ${chName}:`, response.data);
-    
-            const needsComm = response.data.result || false;
-    
-            if (chName === 'Main') {
-              needsComm_main.value = needsComm;
-            } else {
-              needsComm_sub.value = needsComm;
-            }
-    
-            return needsComm;
-          } catch (e) {
-            console.error(`Error checking commission for ${chName}:`, e);
-            restartMessage.value = `${chName} Commission 확인 실패 (${e.message})`;
-            return false;
-          }
-        };
-    
-        const GetSettingData = async () => {
-          try {
-            const response = await axios.get(`/setting/getSetting`);
-            if (response.data.passOK == 1) {
-              setupDict.value = response.data.data;
-            }
-          } catch (error) {
-            console.error("Settings data loading failed:", error);
-          }
-        };
-    
-        const getWaveShow = async (channel) => {
-          if (channel == "main") showMainDiagChart.value = true;
-          else showSubDiagChart.value = true;
-          await getWaveform(channel);
-        };
-    
-        const getWaveform = async (channel) => {
-          const isMain = channel === "main" ? true : false;
-          const waveformDataRef = isMain ? mainWaveformData : subWaveformData;
-          const noDataRef = isMain ? mainWaveformNoData : subWaveformNoData;
-          const assetName = isMain
-            ? setupDict.value["main"]["assetInfo"]["name"]
-            : setupDict.value["sub"]["assetInfo"]["name"];
-    
-          const showChartRef = isMain ? showMainDiagChart : showSubDiagChart;
-    
-          try {
-            const response = await axios.get(`/setting/testwave/${assetName}`);
-    
-            if (response.data.success) {
-              if (
-                response.data.waveT &&
-                Object.keys(response.data.waveT).length > 0
-              ) {
-                showChartRef.value = true;
-                waveformDataRef.value = response.data.waveT;
-                noDataRef.value = false;
-    
-                if (isMain) {
-                  updateMainChart();
-                } else {
-                  updateSubChart();
-                }
+              response.data.waveT &&
+              Object.keys(response.data.waveT).length > 0
+            ) {
+              showChartRef.value = true;
+              waveformDataRef.value = response.data.waveT;
+              noDataRef.value = false;
+  
+              if (isMain) {
+                updateMainChart();
               } else {
-                showChartRef.value = true;
-                noDataRef.value = true;
+                updateSubChart();
               }
             } else {
               showChartRef.value = true;
               noDataRef.value = true;
             }
-          } catch (error) {
-            console.error(`Error loading waveform for ${channel}:`, error);
+          } else {
             showChartRef.value = true;
             noDataRef.value = true;
           }
-        };
-    
-        const getCommision = async (channel) => {
-          const isMain = channel === "main" ? true : false;
-          const loadingRef = isMain ? isLoadingMain : isLoadingSub;
-          const testDataRef = isMain ? mainTestData : subTestData;
-          const testResultRef = isMain ? mainTestResult : subTestResult;
-          const testLoadedRef = isMain ? mainTestLoaded : subTestLoaded;
-    
-          try {
-            loadingRef.value = true;
-            testLoadedRef.value = false;
-            const assetName = isMain
-              ? setupDict.value["main"]["assetInfo"]["name"]
-              : setupDict.value["sub"]["assetInfo"]["name"];
-            const chName = isMain ? "Main" : "Sub";
-            const response = await axios.get(
-              `/setting/test/${chName}/${assetName}`
-            );
-    
-            if (response.data.success) {
-              testDataRef.value = response.data.data;
-              let errCount = 0,
-                warnCount = 0;
-              for (let i = 0; i < testDataRef.value["Commissions"].length; i++) {
-                if (testDataRef.value["Commissions"][i]["Status"] == 3)
-                  errCount += 1;
-                else if (testDataRef.value["Commissions"][i]["Status"] == 2)
-                  warnCount += 1;
-              }
-              testResultRef.value = { err: errCount, warn: warnCount };
-              testLoadedRef.value = true;
-    
-              if (errCount > 0 || warnCount > 0) {
-                restartMessage.value = t('onboardingModal.messages.commissioningFailed');
-              }
+        } catch (error) {
+          console.error(`Error loading waveform for ${channel}:`, error);
+          showChartRef.value = true;
+          noDataRef.value = true;
+        } finally {
+          // Always release the lock regardless of success or failure
+          isLoadingWaveform.value = false;
+        }
+      };
+  
+      const getCommision = async (channel) => {
+        const isMain = channel === "main" ? true : false;
+        const loadingRef = isMain ? isLoadingMain : isLoadingSub;
+        const testDataRef = isMain ? mainTestData : subTestData;
+        const testResultRef = isMain ? mainTestResult : subTestResult;
+        const testLoadedRef = isMain ? mainTestLoaded : subTestLoaded;
+  
+        try {
+          loadingRef.value = true;
+          testLoadedRef.value = false;
+          const assetName = isMain
+            ? setupDict.value["main"]["assetInfo"]["name"]
+            : setupDict.value["sub"]["assetInfo"]["name"];
+          const chName = isMain ? "Main" : "Sub";
+          const response = await axios.get(
+            `/setting/test/${chName}/${assetName}`
+          );
+  
+          if (response.data.success) {
+            testDataRef.value = response.data.data;
+            let errCount = 0,
+              warnCount = 0;
+            for (let i = 0; i < testDataRef.value["Commissions"].length; i++) {
+              if (testDataRef.value["Commissions"][i]["Status"] == 3)
+                errCount += 1;
+              else if (testDataRef.value["Commissions"][i]["Status"] == 2)
+                warnCount += 1;
             }
-          } catch (e) {
-            console.error(`Error loading ${channel} test:`, e);
-            testResultRef.value = { err: 1, warn: 0 };
+            testResultRef.value = { err: errCount, warn: warnCount };
             testLoadedRef.value = true;
-          } finally {
-            loadingRef.value = false;
+  
+            if (errCount > 0 || warnCount > 0) {
+              restartMessage.value = t('onboardingModal.messages.commissioningFailed');
+            }
           }
+        } catch (e) {
+          console.error(`Error loading ${channel} test:`, e);
+          testResultRef.value = { err: 1, warn: 0 };
+          testLoadedRef.value = true;
+        } finally {
+          loadingRef.value = false;
+        }
+      };
+  
+      const canProceedFromMain = computed(() => {
+        return (
+          !isLoadingMain.value &&
+          mainTestLoaded.value &&
+          mainTestResult.value.err === 0
+        );
+      });
+  
+      const canProceedFromSub = computed(() => {
+        return (
+          !isLoadingSub.value &&
+          subTestLoaded.value &&
+          subTestResult.value.err === 0
+        );
+      });
+  
+      const updateMainChart = () => {
+        if (
+          !mainWaveformData.value ||
+          Object.keys(mainWaveformData.value).length === 0
+        )
+          return;
+  
+        const SR = mainWaveformData.value["SR"];
+        const Duration = mainWaveformData.value["Duration"];
+        const deltaT = 1 / SR;
+        const deltaF = 1 / Duration;
+  
+        const chartResult = {
+          "Time Domain(Voltage)": mainWaveformData.value["Vwave"],
+          "Time Domain(Current)": mainWaveformData.value["Iwave"],
+          "Frequency Domain(Voltage)": mainWaveformData.value["Vfft"],
+          "Frequency Domain(Current)": mainWaveformData.value["Ifft"],
         };
-    
-        const canProceedFromMain = computed(() => {
-          return (
-            !isLoadingMain.value &&
-            mainTestLoaded.value &&
-            mainTestResult.value.err === 0
+  
+        if (selectedMainChart.value.includes("Time")) {
+          mainWaveformLabelT.value = Array.from(
+            { length: chartResult[selectedMainChart.value][0].length },
+            (_, i) => i * deltaT
           );
-        });
-    
-        const canProceedFromSub = computed(() => {
-          return (
-            !isLoadingSub.value &&
-            subTestLoaded.value &&
-            subTestResult.value.err === 0
+          mainWaveformDataT.value = chartResult[selectedMainChart.value];
+        } else {
+          mainWaveformLabelT.value = Array.from(
+            { length: chartResult[selectedMainChart.value].length },
+            (_, i) => i * deltaF
           );
-        });
-    
-        const updateMainChart = () => {
-          if (
-            !mainWaveformData.value ||
-            Object.keys(mainWaveformData.value).length === 0
-          )
-            return;
-    
-          const SR = mainWaveformData.value["SR"];
-          const Duration = mainWaveformData.value["Duration"];
-          const deltaT = 1 / SR;
-          const deltaF = 1 / Duration;
-    
-          const chartResult = {
-            "Time Domain(Voltage)": mainWaveformData.value["Vwave"],
-            "Time Domain(Current)": mainWaveformData.value["Iwave"],
-            "Frequency Domain(Voltage)": mainWaveformData.value["Vfft"],
-            "Frequency Domain(Current)": mainWaveformData.value["Ifft"],
-          };
-    
-          if (selectedMainChart.value.includes("Time")) {
-            mainWaveformLabelT.value = Array.from(
-              { length: chartResult[selectedMainChart.value][0].length },
-              (_, i) => i * deltaT
-            );
-            mainWaveformDataT.value = chartResult[selectedMainChart.value];
-          } else {
-            mainWaveformLabelT.value = Array.from(
-              { length: chartResult[selectedMainChart.value].length },
-              (_, i) => i * deltaF
-            );
-            mainWaveformDataT.value = [chartResult[selectedMainChart.value]];
-          }
+          mainWaveformDataT.value = [chartResult[selectedMainChart.value]];
+        }
+      };
+  
+      const updateSubChart = () => {
+        if (
+          !subWaveformData.value ||
+          Object.keys(subWaveformData.value).length === 0
+        )
+          return;
+  
+        const SR = subWaveformData.value["SR"];
+        const Duration = subWaveformData.value["Duration"];
+        const deltaT = 1 / SR;
+        const deltaF = 1 / Duration;
+  
+        const chartResult = {
+          "Time Domain(Voltage)": subWaveformData.value["Vwave"],
+          "Time Domain(Current)": subWaveformData.value["Iwave"],
+          "Frequency Domain(Voltage)": subWaveformData.value["Vfft"],
+          "Frequency Domain(Current)": subWaveformData.value["Ifft"],
         };
-    
-        const updateSubChart = () => {
-          if (
-            !subWaveformData.value ||
-            Object.keys(subWaveformData.value).length === 0
-          )
-            return;
-    
-          const SR = subWaveformData.value["SR"];
-          const Duration = subWaveformData.value["Duration"];
-          const deltaT = 1 / SR;
-          const deltaF = 1 / Duration;
-    
-          const chartResult = {
-            "Time Domain(Voltage)": subWaveformData.value["Vwave"],
-            "Time Domain(Current)": subWaveformData.value["Iwave"],
-            "Frequency Domain(Voltage)": subWaveformData.value["Vfft"],
-            "Frequency Domain(Current)": subWaveformData.value["Ifft"],
-          };
-    
-          if (selectedSubChart.value.includes("Time")) {
-            subWaveformLabelT.value = Array.from(
-              { length: chartResult[selectedSubChart.value][0].length },
-              (_, i) => i * deltaT
-            );
-            subWaveformDataT.value = chartResult[selectedSubChart.value];
-          } else {
-            subWaveformLabelT.value = Array.from(
-              { length: chartResult[selectedSubChart.value].length },
-              (_, i) => i * deltaF
-            );
-            subWaveformDataT.value = [chartResult[selectedSubChart.value]];
-          }
-        };
-    
-        const availableSteps = computed(() => {
-          if (props.OpMode === "device0") {
-            return [{ id: 4, name: t('onboardingModal.steps.complete') }];
-          }
-    
-          const steps = [{ id: 1, name: t('onboardingModal.steps.restartCheck') }];
-    
-          if (diagnosis_main.value) {
-            steps.push({ id: 2, name: t('onboardingModal.steps.mainTest') });
-          }
-    
-          if (diagnosis_sub.value) {
-            steps.push({ id: 3, name: t('onboardingModal.steps.subTest') });
-          }
-    
-          steps.push({ id: 4, name: t('onboardingModal.steps.complete') });
-    
-          return steps;
-        });
-    
-        const currentStepIndex = computed(() => {
-          return availableSteps.value.findIndex(
-            (step) => step.id === currentStep.value
+  
+        if (selectedSubChart.value.includes("Time")) {
+          subWaveformLabelT.value = Array.from(
+            { length: chartResult[selectedSubChart.value][0].length },
+            (_, i) => i * deltaT
           );
-        });
-    
-        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    
-        const nextStep = async () => {
-          if (isProcessing.value) {
-            console.log("[DEBUG] 이미 처리 중, 무시");
-            return;
-          }
-          isProcessing.value = true;
-    
-          try {
-            if (currentStep.value === 1) {
-              console.log("[DEBUG] Step 1: 펌웨어 재시작 처리");
-    
-              if (needsRestart.value) {
-                console.log("[DEBUG] 펌웨어 재시작 필요 - restartDevice 실행");
-                isRestarting.value = true;
-                restartMessage.value = t('onboardingModal.messages.restartingFirmware');
-    
-                const restartSuccess = await restartDevice();
-    
-                if (!restartSuccess) {
-                  restartMessage.value = t('onboardingModal.messages.restartFailed');
-                  isRestarting.value = false;
-                  return;
-                }
-    
-                console.log("[DEBUG] 펌웨어 재시작 완료");
-                isRestarting.value = false;
-              } else {
-                console.log("[DEBUG] 펌웨어 재시작 불필요");
-              }
-    
-              if (diagnosis_main.value) {
-                console.log("[DEBUG] Main 진단 활성화 - checkCommission('Main') 실행");
-                isRestarting.value = true;
-                restartMessage.value = t('onboardingModal.messages.checkingMainCommission');
-                
-                await checkCommission('Main');
-                
-                console.log(`[DEBUG] Main checkCommission 결과: ${needsComm_main.value}`);
-                isRestarting.value = false;
-              }
-    
-              if (diagnosis_sub.value) {
-                console.log("[DEBUG] Sub 진단 활성화 - checkCommission('Sub') 실행");
-                isRestarting.value = true;
-                restartMessage.value = t('onboardingModal.messages.checkingSubCommission');
-                
-                await checkCommission('Sub');
-                
-                console.log(`[DEBUG] Sub checkCommission 결과: ${needsComm_sub.value}`);
-                isRestarting.value = false;
-              }
-    
-              if (!needsComm_main.value && !needsComm_sub.value) {
-                console.log("[DEBUG] 두 채널 모두 commission 불필요 - Complete로");
-                currentStep.value = 4;
-                return;
-              }
-    
-              let triggerTarget = -1;
-              
-              if (needsComm_main.value && needsComm_sub.value) {
-                triggerTarget = 2;
-                //console.log("[DEBUG] Main, Sub 둘 다 commission 필요");
-              } else if (needsComm_main.value) {
-                triggerTarget = 0;
-                //console.log("[DEBUG] Main만 commission 필요");
-              } else if (needsComm_sub.value) {
-                triggerTarget = 1;
-                //console.log("[DEBUG] Sub만 commission 필요");
-              }
-    
-              //console.log(`[DEBUG] trigger 실행 - target: ${triggerTarget}`);
+          subWaveformDataT.value = chartResult[selectedSubChart.value];
+        } else {
+          subWaveformLabelT.value = Array.from(
+            { length: chartResult[selectedSubChart.value].length },
+            (_, i) => i * deltaF
+          );
+          subWaveformDataT.value = [chartResult[selectedSubChart.value]];
+        }
+      };
+  
+      const availableSteps = computed(() => {
+        if (props.OpMode === "device0") {
+          return [{ id: 4, name: t('onboardingModal.steps.complete') }];
+        }
+  
+        const steps = [{ id: 1, name: t('onboardingModal.steps.restartCheck') }];
+  
+        if (diagnosis_main.value) {
+          steps.push({ id: 2, name: t('onboardingModal.steps.mainTest') });
+        }
+  
+        if (diagnosis_sub.value) {
+          steps.push({ id: 3, name: t('onboardingModal.steps.subTest') });
+        }
+  
+        steps.push({ id: 4, name: t('onboardingModal.steps.complete') });
+  
+        return steps;
+      });
+  
+      const currentStepIndex = computed(() => {
+        return availableSteps.value.findIndex(
+          (step) => step.id === currentStep.value
+        );
+      });
+  
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  
+      const nextStep = async () => {
+        if (isProcessing.value) {
+          console.log("[DEBUG] 이미 처리 중, 무시");
+          return;
+        }
+        isProcessing.value = true;
+  
+        try {
+          if (currentStep.value === 1) {
+            console.log("[DEBUG] Step 1: 펌웨어 재시작 처리");
+  
+            if (needsRestart.value) {
+              console.log("[DEBUG] 펌웨어 재시작 필요 - restartDevice 실행");
               isRestarting.value = true;
-              restartMessage.value = t('onboardingModal.messages.acquiringWaveform');
-    
-              let response;
-              try {
-                response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
-              } catch (e) {
-                console.error("Trigger API failed:", e);
-                restartMessage.value = `Trigger 호출 실패 (${e.message})`;
+              restartMessage.value = t('onboardingModal.messages.restartingFirmware');
+  
+              const restartSuccess = await restartDevice();
+  
+              if (!restartSuccess) {
+                restartMessage.value = t('onboardingModal.messages.restartFailed');
                 isRestarting.value = false;
                 return;
               }
+  
+              console.log("[DEBUG] 펌웨어 재시작 완료");
+              isRestarting.value = false;
+            } else {
+              console.log("[DEBUG] 펌웨어 재시작 불필요");
+            }
+  
+            if (diagnosis_main.value) {
+              console.log("[DEBUG] Main 진단 활성화 - checkCommission('Main') 실행");
+              isRestarting.value = true;
+              restartMessage.value = t('onboardingModal.messages.checkingMainCommission');
+              
+              await checkCommission('Main');
+              
+              console.log(`[DEBUG] Main checkCommission 결과: ${needsComm_main.value}`);
+              isRestarting.value = false;
+            }
+  
+            if (diagnosis_sub.value) {
+              console.log("[DEBUG] Sub 진단 활성화 - checkCommission('Sub') 실행");
+              isRestarting.value = true;
+              restartMessage.value = t('onboardingModal.messages.checkingSubCommission');
+              
+              await checkCommission('Sub');
+              
+              console.log(`[DEBUG] Sub checkCommission 결과: ${needsComm_sub.value}`);
+              isRestarting.value = false;
+            }
+  
+            if (!needsComm_main.value && !needsComm_sub.value) {
+              console.log("[DEBUG] 두 채널 모두 commission 불필요 - Complete로");
+              currentStep.value = 4;
+              return;
+            }
+  
+            let triggerTarget = -1;
+            
+            if (needsComm_main.value && needsComm_sub.value) {
+              triggerTarget = 2;
+            } else if (needsComm_main.value) {
+              triggerTarget = 0;
+            } else if (needsComm_sub.value) {
+              triggerTarget = 1;
+            }
+  
+            isRestarting.value = true;
+            restartMessage.value = t('onboardingModal.messages.acquiringWaveform');
+  
+            const response = await axios.get(`/setting/trigger?target=${triggerTarget}`);
+  
+            if (!response.data.success) {
+              restartMessage.value = t('onboardingModal.messages.timeout');
+              isRestarting.value = false;
+              return;
+            }
 
-              if (!response.data.success) {
-                restartMessage.value = response.data.message || t('onboardingModal.messages.timeout');
-                isRestarting.value = false;
-                return;
-              }
-              
-
-              //console.log("[DEBUG] Step 1 완료 - 다음 단계 결정");
-              
-              if (needsComm_main.value) {
-                console.log("[DEBUG] Main Test로 이동");
-                isLoadingMain.value = true;
-                mainTestLoaded.value = false;
-                currentStep.value = 2;
-                await getCommision("main");
-              }
-              else if (needsComm_sub.value) {
-                //console.log("[DEBUG] Sub Test로 이동");
-                isLoadingSub.value = true;
-                subTestLoaded.value = false;
-                currentStep.value = 3;
-                await getCommision("sub");
-              }
-              
-              return;
+            isRestarting.value = false;
+            restartMessage.value = "";
+  
+            if (needsComm_main.value) {
+              console.log("[DEBUG] Main Test로 이동");
+              isLoadingMain.value = true;
+              mainTestLoaded.value = false;
+              currentStep.value = 2;
+              await getCommision("main");
             }
-    
-            if (currentStep.value === 2 && mainTestResult.value.err > 0) {
-              //console.log("[DEBUG] Main Test에 에러 있음 - 진행 불가");
-              return;
+            else if (needsComm_sub.value) {
+              isLoadingSub.value = true;
+              subTestLoaded.value = false;
+              currentStep.value = 3;
+              await getCommision("sub");
             }
-    
-            if (currentStep.value === 3 && subTestResult.value.err > 0) {
-              //console.log("[DEBUG] Sub Test에 에러 있음 - 진행 불가");
-              return;
-            }
-    
-            if (currentStep.value === 2 || currentStep.value === 3) {
-              const currentIndex = currentStepIndex.value;
-              if (currentIndex < availableSteps.value.length - 1) {
-                currentStep.value = availableSteps.value[currentIndex + 1].id;
-              }
-            }
-          } finally {
-            isProcessing.value = false;
-          }
-        };
-    
-        const handleMainTestNext = async () => {
-          if (mainTestResult.value.err > 0) {
-            //console.log("[DEBUG] Main Test 에러 - 진행 불가");
+            
             return;
           }
-    
-          if (needsComm_sub.value) {
-            //console.log("[DEBUG] Sub commission 필요 - Sub Test로 이동");
-            isLoadingSub.value = true;
-            subTestLoaded.value = false;
-            currentStep.value = 3;
-            await getCommision("sub");
-          } else {
-            //console.log("[DEBUG] Sub commission 불필요 - Complete로 이동");
-            currentStep.value = 4;
+  
+          if (currentStep.value === 2 && mainTestResult.value.err > 0) {
+            return;
           }
-        };
-    
-        const prevStep = () => {
-          const currentIndex = currentStepIndex.value;
-          if (currentIndex > 0) {
-            currentStep.value = availableSteps.value[currentIndex - 1].id;
+  
+          if (currentStep.value === 3 && subTestResult.value.err > 0) {
+            return;
           }
-        };
-    
-        const restartDevice = async () => {
-          try {
-            isRestarting.value = true;
-            restartMessage.value = t('onboardingModal.messages.waitingRestart');
-    
-            const response = await axios.get(`/setting/restartdevice`);
-            if (response.data.success) {
-              return true;
-            } else {
-              return false;
+  
+          if (currentStep.value === 2 || currentStep.value === 3) {
+            const currentIndex = currentStepIndex.value;
+            if (currentIndex < availableSteps.value.length - 1) {
+              currentStep.value = availableSteps.value[currentIndex + 1].id;
             }
-          } catch (error) {
+          }
+        } finally {
+          isProcessing.value = false;
+        }
+      };
+  
+      const handleMainTestNext = async () => {
+        if (mainTestResult.value.err > 0) {
+          return;
+        }
+  
+        if (needsComm_sub.value) {
+          isLoadingSub.value = true;
+          subTestLoaded.value = false;
+          currentStep.value = 3;
+          await getCommision("sub");
+        } else {
+          currentStep.value = 4;
+        }
+      };
+  
+      const prevStep = () => {
+        const currentIndex = currentStepIndex.value;
+        if (currentIndex > 0) {
+          currentStep.value = availableSteps.value[currentIndex - 1].id;
+        }
+      };
+  
+      const restartDevice = async () => {
+        try {
+          isRestarting.value = true;
+          restartMessage.value = t('onboardingModal.messages.waitingRestart');
+  
+          const response = await axios.get(`/setting/restartdevice`);
+          if (response.data.success) {
+            return true;
+          } else {
             return false;
           }
-        };
-    
-        const closeModal = () => {
-          emit("close-modal");
-        };
-    
-        const completeSetup = () => {
-          emit("complete-setup");
-          closeModal();
-        };
-    
-        const restartValidation = async () => {
-          emit("restart-validation");
-        };
-    
-        watch(
-          () => props.modalOpen,
-          async (newValue) => {
-            if (newValue) {
-              await GetSettingData();
-              currentStep.value = 1;
-              restartMessage.value = "";  
-              isRestarting.value = false; 
-              await checkRestart();
-            }
+        } catch (error) {
+          return false;
+        }
+      };
+
+      // Prevent modal from closing while any blocking operation is in progress.
+      // Guards against accidental closure during trigger/waveform/commission API calls.
+      const closeModal = () => {
+        if (isBlocking.value) return;
+        emit("close-modal");
+      };
+  
+      const completeSetup = () => {
+        emit("complete-setup");
+        closeModal();
+      };
+  
+      const restartValidation = async () => {
+        emit("restart-validation");
+      };
+  
+      watch(
+        () => props.modalOpen,
+        async (newValue) => {
+          if (newValue) {
+            await GetSettingData();
+            currentStep.value = 1;
+            restartMessage.value = "";  
+            isRestarting.value = false; 
+            await checkRestart();
           }
-        );
-    
-        watch([() => diagnosis_main, () => diagnosis_sub], () => {
-          const validStepIds = availableSteps.value.map((s) => s.id);
-          if (!validStepIds.includes(currentStep.value)) {
-            currentStep.value = validStepIds[0];
-          }
-        });
-    
-        const clickHandler = ({ target }) => {
-          return;
-          if (!props.modalOpen || modalContent.value.contains(target)) return;
-          closeModal();
-        };
-    
-        const keyHandler = ({ keyCode }) => {
-          if (!props.modalOpen || keyCode !== 27) return;
-          closeModal();
-        };
-    
-        onMounted(() => {
-          document.addEventListener("click", clickHandler);
-          document.addEventListener("keydown", keyHandler);
-    
-          if (props.modalOpen) {
-            GetSettingData();
-          }
-        });
-    
-        onUnmounted(() => {
-          document.removeEventListener("click", clickHandler);
-          document.removeEventListener("keydown", keyHandler);
-        });
-    
-        return {
-          modalContent,
-          currentStep,
-          currentStepIndex,
-          availableSteps,
-          isCheckingRestart,
-          needsRestart,
-          isLoadingMain,
-          isLoadingSub,
-          mainTestData,
-          mainTestResult,
-          showMainDiagChart,
-          mainWaveformDataT,
-          mainWaveformLabelT,
-          selectedMainChart,
-          subTestData,
-          subTestResult,
-          showSubDiagChart,
-          subWaveformDataT,
-          subWaveformLabelT,
-          selectedSubChart,
-          ChartTypes,
-          nextStep,
-          prevStep,
-          handleMainTestNext,
-          closeModal,
-          completeSetup,
-          restartValidation,
-          updateMainChart,
-          updateSubChart,
-          stList,
-          diagnosis_main,
-          diagnosis_sub,
-          getWaveShow,
-          restartDevice,
-          isRestarting,
-          restartMessage,
-          diagnosis_detail,
-          mainTestLoaded,
-          subTestLoaded,
-          canProceedFromMain,
-          canProceedFromSub,
-          mainWaveformNoData,
-          subWaveformNoData,
-          channelDiagnosis,
-          applyMode,
-          isProcessing,
-          needsComm_main,
-          needsComm_sub,
-          t
-        };
-      },
-    };
-    </script>
-  <style scoped>
-  .step-content {
-    animation: fadeIn 0.3s ease-in-out;
-  }
+        }
+      );
   
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+      watch([() => diagnosis_main, () => diagnosis_sub], () => {
+        const validStepIds = availableSteps.value.map((s) => s.id);
+        if (!validStepIds.includes(currentStep.value)) {
+          currentStep.value = validStepIds[0];
+        }
+      });
   
-  .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
-  }
+      const clickHandler = ({ target }) => {
+        return;
+        if (!props.modalOpen || modalContent.value.contains(target)) return;
+        closeModal();
+      };
+
+      // ESC key is blocked while any async operation is in progress
+      const keyHandler = ({ keyCode }) => {
+        if (!props.modalOpen || keyCode !== 27) return;
+        if (isBlocking.value) return;
+        closeModal();
+      };
   
-  .btn-sm {
-    @apply px-3 py-1.5 rounded-lg font-medium transition-colors duration-200 text-sm;
-  }
+      onMounted(() => {
+        document.addEventListener("click", clickHandler);
+        document.addEventListener("keydown", keyHandler);
   
-  .btn:disabled {
-    opacity: 0.6;
+        if (props.modalOpen) {
+          GetSettingData();
+        }
+      });
+  
+      onUnmounted(() => {
+        document.removeEventListener("click", clickHandler);
+        document.removeEventListener("keydown", keyHandler);
+      });
+  
+      return {
+        modalContent,
+        currentStep,
+        currentStepIndex,
+        availableSteps,
+        isCheckingRestart,
+        needsRestart,
+        isLoadingMain,
+        isLoadingSub,
+        mainTestData,
+        mainTestResult,
+        showMainDiagChart,
+        mainWaveformDataT,
+        mainWaveformLabelT,
+        selectedMainChart,
+        subTestData,
+        subTestResult,
+        showSubDiagChart,
+        subWaveformDataT,
+        subWaveformLabelT,
+        selectedSubChart,
+        ChartTypes,
+        nextStep,
+        prevStep,
+        handleMainTestNext,
+        closeModal,
+        completeSetup,
+        restartValidation,
+        updateMainChart,
+        updateSubChart,
+        stList,
+        diagnosis_main,
+        diagnosis_sub,
+        getWaveShow,
+        restartDevice,
+        isRestarting,
+        restartMessage,
+        diagnosis_detail,
+        mainTestLoaded,
+        subTestLoaded,
+        canProceedFromMain,
+        canProceedFromSub,
+        mainWaveformNoData,
+        subWaveformNoData,
+        channelDiagnosis,
+        applyMode,
+        isProcessing,
+        needsComm_main,
+        needsComm_sub,
+        isLoadingWaveform,
+        isBlocking,
+        t
+      };
+    },
+  };
+  </script>
+<style scoped>
+.step-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  </style>
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+}
+
+.btn-sm {
+  @apply px-3 py-1.5 rounded-lg font-medium transition-colors duration-200 text-sm;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+}
+</style>
