@@ -89,13 +89,13 @@
                     <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-gray-100 text-left pt-3 px-4">
                         <!-- 차트 컨테이너 -->
                         <div class="flex flex-col space-y-2">                                         
-                            <TrendTab v-if="activeTab === 'Meter'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>       
-                            <TrendTab v-if="activeTab === 'Energy1'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
-                            <TrendTab v-if="activeTab === 'Energy2'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
-                            <TrendTab v-if="activeTab === 'Demand'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
-                            <TrendTab v-if="activeTab === 'PowerQuality'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>   
-                            <TrendTab v-if="activeTab === 'Diagnosis'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
-                            <TrendTab v-if="activeTab === 'Parameters'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
+                            <TrendTab v-if="activeTab === 'Meter'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>       
+                            <TrendTab v-if="activeTab === 'Energy1'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>
+                            <TrendTab v-if="activeTab === 'Energy2'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>
+                            <TrendTab v-if="activeTab === 'Demand'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>
+                            <TrendTab v-if="activeTab === 'PowerQuality'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>   
+                            <TrendTab v-if="activeTab === 'Diagnosis'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>
+                            <TrendTab v-if="activeTab === 'Parameters'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset" :isVfd = "isVfd"/>
                                              
                         </div>
                     </div>
@@ -149,15 +149,20 @@ export default {
         return setupStore.getSubDiagnosis
    });
    const assetName = ref('');
+   const isVfd = ref(false);
    const asset = computed(()=> {
 
       const assetConfig = setupStore.getAssetConfig;
-      console.log("assetConfig",assetConfig);
+      //console.log("assetConfig",assetConfig);
       if(channel.value == 'Main'){
         if (assetConfig.assetNickname_main !== '')
           assetName.value = "("+assetConfig.assetNickname_main+")";
         else
           assetName.value = ''
+        if (assetConfig.assetdriveType_main == 'VFD')
+          isVfd.value = true;
+        else
+          isVfd.value = false;
         return assetConfig.assetName_main;
       }
       else{
@@ -165,6 +170,10 @@ export default {
           assetName.value = "("+assetConfig.assetNickname_sub+")";
         else
           assetName.value = ''
+        if (assetConfig.assetdriveType_sub == 'VFD')
+          isVfd.value = true;
+        else
+          isVfd.value = false;
         return assetConfig.assetName_sub;
       }         
     });
@@ -305,6 +314,7 @@ export default {
       chartContainer,
       asset,
       assetName,
+      isVfd,
     };
   },
 };
