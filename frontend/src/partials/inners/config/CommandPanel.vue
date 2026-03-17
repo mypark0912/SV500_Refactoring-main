@@ -172,7 +172,7 @@
                       >Reinstall</span
                     >
                   </label>
-                  <label v-if="isNtek" class="flex items-center cursor-pointer">
+                  <!--label v-if="isNtek" class="flex items-center cursor-pointer">
                     <input
                       type="radio"
                       name="updateMode"
@@ -184,7 +184,7 @@
                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
                       > Restore</span
                     >
-                  </label>
+                  </label-->
                 </div>
 
                 <!-- Proceed 버튼 (마진 추가) -->
@@ -414,7 +414,7 @@
                 >
                   취소
                 </button>
-                <!--button
+                <button
                   @click="performRestore"
                   :disabled="!restoreFile || isRestoring"
                   class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
@@ -441,7 +441,7 @@
                     ></path>
                   </svg>
                   {{ isRestoring ? '복원 중...' : '복원하기' }}
-                </button-->
+                </button>
               </div>
             </div>
           </div>
