@@ -79,7 +79,7 @@ export default {
     const AssetInfo = computed(() => setupStore.getAssetConfig)
 
     const computedChannel = computed(() => {
-      console.log(props.channel);
+
       if (props.channel == 'Main' || props.channel == 'main')
         return 'Main'
       else
@@ -89,12 +89,16 @@ export default {
     const computedType = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetType_main: AssetInfo.value.assetType_sub)
     const computedAssetName = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetName_main: AssetInfo.value.assetName_sub)
     const isInverter = computed(()=>{
-      const drivetype = computedChannel.value == 'Main' ? AssetInfo.value.assetdriveType_main: AssetInfo.value.assetdriveType_sub;
-      //console.log('drivetype =', drivetype);
-      if (drivetype == "DOL")
+      const Diagenables = computedChannel.value == 'Main' ? props.channelState.MainDiagnosis : props.channelState.SubDiagnosis
+      if(Diagenables){
+          const drivetype = computedChannel.value == 'Main' ? AssetInfo.value.assetdriveType_main: AssetInfo.value.assetdriveType_sub;
+          if (drivetype == "DOL")
+            return false;
+          else
+            return true;
+      }else{
         return false;
-      else
-        return true;
+      }
     })
     //const mainData = inject('meterDictMain');
     //const subData = inject('meterDictSub');

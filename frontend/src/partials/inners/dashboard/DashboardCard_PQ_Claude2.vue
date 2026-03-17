@@ -120,9 +120,9 @@ export default {
   // emits: ['data-change'],
   setup(props) {
     const { t } = useI18n()
-    const channel = ref(props.channel)
-    const asset = ref(props.asset);
-    const isInverter = ref(props.isInv);
+    const channel = computed(() => props.channel)
+    const asset = computed(() => props.asset)
+    const isInverter = computed(() => props.isInv)
     const store = useRealtimeStore()
     const data2 = computed(() => {
       // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)

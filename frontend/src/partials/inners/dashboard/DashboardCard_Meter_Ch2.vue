@@ -140,9 +140,8 @@
             </h3>
           </div>
           <div class="harmonics-container">
-            <DashboardCard_THD  :data="data2" :asset="assetConfig"
-              :height="120"
-              @data-change="onDataChange"  />
+            <DashboardCard_THD  :data="data2" :asset="assetConfig" :channelmode="channelSetup"
+              :height="120" />
           </div>
         </div>
       </div>
@@ -207,6 +206,24 @@ export default {
   //     });
 
     const unbalMode = computed(()=> setupStore.getUnbalance);
+    const channelSetup = computed(()=> {
+      const setting = setupStore.getChannelSetting;
+      if (channel.value == 'Main'){
+        if (setting.MainEnable && setting.MainDiagnosis)
+          return 2
+        else if(setting.MainEnable && !setting.MainDiagnosis)
+          return 1
+        else
+          return 0
+      }else{
+        if (setting.SubEnable && setting.SubDiagnosis)
+          return 2
+        else if(setting.SubEnable && !setting.SubDiagnosis)
+          return 1
+        else
+          return 0
+      }
+    });
     const assetConfig = computed(()=> {
       const configdict = setupStore.getAssetConfig;
       let config = {};
@@ -278,9 +295,9 @@ export default {
       console.log('고조파 차트 준비 완료:', chartInstance);
     };
 
-    const onDataChange = (chartInfo) => {
-      //console.log('차트 데이터 변경:', chartInfo);
-    };
+    // const onDataChange = (chartInfo) => {
+    //   //console.log('차트 데이터 변경:', chartInfo);
+    // };
 
 
 
@@ -294,9 +311,10 @@ export default {
       getUnbalanceStatusClass,
       getUnbalanceStatusText,
       onChartReady,
-      onDataChange,
+      //onDataChange,
       unbalMode,
       assetConfig,
+      channelSetup,
     };
   },
 };

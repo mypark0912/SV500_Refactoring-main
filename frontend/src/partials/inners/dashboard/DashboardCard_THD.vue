@@ -54,15 +54,18 @@ export default {
     colors: {
       type: Array,
       default: () => ['purple', 'blue', 'green']
+    },
+    channelmode:{
+      type:Number,
+      default:0
     }
   },
-  emits: ['data-change'],
-  setup(props, { emit }) {
+  setup(props) {
     const chartData = ref([]);
     const pollTimer = ref(null);
     const getTHD = async () => {
       try {
-        const assetName = props.asset?.Name || props.asset?.name || ''
+        const assetName = props.asset?.name || ''
         if (!assetName) return
         const response = await axios.get(`/api/getRealTimeTHD/${assetName}`)
         if (response.data.success) {
@@ -72,8 +75,15 @@ export default {
         console.error('❌ THD 데이터 실패:', err)
       }
     }
-    const isInverter = computed(()=> props.asset['driveType'] == 'DOL'?false:true);
-        const chartItems = computed(() => {
+    const isInverter = computed(()=>{
+      if(props.channelmode > 1){
+        return props.asset['driveType'] == 'DOL'?false:true
+      }else{
+        return false;
+      }
+    })
+
+    const chartItems = computed(() => {
       if (isInverter.value) {
         // API 데이터 사용
         const values = chartData.value.map(item => parseFloat(item.Value || 0))
@@ -90,7 +100,7 @@ export default {
           }
         })
 
-        emit('data-change', { data: items })
+        //emit('data-change', { data: items })
         return items
       } else {
         // 기존 store 데이터 사용
@@ -108,7 +118,7 @@ export default {
           }
         })
 
-        emit('data-change', { data: items })
+        //emit('data-change', { data: items })
         return items
       }
     })
@@ -145,33 +155,6 @@ export default {
     onBeforeUnmount(() => {
       stopPolling()
     })
-
-    // const chartItems = computed(() => {
-    //   const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
-    //   const maxValue = Math.max(...values, 10) // 최소 10으로 설정
-      
-    //   const items = props.labels.map((label, index) => {
-    //     const value = values[index].toFixed(1)
-    //     const height = (values[index] / maxValue) * 100
-        
-    //     return {
-    //       label,
-    //       value,
-    //       height: Math.max(height, 5), // 최소 5% 높이
-    //       colorClass: `bar-${props.colors[index]}`
-    //     }
-    //   })
-      
-    //   // 데이터 변경 이벤트 발생
-    //   emit('data-change', { data: items })
-      
-    //   return items
-    // })
-
-    // onMounted(async()=>{
-    //   if (isInverter.value)
-    //     await getTHD();
-    // });
 
     return {
       chartItems,
