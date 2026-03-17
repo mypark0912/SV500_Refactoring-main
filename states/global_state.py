@@ -28,8 +28,13 @@ class OsSpec:
             self.logpath = '.'
             self.redisip = '192.168.1.92'
         else:
-            self.redisip = '127.0.0.1'
-            if mode > 0:
+            if mode == 3:  # Docker mode
+                self.influxip = 'influxdb'
+                self.redisip = 'redis'
+                self.restip = '127.0.0.1'
+                self.logpath = '/usr/local/sv500/logs/web'
+            elif mode > 0:
+                self.redisip = '127.0.0.1'
                 self.influxip = '192.168.1.91'
                 self.restip = '192.168.1.24'
                 if mode == 1:
@@ -37,6 +42,7 @@ class OsSpec:
                 else:
                     self.logpath = "/home/ntek/logs"
             else:
+                self.redisip = '127.0.0.1'
                 self.influxip = '127.0.0.1'
                 self.restip = '127.0.0.1'
                 self.logpath = '/usr/local/sv500/logs/web'
@@ -61,7 +67,8 @@ class OsSpec:
         else:
             return "/"
 
-os_spec = OsSpec(0)
+mode = int(os.environ.get('SV500_MODE', '0'))
+os_spec = OsSpec(mode)
 
 class AESEncDec:
     def __init__(self):
