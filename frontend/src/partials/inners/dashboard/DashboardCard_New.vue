@@ -287,13 +287,13 @@
 
         // 그리고 나서 주기 업데이트 걸어
         if (updateInterval) {
-          console.log(`[${channel.value}] 🛑 기존 폴링 정리:`, updateInterval);
+          //console.log(`[${channel.value}] 🛑 기존 폴링 정리:`, updateInterval);
           clearInterval(updateInterval);
           updateInterval = null;  // ✅ 반드시 null로!
         }
-        console.log(`[${channel.value}] ✅ 새 폴링 시작`);
+        //console.log(`[${channel.value}] ✅ 새 폴링 시작`);
           updateInterval = setInterval(async () => {
-            console.log(`[${channel.value}] ⏰ 5분 폴링 실행`);
+            //console.log(`[${channel.value}] ⏰ 5분 폴링 실행`);
             await fetchDashData(); //fetchData();
             await fetchModuleStatus();
             if(!assetTypes.value.includes('Transformer')){
