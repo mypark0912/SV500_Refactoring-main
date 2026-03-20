@@ -185,7 +185,7 @@ export default {
     const fetchInterval = async (ch) => {
       //console.log('FetchInterval')
       try {
-        const response = await axios.get(`/api/getInteverval/demand/${ch}`);
+        const response = await axios.get(`/api/getInterval/demand/${ch}`);
         if (response.data.success) {
           timeout_fifthm = parseInt(response.data.data);
           //console.log(ch,'-', timeout_fifthm);
@@ -277,7 +277,7 @@ export default {
               item.value = (item.value / 1000).toFixed(2);
             });
           });
-          
+          //console.log(powerThd.value)
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
