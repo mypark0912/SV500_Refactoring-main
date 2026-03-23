@@ -820,7 +820,7 @@
       const needsComm_main = ref(false);
       const needsComm_sub = ref(false);
       const isCheckingRestart = ref(false);
-  
+      const needRestartCore = ref(false);
       // Loading states
       const isLoadingMain = ref(false);
       const isLoadingSub = ref(false);
@@ -923,6 +923,7 @@
           isCheckingRestart.value = true;
           const response = await axios.get(`/setting/apply`);
           needsRestart.value = response.data.restartDevice || false;
+          needRestartCore.value = response.data.restartCore || false;
           return needsRestart.value;
         } catch (e) {
           console.error("Error checking restart:", e);
@@ -1210,6 +1211,13 @@
             } else {
               console.log("[DEBUG] 펌웨어 재시작 불필요");
             }
+            if(needRestartCore.value){
+              const restartSuccess = await restartCore();
+              if(restartSuccess)
+                restartMessage.value = "Core process is restarted"
+              else
+                restartMessage.value = "Core process restart is failed"
+            }
   
             if (diagnosis_main.value) {
               console.log("[DEBUG] Main 진단 활성화 - checkCommission('Main') 실행");
@@ -1337,6 +1345,20 @@
         }
       };
 
+      const restartCore = async () => {
+        try {
+          const response = await axios.get(`/setting/restartCore`);
+          if (response.data.success) {
+            return true;
+          } else {
+            return false;
+          }
+        } catch (error) {
+          restartMessage.value = error;
+          return false;
+        }
+      };
+
       // Prevent modal from closing while any blocking operation is in progress.
       // Guards against accidental closure during trigger/waveform/commission API calls.
       const closeModal = () => {
@@ -1451,7 +1473,8 @@
         needsComm_sub,
         isLoadingWaveform,
         isBlocking,
-        t
+        t,
+        needRestartCore,
       };
     },
   };

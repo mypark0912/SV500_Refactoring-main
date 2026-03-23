@@ -3188,16 +3188,20 @@ async def apply(request: Request):
     result = compare_channel_changes(prevData, saveData)
 
     restartdevice = False
+    restartCore = False
 
     if result["General"]["status"] == 'config_changed' or result["Main"]["status"] == 'config_changed' or result["Sub"][
         "status"] == 'config_changed':
         restartdevice = True
 
+    if not all(result[k]["status"] == "no_change" for k in ("Main", "Sub", "General")):
+        restartCore = True
+
     redis_state.client.hset("System", "setup", json.dumps(saveData))
 
     apply_sntp_setting(saveData["General"]["sntpInfo"])
 
-    return {"status": "1", "data": saveData, "restartDevice": restartdevice}
+    return {"status": "1", "data": saveData, "restartDevice": restartdevice, "restartCore": restartCore}
 
 @router.get("/applyNetwork")
 def apply_network(background_tasks: BackgroundTasks):
@@ -3644,8 +3648,6 @@ async def restartasset():
 
 @router.get('/restartdevice')
 async def restartdevice(timeout: int = 30):
-    # redis_state.client.select(0)
-
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
@@ -3661,9 +3663,6 @@ async def restartdevice(timeout: int = 30):
         redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
     try:
         redis_state.client.hset("Service", "save", 1)
-        redis_state.client.hset("Service", "restart", 1)
-        # if is_service_active("mqClient"):
-        #     sysService("restart","MQTTClient")
         # save = 0 될 때까지 대기
         stable_flag = False
         for _ in range(timeout * 10):  # 0.1초 간격
@@ -3685,7 +3684,6 @@ async def restartdevice(timeout: int = 30):
 
 @router.get('/restartCore')
 def restart_core():
-    # redis_state.client.select(0)
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
         if int(checkflag) == 1:
