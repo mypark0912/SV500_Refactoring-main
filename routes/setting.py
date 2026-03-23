@@ -3662,8 +3662,8 @@ async def restartdevice(timeout: int = 30):
     try:
         redis_state.client.hset("Service", "save", 1)
         redis_state.client.hset("Service", "restart", 1)
-        if is_service_active("mqClient"):
-            sysService("restart","MQTTClient")
+        # if is_service_active("mqClient"):
+        #     sysService("restart","MQTTClient")
         # save = 0 될 때까지 대기
         stable_flag = False
         for _ in range(timeout * 10):  # 0.1초 간격
