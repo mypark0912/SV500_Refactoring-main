@@ -364,6 +364,69 @@ def proc_eventFaultData(datas):
     ret = {"data_status": statuslist, "data_tree": superlist}
     return ret
 
+def proc_DiagnosisData_grouped(datas):
+    """
+    proc_DiagnosisData_optimized 결과를 AssemblyID 기준으로 한 단계 더 그룹핑.
+    기존 superNode들 위에 AssemblyID별 슈퍼노드를 추가한다.
+
+    스테이지 매핑:
+      VOL → 전압소스 (source)
+      MFD → 인버터 (inverter)
+      PWS → 전기적 상태 (motor-elec)
+      나머지 → 기계적 상태 (motor-mech)
+    """
+    ASSEMBLY_LABELS = {
+        "VOL": {"ko": "전압소스", "en": "Voltage Source", "stage": "source"},
+        "MFD": {"ko": "인버터", "en": "Inverter", "stage": "inverter"},
+        "PWS": {"ko": "전기적 상태", "en": "Electrical Status", "stage": "motor-elec"},
+    }
+    DEFAULT_LABEL = {"ko": "기계적 상태", "en": "Mechanical Status", "stage": "motor-mech"}
+
+    # 기존 함수로 트리 생성
+    ret = proc_DiagnosisData_optimized(datas)
+    superlist = ret["data_tree"]
+
+    # AssemblyID 기준으로 그룹핑
+    assembly_map = {}
+    assembly_order = []
+
+    for node in superlist:
+        aid = node.get("AssemblyID", "")
+        if aid not in assembly_map:
+            label_info = ASSEMBLY_LABELS.get(aid, DEFAULT_LABEL)
+            assembly_map[aid] = {
+                "ID": f"assembly_{aid}",
+                "Name": aid,
+                "Title": label_info["ko"],
+                "Titles": {"ko": label_info["ko"], "en": label_info["en"]},
+                "AssemblyID": aid,
+                "Stage": label_info["stage"],
+                "Description": "",
+                "Descriptions": {"ko": "", "en": ""},
+                "Value": None,
+                "isAssembly": True,
+                "isParent": True,
+                "Status": 0,
+                "children": []
+            }
+            assembly_order.append(aid)
+        assembly_map[aid]["children"].append(node)
+
+    # 각 어셈블리 노드의 Status = 자식 중 최대값
+    for aid in assembly_order:
+        assembly_node = assembly_map[aid]
+        max_status = 0
+        for child in assembly_node["children"]:
+            child_status = child.get("Status", 0)
+            if isinstance(child_status, (int, float)) and child_status > max_status:
+                max_status = child_status
+        assembly_node["Status"] = max_status
+
+    grouped_tree = [assembly_map[aid] for aid in assembly_order]
+
+    return {"data_status": ret["data_status"], "data_tree": grouped_tree}
+
+
 def proc_DiagnosisData_optimized(datas):
     import time
     # start = time.time()
@@ -594,6 +657,20 @@ def determine_data_state(last_record_datetime_str, stale_period_hours):
     except (ValueError, TypeError) as e:
         print(f"Error parsing datetime: {e}")
         return "NO_DATA"
+
+@router.get("/getDiagnosisGrouped/{asset}")
+@gc_after_large_data(threshold_mb=30)
+async def get_diagnosis_grouped(asset, request: Request):
+    async with httpx.AsyncClient(timeout=api_timeout) as client:
+        response = await client.get(f"http://{os_spec.restip}:5000/api/getDiagnostic?name={asset}")
+        datas = response.json()
+
+    if datas:
+        ret = proc_DiagnosisData_grouped(datas)
+        data_state = determine_data_state(datas["LastRecordDateTime"], datas["StalePeriod"])
+        return {"success": True, "data_status": ret['data_status'], "data_tree": ret['data_tree'], "data_state": data_state, "data_recordtime": datas["LastRecordDateTime"]}
+    else:
+        return {"success": False, "error": "No Data"}
 
 @router.get("/getDiagnosisDetail/{asset}")
 @gc_after_large_data(threshold_mb=30)  # Diagnosis Vue : get diagnosis

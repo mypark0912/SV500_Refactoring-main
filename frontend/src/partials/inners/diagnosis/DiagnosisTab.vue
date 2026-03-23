@@ -1,26 +1,21 @@
 <template>
 <div v-if="mode != 'Event'" class="grid grid-cols-12 gap-6">
-    <!-- 왼쪽 박스 (Diagnosis_Info + Diagnosis_Barchart) -->
      <div class="col-span-12 flex flex-col gap-6 h-auto"> 
         <Diagnosis_Barchart v-if="chartdata !== null" :channel="channel" :data="chartdata" :mode="mode" class="h-auto" />
       </div>
-
-          <!-- 오른쪽 박스 (Diagnosis_TreeTable) - 높이 제한 없음 -->
       <div class="col-span-12">
         <Diagnosis_TreeTable v-if="items.length > 0" :channel="channel" :data="items" :mode="mode" />
       </div>
 </div>
 <div v-else class="grid grid-cols-12 gap-6">
-    <!-- 왼쪽 박스 (Diagnosis_Info + Diagnosis_Barchart) -->
      <div class="col-span-8 flex flex-col gap-6 h-auto"> 
         <Diagnosis_Barchart v-if="chartdata !== null" :channel="channel" :data="chartdata" :mode="mode" class="h-auto" />
       </div>
-
-          <!-- 오른쪽 박스 (Diagnosis_TreeTable) - 높이 제한 없음 -->
       <div class="col-span-4 pt-4">
         <Diagnosis_TreeTable v-if="items.length > 0" :channel="channel" :data="items" :mode="mode" />
       </div>
 </div>
+
 </template>
 <script>
 import { ref, watch, computed, onMounted, provide } from 'vue'
