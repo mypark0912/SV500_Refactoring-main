@@ -77,7 +77,7 @@ import axios from 'axios'
 import Diagnosis_TreeTable from './Diagnosis_TreeTable2.vue'
 
 const STATUS_COLORS = { 0: '#c4c4c4', 1: '#16a34a', 2: '#ca8a04', 3: '#ea580c', 4: '#dc2626' }
-const STATUS_TEXT = { 0: '정지', 1: '정상', 2: '주의', 3: '경고', 4: '위험' }
+const STATUS_TEXT = { 0: 'STOP', 1: 'NORMAL', 2: 'ATTENTION', 3: 'WARNING', 4: 'INSPECT' }
 const CATEGORY_COLORS = {
   source: '#1e3a8a',      // blue-900 남색
   inverter: '#8b5cf6',    // violet-500 바이올렛
@@ -113,10 +113,10 @@ export default {
     /* ───────── 카테고리 데이터 (API → 변환) ───────── */
     const categories = computed(() => {
       const cats = [
-        { id: 'source',      label: '전압소스',   color: CATEGORY_COLORS.source,       items: [] },
-        { id: 'inverter',    label: '인버터',     color: CATEGORY_COLORS.inverter,     items: [] },
-        { id: 'motor-elec',  label: '전기적 상태', color: CATEGORY_COLORS['motor-elec'], items: [] },
-        { id: 'motor-mech',  label: '기계적 상태', color: CATEGORY_COLORS['motor-mech'], items: [] },
+        { id: 'source',      label: 'Voltage Source',   color: CATEGORY_COLORS.source,       items: [] },
+        { id: 'inverter',    label: 'Inverter',     color: CATEGORY_COLORS.inverter,     items: [] },
+        { id: 'motor-elec',  label: 'Electrical Status', color: CATEGORY_COLORS['motor-elec'], items: [] },
+        { id: 'motor-mech',  label: 'Mechanical Status', color: CATEGORY_COLORS['motor-mech'], items: [] },
       ]
       const catMap = {}
       cats.forEach(c => { catMap[c.id] = c })
