@@ -346,7 +346,7 @@ export default {
       // }, 60*1000); // 1분마다 업데이트
     };
 
-    watch(() => setup.value, (newChannel) => {
+    watch(setup, (newChannel) => {
       if (newChannel) {
         startFetching();
       }

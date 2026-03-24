@@ -265,7 +265,7 @@ export default {
     provide('meterDictSub', meterDictSub)
 
     // 채널 상태 변화 감시
-    watch(() => ChannelState.value, async (newVal) => {
+    watch(ChannelState, async (newVal) => {
       console.log('🔄 ChannelState 변경됨:', newVal)
       
       if (!setup.value) {
@@ -288,7 +288,7 @@ export default {
     }, { immediate: true })
 
     // setup 값 변화 감시
-    watch(() => setup.value, async (newSetup) => {
+    watch(setup, async (newSetup) => {
       console.log('🔄 Setup 변경됨:', newSetup)
       
       if (newSetup && opMode.value && opMode.value !== '') {

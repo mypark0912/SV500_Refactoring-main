@@ -14,7 +14,7 @@
 
 <script setup>
 import LineChart from "../../../charts/connect/ReportTrendChart_Echart.vue";
-import { ref, inject } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -23,5 +23,5 @@ const props = defineProps({
 
 const isPdfMode = inject('isPdfMode', false)
 
-const option = ref(props.data);
+const option = computed(() => props.data);
 </script>

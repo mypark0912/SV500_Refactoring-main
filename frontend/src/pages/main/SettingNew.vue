@@ -491,7 +491,7 @@
         }
       };
 
-      watch(() => showDiagnosis.value, (newVal) => { useDiagnosis.value = newVal; }, { immediate: true });
+      watch(showDiagnosis, (newVal) => { useDiagnosis.value = newVal; }, { immediate: true });
       watch(() => inputDict.value.useFuction?.diagnosis_main, (newVal) => { currentDiagnosis.value.Main = newVal; }, { immediate: true });
       watch(() => inputDict.value.useFuction?.diagnosis_sub, (newVal) => { currentDiagnosis.value.Sub = newVal; }, { immediate: true });
       watch(() => [route.params.channel, route.params.mode], ([newChannel, newMode]) => { channel.value = newChannel; mode.value = newMode; });

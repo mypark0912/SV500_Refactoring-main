@@ -423,7 +423,7 @@ export function useReportData() {
           for(let i = 0 ; i< treeItems.length;i++){
             if(treeItems[i]["Status"] > 1 ){
               //items.value.push();
-              const childDict = [];
+              let childDict = [];
               if(treeItems[i]["children"].length > 0){
                 for(let j = 0 ; j < treeItems[i]["children"].length ; j++ ){
                   if(treeItems[i]["children"][j]["isSub"]){
@@ -544,7 +544,7 @@ export function useReportData() {
         //console.log("Received monthly data:", reportData.energyMonthlyData);
       }
       // reportData.energyData = response.data.data
-      return reportData.monthlyData
+      return reportData.energyMonthlyData
     } catch (error) {
       console.error('Energy 데이터 로딩 실패:', error)
     }
@@ -630,16 +630,16 @@ export function useReportData() {
       loadInfoData(channel),
       loadDiagnosisData(channel),
       loadPowerQualityData(channel),
-      loadEnergyData(channel)
+      loadEnergyHourlyData(channel)
     ])
   }
 
-  const getAllData = () => ({
+  const getAllData = (channel) => ({
     channel,
     datalist: reportData.infoData,
     diagnosisData: reportData.diagnosisData,
     powerQualityData: reportData.powerQualityData,
-    energyData: reportData.energyData
+    energyData: reportData.energyHourlyData
   })
 
   const parseMask = (mask) => {

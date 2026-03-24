@@ -201,7 +201,7 @@ export default {
     provide('period',period);
     provide('parameter',parameter);
 
-    watch(() => curPage.value, (newPage) => {
+    watch(curPage, (newPage) => {
       if(mode.value != 'Event'){
         if(!period.value && !parameter.value){
           fetchAlarmData(channel.value, newPage)
@@ -217,7 +217,7 @@ export default {
       }
     });
 
-    watch(() => search.value, (val) => {
+    watch(search, (val) => {
       //fetchAlarmData(channel.value, newPage)
       if(val){
         //console.log('SEARCH:' ,start.value , end.value, param.value);

@@ -170,8 +170,8 @@ import { useRouter } from 'vue-router'
           else
             return 'Sub';
         })
-        const stData = ref(props.data);
-        const transData = ref(props.transData);
+        const stData = computed(() => props.data);
+        const transData = computed(() => props.transData);
         const LoadRate = ref(0);
         const strList = computed(()=>{
           return [{"text":t('dashboard.diagnosis.st0'), "css":'bg-gray-500/20 text-gray-700 font-semibold'},

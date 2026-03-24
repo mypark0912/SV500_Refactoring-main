@@ -152,8 +152,7 @@ import { useI18n } from 'vue-i18n'
 //import BarChart_THD from '../../charts/THD_Chart_Claude.vue';
 import DashboardCard_THD from './DashboardCard_THD.vue';
 import { useSetupStore } from '@/store/setup'
-import { useRealtimeStore } from '@/store/realtime' 
-import { storeToRefs } from 'pinia'
+import { useRealtimeStore } from '@/store/realtime'
 export default {
   name: 'PremiumDashboardCard',
   props: {

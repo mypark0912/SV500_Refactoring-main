@@ -328,7 +328,7 @@ export default {
           for(let i = 0 ; i< treeItems.length;i++){
             if(treeItems[i]["Status"] > 1 ){
               //items.value.push();
-              const childDict = [];
+              let childDict = [];
               if(treeItems[i]["children"].length > 0){
                 for(let j = 0 ; j < treeItems[i]["children"].length ; j++ ){
                   if(treeItems[i]["children"][j]["isSub"]){
@@ -346,7 +346,7 @@ export default {
                   }
                 }
               }else{
-                childDict = [{Title:treeItems[i]["Title"],Assembly:treeItems[i]["children"][j]["AssemblyID"], Value:treeItems[i]["Value"]} ]
+                childDict = [{Title:treeItems[i]["Title"],Assembly:treeItems[i]["AssemblyID"], Value:treeItems[i]["Value"]} ]
               }
               items.value.push({Item:treeItems[i], Child:childDict});            
             }

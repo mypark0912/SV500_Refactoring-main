@@ -3,10 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
 import router from '@/router2'
-import { useSetupStore } from './setup'
-
 export const useAuthStore = defineStore('auth', () => {
-  const setupStore = useSetupStore();
   const user = ref(localStorage.getItem('user') || '')
   const userRole = ref(localStorage.getItem('userRole') || '')
   const logined = ref(localStorage.getItem('logined') === 'true')
@@ -146,11 +143,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function checkInstalled() {
+    const { useSetupStore } = await import('./setup')
+    const setupStore = useSetupStore()
     try {
       const response = await axios.get('/auth/checkInstall')
       //console.log(response.data.result);
       setInstall(response.data.result)
-      if (response.data.result > 0) 
+      if (response.data.result > 0)
         setupStore.setCalib(response.data.calibration)
     } catch (err) {
       console.error('checkInstalled Error:', err)
@@ -203,13 +202,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function resetAndLogout() {
+    const { useSetupStore } = await import('./setup')
+    const setupStore = useSetupStore()
     try {
       // 1. 서버에 로그아웃 요청
       await axios.get('/auth/logout', { withCredentials: true })
-      
+
       // 2. AuthStore 초기화
       $reset()
-      
+
       // 3. SetupStore도 초기화 (있다면)
       if (setupStore.$reset) {
         setupStore.$reset()

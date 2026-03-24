@@ -74,7 +74,7 @@ export default {
       const chType = channel.value == 'Main'? asset.value.assetType_main : asset.value.assetType_sub;
       return ({"name":chName, "type":chType});
     });
-    const AssetInfo = ref(props.data);
+    const AssetInfo = computed(() => props.data);
     const equipImageSrc = computed(() => {
       switch (thisAsset.value.type) {
         case 'Motor':

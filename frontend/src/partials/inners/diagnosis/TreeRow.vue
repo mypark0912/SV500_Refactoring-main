@@ -61,7 +61,7 @@
     mode.value = props.mode;
   });
 
-watch(() => locale.value, (newLocale) => {
+watch(locale, (newLocale) => {
   if (props.item?.Descriptions?.[newLocale]) {
     //descStr.value = props.item.Descriptions[newLocale];
     if(props.item.Status > 1)

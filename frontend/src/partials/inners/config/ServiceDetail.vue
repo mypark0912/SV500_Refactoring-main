@@ -56,7 +56,7 @@
   </template>
   
   <script>
-  import { ref, onMounted } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   
   export default {
     name: 'ErrorListCard',
@@ -96,8 +96,8 @@
     //       message: 'SV500 waveform and event folders does not exist'
     //     }
     //   ])
-      const errorList = ref(props.data);
-      const msg = ref(props.msg);
+      const errorList = computed(() => props.data);
+      const msg = computed(() => props.msg);
       onMounted(() => {
         // TODO: API 호출 로직 추가
         //console.log(props.data);

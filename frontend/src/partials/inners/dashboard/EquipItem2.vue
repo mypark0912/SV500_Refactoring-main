@@ -160,16 +160,20 @@ export default {
     
     const channel = ref(props.channel);
     const isRunning = ref(props.status);
-    
+
+    watch(() => props.status, (newVal) => {
+      isRunning.value = newVal;
+    });
+
     const computedChannel = computed(() => {
       if (channel.value == 'Main' || channel.value == 'main')
         return 'Main';
       else
         return 'Sub';
     })
-    
-    const stData = ref(props.data);
-    const transData = ref(props.transData);
+
+    const stData = computed(() => props.data);
+    const transData = computed(() => props.transData);
     const LoadRate = ref(0);
 
     // Temp 데이터 유무 체크

@@ -31,7 +31,7 @@
   </template>
   
   <script>
-  import { ref, watch } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'  // ✅ 추가
   export default {
     name: 'DashboardCard_table4',
@@ -47,7 +47,7 @@
     },
     setup(props){
       const { t, locale } = useI18n();
-      const tbdata = ref(props.data);
+      const tbdata = computed(() => props.data);
       const printdata = ref([]);
 
       for (let i = 0; i < tbdata.value.length; i++) {
@@ -101,7 +101,7 @@
         }
       };
 
-      watch(() => locale.value, (newLocale) => {
+      watch(locale, (newLocale) => {
         printdata.value.forEach(item => {
           item.Description = item.Descriptions[newLocale];
         });

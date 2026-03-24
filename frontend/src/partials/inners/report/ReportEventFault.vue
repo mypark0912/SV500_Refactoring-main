@@ -8,12 +8,12 @@
 
 <script setup>
 import Diagnosis_TreeTable from '../diagnosis/Diagnosis_TreeTable2.vue'
-import {ref} from 'vue'
+import {computed} from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   data: Object,
 })
 
-const eventData = ref(props.data);
+const eventData = computed(() => props.data);
 </script>

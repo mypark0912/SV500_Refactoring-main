@@ -131,7 +131,7 @@ export default {
       renderChart()
     }, { deep: true })
 
-    watch(() => darkMode.value, () => {
+    watch(darkMode, () => {
       renderChart()
     })
 

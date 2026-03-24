@@ -581,6 +581,7 @@ export default {
           const en50160Response = await axios.get(`/report/week/${channelComputed.value}/${filename}`);
           if (en50160Response.data) {
             en50160ReportData.value = en50160Response.data;
+            //console.log(en50160ReportData.value);
           }
         } catch (en50160Error) {
           console.warn("EN50160 데이터 조회 실패:", en50160Error);

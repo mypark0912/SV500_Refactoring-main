@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 
 export default {
   name: 'DropdownSelect',
@@ -68,7 +68,7 @@ export default {
     const dropdown = ref(null)    
     const selected = ref(0)
     const selectedOptions = inject("selectedOptions")
-    const options = ref(props.options)
+    const options = computed(() => props.options)
 
     // close on click outside
     const clickHandler = ({ target }) => {

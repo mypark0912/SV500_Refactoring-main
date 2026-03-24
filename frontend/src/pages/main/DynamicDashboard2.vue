@@ -71,7 +71,6 @@
   
   <script>
   import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
-  import { storeToRefs } from 'pinia'
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
@@ -153,7 +152,7 @@
       //   // Store에서 채널 상태 변경 처리
       //   await realtimeStore.onChannelStateChange(opMode.value, newVal)
       // }, { immediate: true })
-      watch(() => ChannelState.value, async (newVal) => {
+      watch(ChannelState, async (newVal) => {
         console.log('🔄 ChannelState 변경됨:', newVal)
         
         if (!setup.value || !isInitialized.value) {
@@ -172,7 +171,7 @@
       //     realtimeStore.startPolling(opMode.value, ChannelState.value)
       //   }
       // })
-      watch(() => setup.value, async (newSetup) => {
+      watch(setup, async (newSetup) => {
         console.log('🔄 Setup 변경됨:', newSetup)
         
         if (newSetup && opMode.value && opMode.value !== '' && !isInitialized.value) {

@@ -63,10 +63,10 @@ export default {
   },
   setup(props){
 
-    const title = ref(props.title);
-    const mode = ref(props.mode);
-    const DiagState = ref(props.state);
-    const data = ref(props.data);
+    const title = computed(() => props.title);
+    const mode = computed(() => props.mode);
+    const DiagState = computed(() => props.state);
+    const data = computed(() => props.data);
     const setupStore = useSetupStore();
     // const item = ref(props.item);
     // const Status = inject('sysStatus');

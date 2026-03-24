@@ -537,7 +537,7 @@ export default {
     provide('isPdfMode', true)
     const emit = context.emit;
     const { t, locale } = useI18n();    
-    const data = ref(props.data);
+    const data = computed(() => props.data);
     const datalist = ref({});
     const setupStore = useSetupStore();
     const route = useRoute()
@@ -1805,7 +1805,7 @@ const overLoadPercentage = computed(() => {
           
           for(let i = 0 ; i< treeItems.length;i++){
             if(treeItems[i]["Status"] > 1 ){
-              const childDict = [];
+              let childDict = [];
               if(treeItems[i]["children"].length > 0){
                 for(let j = 0 ; j < treeItems[i]["children"].length ; j++ ){
                   if(treeItems[i]["children"][j]["isSub"]){
@@ -1813,8 +1813,8 @@ const overLoadPercentage = computed(() => {
                       if( treeItems[i]["children"][j]["children"][k]["Status"] > 1){
                         chartList.push(treeItems[i]["children"][j]["children"][k]);
                         childDict.push({
-                          Title:treeItems[i]["children"][j]["children"][k]["Title"], 
-                          Assembly:treeItems[i]["children"][j]["AssemblyID"], 
+                          Title:treeItems[i]["children"][j]["children"][k]["Title"],
+                          Assembly:treeItems[i]["children"][j]["AssemblyID"],
                           Value:treeItems[i]["children"][j]["children"][k]["Value"]
                         })
                       }
@@ -1824,7 +1824,7 @@ const overLoadPercentage = computed(() => {
                       chartList.push(treeItems[i]["children"][j]);
                       childDict.push({
                         Title:treeItems[i]["children"][j]["Title"],
-                        Assembly:treeItems[i]["children"][j]["AssemblyID"], 
+                        Assembly:treeItems[i]["children"][j]["AssemblyID"],
                         Value:treeItems[i]["children"][j]["Value"]
                       })
                     }
@@ -1833,7 +1833,7 @@ const overLoadPercentage = computed(() => {
               }else{
                 childDict = [{
                   Title:treeItems[i]["Title"],
-                  Assembly:treeItems[i]["AssemblyID"], 
+                  Assembly:treeItems[i]["AssemblyID"],
                   Value:treeItems[i]["Value"]
                 }]
               }
@@ -1895,8 +1895,8 @@ const overLoadPercentage = computed(() => {
           
           for (let i = 0; i < treeItems.length; i++) {
             if (treeItems[i]["Status"] > 1) {
-              const childDict = [];
-              
+              let childDict = [];
+
               if (treeItems[i]["children"].length > 0) {
                 for (let j = 0; j < treeItems[i]["children"].length; j++) {
                   if (treeItems[i]["children"][j]["isSub"]) {

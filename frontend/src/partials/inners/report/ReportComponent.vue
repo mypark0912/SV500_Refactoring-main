@@ -328,7 +328,57 @@ export default {
     }
     const { baseChart, parseMask, getfinValue, makeKey } = useReportData()
 
-    onMounted(() => { fetchData(); fetchITICData() })
+    onMounted(() => { loadSummaryData(); fetchITICData() })
+
+    const transformSummary = (s) => {
+      const phases = ['L1', 'L2', 'L3']
+      const result = { "status&compliance": s.compliance }
+
+      // 단일 값 (Frequency, Voltage Unbalance)
+      result["Frequency Variation 1"] = s.freq_var1
+      result["Frequency Variation 2"] = s.freq_var2
+      result["Voltage Unbalance"] = s.voltbal_var
+
+      // 3상 배열 [L1, L2, L3]
+      const phaseMap = {
+        volt1_var: "Voltage Variation 1",
+        volt2_var: "Voltage Variation 2",
+        volt_thd_var: "THDs Variation",
+        volt_hd_var: "Harmonics Variatiopn",
+        pst_var: "Flickers Pst",
+        plt_var: "Flickers Plt",
+        svolt_var: "Signaling Voltage",
+      }
+      for (const [key, prefix] of Object.entries(phaseMap)) {
+        if (Array.isArray(s[key])) {
+          phases.forEach((ph, i) => { result[`${prefix} ${ph}(%)`] = s[key][i] })
+        }
+      }
+
+      // 4상 배열 [L1, L2, L3, Multi Phase]
+      const eventMap = {
+        sag: "Voltage Dips",
+        swell: "Voltage Swells",
+        short_interruption: "Short Interruptions",
+        long_interruption: "Long Interruptions",
+      }
+      const eventPhases = ['L1', 'L2', 'L3', 'Multi Phase']
+      for (const [key, prefix] of Object.entries(eventMap)) {
+        if (Array.isArray(s[key])) {
+          eventPhases.forEach((ph, i) => { result[`${prefix} ${ph}`] = s[key][i] })
+        }
+      }
+
+      return result
+    }
+
+    const loadSummaryData = () => {
+      if (props.reportData && props.reportData["summary"]) {
+        tbdata.value = transformSummary(props.reportData["summary"])
+      } else {
+        fetchData()
+      }
+    }
 
     const fetchData = async () => {
       try {
@@ -380,7 +430,13 @@ const fetchITICData = async () => {
       return bits.some(bit => (comp & (1 << bit)) !== 0) ? "Failed" : "OK"
     }
 
-    watch(() => props.channel, (newChannel) => { channel.value = newChannel; fetchData(); fetchITICData() })
+    watch(() => props.channel, (newChannel) => { channel.value = newChannel; loadSummaryData(); fetchITICData() })
+
+    watch(() => props.reportData, (newData) => {
+      if (newData && newData["summary"]) {
+        tbdata.value = transformSummary(newData["summary"])
+      }
+    })
 
     return {
       channel, linechartData, mode, tbdata, makeKey, getComp, t, iticDataList, enReport_data,

@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
-import { useAuthStore } from './auth'
 import { useStorage } from '@vueuse/core'
 export const useSetupStore = defineStore('setup', () => {
-  const authStore = useAuthStore();
   const assetConfig = useStorage('asset-config', {
     assetType_main: '',
     assetName_main: '',
@@ -134,6 +132,8 @@ export const useSetupStore = defineStore('setup', () => {
 
   async function checkSetting(forceUpdate = false) {
     if (!forceUpdate && applysetup.value) return
+    const { useAuthStore } = await import('./auth')
+    const authStore = useAuthStore()
     try {
       const response = await axios.get('/setting/checkSettingFile')
       if (response.data?.result === '1') {

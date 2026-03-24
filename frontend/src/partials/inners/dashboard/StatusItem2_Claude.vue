@@ -147,8 +147,8 @@ export default {
         return 'Sub';
     })
     
-    const stData = ref(props.data);
-    const transData = ref(props.transData);
+    const stData = computed(() => props.data);
+    const transData = computed(() => props.transData);
     //console.log('transData', transData);
     const LoadRate = ref(0);
 

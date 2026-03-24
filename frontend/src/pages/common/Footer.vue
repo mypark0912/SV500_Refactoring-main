@@ -29,29 +29,17 @@
   </template>
   
   <script>
-  import { reactive, watch } from 'vue'
-  
+  import { computed } from 'vue'
 
-  
   export default {
     name: 'Footer',
     props: [
       'variant',
       'langset'
     ],
-    components: {
-
-    },
     setup(props) {
-      // ✅ langset이 null일 경우 기본 객체 설정
-      const langs = reactive(props.langset || {});
-      //console.log("langs.value",langs.value);
-      // ✅ props.langset이 변경될 때마다 langs 업데이트 (반응형 유지)
-      watch(() => props.langset, (newLangset) => {
-        Object.assign(langs, newLangset); // ✅ 기존 객체 유지하면서 업데이트
-        console.log("✅ langset 업데이트됨:", langs);
-      });
-  
+      const langs = computed(() => props.langset || {});
+
       return {
         langs,
       }

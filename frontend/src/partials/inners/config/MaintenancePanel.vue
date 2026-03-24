@@ -613,7 +613,7 @@ export default {
     });
 
     // 설치(mtype==0) 선택 시 자동 처리
-    watch(() => mtype.value, (val) => {
+    watch(mtype, (val) => {
       if (val == 0) {
         if (releaseNoteList.value.length > 0) {
           buildVersion.value = releaseNoteList.value[0];

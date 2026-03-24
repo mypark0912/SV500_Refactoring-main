@@ -61,7 +61,7 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
-const stData = ref(props.data)
+const stData = computed(() => props.data)
 
 // 표시할 상태들 (정지 제외)
 const displayedStatuses = computed(() => {

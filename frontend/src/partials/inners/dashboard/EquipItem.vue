@@ -141,7 +141,7 @@ import transImg from '@/images/trans.png'
           return 'Sub';
       })
 
-      const stData = ref(props.data);
+      const stData = computed(() => props.data);
       const transData = computed(()=>{
           if (!props.transData) {
             console.log('transData is undefined!');

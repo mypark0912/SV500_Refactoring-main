@@ -38,7 +38,6 @@ const props = defineProps({
 })
 const isPdfMode = inject('isPdfMode', false)
 const { t, locale } = useI18n()
-const stData = ref(props.data);
 const Item = ref({});
 const childItems = ref([]);
 
