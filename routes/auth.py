@@ -127,7 +127,7 @@ def check_useDiagnosis():
     if not "channel" in setting:
         return False
     opmode = setting.get("mode", "")
-    if opmode == 'device1':
+    if opmode in ('device1', 'device2', 'device3', 'device4'):
         general_data = setting.get("General", {})
         use_fuction = general_data.get("useFuction", {})
         diag_main = bool(use_fuction.get("diagnosis_main", False))
@@ -277,7 +277,7 @@ def join_admin(data: SignupAdmin):
     adminPass = data.adminPass
     lang = data.lang
 
-    if devType < 3:
+    if devType <= 4:
         mode = f"device{devType}"
         if devType == 0:
             diag = 'No'

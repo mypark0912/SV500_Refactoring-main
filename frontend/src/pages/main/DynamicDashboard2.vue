@@ -48,10 +48,13 @@
                 :channel-state="ChannelState"
                 :channel="channel"
               />
-              <SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+              <!--SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
-              />
+              /-->
+              <MeasureLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+                :channel-state="ChannelState"
+                :channel="channel" />
               <DualChannelLayout v-else-if="dashboardLayout === 'DualChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
@@ -76,6 +79,7 @@
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
   import DualChannelLayout from '../layouts/DualChannelLayout.vue' 
   import IntegratedLayout from '../layouts/IntegratedLayout3.vue'  
+  import MeasureLayout from '../layouts/MeasuringLayout.vue'  
   import Footer from "../common/Footer.vue"
   import { useSetupStore } from '@/store/setup'
   import { useAuthStore } from '@/store/auth'
@@ -92,6 +96,7 @@
       SingleChannelLayout,
       DualChannelLayout,
       IntegratedLayout,
+      MeasureLayout,
     },
     setup(props) {
       const sidebarOpen = ref(false)
