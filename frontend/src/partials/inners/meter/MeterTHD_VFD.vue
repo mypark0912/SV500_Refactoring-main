@@ -1,13 +1,7 @@
 <template>
-  <div class="col-span-full xl:col-span-7 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
-    <div class="card">
-      <div class="premium-card-header">
-        <div class="header-content">
-          <div class="header-left">
-            <h2 class="card-title">{{ t('meter.cardTitle.title_thd') }}</h2>
-          </div>
-        </div>
-      </div>
+  <div class="col-span-full xl:col-span-7 meter-card">
+    <div class="meter-card-header">
+      <h3 class="meter-card-title meter-accent-violet">{{ t('meter.cardTitle.title_thd') }}</h3>
     </div>
 
     <!-- 로딩 -->
@@ -16,9 +10,9 @@
     </div>
 
     <!-- 데이터 테이블 -->
-    <div v-else-if="thdList.length > 0" class="overflow-x-auto px-4 py-4">
+    <div v-else-if="thdList.length > 0" class="meter-card-body overflow-x-auto">
       <table class="table-auto w-full dark:text-white">
-        <thead class="text-xs uppercase text-gray-400 bg-gray-50 dark:bg-gray-300 dark:text-gray-200 dark:bg-opacity-50 rounded-sm">
+        <thead class="text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-50/80 dark:bg-gray-700/50">
         <tr>
             <th class="px-4 py-2">
             <div class="font-bold text-left">{{ t('meter.Table.th_tilte') }}</div>
@@ -138,6 +132,6 @@ export default {
 }
 </script>
 
-<style>
-@import '../../../css/card-styles.css';
+<style scoped>
+@import '../../../css/meter-card.css';
 </style>

@@ -6,34 +6,21 @@
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
     </div>
-
     <div class="card-body">
-      <!-- 평균 전압 Big Number -->
-      <div class="big-number">
-        <span class="status-dot" :class="voltageStatusClass"></span>
-        <div>
-          <div class="big-value">
-            {{ avgVoltage }} <span class="big-unit">V</span>
-          </div>
-          <span class="big-label">{{ t('dashboard.meter.avgvoltage') }}</span>
+      <!-- 평균 전압 (가운데 정렬) -->
+      <div class="avg-section">
+        <span class="avg-label">{{ t('dashboard.meter.avgvoltage') }}</span>
+        <div class="avg-value">
+          <span class="status-dot" :class="voltageStatusClass"></span>
+          {{ avgVoltage }} <span class="avg-unit">V</span>
         </div>
       </div>
-
-      <!-- 상별 전압 바 차트 -->
-      <div class="phase-bars">
-        <div v-for="(item, idx) in phaseItems" :key="idx" class="phase-row">
+      <!-- 상별 전압 (아래) -->
+      <div class="phase-section">
+        <div v-for="item in phaseItems" :key="item.label" class="phase-row">
           <span class="phase-label">{{ item.label }}</span>
-          <div class="bar-track">
-            <div class="bar-fill" :style="{ width: item.pct + '%', backgroundColor: item.color }"></div>
-            <!-- 평균 마커 -->
-            <div class="avg-marker" :style="{ left: avgPct + '%' }"></div>
-          </div>
-          <span class="phase-value">{{ item.value }} <span class="phase-unit">V</span></span>
+          <span class="phase-value" :class="item.statusClass">{{ item.value }} <span class="phase-unit">V</span></span>
         </div>
-      </div>
-      <div class="legend">
-        <span class="legend-line"></span>
-        <span class="legend-text">평균</span>
       </div>
     </div>
   </div>
@@ -59,11 +46,16 @@ export default {
 
     const hasData = computed(() => Object.keys(data.value).length > 0)
     const isPT = computed(() => data.value.DashPT !== 0)
-
     const avgVoltage = computed(() => isPT.value ? (data.value.Upp4 || 0) : (data.value.U4 || 0))
 
+    const getVoltageStatusClass = (v) => {
+      if (!v) return 'text-gray-400'
+      if (v < 200 || v > 240) return 'text-red-500 dark:text-red-400'
+      if (v < 210 || v > 230) return 'text-amber-500 dark:text-amber-400'
+      return 'text-green-600 dark:text-green-400'
+    }
+
     const phaseItems = computed(() => {
-      const min = 200, max = 260
       const phases = isPT.value
         ? [
             { label: 'L1', value: data.value.Upp1 || 0 },
@@ -75,17 +67,7 @@ export default {
             { label: 'L2', value: data.value.U2 || 0 },
             { label: 'L3', value: data.value.U3 || 0 },
           ]
-      const colors = ['#8b5cf6', '#a78bfa', '#c4b5fd']
-      return phases.map((p, i) => ({
-        ...p,
-        pct: Math.min(((p.value - min) / (max - min)) * 100, 100),
-        color: colors[i],
-      }))
-    })
-
-    const avgPct = computed(() => {
-      const min = 200, max = 260
-      return Math.min(((avgVoltage.value - min) / (max - min)) * 100, 100)
+      return phases.map(p => ({ ...p, statusClass: getVoltageStatusClass(p.value) }))
     })
 
     const voltageStatusClass = computed(() => {
@@ -95,87 +77,69 @@ export default {
       return 'dot-good'
     })
 
-    return { t, hasData, avgVoltage, phaseItems, avgPct, voltageStatusClass }
+    return { t, hasData, avgVoltage, phaseItems, voltageStatusClass }
   },
 }
 </script>
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-4;
+  @apply col-span-full sm:col-span-6 xl:col-span-2;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
 }
 .card-header {
-  @apply flex justify-between items-center px-5 pt-4 pb-2;
+  @apply flex justify-between items-center px-4 py-2.5;
 }
 .card-title {
-  @apply text-sm font-bold text-gray-700 dark:text-white;
+  @apply text-base font-bold text-gray-800 dark:text-white flex items-center gap-2;
+}
+.card-title::before {
+  content: '';
+  @apply w-1 h-4 rounded-full bg-blue-500 inline-block flex-shrink-0;
 }
 .card-channel {
-  @apply text-xs text-gray-400 dark:text-gray-500;
+  @apply text-gray-500 dark:text-gray-500;
+  font-size: 10px;
 }
 .card-body {
-  @apply px-5 pb-5;
+  @apply px-4 py-3;
 }
-
-/* Big Number */
-.big-number {
-  @apply flex items-center gap-3 mb-4;
+/* 평균 (가운데 정렬) */
+.avg-section {
+  @apply flex flex-col items-center text-center mb-2;
+}
+.avg-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 mb-1;
+}
+.avg-value {
+  @apply text-3xl font-extrabold text-gray-800 dark:text-white tabular-nums flex items-center justify-center gap-1.5;
+}
+.avg-unit {
+  @apply text-base font-medium text-gray-600 dark:text-gray-400;
 }
 .status-dot {
-  @apply w-2.5 h-2.5 rounded-full flex-shrink-0;
+  @apply w-2 h-2 rounded-full flex-shrink-0;
 }
 .dot-good { @apply bg-green-500; }
 .dot-warn { @apply bg-amber-500; }
 .dot-danger { @apply bg-red-500; }
-.big-value {
-  @apply text-3xl font-extrabold text-gray-800 dark:text-white tabular-nums;
-}
-.big-unit {
-  @apply text-sm font-medium text-gray-400 dark:text-gray-500;
-}
-.big-label {
-  @apply text-xs text-gray-400 dark:text-gray-500;
-}
 
-/* Phase Bars */
-.phase-bars {
-  @apply space-y-2;
+/* 상별 (아래) */
+.phase-section {
+  @apply border-t border-gray-100 dark:border-gray-700 pt-3 mt-1 space-y-1;
 }
 .phase-row {
-  @apply flex items-center gap-2;
+  @apply flex justify-between items-center;
 }
 .phase-label {
-  @apply text-xs font-bold text-gray-400 dark:text-gray-500 w-5;
-}
-.bar-track {
-  @apply flex-1 h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-visible relative;
-}
-.bar-fill {
-  @apply h-full rounded-full transition-all duration-500;
-  opacity: 0.75;
-}
-.avg-marker {
-  @apply absolute top-0 h-full w-0.5 bg-gray-400 dark:bg-gray-500 rounded;
-  opacity: 0.5;
+  @apply text-sm font-semibold text-gray-600 dark:text-gray-400;
 }
 .phase-value {
-  @apply text-xs font-semibold text-gray-600 dark:text-gray-300 w-20 text-right tabular-nums;
+  @apply text-base font-bold tabular-nums;
 }
 .phase-unit {
-  @apply text-gray-400 dark:text-gray-500;
-}
-
-/* Legend */
-.legend {
-  @apply flex items-center gap-1.5 mt-3 text-xs text-gray-300 dark:text-gray-600;
-}
-.legend-line {
-  @apply w-3 h-0.5 bg-gray-400 dark:bg-gray-500 rounded;
-}
-.legend-text {
-  @apply text-xs;
+  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
 }
 </style>

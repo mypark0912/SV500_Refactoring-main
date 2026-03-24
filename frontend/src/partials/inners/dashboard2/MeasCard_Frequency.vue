@@ -6,47 +6,21 @@
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
     </div>
-
     <div class="card-body">
-      <!-- 주파수 Big Number -->
-      <div class="big-number">
-        <span class="status-dot" :class="freqStatusClass"></span>
-        <div>
-          <div class="big-value">
-            {{ currentFreq }} <span class="big-unit">Hz</span>
-          </div>
-          <span class="big-label" :class="freqStatusTextClass">{{ freqStatusText }}</span>
+      <div class="freq-content">
+        <span class="freq-label">주파수</span>
+        <div class="freq-value">
+          <span class="status-dot" :class="freqStatusClass"></span>
+          {{ currentFreq }} <span class="freq-unit">Hz</span>
         </div>
-      </div>
-
-      <!-- 미니 트렌드 차트 (최근 이력) -->
-      <div class="trend-area">
-        <span class="trend-label">최근 추이</span>
-        <div class="trend-chart" ref="chartContainer">
-          <svg v-if="freqHistory.length >= 2" :width="chartW" :height="chartH" class="overflow-visible">
-            <defs>
-              <linearGradient :id="'fg-' + channel" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" :stop-color="trendColor" stop-opacity="0.18" />
-                <stop offset="100%" :stop-color="trendColor" stop-opacity="0.02" />
-              </linearGradient>
-            </defs>
-            <polygon :points="areaPoints" :fill="`url(#fg-${channel})`" />
-            <polyline :points="linePoints" fill="none" :stroke="trendColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-            <!-- latest dot -->
-            <circle :cx="lastPt[0]" :cy="lastPt[1]" r="3.5" fill="white" :stroke="trendColor" stroke-width="2" />
-          </svg>
-        </div>
-        <div class="trend-axis">
-          <span>-{{ freqHistory.length }}min</span>
-          <span>now</span>
-        </div>
+        <span class="freq-status" :class="freqStatusTextClass">{{ freqStatusText }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRealtimeStore } from '@/store/realtime'
 
@@ -65,70 +39,6 @@ export default {
 
     const hasData = computed(() => Object.keys(data.value).length > 0)
     const currentFreq = computed(() => data.value.Freq || 0)
-
-    // 주파수 이력 (최근 60개, 1분 간격 push)
-    const freqHistory = ref([])
-    const MAX_HISTORY = 60
-
-    const pushHistory = () => {
-      const v = currentFreq.value
-      if (v > 0) {
-        freqHistory.value.push(v)
-        if (freqHistory.value.length > MAX_HISTORY) freqHistory.value.shift()
-      }
-    }
-
-    // 최초 1회 + 1분 간격 수집
-    pushHistory()
-    const timer = setInterval(pushHistory, 60000)
-    onBeforeUnmount(() => clearInterval(timer))
-
-    // 데이터 변경 시에도 수집
-    watch(currentFreq, () => {
-      // 실시간 store 가 바뀔 때마다 최신값 갱신 (마지막 값만 교체)
-      if (freqHistory.value.length > 0) {
-        freqHistory.value[freqHistory.value.length - 1] = currentFreq.value
-      }
-    })
-
-    // 차트 사이즈
-    const chartW = 260
-    const chartH = 60
-
-    const trendColor = computed(() => {
-      const v = currentFreq.value
-      if (v < 59.5 || v > 60.5) return '#ef4444'
-      if (v < 59.8 || v > 60.2) return '#f59e0b'
-      return '#22c55e'
-    })
-
-    const linePoints = computed(() => {
-      const d = freqHistory.value
-      if (d.length < 2) return ''
-      const max = Math.max(...d) + 0.05
-      const min = Math.min(...d) - 0.05
-      const range = max - min || 0.1
-      return d.map((v, i) => {
-        const x = (i / (d.length - 1)) * chartW
-        const y = chartH - ((v - min) / range) * (chartH - 4) - 2
-        return `${x},${y}`
-      }).join(' ')
-    })
-
-    const areaPoints = computed(() => {
-      if (!linePoints.value) return ''
-      return `0,${chartH} ${linePoints.value} ${chartW},${chartH}`
-    })
-
-    const lastPt = computed(() => {
-      const d = freqHistory.value
-      if (d.length < 2) return [0, 0]
-      const max = Math.max(...d) + 0.05
-      const min = Math.min(...d) - 0.05
-      const range = max - min || 0.1
-      const last = d[d.length - 1]
-      return [chartW, chartH - ((last - min) / range) * (chartH - 4) - 2]
-    })
 
     const freqStatusClass = computed(() => {
       const v = currentFreq.value
@@ -151,65 +61,54 @@ export default {
       return 'text-green-500'
     })
 
-    return {
-      t, hasData, currentFreq, freqHistory,
-      chartW, chartH, trendColor,
-      linePoints, areaPoints, lastPt,
-      freqStatusClass, freqStatusText, freqStatusTextClass,
-    }
+    return { t, hasData, currentFreq, freqStatusClass, freqStatusText, freqStatusTextClass }
   },
 }
 </script>
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-4;
+  @apply col-span-full sm:col-span-6 xl:col-span-2;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
 }
 .card-header {
-  @apply flex justify-between items-center px-5 pt-4 pb-2;
+  @apply flex justify-between items-center px-4 py-2.5;
 }
 .card-title {
-  @apply text-sm font-bold text-gray-700 dark:text-white;
+  @apply text-base font-bold text-gray-800 dark:text-white flex items-center gap-2;
+}
+.card-title::before {
+  content: '';
+  @apply w-1 h-4 rounded-full bg-emerald-500 inline-block flex-shrink-0;
 }
 .card-channel {
-  @apply text-xs text-gray-400 dark:text-gray-500;
+  @apply text-gray-500 dark:text-gray-500;
+  font-size: 10px;
 }
 .card-body {
-  @apply px-5 pb-5;
+  @apply px-4 py-3;
 }
-.big-number {
-  @apply flex items-center gap-3 mb-4;
+.freq-content {
+  @apply flex flex-col items-center justify-center py-1;
+}
+.freq-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 mb-1;
+}
+.freq-value {
+  @apply text-3xl font-extrabold text-gray-800 dark:text-white tabular-nums flex items-center gap-2;
+}
+.freq-unit {
+  @apply text-base font-medium text-gray-600 dark:text-gray-400;
 }
 .status-dot {
-  @apply w-2.5 h-2.5 rounded-full flex-shrink-0;
+  @apply w-2 h-2 rounded-full flex-shrink-0;
 }
 .dot-good { @apply bg-green-500; }
 .dot-warn { @apply bg-amber-500; }
 .dot-danger { @apply bg-red-500; }
-.big-value {
-  @apply text-3xl font-extrabold text-gray-800 dark:text-white tabular-nums;
-}
-.big-unit {
-  @apply text-sm font-medium text-gray-400 dark:text-gray-500;
-}
-.big-label {
-  @apply text-xs font-medium;
-}
-
-/* Trend */
-.trend-area {
-  @apply bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3;
-}
-.trend-label {
-  @apply text-xs text-gray-400 dark:text-gray-500 block mb-2;
-}
-.trend-chart {
-  @apply w-full;
-}
-.trend-axis {
-  @apply flex justify-between mt-1 text-xs text-gray-300 dark:text-gray-600;
+.freq-status {
+  @apply text-sm font-semibold mt-1;
 }
 </style>

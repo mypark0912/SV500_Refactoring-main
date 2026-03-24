@@ -1,17 +1,9 @@
 <template>
-    <div :class="widCss" class="bg-white dark:bg-gray-800 shadow-sm rounded-xl">
-    <div class="card">
-      <div class="premium-card-header">
-        <div class="header-content">
-          <div class="header-left">
-            <h2 class="card-title">
-              {{ cTitle }}
-            </h2>    
-          </div>  
-        </div>
-      </div> 
-    </div>
-      <div class="p-3 space-y-4">
+    <div :class="widCss" class="meter-card">
+      <div class="meter-card-header">
+        <h3 class="meter-card-title" :class="accentClass">{{ cTitle }}</h3>
+      </div>
+      <div class="meter-card-body">
         <MeterTable v-if="mode === 0" :data="data" :channel="channel" />
         <MeterTable3 v-else-if="mode === 1"  :data="data" :channel="channel"/>
         <MeterTable4 v-else :data="data" :channel="channel"/>
@@ -79,6 +71,15 @@ import MeterTable4 from './MeterTable4.vue';
           { immediate: true }
         );
 
+        const accentClass = computed(() => {
+          if (props.title === 'Meter') return 'meter-accent-blue'
+          if (props.title === 'THD') return 'meter-accent-violet'
+          if (props.title === 'Power') return 'meter-accent-emerald'
+          if (props.title === 'Demand') return 'meter-accent-amber'
+          if (props.title === 'Demand I') return 'meter-accent-orange'
+          return 'meter-accent-blue'
+        })
+
         return {
           channel,
           data,
@@ -86,11 +87,12 @@ import MeterTable4 from './MeterTable4.vue';
           t,
           cTitle,
           mode,
+          accentClass,
         };
       }
     }
     </script>
 
-    <style>
-    @import '../../../css/card-styles.css';
+    <style scoped>
+    @import '../../../css/meter-card.css';
     </style>

@@ -45,8 +45,13 @@
               <!-- Tab Content -->
               <div v-for="(tab, index) in tabs" :key="index">
                 <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
-                  <!-- 콤보박스 -->
-                  <div class="mt-2 mb-4 flex items-center gap-x-2">
+                  <!-- Status 탭: PQ 진단 -->
+                  <template v-if="activeTab === 'Status'">
+                    <DiagnosisTab :channel="channelComputed" :asset="assetConfig" mode="PowerQuality" :key="`pq-status-${statusRefreshKey}`" />
+                  </template>
+
+                  <!-- 콤보박스 (Harmonics / Waveform 탭만) -->
+                  <div v-if="activeTab !== 'Status'" class="mt-2 mb-4 flex items-center gap-x-2">
                     <span v-if="isShowDriveType">DriveType : {{ driveType }}</span>
                     <span v-if="isShowDriveType" class="mx-3 text-gray-300 dark:text-gray-600">|</span>
                     <label :for="tab.name + '-select'" 
@@ -73,8 +78,8 @@
                     </div>
                   </div>
 
-                  <!-- 차트 컨테이너 -->
-                  <div class="flex flex-col space-y-4">
+                  <!-- 차트 컨테이너 (Harmonics / Waveform 탭만) -->
+                  <div v-if="activeTab !== 'Status'" class="flex flex-col space-y-4">
                     <!-- DOL 모드: 3개 차트 -->
                     <template v-if="driveType !== 'VFD'">
                       <BarChart v-if="
@@ -138,6 +143,7 @@ import BarChart from "../../charts/connect/BarChart05.vue";
 import LineChart from "../../charts/connect/LineChart02.vue";
 import Report_table from "../../partials/inners/power/ReportTable2.vue";
 import PowerQ_Table from "../../partials/inners/power/PowerQ_Table.vue";
+import DiagnosisTab from "../../partials/inners/diagnosis/DiagnosisTab.vue";
 import { tailwindConfig } from "../../utils/Utils";
 import { useI18n } from "vue-i18n";
 import { useSetupStore } from '@/store/setup'
@@ -152,6 +158,7 @@ export default {
     LineChart,
     Report_table,
     PowerQ_Table,
+    DiagnosisTab,
   },
   setup(props) {
     const { t } = useI18n();
@@ -179,6 +186,8 @@ export default {
     const dataInterval = ref(null);
     const isComponentActive = ref(false);
     const isInitializing = ref(false);
+    const statusRefreshKey = ref(0);
+    const statusInterval = ref(null);
 
     let timeout_harmonics = 5;
 
@@ -233,6 +242,8 @@ export default {
         return setupStore.getAssetConfig.assetName_sub;
     });
 
+    const assetConfig = computed(() => setupStore.getAssetConfig);
+
     const isShowDriveType = computed(()=>{
       if (channelComputed.value == 'Main' || channelComputed.value == 'main'){
         const isTrans = setupStore.getAssetConfig.assetType_main == 'Transformer' || setupStore.getAssetConfig.assetType_main == 'PrimaryTransformer';
@@ -270,6 +281,12 @@ export default {
         ],
       };
 
+      const statusTab = {
+        name: "Status",
+        label: t("pq.tabs.status"),
+        options: [],
+      };
+
       if (driveType.value === 'VFD') {
         return [
           {
@@ -281,6 +298,7 @@ export default {
             ],
           },
           waveformTab,
+          statusTab,
         ];
       } else {
         return [
@@ -294,6 +312,7 @@ export default {
             ],
           },
           waveformTab,
+          statusTab,
         ];
       }
     });
@@ -693,9 +712,26 @@ export default {
       }
     };
 
+    const startStatusInterval = () => {
+      stopStatusInterval();
+      if (isComponentActive.value) {
+        statusInterval.value = setInterval(() => {
+          statusRefreshKey.value++;
+        }, 5 * 60 * 1000);
+      }
+    };
+
+    const stopStatusInterval = () => {
+      if (statusInterval.value) {
+        clearInterval(statusInterval.value);
+        statusInterval.value = null;
+      }
+    };
+
     const stopAllIntervals = () => {
       stopInterval();
       stopWaveInterval();
+      stopStatusInterval();
     };
 
     const refreshWaveData = async () => {
@@ -796,7 +832,10 @@ export default {
         initSelectedOptions();
         
         // 현재 탭에 따라 데이터 로드
-        if (activeTab.value === 'Harmonics') {
+        if (activeTab.value === 'Status') {
+          statusRefreshKey.value++;
+          startStatusInterval();
+        } else if (activeTab.value === 'Harmonics') {
           await startInterval();
         } else if (activeTab.value === 'Waveform') {
           await startWave();
@@ -868,6 +907,10 @@ export default {
         await endWave();
       }
 
+      if (newTab === 'Status') {
+        startStatusInterval();
+      }
+
       if (newTab === 'Harmonics') {
         await startInterval();
       }
@@ -914,6 +957,8 @@ export default {
       vfdChartMode,
       asset,
       isShowDriveType,
+      assetConfig,
+      statusRefreshKey,
     };
   },
 };

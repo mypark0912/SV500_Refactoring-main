@@ -257,7 +257,8 @@
     },
     "tabs": {
       "harmonics": "高調波",
-      "waveform": "波形"
+      "waveform": "波形",
+      "status": "状態"
     },
     "options": {
       "phaseVoltage": "相電圧",

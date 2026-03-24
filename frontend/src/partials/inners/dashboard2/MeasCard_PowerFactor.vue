@@ -6,50 +6,42 @@
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
     </div>
-
     <div class="card-body">
-      <div class="pf-power-grid">
-        <!-- 역률 반원 게이지 -->
-        <div class="gauge-area">
-          <span class="gauge-label">{{ t('dashboard.pq.powerfactor') }}</span>
-          <div class="gauge-wrap">
-            <svg :width="gaugeSize" :height="gaugeSize * 0.55" :viewBox="`0 0 ${gaugeSize} ${gaugeSize * 0.55}`">
-              <!-- background arc -->
-              <path :d="arcPath" fill="none" stroke="#f1f5f9" stroke-width="10" stroke-linecap="round"
+      <div class="pf-row">
+        <!-- 역률 링 게이지 -->
+        <div class="gauge-section">
+          <div class="ring-gauge">
+            <svg :width="ringSize" :height="ringSize" class="-rotate-90">
+              <circle :cx="ringSize/2" :cy="ringSize/2" :r="ringR"
+                fill="none" stroke="#f1f5f9" :stroke-width="ringStroke"
                 class="dark:stroke-gray-700" />
-              <!-- value arc -->
-              <path :d="arcPath" fill="none" :stroke="pfColor" stroke-width="10" stroke-linecap="round"
-                :stroke-dasharray="arcLength" :stroke-dashoffset="arcOffset"
-                class="transition-all duration-700" />
-              <!-- center value -->
-              <text :x="gaugeSize / 2" :y="gaugeSize * 0.48" text-anchor="middle"
-                :fill="pfColor" font-weight="800" font-size="20" class="tabular-nums">
-                {{ pfValue }}%
-              </text>
+              <circle :cx="ringSize/2" :cy="ringSize/2" :r="ringR"
+                fill="none" :stroke="pfColor" :stroke-width="ringStroke"
+                :stroke-dasharray="ringCirc" :stroke-dashoffset="ringOffset"
+                stroke-linecap="round" class="transition-all duration-700" />
             </svg>
+            <div class="ring-center">
+              <span class="ring-value" :style="{ color: pfColor }">{{ pfDisplay }}</span>
+              <span class="ring-unit">%</span>
+            </div>
           </div>
+          <span class="gauge-title">{{ t('dashboard.pq.powerfactor') }}</span>
           <span class="pf-status" :class="pfStatusClass">{{ pfStatusText }}</span>
         </div>
 
-        <!-- 전력 수치 (P / Q / S) -->
-        <div class="power-stack">
+        <!-- 전력 수치 -->
+        <div class="power-section">
           <div class="power-item">
             <span class="power-label">유효전력 (P)</span>
-            <div class="power-value">
-              {{ data.P4 || 0 }} <span class="power-unit">kW</span>
-            </div>
+            <div class="power-value">{{ data.P4 || 0 }} <span class="power-unit">kW</span></div>
           </div>
           <div class="power-item">
             <span class="power-label">무효전력 (Q)</span>
-            <div class="power-value">
-              {{ data.Q4 || 0 }} <span class="power-unit">kVar</span>
-            </div>
+            <div class="power-value">{{ data.Q4 || 0 }} <span class="power-unit">kVar</span></div>
           </div>
           <div class="power-item">
             <span class="power-label">피상전력 (S)</span>
-            <div class="power-value">
-              {{ data.S4 || 0 }} <span class="power-unit">kVA</span>
-            </div>
+            <div class="power-value">{{ data.S4 || 0 }} <span class="power-unit">kVA</span></div>
           </div>
         </div>
       </div>
@@ -76,50 +68,43 @@ export default {
     })
 
     const hasData = computed(() => Object.keys(data.value).length > 0)
-    const pfValue = computed(() => {
-      const v = data.value.PF4
-      return v != null ? parseFloat(v).toFixed(2) : '0.00'
-    })
+    const pfValue = computed(() => parseFloat(data.value.PF4) || 0)
+    const pfDisplay = computed(() => pfValue.value.toFixed(2))
 
-    // Gauge calculations
-    const gaugeSize = 140
-    const r = gaugeSize * 0.4
-    const arcLength = Math.PI * r
-
-    const arcPath = computed(() => {
-      const s = gaugeSize
-      return `M ${s * 0.1} ${s * 0.5} A ${r} ${r} 0 0 1 ${s * 0.9} ${s * 0.5}`
-    })
-
-    const arcOffset = computed(() => {
-      const pf = Math.min(Math.max(parseFloat(pfValue.value) || 0, 0), 100)
-      return arcLength * (1 - pf / 100)
+    // Ring gauge calculations
+    const ringSize = 96
+    const ringStroke = 8
+    const ringR = (ringSize - ringStroke) / 2
+    const ringCirc = 2 * Math.PI * ringR
+    const ringOffset = computed(() => {
+      const pct = Math.min(pfValue.value / 100, 1)
+      return ringCirc * (1 - pct)
     })
 
     const pfColor = computed(() => {
-      const v = parseFloat(pfValue.value) || 0
+      const v = pfValue.value
       if (v >= 95) return '#22c55e'
       if (v >= 85) return '#f59e0b'
       return '#ef4444'
     })
 
     const pfStatusClass = computed(() => {
-      const v = parseFloat(pfValue.value) || 0
+      const v = pfValue.value
       if (v >= 95) return 'text-green-500'
       if (v >= 85) return 'text-amber-500'
       return 'text-red-500'
     })
 
     const pfStatusText = computed(() => {
-      const v = parseFloat(pfValue.value) || 0
+      const v = pfValue.value
       if (v >= 95) return '양호'
       if (v >= 85) return '주의'
       return '기준 미달'
     })
 
     return {
-      t, data, hasData, pfValue,
-      gaugeSize, arcPath, arcLength, arcOffset, pfColor,
+      t, data, hasData, pfDisplay, pfColor,
+      ringSize, ringStroke, ringR, ringCirc, ringOffset,
       pfStatusClass, pfStatusText,
     }
   },
@@ -128,57 +113,71 @@ export default {
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-5;
+  @apply col-span-full sm:col-span-6 xl:col-span-3;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
 }
 .card-header {
-  @apply flex justify-between items-center px-5 pt-4 pb-2;
+  @apply flex justify-between items-center px-4 py-2.5;
 }
 .card-title {
-  @apply text-sm font-bold text-gray-700 dark:text-white;
+  @apply text-base font-bold text-gray-800 dark:text-white flex items-center gap-2;
+}
+.card-title::before {
+  content: '';
+  @apply w-1 h-4 rounded-full bg-violet-500 inline-block flex-shrink-0;
 }
 .card-channel {
-  @apply text-xs text-gray-400 dark:text-gray-500;
+  @apply text-gray-500 dark:text-gray-500;
+  font-size: 10px;
 }
 .card-body {
-  @apply px-5 pb-5;
+  @apply px-4 py-3;
 }
 
-/* Grid layout */
-.pf-power-grid {
-  @apply grid grid-cols-2 gap-4;
+.pf-row {
+  @apply grid items-center gap-3;
+  grid-template-columns: 4fr 6fr;
 }
 
-/* Gauge area */
-.gauge-area {
-  @apply flex flex-col items-center bg-gray-50 dark:bg-gray-700/50 rounded-xl py-4;
+/* Ring Gauge */
+.gauge-section {
+  @apply flex flex-col items-center;
 }
-.gauge-label {
-  @apply text-xs text-gray-400 dark:text-gray-500 mb-1;
+.ring-gauge {
+  @apply relative;
 }
-.gauge-wrap {
-  @apply flex justify-center;
+.ring-center {
+  @apply absolute inset-0 flex items-center justify-center flex-col;
+}
+.ring-value {
+  @apply text-xl font-extrabold tabular-nums leading-none;
+}
+.ring-unit {
+  @apply text-xs text-gray-600 dark:text-gray-400;
+}
+.gauge-title {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
 }
 .pf-status {
-  @apply text-xs font-semibold mt-1;
+  @apply text-sm font-semibold;
 }
 
-/* Power stack */
-.power-stack {
-  @apply flex flex-col gap-3 justify-center;
+/* Power */
+.power-section {
+  @apply space-y-1.5;
 }
 .power-item {
-  @apply bg-gray-50 dark:bg-gray-700/50 rounded-xl px-4 py-3;
+  @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg px-2.5 py-1.5;
 }
 .power-label {
-  @apply text-xs text-gray-400 dark:text-gray-500;
+  @apply text-sm text-gray-600 dark:text-gray-400;
 }
 .power-value {
-  @apply text-xl font-bold text-gray-800 dark:text-white mt-1 tabular-nums;
+  @apply text-lg font-bold text-gray-800 dark:text-white tabular-nums;
 }
 .power-unit {
-  @apply text-sm font-medium text-gray-400 dark:text-gray-500;
+  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
 }
 </style>

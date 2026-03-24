@@ -6,57 +6,36 @@
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
     </div>
-
     <div class="card-body">
-      <div class="pq-grid">
-        <!-- 불평형률 -->
-        <div class="pq-section">
-          <span class="section-label">전압/전류 불평형률</span>
-          <div class="unbalance-bars">
-            <!-- 전압 불평형 -->
-            <div class="ubal-row">
-              <span class="ubal-label">전압</span>
-              <div class="ubal-track">
-                <div class="ubal-fill bg-violet-400 dark:bg-violet-300"
-                  :style="{ width: Math.min((ubalVoltage / 5) * 100, 100) + '%' }"></div>
-                <div class="ubal-threshold" :style="{ left: '60%' }"></div>
-              </div>
-              <div class="ubal-value-wrap">
-                <span class="ubal-dot" :class="getUnbalanceStatusClass(ubalVoltage)"></span>
-                <span class="ubal-value">{{ ubalVoltage.toFixed(1) }}%</span>
-              </div>
-            </div>
-            <!-- 전류 불평형 -->
-            <div class="ubal-row">
-              <span class="ubal-label">전류</span>
-              <div class="ubal-track">
-                <div class="ubal-fill bg-sky-400 dark:bg-sky-300"
-                  :style="{ width: Math.min((ubalCurrent / 5) * 100, 100) + '%' }"></div>
-                <div class="ubal-threshold" :style="{ left: '60%' }"></div>
-              </div>
-              <div class="ubal-value-wrap">
-                <span class="ubal-dot" :class="getUnbalanceStatusClass(ubalCurrent)"></span>
-                <span class="ubal-value">{{ ubalCurrent.toFixed(1) }}%</span>
-              </div>
-            </div>
+      <!-- 상단: 불평형률 수평 바 -->
+      <div class="section-group">
+        <span class="section-title">불평형률</span>
+        <div class="hbar-item">
+          <span class="hbar-label">전압</span>
+          <div class="hbar-track">
+            <div class="hbar-fill" :style="{ width: ubalVWidthPct + '%', backgroundColor: ubalVColor }"></div>
           </div>
-          <div class="threshold-legend">
-            <span class="threshold-line"></span>
-            <span class="threshold-text">허용 기준 (3%)</span>
-          </div>
+          <span class="hbar-value" :style="{ color: ubalVColor }">{{ ubalVoltage.toFixed(1) }}%</span>
         </div>
+        <div class="hbar-item">
+          <span class="hbar-label">전류</span>
+          <div class="hbar-track">
+            <div class="hbar-fill" :style="{ width: ubalIWidthPct + '%', backgroundColor: ubalIColor }"></div>
+          </div>
+          <span class="hbar-value" :style="{ color: ubalIColor }">{{ ubalCurrent.toFixed(1) }}%</span>
+        </div>
+      </div>
 
-        <!-- 고조파 왜곡률 (THD bar chart) -->
-        <div class="pq-section">
-          <span class="section-label">고조파 왜곡률</span>
-          <div class="thd-chart">
-            <div v-for="item in thdItems" :key="item.label" class="thd-bar-item">
-              <span class="thd-bar-value">{{ item.value }}%</span>
-              <div class="thd-bar-track">
-                <div class="thd-bar-fill" :style="{ height: item.heightPct + '%', backgroundColor: item.color }"></div>
-              </div>
-              <span class="thd-bar-label">{{ item.label }}</span>
+      <!-- 하단: 고조파 왜곡률 수직 바 차트 -->
+      <div class="section-group mt-4">
+        <span class="section-title">고조파 왜곡률</span>
+        <div class="vbar-chart">
+          <div v-for="item in thdItems" :key="item.label" class="vbar-item">
+            <span class="vbar-value" :style="{ color: item.color }">{{ item.value }}%</span>
+            <div class="vbar-track">
+              <div class="vbar-fill" :style="{ height: item.heightPct + '%', backgroundColor: item.color }"></div>
             </div>
+            <span class="vbar-label">{{ item.label }}</span>
           </div>
         </div>
       </div>
@@ -83,13 +62,28 @@ export default {
     })
 
     const hasData = computed(() => Object.keys(data.value).length > 0)
-
     const ubalVoltage = computed(() => parseFloat(data.value.Ubal1) || 0)
     const ubalCurrent = computed(() => parseFloat(data.value.Ibal1) || 0)
 
+    // Horizontal bar helpers
+    const getUnbalColor = (v) => {
+      if (v >= 3) return '#ef4444'
+      if (v >= 2) return '#f59e0b'
+      if (v >= 1) return '#eab308'
+      return '#22c55e'
+    }
+
+    const ubalVColor = computed(() => getUnbalColor(ubalVoltage.value))
+    const ubalIColor = computed(() => getUnbalColor(ubalCurrent.value))
+
+    // max 5% scale for unbalance → width percentage
+    const ubalVWidthPct = computed(() => Math.min((ubalVoltage.value / 5) * 100, 100))
+    const ubalIWidthPct = computed(() => Math.min((ubalCurrent.value / 5) * 100, 100))
+
+    // THD
     const thdItems = computed(() => {
       const items = [
-        { label: 'THD-U', key: 'thdu total', color: '#f87171' },
+        { label: 'THD-U', key: 'thdu total', color: '#8b5cf6' },
         { label: 'THD-I', key: 'thdi total', color: '#60a5fa' },
         { label: 'TDD-I', key: 'tddi total', color: '#2dd4bf' },
       ]
@@ -99,121 +93,90 @@ export default {
         label: it.label,
         value: values[i].toFixed(1),
         color: it.color,
+        widthPct: Math.max((values[i] / maxVal) * 100, 5),
         heightPct: Math.max((values[i] / maxVal) * 100, 5),
       }))
     })
 
-    const getUnbalanceStatusClass = (value) => {
-      if (value >= 3) return 'dot-danger'
-      if (value >= 2) return 'dot-warn'
-      if (value >= 1) return 'dot-caution'
-      return 'dot-good'
+    return {
+      t, hasData, ubalVoltage, ubalCurrent, thdItems,
+      ubalVColor, ubalIColor, ubalVWidthPct, ubalIWidthPct,
     }
-
-    return { t, data, hasData, ubalVoltage, ubalCurrent, thdItems, getUnbalanceStatusClass }
   },
 }
 </script>
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-7;
+  @apply col-span-full sm:col-span-6 xl:col-span-3;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
 }
 .card-header {
-  @apply flex justify-between items-center px-5 pt-4 pb-2;
+  @apply flex justify-between items-center px-4 py-2.5;
 }
 .card-title {
-  @apply text-sm font-bold text-gray-700 dark:text-white;
+  @apply text-base font-bold text-gray-800 dark:text-white flex items-center gap-2;
+}
+.card-title::before {
+  content: '';
+  @apply w-1 h-4 rounded-full bg-orange-500 inline-block flex-shrink-0;
 }
 .card-channel {
-  @apply text-xs text-gray-400 dark:text-gray-500;
+  @apply text-gray-500 dark:text-gray-500;
+  font-size: 10px;
 }
 .card-body {
-  @apply px-5 pb-5;
+  @apply px-4 py-3;
 }
 
-/* PQ Grid */
-.pq-grid {
-  @apply grid grid-cols-2 gap-5;
+/* Section */
+.section-group {
+  @apply space-y-1.5;
 }
-.pq-section {
-  @apply space-y-3;
-}
-.section-label {
-  @apply text-xs font-medium text-gray-500 dark:text-gray-400 block;
+.section-title {
+  @apply text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1.5;
 }
 
-/* Unbalance Bars */
-.unbalance-bars {
-  @apply space-y-3;
-}
-.ubal-row {
+/* Horizontal bar (불평형률) */
+.hbar-item {
   @apply flex items-center gap-2;
 }
-.ubal-label {
-  @apply text-xs text-gray-500 dark:text-gray-400 w-6;
+.hbar-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 w-8 flex-shrink-0;
 }
-.ubal-track {
-  @apply flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-visible relative;
+.hbar-track {
+  @apply flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden;
 }
-.ubal-fill {
+.hbar-fill {
   @apply h-full rounded-full transition-all duration-500;
+  min-width: 4px;
 }
-.ubal-threshold {
-  @apply absolute top-0 h-full w-0.5 bg-red-300 dark:bg-red-400 rounded;
-  opacity: 0.5;
-}
-.ubal-value-wrap {
-  @apply flex items-center gap-1.5 w-16 justify-end;
-}
-.ubal-dot {
-  @apply w-1.5 h-1.5 rounded-full flex-shrink-0;
-}
-.dot-good { @apply bg-green-500; }
-.dot-caution { @apply bg-yellow-500; }
-.dot-warn { @apply bg-amber-500; }
-.dot-danger { @apply bg-red-500; }
-.ubal-value {
-  @apply text-xs font-semibold text-gray-600 dark:text-gray-300 tabular-nums;
+.hbar-value {
+  @apply text-sm font-bold tabular-nums w-12 text-right flex-shrink-0;
 }
 
-/* Threshold legend */
-.threshold-legend {
-  @apply flex items-center gap-1.5 text-xs text-gray-300 dark:text-gray-600;
+/* Vertical bar chart (고조파) */
+.vbar-chart {
+  @apply flex items-end justify-around gap-3;
+  min-height: 80px;
 }
-.threshold-line {
-  @apply w-0.5 h-2.5 bg-red-300 dark:bg-red-400 rounded;
-  opacity: 0.6;
-}
-.threshold-text {
-  @apply text-xs;
-}
-
-/* THD Bar Chart */
-.thd-chart {
-  @apply flex items-end justify-center gap-4;
-  height: 120px;
-}
-.thd-bar-item {
+.vbar-item {
   @apply flex flex-col items-center gap-1 flex-1;
-  max-width: 48px;
 }
-.thd-bar-value {
-  @apply text-xs font-bold text-gray-600 dark:text-gray-300 tabular-nums;
+.vbar-value {
+  @apply text-sm font-bold tabular-nums;
 }
-.thd-bar-track {
+.vbar-track {
   @apply w-full flex items-end;
-  height: 80px;
+  height: 60px;
 }
-.thd-bar-fill {
-  @apply w-full rounded-t-lg transition-all duration-500;
-  min-height: 4px;
+.vbar-fill {
+  @apply w-full rounded-t-md transition-all duration-500;
+  min-height: 3px;
 }
-.thd-bar-label {
-  @apply text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap;
-  font-size: 10px;
+.vbar-label {
+  @apply text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap;
 }
 </style>

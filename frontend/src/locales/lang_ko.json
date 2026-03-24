@@ -574,7 +574,8 @@
     },
     "tabs": {
       "harmonics": "고조파",
-      "waveform": "파형"
+      "waveform": "파형",
+      "status": "상태"
     },
     "options": {
       "phaseVoltage": "상전압",

@@ -577,7 +577,8 @@
     },
     "tabs": {
       "harmonics": "Harmonics",
-      "waveform": "Waveform"
+      "waveform": "Waveform",
+      "status": "Status"
     },
     "options": {
       "phaseVoltage": "Phase Voltage",

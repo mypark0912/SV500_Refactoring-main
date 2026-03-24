@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-12 gap-x-4 gap-y-4">
-    <!-- Row 1: 전압 / 전류 / 주파수 (4 + 4 + 4) -->
+    <!-- Row 1: 전압(2) / 전류(2) / 주파수(2) / 역률·유효전력(3) / 불평형률·고조파(3) -->
     <MeasCard_Voltage
       v-if="channelState.MainEnable || channelState.SubEnable"
       :channel="computedChannel"
@@ -13,8 +13,6 @@
       v-if="channelState.MainEnable || channelState.SubEnable"
       :channel="computedChannel"
     />
-
-    <!-- Row 2: 역률·유효전력 (5) / 불평형률·고조파 (7) -->
     <MeasCard_PowerFactor
       v-if="channelState.MainEnable || channelState.SubEnable"
       :channel="computedChannel"
@@ -24,8 +22,12 @@
       :channel="computedChannel"
     />
 
-    <!-- Row 3: 전력량 현황 (12) -->
+    <!-- Row 2: 전력량(7) / 알람·이벤트 로그(5) -->
     <MeasCard_Energy
+      v-if="channelState.MainEnable || channelState.SubEnable"
+      :channel="computedChannel"
+    />
+    <MeasCard_EventLog
       v-if="channelState.MainEnable || channelState.SubEnable"
       :channel="computedChannel"
     />
@@ -40,6 +42,7 @@ import MeasCard_Frequency from '../../partials/inners/dashboard2/MeasCard_Freque
 import MeasCard_PowerFactor from '../../partials/inners/dashboard2/MeasCard_PowerFactor.vue'
 import MeasCard_PQ from '../../partials/inners/dashboard2/MeasCard_PQ.vue'
 import MeasCard_Energy from '../../partials/inners/dashboard2/MeasCard_Energy.vue'
+import MeasCard_EventLog from '../../partials/inners/dashboard2/MeasCard_EventLog.vue'
 
 export default {
   name: 'MeasuringLayout',
@@ -50,6 +53,7 @@ export default {
     MeasCard_PowerFactor,
     MeasCard_PQ,
     MeasCard_Energy,
+    MeasCard_EventLog,
   },
   props: {
     channelState: {
