@@ -36,13 +36,13 @@
 
 <script>
 import { computed } from 'vue'
-import MeasCard_Voltage from '../../partials/inners/dashboard2/MeasCard_Voltage.vue'
-import MeasCard_Current from '../../partials/inners/dashboard2/MeasCard_Current.vue'
-import MeasCard_Frequency from '../../partials/inners/dashboard2/MeasCard_Frequency.vue'
-import MeasCard_PowerFactor from '../../partials/inners/dashboard2/MeasCard_PowerFactor.vue'
-import MeasCard_PQ from '../../partials/inners/dashboard2/MeasCard_PQ.vue'
-import MeasCard_Energy from '../../partials/inners/dashboard2/MeasCard_Energy.vue'
-import MeasCard_EventLog from '../../partials/inners/dashboard2/MeasCard_EventLog.vue'
+import MeasCard_Voltage from '../../partials/modeview/dashboard2/MeasCard_Voltage.vue'
+import MeasCard_Current from '../../partials/modeview/dashboard2/MeasCard_Current.vue'
+import MeasCard_Frequency from '../../partials/modeview/dashboard2/MeasCard_Frequency.vue'
+import MeasCard_PowerFactor from '../../partials/modeview/dashboard2/MeasCard_PowerFactor.vue'
+import MeasCard_PQ from '../../partials/modeview/dashboard2/MeasCard_PQ.vue'
+import MeasCard_Energy from '../../partials/modeview/dashboard2/MeasCard_Energy.vue'
+import MeasCard_EventLog from '../../partials/modeview/dashboard2/MeasCard_EventLog.vue'
 
 export default {
   name: 'MeasuringLayout',
