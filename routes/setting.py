@@ -3544,10 +3544,13 @@ async def check_comm(asset):
 
 @router.get('/checkSmart')
 def check_smart():
-    if is_service_active("smartsystemsrestapiservice"):
-        return {"success": True}
+    if int(os_spec.mode) != 3:
+        if is_service_active("smartsystemsrestapiservice"):
+            return {"success": True}
+        else:
+            return {"success": False}
     else:
-        return {"success": False}
+        return {"success": True}
 
 
 @router.get('/manageSmart/{mode}')
