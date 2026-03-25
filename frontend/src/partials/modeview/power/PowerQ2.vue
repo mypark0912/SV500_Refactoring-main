@@ -137,14 +137,14 @@
 import { ref, watch, computed, nextTick, onMounted, onUnmounted, onBeforeUnmount, reactive } from "vue";
 import { useRoute } from "vue-router";
 import axios from "axios";
-import Sidebar from "../common/SideBar3.vue";
-import Header from "../common/Header.vue";
-import BarChart from "../../charts/connect/BarChart05.vue";
-import LineChart from "../../charts/connect/LineChart02.vue";
-import Report_table from "../../partials/inners/power/ReportTable2.vue";
-import PowerQ_Table from "../../partials/inners/power/PowerQ_Table.vue";
-import DiagnosisTab from "../../partials/inners/diagnosis/DiagnosisTab.vue";
-import { tailwindConfig } from "../../utils/Utils";
+import Sidebar from "../../../pages/common/SideBar3.vue";
+import Header from "../../../pages/common/Header.vue";
+import BarChart from "../../../charts/connect/BarChart05.vue";
+import LineChart from "../../../charts/connect/LineChart02.vue";
+import Report_table from "../../inners/power/ReportTable2.vue";
+import PowerQ_Table from "../../inners/power/PowerQ_Table.vue";
+import DiagnosisTab from "../../inners/diagnosis/DiagnosisTab.vue";
+import { tailwindConfig } from "../../../utils/Utils";
 import { useI18n } from "vue-i18n";
 import { useSetupStore } from '@/store/setup'
 

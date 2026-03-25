@@ -434,7 +434,7 @@
         inputDict.value.useFuction.ftp = inputDict.value.useFuction.ftp === 1 ? 0 : 1;
       };
 
-      const toggleDiagnosis = (channelType) => {
+      const toggleDiagnosis = async(channelType) => {
         if (isSaving.value) return;
         if (channelType === "sub" && !channel_sub.value?.Enable) {
           alert("Sub 채널이 비활성화되어 있습니다. 먼저 Sub 채널을 활성화해주세요.");
@@ -442,7 +442,8 @@
         }
         inputDict.value.useFuction[`diagnosis_${channelType}`] = !inputDict.value.useFuction[`diagnosis_${channelType}`];
         if (inputDict.value.useFuction[`diagnosis_${channelType}`]) {
-          if (!checkSmart()) {
+          const active = await checkSmart();
+          if (!active) {
             if (confirm("Not running diagnostic service. Do you want to run service?")) {
               manageSmart(1);
             } else {

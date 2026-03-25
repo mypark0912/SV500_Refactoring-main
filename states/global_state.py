@@ -22,6 +22,7 @@ AES_KEY = b'ntekSystem_20250721_mypark_caner'  # 16바이트 (AES-128)
 class OsSpec:
     def __init__(self, mode):
         self.os = self.get_os_info()
+        self.mode = mode
         if self.os == 'Windows':
             self.influxip = '192.168.1.91'
             self.restip = '192.168.1.24'
