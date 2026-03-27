@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists, saveLog
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists, updateLog
 from datetime import datetime
 router = APIRouter()
 
@@ -283,7 +283,7 @@ async def set_system_time(data: TimeSetRequest, request: Request):
 
         subprocess.run("hwclock -w", shell=True, check=True)
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
-        saveLog("Set Time", request)
+        updateLog("Set Time", request)
         return {
             "success": True,
             "message": "System time updated",
