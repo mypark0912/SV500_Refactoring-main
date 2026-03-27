@@ -274,17 +274,16 @@ async def get_device_time():
 
 @router.post("/calibrate/setSystemTime")
 async def set_system_time(data: TimeSetRequest, request: Request):
-    saveLog("Set Time", request)
     try:
         tz_cmd = f"timedatectl set-timezone {data.timezone}"
         subprocess.run(tz_cmd, shell=True, check=True)
         date_cmd = f"date -s '{data.datetime_str}'"
         result = subprocess.run(date_cmd, shell=True, check=True, capture_output=True, text=True)
-        print(f"System time set to: {data.datetime_str}")
+        # print(f"System time set to: {data.datetime_str}")
 
         subprocess.run("hwclock -w", shell=True, check=True)
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
-
+        saveLog("Set Time", request)
         return {
             "success": True,
             "message": "System time updated",
