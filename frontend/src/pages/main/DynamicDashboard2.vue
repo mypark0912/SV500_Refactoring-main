@@ -77,7 +77,7 @@
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
-  import DualChannelLayout from '../layouts/DualChannelLayout.vue' 
+  import DualChannelLayout from '../layouts/DualChannel_NewCSS.vue'
   import IntegratedLayout from '../layouts/IntegratedLayout3.vue'  
   import MeasureLayout from '../layouts/MeasuringLayout.vue'  
   import Footer from "../common/Footer.vue"
