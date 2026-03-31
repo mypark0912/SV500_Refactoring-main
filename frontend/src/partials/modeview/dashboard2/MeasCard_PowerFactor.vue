@@ -1,7 +1,7 @@
 <template>
   <div v-if="hasData" class="card-wrap">
     <div class="card-header">
-      <h3 class="card-title">역률 · 유효전력</h3>
+      <h3 class="card-title meter-accent-violet">{{ t('dashboard.powerCard') }}</h3>
       <span class="card-channel">
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
@@ -32,16 +32,16 @@
         <!-- 전력 수치 -->
         <div class="power-section">
           <div class="power-item">
-            <span class="power-label">유효전력 (P)</span>
-            <div class="power-value">{{ data.P4 || 0 }} <span class="power-unit">kW</span></div>
+            <span class="power-label">{{ t('dashboard.activePower') }}</span>
+            <div class="power-value">{{ (data.P4 || 0).toFixed(2) }} <span class="power-unit">kW</span></div>
           </div>
           <div class="power-item">
-            <span class="power-label">무효전력 (Q)</span>
-            <div class="power-value">{{ data.Q4 || 0 }} <span class="power-unit">kVar</span></div>
+            <span class="power-label">{{ t('dashboard.reactivePower') }}</span>
+            <div class="power-value">{{ (data.Q4 || 0).toFixed(2) }} <span class="power-unit">kVar</span></div>
           </div>
           <div class="power-item">
-            <span class="power-label">피상전력 (S)</span>
-            <div class="power-value">{{ data.S4 || 0 }} <span class="power-unit">kVA</span></div>
+            <span class="power-label">{{ t('dashboard.apparentPower') }}</span>
+            <div class="power-value">{{ (data.S4 || 0).toFixed(2) }} <span class="power-unit">kVA</span></div>
           </div>
         </div>
       </div>
@@ -71,7 +71,6 @@ export default {
     const pfValue = computed(() => parseFloat(data.value.PF4) || 0)
     const pfDisplay = computed(() => pfValue.value.toFixed(2))
 
-    // Ring gauge calculations
     const ringSize = 96
     const ringStroke = 8
     const ringR = (ringSize - ringStroke) / 2
@@ -97,9 +96,9 @@ export default {
 
     const pfStatusText = computed(() => {
       const v = pfValue.value
-      if (v >= 95) return '양호'
-      if (v >= 85) return '주의'
-      return '기준 미달'
+      if (v >= 95) return t('dashboard.pfGood')
+      if (v >= 85) return t('dashboard.pfWarn')
+      return t('dashboard.pfBad')
     })
 
     return {
@@ -113,7 +112,7 @@ export default {
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-3;
+  @apply col-span-full sm:col-span-6 xl:col-span-4;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
@@ -126,7 +125,10 @@ export default {
 }
 .card-title::before {
   content: '';
-  @apply w-1 h-4 rounded-full bg-violet-500 inline-block flex-shrink-0;
+  @apply w-1 h-4 rounded-full inline-block flex-shrink-0;
+}
+.meter-accent-violet::before {
+  @apply bg-violet-500;
 }
 .card-channel {
   @apply text-gray-500 dark:text-gray-500;

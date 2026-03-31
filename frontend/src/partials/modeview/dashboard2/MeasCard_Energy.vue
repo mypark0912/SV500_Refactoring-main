@@ -2,7 +2,7 @@
   <div class="card-wrap">
     <!-- 헤더 -->
     <div class="card-header">
-      <h3 class="card-title">{{ t('dashboard.kwh') }}</h3>
+      <h3 class="card-title meter-accent-indigo">{{ t('dashboard.kwh') }}</h3>
       <span class="card-channel">
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
@@ -21,8 +21,7 @@
           <div class="summary-content">
             <span class="summary-label">{{ t('dashboard.kwh_realtime.today') }}</span>
             <div class="summary-value">
-              <template v-if="energyData && energyData.length > 0">61</template>
-              <template v-else>{{ parseFloat(consumptionData.daily).toFixed(2) }}</template>
+              {{ parseFloat(consumptionData.daily).toFixed(2) }}
               <span class="summary-unit">kWh</span>
             </div>
             <div class="summary-compare">
@@ -66,8 +65,7 @@
           <div class="summary-content">
             <span class="summary-label">{{ t('dashboard.kwh_realtime.thismonth') }}</span>
             <div class="summary-value">
-              <template v-if="energyData && energyData.length > 0">{{ energyData[0].data[1].value.toFixed(2) }}</template>
-              <template v-else>{{ parseFloat(consumptionData.monthly).toFixed(2) }}</template>
+              {{ parseFloat(consumptionData.monthly).toFixed(2) }}
               <span class="summary-unit">kWh</span>
             </div>
             <div class="summary-compare">
@@ -134,7 +132,6 @@ export default {
     const updateInterval = ref(null);
     const channel = computed(() => (props.channel == 'main' || props.channel == 'Main') ? 'Main' : 'Sub');
 
-    const energyData = ref([]);
     const consumptionData = ref({
       today: 0,
       daily: 0,
@@ -325,7 +322,6 @@ export default {
       chartData,
       t,
       channel,
-      energyData,
       consumptionData,
       todayHourlyData,
     };
@@ -335,7 +331,6 @@ export default {
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full xl:col-span-7;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
@@ -348,7 +343,10 @@ export default {
 }
 .card-title::before {
   content: '';
-  @apply w-1 h-4 rounded-full bg-indigo-500 inline-block flex-shrink-0;
+  @apply w-1 h-4 rounded-full inline-block flex-shrink-0;
+}
+.meter-accent-indigo::before {
+  @apply bg-indigo-500;
 }
 .card-channel {
   @apply text-gray-500 dark:text-gray-500;
@@ -362,71 +360,58 @@ export default {
 .summary-grid {
   @apply grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4;
 }
-
 .summary-item {
   @apply flex items-start gap-3 p-3 rounded-lg;
   @apply border border-gray-100 dark:border-gray-700;
   @apply transition-all duration-200 hover:shadow-md;
 }
-
 .summary-item.today {
   @apply bg-blue-50/60 dark:bg-blue-900/20;
 }
 .summary-item.today .summary-icon {
   @apply text-blue-500 dark:text-blue-400;
 }
-
 .summary-item.week {
   @apply bg-emerald-50/60 dark:bg-emerald-900/20;
 }
 .summary-item.week .summary-icon {
   @apply text-emerald-500 dark:text-emerald-400;
 }
-
 .summary-item.month {
   @apply bg-violet-50/60 dark:bg-violet-900/20;
 }
 .summary-item.month .summary-icon {
   @apply text-violet-500 dark:text-violet-400;
 }
-
 .summary-item.year {
   @apply bg-amber-50/60 dark:bg-amber-900/20;
 }
 .summary-item.year .summary-icon {
   @apply text-amber-500 dark:text-amber-400;
 }
-
 .summary-icon {
   @apply flex-shrink-0 mt-0.5;
 }
-
 .summary-content {
   @apply flex-1 min-w-0;
 }
-
 .summary-label {
   @apply text-sm text-gray-500 dark:text-gray-400 block;
 }
-
 .summary-value {
-  @apply text-xl font-bold text-gray-800 dark:text-white tabular-nums leading-tight;
+  @apply text-base font-bold text-gray-800 dark:text-white tabular-nums leading-tight;
 }
-
 .summary-unit {
-  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  @apply text-xs font-medium text-gray-600 dark:text-gray-400;
 }
-
 .summary-compare {
   @apply flex items-center gap-1 mt-0.5;
 }
-
 .compare-label {
-  @apply text-sm text-gray-600 dark:text-gray-400;
+  @apply text-xs text-gray-600 dark:text-gray-400;
 }
-
 .compare-value {
-  @apply text-sm font-semibold;
+  @apply text-xs font-semibold;
 }
 .compare-value.up {
   @apply text-green-600 dark:text-green-400;
@@ -441,7 +426,6 @@ export default {
   @apply border border-gray-100 dark:border-gray-700;
 }
 
-/* 반응형 */
 @media (max-width: 640px) {
   .summary-grid {
     @apply grid-cols-2 gap-2;

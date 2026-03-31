@@ -294,6 +294,20 @@
       "pqfe3": "Medium",
       "pqfe4": "High"
     },
+    "powerCard": "Power Factor · Power",
+    "activePower": "Active Power (P)",
+    "reactivePower": "Reactive Power (Q)",
+    "apparentPower": "Apparent Power (S)",
+    "pfGood": "Good",
+    "pfWarn": "Caution",
+    "pfBad": "Below Standard",
+    "alarmLog": "Alarm / Event Log",
+    "alarmTable": {
+      "time": "Time",
+      "criteria": "Criteria",
+      "status": "Status",
+      "value": "Value"
+    },
     "kwh": "Total power consumption",
     "kwh_realtime": {
       "today": "Today",

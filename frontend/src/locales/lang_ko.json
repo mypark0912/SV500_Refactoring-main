@@ -294,6 +294,20 @@
       "pqfe3": "경고",
       "pqfe4": "위험"
     },
+    "powerCard": "역률 · 전력",
+    "activePower": "유효전력 (P)",
+    "reactivePower": "무효전력 (Q)",
+    "apparentPower": "피상전력 (S)",
+    "pfGood": "양호",
+    "pfWarn": "주의",
+    "pfBad": "기준 미달",
+    "alarmLog": "알람 / 이벤트 로그",
+    "alarmTable": {
+      "time": "시간",
+      "criteria": "기준",
+      "status": "상태",
+      "value": "값"
+    },
     "kwh": "전력량 현황",
     "kwh_realtime": {
       "today": "오늘",

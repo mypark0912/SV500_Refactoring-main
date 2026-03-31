@@ -1,15 +1,7 @@
 <template>
   <div class="grid grid-cols-12 gap-x-4 gap-y-4">
-    <!-- Row 1: 전압(2) / 전류(2) / 주파수(2) / 역률·유효전력(3) / 불평형률·고조파(3) -->
+    <!-- 상단 카드들: [Meter 4] [Power 4] [PQ 4] -->
     <MeasCard_Voltage
-      v-if="channelState.MainEnable || channelState.SubEnable"
-      :channel="computedChannel"
-    />
-    <MeasCard_Current
-      v-if="channelState.MainEnable || channelState.SubEnable"
-      :channel="computedChannel"
-    />
-    <MeasCard_Frequency
       v-if="channelState.MainEnable || channelState.SubEnable"
       :channel="computedChannel"
     />
@@ -22,23 +14,24 @@
       :channel="computedChannel"
     />
 
-    <!-- Row 2: 전력량(7) / 알람·이벤트 로그(5) -->
-    <MeasCard_Energy
+    <!-- 하단 카드들: [Energy 7] [EventLog 5] -->
+    <div
       v-if="channelState.MainEnable || channelState.SubEnable"
-      :channel="computedChannel"
-    />
-    <MeasCard_EventLog
-      v-if="channelState.MainEnable || channelState.SubEnable"
-      :channel="computedChannel"
-    />
+      class="col-span-full grid grid-cols-12 gap-x-4 gap-y-4 items-stretch"
+    >
+      <div class="col-span-full lg:col-span-7 flex">
+        <MeasCard_Energy :channel="computedChannel" class="w-full" />
+      </div>
+      <div class="col-span-full lg:col-span-5 flex">
+        <MeasCard_EventLog :channel="computedChannel" class="w-full" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { computed } from 'vue'
 import MeasCard_Voltage from '../../partials/modeview/dashboard2/MeasCard_Voltage.vue'
-import MeasCard_Current from '../../partials/modeview/dashboard2/MeasCard_Current.vue'
-import MeasCard_Frequency from '../../partials/modeview/dashboard2/MeasCard_Frequency.vue'
 import MeasCard_PowerFactor from '../../partials/modeview/dashboard2/MeasCard_PowerFactor.vue'
 import MeasCard_PQ from '../../partials/modeview/dashboard2/MeasCard_PQ.vue'
 import MeasCard_Energy from '../../partials/modeview/dashboard2/MeasCard_Energy.vue'
@@ -48,8 +41,6 @@ export default {
   name: 'MeasuringLayout',
   components: {
     MeasCard_Voltage,
-    MeasCard_Current,
-    MeasCard_Frequency,
     MeasCard_PowerFactor,
     MeasCard_PQ,
     MeasCard_Energy,

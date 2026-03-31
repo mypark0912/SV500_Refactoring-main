@@ -1,7 +1,7 @@
 <template>
   <div class="card-wrap">
     <div class="card-header">
-      <h3 class="card-title">알람 / 이벤트 로그</h3>
+      <h3 class="card-title meter-accent-teal">{{ t('dashboard.alarmLog') }}</h3>
       <span class="card-channel">
         {{ channel === 'Main' ? t('dashboard.meter.subtitle_main') : t('dashboard.meter.subtitle_sub') }}
       </span>
@@ -11,22 +11,23 @@
         <table class="log-table">
           <thead>
             <tr>
-              <th>시간</th>
-              <th>유형</th>
-              <th>내용</th>
-              <th>상태</th>
+              <th>{{ t('dashboard.alarmTable.time') }}</th>
+              <th>{{ t('dashboard.alarmTable.criteria') }}</th>
+              <th>{{ t('dashboard.alarmTable.status') }}</th>
+              <th>{{ t('dashboard.alarmTable.value') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(item, idx) in logItems" :key="idx">
-              <td class="col-time">{{ item.time }}</td>
+              <td class="col-time">{{ item.ts_formatted }}</td>
+              <td class="col-msg">{{ item.criteria }}</td>
               <td>
-                <span class="badge" :class="'badge-' + item.level">{{ item.type }}</span>
+                <span class="status-tag" :class="item.status === 'OCCURRED' ? 'tag-active' : 'tag-resolved'">{{ item.status }}</span>
               </td>
-              <td class="col-msg">{{ item.message }}</td>
-              <td>
-                <span class="status-tag" :class="'tag-' + item.status">{{ item.statusText }}</span>
-              </td>
+              <td class="col-value">{{ parseFloat(item.value).toFixed(2) }}</td>
+            </tr>
+            <tr v-if="logItems.length === 0">
+              <td colspan="4" class="text-center text-gray-400 py-4">No data</td>
             </tr>
           </tbody>
         </table>
@@ -36,8 +37,9 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import axios from 'axios'
 
 export default {
   name: 'MeasCard_EventLog',
@@ -46,14 +48,28 @@ export default {
   },
   setup() {
     const { t } = useI18n()
-    const logItems = ref([
-      { time: '14:32:10', type: '경고', level: 'warn', message: '전압 불평형률 2.8% 초과', status: 'active', statusText: '발생' },
-      { time: '14:28:45', type: '알람', level: 'danger', message: 'THD-I 8.2% 기준 초과', status: 'active', statusText: '발생' },
-      { time: '14:15:22', type: '정보', level: 'info', message: '역률 95% 이상 회복', status: 'resolved', statusText: '복구' },
-      { time: '13:58:03', type: '경고', level: 'warn', message: '전류 불평형률 2.1% 초과', status: 'resolved', statusText: '복구' },
-      { time: '13:42:17', type: '알람', level: 'danger', message: '순간 전압 강하 감지', status: 'resolved', statusText: '복구' },
-      { time: '13:30:00', type: '정보', level: 'info', message: '시스템 정상 가동 확인', status: 'resolved', statusText: '확인' },
-    ])
+    const logItems = ref([])
+    let timer = null
+
+    const fetchRecentAlarmLog = async () => {
+      try {
+        const response = await axios.get('/api/getRecentAlarmLog')
+        if (response.data.success) {
+          logItems.value = response.data.data
+        }
+      } catch (error) {
+        console.error('알람로그 가져오기 실패:', error)
+      }
+    }
+
+    onMounted(() => {
+      fetchRecentAlarmLog()
+      timer = setInterval(fetchRecentAlarmLog, 3600000)
+    })
+
+    onUnmounted(() => {
+      if (timer) clearInterval(timer)
+    })
 
     return { t, logItems }
   },
@@ -62,7 +78,6 @@ export default {
 
 <style scoped>
 .card-wrap {
-  @apply col-span-full sm:col-span-6 xl:col-span-5;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
   @apply overflow-hidden;
@@ -75,7 +90,10 @@ export default {
 }
 .card-title::before {
   content: '';
-  @apply w-1 h-4 rounded-full bg-teal-500 inline-block flex-shrink-0;
+  @apply w-1 h-4 rounded-full inline-block flex-shrink-0;
+}
+.meter-accent-teal::before {
+  @apply bg-teal-500;
 }
 .card-channel {
   @apply text-gray-500 dark:text-gray-500;
@@ -88,14 +106,13 @@ export default {
 /* Table */
 .log-table-wrap {
   @apply overflow-y-auto;
-  max-height: 220px;
 }
 .log-table {
   @apply w-full text-left;
   border-collapse: collapse;
 }
 .log-table thead th {
-  @apply text-sm font-semibold text-gray-500 dark:text-gray-400 pb-2;
+  @apply text-xs font-semibold text-gray-500 dark:text-gray-400 pb-2;
   @apply border-b border-gray-200 dark:border-gray-700;
   @apply sticky top-0 bg-white dark:bg-gray-800;
 }
@@ -111,19 +128,8 @@ export default {
 .col-msg {
   @apply truncate max-w-[160px];
 }
-
-/* Badge */
-.badge {
-  @apply text-sm font-semibold px-1.5 py-0.5 rounded;
-}
-.badge-danger {
-  @apply bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400;
-}
-.badge-warn {
-  @apply bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400;
-}
-.badge-info {
-  @apply bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+.col-value {
+  @apply tabular-nums text-sm;
 }
 
 /* Status tag */
