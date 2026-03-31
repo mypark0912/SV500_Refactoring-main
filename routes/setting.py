@@ -644,6 +644,76 @@ async def setup_downsampling():
         logging.error(f"❌ Downsampling setup error: {e}")
         return {"success": False, "message": str(e)}
 
+@router.get('/recreateBuckets')
+async def recreate_buckets(request: Request):
+    """삭제된 InfluxDB 버킷만 확인 후 재생성 (nteks 초기버킷 포함)"""
+    saveLog("Recreate InfluxDB Buckets", request)
+    results = {}
+
+    # 재생성 대상 버킷 목록: (이름, retention 일수) - 0은 무제한
+    target_buckets = [
+        ("nteks", 0),
+        ("ntek", 365),
+        ("ntek_1h", 90),
+        ("ntek_1d", 730),
+        ("ntek30", 30),
+    ]
+
+    try:
+        if influx_state.client is None or influx_state.error:
+            return {"success": False, "message": "InfluxDB client not connected"}
+
+        # 기존 버킷 목록 조회
+        config = aesState.getInflux()
+        token = aesState.decrypt(config["cipher"])
+
+        async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            resp = await client.get(
+                "http://127.0.0.1:8086/api/v2/buckets",
+                headers={"Authorization": f"Token {token}"},
+                params={"orgID": config['org_id']}
+            )
+
+        if resp.status_code != 200:
+            return {"success": False, "message": f"Failed to list buckets: {resp.text}"}
+
+        existing_names = {b["name"] for b in resp.json().get("buckets", [])}
+
+        # 없는 버킷만 생성
+        created = []
+        skipped = []
+        failed = []
+
+        for bucket_name, retention_days in target_buckets:
+            if bucket_name in existing_names:
+                results[bucket_name] = {"success": True, "message": "Already exists"}
+                skipped.append(bucket_name)
+            else:
+                res = await create_influx_bucket(bucket_name, retention_days)
+                results[bucket_name] = res
+                if res["success"]:
+                    created.append(bucket_name)
+                else:
+                    failed.append(bucket_name)
+
+        msg_parts = []
+        if created:
+            msg_parts.append(f"Created: {', '.join(created)}")
+        if skipped:
+            msg_parts.append(f"Already exists: {', '.join(skipped)}")
+        if failed:
+            msg_parts.append(f"Failed: {', '.join(failed)}")
+
+        return {
+            "success": len(failed) == 0,
+            "message": " / ".join(msg_parts),
+            "details": results
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Recreate buckets error: {e}")
+        return {"success": False, "message": str(e)}
+
 @router.put('/recreateDownsamplingTasks')
 async def api_recreate_downsampling_tasks():
     result = await recreate_downsampling_tasks()
