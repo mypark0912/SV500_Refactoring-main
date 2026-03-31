@@ -79,10 +79,43 @@ import Diagnosis_TreeTable from './Diagnosis_TreeTable2.vue'
 const STATUS_COLORS = { 0: '#c4c4c4', 1: '#16a34a', 2: '#ca8a04', 3: '#ea580c', 4: '#dc2626' }
 const STATUS_TEXT = { 0: 'STOP', 1: 'NORMAL', 2: 'ATTENTION', 3: 'WARNING', 4: 'INSPECT' }
 const CATEGORY_COLORS = {
-  source: '#1e3a8a',      // blue-900 남색
-  inverter: '#8b5cf6',    // violet-500 바이올렛
-  'motor-elec': '#0ea5e9', // sky-500 스카이블루
-  'motor-mech': '#ec4899', // pink-500 핑크
+  'voltage-inverter': '#1e3a8a',  // blue-900 남색
+  'components': '#8b5cf6',         // violet-500 바이올렛
+  'mechanical': '#ec4899',         // pink-500 핑크
+  'electrical': '#0ea5e9',         // sky-500 스카이블루
+}
+
+const ITEM_CATEGORY_MAP = {
+  // Voltage / Inverter
+  'Incoming Voltage': 'voltage-inverter',
+  'DCLink': 'voltage-inverter',
+  'Rectifier': 'voltage-inverter',
+  'Switching': 'voltage-inverter',
+  // Components
+  'Capacitor': 'components',
+  'TapChanger': 'components',
+  'Bushings': 'components',
+  // Mechanical
+  'NoiseVibration': 'mechanical',
+  'Rotor': 'mechanical',
+  'Bearing': 'mechanical',
+  'TorqueRipple': 'mechanical',
+  'MechanicalUnbalance': 'mechanical',
+  'SoftFoot': 'mechanical',
+  'Cavitation': 'mechanical',
+  'Vane': 'mechanical',
+  'Turbulence': 'mechanical',
+  'Blade': 'mechanical',
+  // Electrical
+  'Stress': 'electrical',
+  'LoadUnbalance': 'electrical',
+  'CableConnection': 'electrical',
+  'Winding': 'electrical',
+  'Heat': 'electrical',
+  'Core': 'electrical',
+  'Load': 'electrical',
+  'NeutralLoading': 'electrical',
+  'Stator': 'electrical',
 }
 
 export default {
@@ -113,27 +146,29 @@ export default {
     /* ───────── 카테고리 데이터 (API → 변환) ───────── */
     const categories = computed(() => {
       const cats = [
-        { id: 'source',      label: 'Voltage Source',   color: CATEGORY_COLORS.source,       items: [] },
-        { id: 'inverter',    label: 'Inverter',     color: CATEGORY_COLORS.inverter,     items: [] },
-        { id: 'motor-elec',  label: 'Electrical Status', color: CATEGORY_COLORS['motor-elec'], items: [] },
-        { id: 'motor-mech',  label: 'Mechanical Status', color: CATEGORY_COLORS['motor-mech'], items: [] },
+        { id: 'voltage-inverter', label: 'Voltage / Inverter', color: CATEGORY_COLORS['voltage-inverter'], items: [] },
+        { id: 'components',       label: 'Components',         color: CATEGORY_COLORS['components'],       items: [] },
+        { id: 'mechanical',       label: 'Mechanical',         color: CATEGORY_COLORS['mechanical'],       items: [] },
+        { id: 'electrical',       label: 'Electrical',         color: CATEGORY_COLORS['electrical'],       items: [] },
       ]
       const catMap = {}
       cats.forEach(c => { catMap[c.id] = c })
 
       for (const node of groupedTree.value) {
-        const stageKey = node.Stage || 'motor-mech'
-        const cat = catMap[stageKey]
-        if (cat && node.children) {
-          for (const child of node.children) {
-            cat.items.push({
+        if (!node.children) continue
+        for (const child of node.children) {
+          const itemName = child.Name || child.Title || ''
+          const catId = ITEM_CATEGORY_MAP[itemName]
+          if (catId && catMap[catId]) {
+            catMap[catId].items.push({
               name: child.Titles?.[locale.value] || child.Title || child.Name,
+              rawName: itemName,
               status: child.Status || 0,
             })
           }
         }
       }
-      return cats
+      return cats.filter(c => c.items.length > 0)
     })
 
     /* ───────── 트리테이블 데이터 (전체) ───────── */
