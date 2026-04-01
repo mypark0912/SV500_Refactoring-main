@@ -74,8 +74,8 @@ export default {
 
     const ubalVColor = computed(() => getUnbalColor(ubalVoltage.value))
     const ubalIColor = computed(() => getUnbalColor(ubalCurrent.value))
-    const ubalVWidthPct = computed(() => Math.min((ubalVoltage.value / 5) * 100, 100))
-    const ubalIWidthPct = computed(() => Math.min((ubalCurrent.value / 5) * 100, 100))
+    const ubalVWidthPct = computed(() => Math.min(ubalVoltage.value, 100))
+    const ubalIWidthPct = computed(() => Math.min(ubalCurrent.value, 100))
 
     const thdItems = computed(() => {
       const items = [
@@ -84,7 +84,7 @@ export default {
         { label: 'TDD-I', key: 'tddi total', color: '#2dd4bf' },
       ]
       const values = items.map(it => parseFloat(data.value[it.key]) || 0)
-      const maxVal = Math.max(...values, 10)
+      const maxVal = Math.max(...values, 100)
       return items.map((it, i) => ({
         label: it.label,
         value: values[i].toFixed(1),

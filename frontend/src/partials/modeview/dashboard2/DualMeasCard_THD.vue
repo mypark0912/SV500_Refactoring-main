@@ -65,7 +65,7 @@ export default {
 
       if (isInverter.value) {
         values = chartData.value.map(item => parseFloat(item.Value || 0))
-        const maxValue = Math.max(...values, 100)
+        const maxValue = 100
         items = chartData.value.map((item, index) => {
           const val = parseFloat(item.Value || 0)
           const height = Math.min(Math.max((val / maxValue) * 100, 5), 100)
@@ -78,7 +78,7 @@ export default {
         })
       } else {
         values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
-        const maxValue = Math.max(...values, 100)
+        const maxValue = 100
         items = props.labels.map((label, index) => {
           const val = values[index]
           const height = Math.min(Math.max((val / maxValue) * 100, 5), 100)
