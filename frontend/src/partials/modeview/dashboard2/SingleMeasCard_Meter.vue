@@ -192,7 +192,7 @@ export default {
   @apply col-span-full sm:col-span-6 xl:col-span-4;
   @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
   @apply shadow-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50;
-  @apply overflow-hidden;
+  @apply overflow-hidden flex flex-col;
 }
 .card-header {
   @apply flex justify-between items-center px-4 py-2.5;
@@ -208,16 +208,15 @@ export default {
   @apply bg-blue-500;
 }
 .card-channel {
-  @apply text-gray-500 dark:text-gray-500;
-  font-size: 10px;
+  @apply text-xs text-gray-500 dark:text-gray-400;
 }
 .card-body {
-  @apply px-4 py-3;
+  @apply px-4 py-3 flex-1 flex flex-col;
 }
 
 /* Summary row */
 .summary-row {
-  @apply grid grid-cols-3 gap-3 mb-3;
+  @apply grid grid-cols-3 gap-3 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700;
 }
 .summary-item {
   @apply flex flex-col items-center text-center;
@@ -234,7 +233,7 @@ export default {
 
 /* Detail grid */
 .detail-grid {
-  @apply grid grid-cols-2 gap-3;
+  @apply grid grid-cols-2 gap-3 flex-1;
 }
 .detail-block {
   @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg overflow-hidden;

@@ -8,50 +8,40 @@
       </span>
     </div>
 
-    <!-- 불평형률 & 역률 & 고조파 통합 섹션 -->
     <div class="card-body">
-      <!-- 불평형률 + 역률 수평 배치 -->
-      <div class="horizontal-group">
-        <!-- 불평형률 -->
-        <div class="data-subsection flex-1">
-          <h3 class="subsection-title">{{ t('dashboard.pq.unbalance') }}</h3>
-          <div class="unbalance-vertical">
-            <!-- 전압 불평형 -->
-            <div class="compact-item">
-              <div class="compact-header">
-                <span class="compact-label">{{ t('dashboard.meter.voltage') }}</span>
-                <span class="compact-value" :class="getUnbalanceClass(data2.Ubal1)">
-                  {{ data2.Ubal1?.toFixed(1) || 0 }}%
-                </span>
-              </div>
-              <div class="mini-progress">
-                <div
-                  class="mini-fill bg-violet-400"
-                  :style="{ width: Math.min(data2.Ubal1 || 0, 100) + '%' }"
-                ></div>
-              </div>
+      <!-- 상단: 불평형률 -->
+      <div class="data-subsection">
+        <h3 class="subsection-title">{{ t('dashboard.pq.unbalance') }}</h3>
+        <div class="unbalance-vertical">
+          <div class="compact-item">
+            <div class="compact-header">
+              <span class="compact-label">{{ t('dashboard.meter.voltage') }}</span>
+              <span class="compact-value" :class="getUnbalanceClass(data2.Ubal1)">
+                {{ data2.Ubal1?.toFixed(1) || 0 }}%
+              </span>
             </div>
-
-            <!-- 전류 불평형 -->
-            <div class="compact-item">
-              <div class="compact-header">
-                <span class="compact-label">{{ t('dashboard.meter.current') }}</span>
-                <span class="compact-value" :class="getUnbalanceClass(data2.Ibal1)">
-                  {{ data2.Ibal1?.toFixed(1) || 0 }}%
-                </span>
-              </div>
-              <div class="mini-progress">
-                <div
-                  class="mini-fill bg-sky-400"
-                  :style="{ width: Math.min(data2.Ibal1 || 0, 100) + '%' }"
-                ></div>
-              </div>
+            <div class="mini-progress">
+              <div class="mini-fill bg-violet-400" :style="{ width: Math.min(data2.Ubal1 || 0, 100) + '%' }"></div>
+            </div>
+          </div>
+          <div class="compact-item">
+            <div class="compact-header">
+              <span class="compact-label">{{ t('dashboard.meter.current') }}</span>
+              <span class="compact-value" :class="getUnbalanceClass(data2.Ibal1)">
+                {{ data2.Ibal1?.toFixed(1) || 0 }}%
+              </span>
+            </div>
+            <div class="mini-progress">
+              <div class="mini-fill bg-sky-400" :style="{ width: Math.min(data2.Ibal1 || 0, 100) + '%' }"></div>
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- 하단: 역률(좌) + THD 링(우) -->
+      <div class="bottom-group">
         <!-- 역률 게이지 -->
-        <div class="data-subsection flex-1">
+        <div class="pf-section">
           <h3 class="subsection-title">{{ t('dashboard.pq.powerfactor') }}</h3>
           <div class="gauge-wrapper">
             <div class="gauge">
@@ -65,34 +55,27 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 고조파 -->
-      <div class="data-subsection">
-        <h3 class="subsection-title">{{ t('dashboard.pq.THD') }}</h3>
-
-        <!-- CSS 바 차트 -->
-        <div class="css-bar-chart">
-          <div class="chart-bars">
-            <div
-              v-for="(item, index) in chartItems"
-              :key="index"
-              class="bar-item"
-            >
-              <!-- 바 컨테이너 -->
-              <div class="bar-container">
-                <div
-                  class="bar-fill"
+        <!-- THD 링 인디케이터 -->
+        <div class="thd-section">
+          <h3 class="subsection-title">{{ t('dashboard.pq.THD') }}</h3>
+          <div class="thd-rings">
+            <div v-for="(item, index) in chartItems" :key="index" class="ring-item">
+              <svg class="ring-svg" viewBox="0 0 36 36">
+                <circle class="ring-bg" cx="18" cy="18" r="15.5" />
+                <circle
+                  class="ring-fill"
                   :class="item.colorClass"
-                  :style="{ height: item.height + '%' }"
-                >
-                  <!-- 값 라벨 -->
-                  <div class="bar-label">{{ item.value }}%</div>
-                </div>
+                  cx="18" cy="18" r="15.5"
+                  :stroke-dasharray="`${Math.min(parseFloat(item.value), 100) * 0.9742} 97.42`"
+                  stroke-dashoffset="0"
+                />
+              </svg>
+              <div class="ring-center">
+                <span class="ring-value">{{ item.value }}</span>
+                <span class="ring-unit">%</span>
               </div>
-
-              <!-- 하단 라벨 -->
-              <div class="bar-name">{{ item.label }}</div>
+              <span class="ring-label">{{ item.label }}</span>
             </div>
           </div>
         </div>
@@ -275,17 +258,13 @@ export default {
 }
 .card-channel {
   @apply text-gray-500 dark:text-gray-500;
-  font-size: 10px;
+  @apply text-xs;
 }
 .card-body {
   @apply px-4 py-3;
 }
 
 /* ── layout ── */
-.horizontal-group {
-  @apply flex gap-4;
-}
-
 .data-subsection {
   @apply space-y-2;
 }
@@ -301,7 +280,19 @@ export default {
 }
 
 .unbalance-vertical {
-  @apply space-y-5;
+  @apply space-y-3;
+}
+
+.bottom-group {
+  @apply flex gap-4 pt-3 border-t border-gray-100 dark:border-gray-700;
+}
+
+.pf-section {
+  @apply flex-1 space-y-2;
+}
+
+.thd-section {
+  @apply flex-1 space-y-2;
 }
 
 /* ── 역률 게이지 ── */
@@ -404,58 +395,61 @@ export default {
   @apply h-full rounded-full transition-all duration-500 ease-out;
 }
 
-/* ── CSS 바 차트 스타일 ── */
-.css-bar-chart {
-  @apply w-full p-4 pt-8;
+/* ── THD 링 인디케이터 ── */
+.thd-rings {
+  @apply flex justify-around items-center gap-2;
 }
-
-.chart-bars {
-  @apply flex justify-around items-end gap-4 h-24;
-  @apply relative;
+.ring-item {
+  @apply flex flex-col items-center gap-1;
+  position: relative;
 }
-
-.bar-item {
-  @apply flex-1 flex flex-col items-center;
-  @apply max-w-[60px];
+.ring-svg {
+  width: 56px;
+  height: 56px;
+  transform: rotate(-90deg);
 }
-
-.bar-container {
-  @apply relative w-full h-16 flex items-end justify-center;
+.ring-bg {
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 3;
 }
-
-.bar-fill {
-  @apply w-full rounded-t transition-all duration-700 ease-out;
-  @apply relative flex items-start justify-center;
-  @apply min-h-[8px];
+:is(.dark) .ring-bg {
+  stroke: #374151;
 }
-
-.bar-label {
-  @apply text-xs font-bold;
-  @apply absolute bottom-full left-1/2 transform -translate-x-1/2;
-  @apply text-center whitespace-nowrap;
-  @apply text-gray-800 dark:text-white;
-  @apply mb-1;
+.ring-fill {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.7s ease-out;
 }
-
-.bar-name {
-  @apply text-xs font-semibold text-gray-700 dark:text-white;
-  @apply mt-2 text-center;
+.ring-fill.bar-pink {
+  stroke: #ec4899;
 }
-
-/* 바 색상 */
-.bar-pink {
-  @apply bg-gradient-to-t from-pink-500 to-pink-400;
-  @apply dark:from-pink-400 dark:to-pink-300;
+.ring-fill.bar-indigo {
+  stroke: #6366f1;
 }
-
-.bar-indigo {
-  @apply bg-gradient-to-t from-indigo-500 to-indigo-400;
-  @apply dark:from-indigo-400 dark:to-indigo-300;
+.ring-fill.bar-teal {
+  stroke: #14b8a6;
 }
-
-.bar-teal {
-  @apply bg-gradient-to-t from-teal-500 to-teal-400;
-  @apply dark:from-teal-400 dark:to-teal-300;
+.ring-center {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+.ring-value {
+  @apply text-xs font-bold text-gray-800 dark:text-white;
+}
+.ring-unit {
+  @apply text-[9px] font-medium text-gray-500 dark:text-gray-400;
+}
+.ring-label {
+  @apply text-[10px] font-semibold text-gray-600 dark:text-gray-400;
 }
 
 /* 반응형 개선 */
@@ -466,22 +460,6 @@ export default {
 
   .card-body {
     @apply space-y-3;
-  }
-
-  .chart-bars {
-    @apply gap-2 h-20;
-  }
-
-  .bar-container {
-    @apply h-12;
-  }
-
-  .bar-label {
-    @apply text-xs;
-  }
-
-  .bar-name {
-    @apply text-xs;
   }
 }
 

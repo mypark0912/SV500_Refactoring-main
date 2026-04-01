@@ -290,7 +290,7 @@ export default {
 }
 .card-channel {
   @apply text-gray-500 dark:text-gray-500;
-  font-size: 10px;
+  @apply text-xs;
 }
 .card-body {
   @apply px-4 py-3;
