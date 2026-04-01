@@ -275,8 +275,8 @@
               <div class="text-gray-700 dark:text-white text-left pt-3 px-4 pb-4">
                 <div class="flex flex-col space-y-2">
                   
-                  <!-- 설비 진단 -->
-                  <Report_Diagnosis
+                  <!-- 설비 진단 (Bands 스타일) -->
+                  <Report_Diagnosis_Bands
                     v-if="activeTab === 'Equipment' && mode"
                     ref="diagnosisRef"
                     :channel="channelComputed"
@@ -284,15 +284,15 @@
                     :reportData="diagnosisReportData"
                     :key="`diag-${channelComputed}`"
                   />
-                  
-                  <!-- 전력품질 진단 -->
-                  <Report_Diagnosis
+
+                  <!-- 전력품질 진단 (Bands 스타일) -->
+                  <Report_PQ
                     v-if="activeTab === 'PowerQuality'"
                     ref="pqDiagnosisRef"
                     :channel="channelComputed"
                     :mode="'powerquality'"
                     :reportData="pqReportData"
-                    :key="`pq-diag-${channelComputed}`" 
+                    :key="`pq-diag-${channelComputed}`"
                   />
                   
                   <!-- EN50160 보고서 -->
@@ -335,8 +335,9 @@ import Header from "../common/Header.vue";
 import Footer from "../common/Footer.vue";
 import ReportComponent from "../../partials/inners/report/ReportComponent.vue";
 import Report_WattHour from "../../partials/inners/report/Report_WattHour.vue";
-import Report_Diagnosis from "../../partials/inners/report/Report_Diagnosis_New.vue";
-import Report_Info from "../../partials/inners/report/Report_Info.vue";
+import Report_Diagnosis_Bands from "../../partials/modeview/report/Report_Diagnosis.vue";
+import Report_PQ from "../../partials/modeview/report/Report_PQ.vue";
+import Report_Info from "../../partials/modeview/report/Report_Info.vue";
 import { useI18n } from "vue-i18n";
 
 export default {
@@ -348,7 +349,8 @@ export default {
     Footer,
     ReportComponent,
     Report_WattHour,
-    Report_Diagnosis,
+    Report_Diagnosis_Bands,
+    Report_PQ,
     Report_Info,
   },
   setup(props) {
