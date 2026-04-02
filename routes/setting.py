@@ -31,6 +31,24 @@ setting_timeout = httpx.Timeout(
 
 router = APIRouter()
 
+def safe_int(value, default=0):
+    """안전한 int 변환. 빈 문자열, None, 변환 불가 값은 default 반환"""
+    if value is None or value == '':
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(value, default=0.0):
+    """안전한 float 변환. 빈 문자열, None, 변환 불가 값은 default 반환"""
+    if value is None or value == '':
+        return default
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
 def command_to_binary(command: Command) -> bytes:
     """Command 객체를 바이너리로 변환 (C 구조체와 호환)"""
     # C의 int는 보통 4바이트, enum도 int로 처리
@@ -1782,7 +1800,7 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
     result[f"pq_{prefix}"] = bool(channel_data.get("PowerQuality", 0))
 
     demand = channel_data.get("demand", {})
-    result[f"demand_collect_{prefix}"] = int(demand.get("collect", 0)) if "collect" in demand else 0
+    result[f"demand_collect_{prefix}"] = safe_int(demand.get("collect", 0)) if "collect" in demand else 0
 
     if diag_enabled:
         asset_info = channel_data.get("assetInfo", {})
@@ -1792,7 +1810,7 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
         result[f"assetdriveType_{prefix}"] = asset_info.get("driveType", "")
 
         if asset_info.get("type") == 'Transformer':
-            result[f"{prefix}_kva"] = int(channel_data.get("n_kva", 0))
+            result[f"{prefix}_kva"] = safe_int(channel_data.get("n_kva", 0))
 
 @router.get('/checkSettingFile') #check setup.json
 async def check_setupfile(request: Request):
@@ -1825,7 +1843,10 @@ async def check_setupfile(request: Request):
         # 2. Redis에 setup이 있는지 확인
         if redis_state.client.hexists("System", "setup"):
             # Redis에 있으면 Redis 데이터 사용
-            setting = json.loads(redis_state.client.hget("System", "setup"))
+            raw = redis_state.client.hget("System", "setup")
+            if not raw:
+                return {"result": "0", "error": "Redis setup data is empty"}
+            setting = json.loads(raw)
             # deviceMac = get_mac_address()
             if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
                 setting["General"]["deviceInfo"]["mac_address"] = deviceMac
@@ -1863,7 +1884,7 @@ async def check_setupfile(request: Request):
         if not redis_state.client.exists("influx_init"):
             await save_influx_status()
         for idx, ch in enumerate(setting["channel"]):
-            setting["channel"][idx]["ctInfo"]["inorminal"] = float(setting["channel"][idx]["ctInfo"]["inorminal"])/1000
+            setting["channel"][idx]["ctInfo"]["inorminal"] = safe_float(setting["channel"][idx]["ctInfo"]["inorminal"])/1000
 
         # 3. 설정 파싱 및 반환
         return parse_settings(setting)
@@ -1874,12 +1895,12 @@ async def check_setupfile(request: Request):
 def saveStartCurrent(setting):
     main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
     if main_channel_data:
-        main_c = int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        main_c = safe_int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
     else:
         main_c = 0
     sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
     if sub_channel_data:
-        sub_c = int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        sub_c = safe_int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
     else:
         sub_c = 0
     return {"main": main_c, "sub": sub_c}
@@ -1887,26 +1908,26 @@ def saveStartCurrent(setting):
 def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
     main_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Main"), None)
     if main_channel_data:
-        main_c = int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
-        if int(main_channel_data["demand"]["demand_interval"]) != 15:
-            main_d = int(main_channel_data["demand"]["demand_interval"])*60
+        main_c = safe_int(main_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        if safe_int(main_channel_data["demand"]["demand_interval"]) != 15:
+            main_d = safe_int(main_channel_data["demand"]["demand_interval"])*60
         else:
             main_d = 15*60
-        if "collect" in main_channel_data["demand"] and int(main_channel_data["demand"]["collect"]) != 0:
+        if "collect" in main_channel_data["demand"] and safe_int(main_channel_data["demand"]["collect"]) != 0:
             main_d_collect = 1
         else:
             main_d_collect = 0
-        main_s = int(main_channel_data["sampling"]["period"])*60
+        main_s = safe_int(main_channel_data["sampling"]["period"])*60
         if "dash" in main_channel_data["ptInfo"]:
-            dashSetup = int(main_channel_data["ptInfo"]["dash"])
+            dashSetup = safe_int(main_channel_data["ptInfo"]["dash"])
         else:
             dashSetup = 1
         main_data = {
-            "PT_WiringMode":int(main_channel_data["ptInfo"]["wiringmode"]),
-            "RatedFrequency": int(main_channel_data["ptInfo"]["linefrequency"]),
-            "RatedVoltage": int(main_channel_data["ptInfo"]["vnorminal"]),
-            "RatedCurrent": int(main_channel_data["ctInfo"]["inorminal"]),
-            "RatedKVA": int(main_channel_data["n_kva"]),
+            "PT_WiringMode":safe_int(main_channel_data["ptInfo"]["wiringmode"]),
+            "RatedFrequency": safe_int(main_channel_data["ptInfo"]["linefrequency"]),
+            "RatedVoltage": safe_int(main_channel_data["ptInfo"]["vnorminal"]),
+            "RatedCurrent": safe_int(main_channel_data["ctInfo"]["inorminal"]),
+            "RatedKVA": safe_int(main_channel_data["n_kva"]),
             "DashPT": dashSetup
         }
     else:
@@ -1917,26 +1938,26 @@ def save_StartCurrent_DemandInterval_SamplingPeriod(setting):
         main_data = {}
     sub_channel_data = next((ch for ch in setting["channel"] if ch.get("channel") == "Sub"), None)
     if sub_channel_data:
-        sub_c = int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
-        if int(sub_channel_data["demand"]["demand_interval"]) != 15:
-            sub_d = int(sub_channel_data["demand"]["demand_interval"])*60
+        sub_c = safe_int(sub_channel_data["ctInfo"]["startingcurrent"]) / 1000
+        if safe_int(sub_channel_data["demand"]["demand_interval"]) != 15:
+            sub_d = safe_int(sub_channel_data["demand"]["demand_interval"])*60
         else:
             sub_d = 15 * 60
-        if "collect" in sub_channel_data["demand"] and int(sub_channel_data["demand"]["collect"]) != 0:
+        if "collect" in sub_channel_data["demand"] and safe_int(sub_channel_data["demand"]["collect"]) != 0:
             sub_d_collect = 1
         else:
             sub_d_collect = 0
-        sub_s = int(sub_channel_data["sampling"]["period"])*60
+        sub_s = safe_int(sub_channel_data["sampling"]["period"])*60
         if "dash" in sub_channel_data["ptInfo"]:
-            dashSetup = int(sub_channel_data["ptInfo"]["dash"])
+            dashSetup = safe_int(sub_channel_data["ptInfo"]["dash"])
         else:
             dashSetup = 1
         sub_data = {
-            "PT_WiringMode": int(sub_channel_data["ptInfo"]["wiringmode"]),
-            "RatedFrequency": int(sub_channel_data["ptInfo"]["linefrequency"]),
-            "RatedVoltage": int(sub_channel_data["ptInfo"]["vnorminal"]),
-            "RatedCurrent": int(sub_channel_data["ctInfo"]["inorminal"]),
-            "RatedKVA": int(sub_channel_data["n_kva"]),
+            "PT_WiringMode": safe_int(sub_channel_data["ptInfo"]["wiringmode"]),
+            "RatedFrequency": safe_int(sub_channel_data["ptInfo"]["linefrequency"]),
+            "RatedVoltage": safe_int(sub_channel_data["ptInfo"]["vnorminal"]),
+            "RatedCurrent": safe_int(sub_channel_data["ctInfo"]["inorminal"]),
+            "RatedKVA": safe_int(sub_channel_data["n_kva"]),
             "DashPT": dashSetup
         }
     else:
@@ -1955,7 +1976,10 @@ def get_setting():
     # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System", "setup"):
         redisContext = redis_state.client.hget("System", "setup")
-        setting = json.loads(redisContext)
+        if redisContext:
+            setting = json.loads(redisContext)
+        else:
+            return {"passOK": 0}
     else:
         file_path = os.path.join(SETTING_FOLDER, 'setup.json')
         if not os.path.exists(file_path):
@@ -1967,7 +1991,7 @@ def get_setting():
             return {"passOK": 0}
 
     for idx, ch in enumerate(setting["channel"]):
-        setting["channel"][idx]["ctInfo"]["inorminal"] = float(
+        setting["channel"][idx]["ctInfo"]["inorminal"] = safe_float(
             setting["channel"][idx]["ctInfo"]["inorminal"]) / 1000
 
     setup_dict = {
@@ -1992,7 +2016,10 @@ def getDatafromSetting(channel):
     # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System", "setup"):
         redisContext = redis_state.client.hget("System", "setup")
-        setting = json.loads(redisContext)
+        if redisContext:
+            setting = json.loads(redisContext)
+        else:
+            return {"passOK": 0}
     else:
         file_path = os.path.join(SETTING_FOLDER, 'setup.json')
         if not os.path.exists(file_path):
@@ -2004,7 +2031,7 @@ def getDatafromSetting(channel):
             return {"passOK": "0"}
 
     for idx, ch in enumerate(setting["channel"]):
-        setting["channel"][idx]["ctInfo"]["inorminal"] = float(
+        setting["channel"][idx]["ctInfo"]["inorminal"] = safe_float(
             setting["channel"][idx]["ctInfo"]["inorminal"]) / 1000
 
     if channel in setting:
@@ -2025,7 +2052,7 @@ def reset():
         # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("Service","setting"):
             checkflag = redis_state.client.hget("Service","setting")
-            if int(checkflag) == 1:
+            if safe_int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
 
         setting_path = os.path.join(SETTING_FOLDER, 'setup.json')
@@ -2038,7 +2065,10 @@ def reset():
                 msg = "No exist setup.json"
 
             if redis_state.client.hexists("System", "setup"):
-                nowSetup = json.loads(redis_state.client.hget("System", "setup"))
+                raw = redis_state.client.hget("System", "setup")
+                if not raw:
+                    return {"success": False, "msg": "Redis setup data is empty"}
+                nowSetup = json.loads(raw)
                 default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
 
                 with open(default_file_path, "r", encoding="utf-8") as f:
@@ -2066,7 +2096,10 @@ def reset():
 async def reset_count(request:Request):
     # redis_state.client.select(0)
     if redis_state.client.hexists("System","setup"):
-        setup = json.loads(redis_state.client.hget("System","setup"))
+        raw = redis_state.client.hget("System","setup")
+        if not raw:
+            return
+        setup = json.loads(raw)
         mainEnable = 0
         subEnable = 0
         for chInfo in setup["channel"]:
@@ -2238,7 +2271,7 @@ async def resetAll(request:Request):
         # redis_state.client.execute_command("SELECT", 0)
         if redis_state.client.hexists("Service", "setting"):
             checkflag = redis_state.client.hget("Service", "setting")
-            if int(checkflag) == 1:
+            if safe_int(checkflag) == 1:
                 return {"success": False, "msg": "Modbus setting is activated"}
         ret = await reset_system(request) #stop core, reinstall smartsystem
         if not ret["success"]:
@@ -2467,10 +2500,10 @@ def load_bearings_from_db():
         for row in rows:
             result.append({
                 'Name': row[0],
-                'BPFO': float(row[1]),
-                'BPFI': float(row[2]),
-                'BSF': float(row[3]),
-                'FTF': float(row[4])
+                'BPFO': safe_float(row[1]),
+                'BPFI': safe_float(row[2]),
+                'BSF': safe_float(row[3]),
+                'FTF': safe_float(row[4])
             })
         
         conn.close()
@@ -2540,16 +2573,16 @@ def init_bearing_db_from_csv():
         for bearing in data:
             try:
                 name = str(bearing.get('Name', ''))
-                bpfo = float(bearing.get('BPFO', 0))
-                bpfi = float(bearing.get('BPFI', 0))
-                bsf = float(bearing.get('BSF', 0))
-                ftf = float(bearing.get('FTF', 0))
-                
+                bpfo = safe_float(bearing.get('BPFO', 0))
+                bpfi = safe_float(bearing.get('BPFI', 0))
+                bsf = safe_float(bearing.get('BSF', 0))
+                ftf = safe_float(bearing.get('FTF', 0))
+
                 cursor.execute('''
                     INSERT INTO bearings (Name, BPFO, BPFI, BSF, FTF)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (name, bpfo, bpfi, bsf, ftf))
-                
+
                 inserted_count += 1
                 
             except sqlite3.IntegrityError:
@@ -2605,16 +2638,16 @@ def upload_bearing_to_db(file: UploadFile = File(...)):
             try:
                 # 데이터 타입 확인 및 변환
                 name = str(bearing.get('Name', ''))
-                bpfo = float(bearing.get('BPFO', 0))
-                bpfi = float(bearing.get('BPFI', 0))
-                bsf = float(bearing.get('BSF', 0))
-                ftf = float(bearing.get('FTF', 0))
-                
+                bpfo = safe_float(bearing.get('BPFO', 0))
+                bpfi = safe_float(bearing.get('BPFI', 0))
+                bsf = safe_float(bearing.get('BSF', 0))
+                ftf = safe_float(bearing.get('FTF', 0))
+
                 cursor.execute('''
                     INSERT INTO bearings (Name, BPFO, BPFI, BSF, FTF)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (name, bpfo, bpfi, bsf, ftf))
-                
+
                 inserted.append({
                     'Name': name,
                     'BPFO': bpfo,
@@ -2729,10 +2762,10 @@ def insert_bearings(bearing_list):
                     VALUES (?, ?, ?, ?, ?)
                 ''', (
                     bearing['Name'],
-                    float(bearing['BPFO']),
-                    float(bearing['BPFI']),
-                    float(bearing['BSF']),
-                    float(bearing['FTF'])
+                    safe_float(bearing['BPFO']),
+                    safe_float(bearing['BPFI']),
+                    safe_float(bearing['BSF']),
+                    safe_float(bearing['FTF'])
                 ))
                 inserted.append(bearing)
             except sqlite3.IntegrityError:
@@ -2895,14 +2928,15 @@ async def unreg_Asset(channel, asset):
     # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System","setup"):
         datStr = redis_state.client.hget("System","setup")
-        setting = json.loads(datStr)
-        for chInfo in setting["channel"]:
-            if channel == chInfo["channel"]:
-                chInfo["assetInfo"]["name"] =''
-                chInfo["assetInfo"]["type"] = ''
-                finflag = True
-                break
-        redis_state.client.hset("System","setup", json.dumps(setting))
+        if datStr:
+            setting = json.loads(datStr)
+            for chInfo in setting["channel"]:
+                if channel == chInfo["channel"]:
+                    chInfo["assetInfo"]["name"] =''
+                    chInfo["assetInfo"]["type"] = ''
+                    finflag = True
+                    break
+            redis_state.client.hset("System","setup", json.dumps(setting))
     if finflag:
         return {"success":True}
     else:
@@ -2921,14 +2955,15 @@ async def reg_Asset(channel, assetName, assetType):
     # redis_state.client.execute_command("SELECT", 0)
     if redis_state.client.hexists("System","setup"):
         datStr = redis_state.client.hget("System","setup")
-        setting = json.loads(datStr)
-        for chInfo in setting["channel"]:
-            if channel == chInfo["channel"]:
-                chInfo["assetInfo"]["name"] = assetName
-                chInfo["assetInfo"]["type"] = assetType
-                finflag = True
-                break
-        redis_state.client.hset("System","setup", json.dumps(setting))
+        if datStr:
+            setting = json.loads(datStr)
+            for chInfo in setting["channel"]:
+                if channel == chInfo["channel"]:
+                    chInfo["assetInfo"]["name"] = assetName
+                    chInfo["assetInfo"]["type"] = assetType
+                    finflag = True
+                    break
+            redis_state.client.hset("System","setup", json.dumps(setting))
 
         # set_applyStatus(channel, assetName)
     if finflag:
@@ -3029,7 +3064,7 @@ async def saveSetting(channel: str, request: Request):
     # redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"status": "0", "error": "Modbus setting is activated"}
     try:
         FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
@@ -3061,7 +3096,7 @@ async def saveSetting(channel: str, request: Request):
                 if ch.get("channel", "").lower() == channel.lower():
                     setting["channel"][idx] = data
                     updated = True
-                    setting["channel"][idx]["ctInfo"]["inorminal"] = int(float(data["ctInfo"]["inorminal"])*1000)
+                    setting["channel"][idx]["ctInfo"]["inorminal"] = safe_int(safe_float(data["ctInfo"]["inorminal"])*1000)
                     break
             if not updated:
                 setting["channel"].append(data)
@@ -3182,7 +3217,7 @@ async def saveSetting2(request: Request):
 
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"status": "0", "error": "Modbus setting is activated"}
 
     try:
@@ -3212,7 +3247,7 @@ async def saveSetting2(request: Request):
 
         for ch in data["channel"]:
             if "ctInfo" in ch and "inorminal" in ch["ctInfo"]:
-                ch["ctInfo"]["inorminal"] = int(float(ch["ctInfo"]["inorminal"]) * 1000)
+                ch["ctInfo"]["inorminal"] = safe_int(safe_float(ch["ctInfo"]["inorminal"]) * 1000)
 
         redis_state.client.hset("System", "config", json.dumps(data))
         return {"status": "1"}
@@ -3234,13 +3269,17 @@ async def apply(request: Request):
         traceback.print_exc()
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"status": "0", "error": "Modbus setting is activated"}
 
     saveSetup = redis_state.client.hget("System", "config")
+    if not saveSetup:
+        return {"status": "0", "error": "No config data in Redis"}
     saveData = json.loads(saveSetup)
 
     prevSetup = redis_state.client.hget("System", "setup")
+    if not prevSetup:
+        return {"status": "0", "error": "No setup data in Redis"}
     prevData = json.loads(prevSetup)
 
     FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
@@ -3250,7 +3289,7 @@ async def apply(request: Request):
 
     procData = save_redis_setup(saveData)
 
-    if int(procData["Demand_Collect"]["main"]) == 1 or int(procData["Demand_Collect"]["sub"]) == 1:
+    if safe_int(procData["Demand_Collect"]["main"]) == 1 or safe_int(procData["Demand_Collect"]["sub"]) == 1:
         ret = await check_demand_downsampling_status()
         if not ret.get("result"):
             await create_demand_downsampling_tasks()
@@ -3277,12 +3316,15 @@ async def apply(request: Request):
 def apply_network(background_tasks: BackgroundTasks):
     if redis_state.client.hexists("System", "setup"):
         setup = redis_state.client.hget("System", "setup")
-        setupData = json.loads(setup)
-        netData = setupData["General"]["tcpip"]
+        if setup:
+            setupData = json.loads(setup)
+            netData = setupData["General"]["tcpip"]
 
         # 현재 IP 먼저 읽어서 응답
-        background_tasks.add_task(apply_network_setting, netData)
-        return {"result": True, "message": "적용 중..."}
+            background_tasks.add_task(apply_network_setting, netData)
+            return {"result": True, "message": "적용 중..."}
+        else:
+            return {"result":False}
     else:
         return {"result": False}
 
@@ -3311,7 +3353,7 @@ def get_current_ip(IFACE):
 def apply_network_setting(net_data):
     NETWORK_FILE = "/etc/systemd/network/10-static-end1.network"
     IFACE = "end1"
-    dhcp = int(net_data.get("dhcp", 0))
+    dhcp = safe_int(net_data.get("dhcp", 0))
     ip = net_data["ip_address"]
     mask = net_data["subnet_mask"]
     gateway = net_data["gateway"]
@@ -3434,13 +3476,13 @@ def apply_sntp_setting(sntp_data):
     return {"result": True}
 
 def save_redis_setup(setupData):
-    if setupData["General"]["modbus"]["rtu_use"] == 1:
+    modbus = setupData["General"].get("modbus", {})
+    if safe_int(modbus.get("rtu_use", 0)) == 1:
         serialUse = True
-        redis_state.client.hset("SerialModbus","ModuleInfo", json.dumps(setupData["General"]["modbus"].get("serialinfo")))
+        redis_state.client.hset("SerialModbus","ModuleInfo", json.dumps(modbus.get("serialinfo")))
     else:
         serialUse = False
         redis_state.client.delete("SerialModbus")
-
     if len(setupData["channel"]) > 0:
         for ch in setupData["channel"]:
             if "channel" in ch and "alarm" in ch:
@@ -3506,7 +3548,7 @@ def save_frpc_config(lte, subdomain,prefix, file_path="/home/root/frp_0.66.0_lin
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         proxyname = f"device-web-{prefix}"
         ftpname = f"device-ssh-{prefix}"
-        ftpport = 12000 + int(prefix)
+        ftpport = 12000 + safe_int(prefix)
         # TOML 내용 생성
         if lte == 0:
             toml_content = f'''serverAddr = "13.125.5.143"
@@ -3614,7 +3656,7 @@ async def check_comm(asset):
 
 @router.get('/checkSmart')
 def check_smart():
-    if int(os_spec.mode) != 3:
+    if safe_int(os_spec.mode) != 3:
         if is_service_active("smartsystemsrestapiservice"):
             return {"success": True}
         else:
@@ -3628,7 +3670,7 @@ async def manage_smart(mode):
     restartsmart = False
     restartapi = False
 
-    if int(mode) == 1:
+    if safe_int(mode) == 1:
         if is_service_enabled("smartsystemsrestapiservice"):
             if not is_service_active("smartsystemsrestapiservice"):
                 ret = sysService("start", "SmartAPI")
@@ -3698,7 +3740,7 @@ async def restartasset():
     # redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"status": "0","success": False, "error": "Modbus setting is activated"}
     try:
         # redis_state.client.hset("Service","save",1)
@@ -3723,14 +3765,15 @@ async def restartasset():
 async def restartdevice(timeout: int = 30):
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"success": False, "error": "Modbus setting is activated"}
 
     if redis_state.client.hexists("Equipment", "applyStatus"):
         applyst = redis_state.client.hget("Equipment", "applyStatus")
-        applycontext = json.loads(applyst)
-        applycontext["restartFW"] = True
-        redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
+        if applyst:
+            applycontext = json.loads(applyst)
+            applycontext["restartFW"] = True
+            redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
     else:
         applycontext = { "restartFW":True, "commisionAsset":{}}
         redis_state.client.hset("Equipment", "applyStatus", json.dumps(applycontext))
@@ -3742,7 +3785,7 @@ async def restartdevice(timeout: int = 30):
             await asyncio.sleep(0.1)
 
             save_flag = redis_state.client.hget("Service", "save")
-            if save_flag is not None and int(save_flag) == 0:
+            if save_flag is not None and safe_int(save_flag) == 0:
                 stable_flag = True
                 break
 
@@ -3759,7 +3802,7 @@ async def restartdevice(timeout: int = 30):
 def restart_core():
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"success": False, "error": "Modbus setting is activated"}
     try:
         redis_state.client.hset("Service", "restart", 1)
@@ -3771,7 +3814,7 @@ def restart_core():
 def restore_setting():
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
-        if int(checkflag) == 1:
+        if safe_int(checkflag) == 1:
             return {"status": "0", "error": "Modbus setting is activated"}
 
     setting_file = os.path.join(SETTING_FOLDER, 'setup.json')
@@ -3799,7 +3842,10 @@ def get_Bearing(filename):
     _, ext = os.path.splitext(filename)
 
     if ext.lower() != ".csv":
-        return json.loads(filename)
+        try:
+            return json.loads(filename)
+        except (json.JSONDecodeError, TypeError):
+            return []
     else:
         parsed_result = []
         with open(filename, "r", encoding="utf-8") as f:
@@ -3808,7 +3854,7 @@ def get_Bearing(filename):
                 # 문자열 → float 변환 (Name은 그대로)
                 for key in row:
                     if key != "Name":
-                        row[key] = float(row[key])
+                        row[key] = safe_float(row[key])
                 parsed_result.append(row)
         return parsed_result
 
@@ -3992,7 +4038,7 @@ async def check_SmartStatus():
 
 def is_same_version(current: str, new: str) -> bool:
     """두 버전이 같은지"""
-    return tuple(map(int, new.split('.'))) == tuple(map(int, current.split('.')))
+    return tuple(map(safe_int, new.split('.'))) == tuple(map(safe_int, current.split('.')))
 
 async def check_SmartVersion():
     try:
@@ -4095,7 +4141,10 @@ def delete_cert(filename: str):
 @router.get("/checkMQTT")
 def check_mqtt(background_tasks: BackgroundTasks):
     if redis_state.client.hexists("System", "setup"):
-        setup = json.loads(redis_state.client.hget("System", "setup"))
+        raw = redis_state.client.hget("System", "setup")
+        if not raw:
+            return {"passOK": 0, "error": "Redis setup data is empty"}
+        setup = json.loads(raw)
     else:
         file_path = os.path.join(SETTING_FOLDER, 'setup.json')
         if not os.path.exists(file_path):
@@ -4116,15 +4165,16 @@ def check_mqtt(background_tasks: BackgroundTasks):
 def _apply_mqtt_services(setup):
     ret = {}
     try:
-        if int(setup["General"]["MQTT"]["Use"]) == 1:
+        mqtt = setup["General"].get("MQTT", {})
+        if safe_int(mqtt.get("Use", 0)) == 1:
             redis_state.client.hset("System", "MQTT", 1)
 
-            if int(setup["General"]["MQTT"]["Type"]) == 0:
+            if safe_int(setup["General"]["MQTT"]["Type"]) == 0:
                 file_path = os.path.join(SETTING_FOLDER, 'mqtt.json')
                 if not os.path.exists(file_path):
                     jsonData = {
                         "host": setup["General"]["MQTT"]["host"],
-                        "port": int(setup["General"]["MQTT"]["port"]),
+                        "port": safe_int(setup["General"]["MQTT"]["port"]),
                         "device_id": setup["General"]["MQTT"]["device_id"],
                         "username": setup["General"]["MQTT"]["username"],
                         "password": setup["General"]["MQTT"]["password"]
@@ -4133,7 +4183,7 @@ def _apply_mqtt_services(setup):
                     with open(file_path, "r", encoding="utf-8") as f:
                         jsonData = json.load(f)
                     jsonData["host"] = setup["General"]["MQTT"]["host"]
-                    jsonData["port"] = int(setup["General"]["MQTT"]["port"])
+                    jsonData["port"] = safe_int(setup["General"]["MQTT"]["port"])
                     jsonData["device_id"] = setup["General"]["MQTT"]["device_id"]
                     jsonData["username"] = setup["General"]["MQTT"]["username"]
                     jsonData["password"] = setup["General"]["MQTT"]["password"]
@@ -4167,10 +4217,10 @@ def _apply_mqtt_services(setup):
                 ret["start"] = sysService("start", "MQTTClient")
 
             # FRP 서비스 제어 (Type == 1)
-            if int(setup["General"]["MQTT"]["Type"]) == 1:
+            if safe_int(setup["General"]["MQTT"]["Type"]) == 1:
                 subdomain = setup["General"]["MQTT"]["url"]
                 name_prefix = setup["General"]["MQTT"]["externalport"]
-                useLte = int(setup["General"]["MQTT"]["lteuse"])
+                useLte = safe_int(mqtt.get("lteuse", 0))
                 if not service_exists("frpc.service"):
                     save_frpc_config(useLte, subdomain, name_prefix)
                     save_frpc_service(
@@ -4385,7 +4435,9 @@ async def check_sysStatus():
         if not redis_state.client is None:
             # redis_state.client.execute_command("SELECT", 0)
             if redis_state.client.hexists("System", "Status"):
-                data = json.loads(redis_state.client.hget("System", "Status"))
+                raw = redis_state.client.hget("System", "Status")
+                if raw:
+                    data = json.loads(raw)
         data["core"] = 0
 
         usage = psutil.disk_usage('/')
@@ -4442,7 +4494,7 @@ async def check_sysStatus():
             'a35': 'sv500A35'
         }
 
-        mqtt_enabled = has_mqtt_flag and int(redis_state.client.hget("System", "MQTT")) == 1
+        mqtt_enabled = has_mqtt_flag and safe_int(redis_state.client.hget("System", "MQTT")) == 1
         if mqtt_enabled and has_mqtt_service:
             base_services['mqClient'] = 'mqClient'
             if has_frpc:
@@ -4761,7 +4813,7 @@ def get_sysMode():
 
 @router.get('/updateSmartSystem/{mode}')
 async def update_smartsystem(mode, request: Request):
-    if int(mode) == 1:
+    if safe_int(mode) == 1:
         c_text = 'Smart System reinstall'
         saveLog("Reinstll SmartSystem", request)
     else:
@@ -4769,7 +4821,7 @@ async def update_smartsystem(mode, request: Request):
         saveLog("Update SmartSystem", request)
     lastpost = get_lastpost()
     if lastpost["result"] == 1:
-        idx = int(lastpost["data"]["id"])
+        idx = safe_int(lastpost["data"]["id"])
         smartVersion = lastpost["data"]["smart_version"]
         dict = getVersions()
         if smartVersion != dict["smartsystem"]:
@@ -4783,7 +4835,7 @@ async def update_smartsystem(mode, request: Request):
         save_post(update, 0, 0)
 
 
-    if int(mode) == 1:
+    if safe_int(mode) == 1:
         reset_assetInfo('Main','Sub')
         try:
             result = subprocess.run(
@@ -4868,7 +4920,10 @@ def reset_assetInfo(channel1, channel2):
     FILE_PATH = os.path.join(SETTING_FOLDER, "setup.json")
 
     if redis_state.client.hexists("System", "setup"):
-        setting = json.loads(redis_state.client.hget("System", "setup"))
+        raw = redis_state.client.hget("System", "setup")
+        if not raw:
+            return {"success": False, "error": "Redis setup data is empty"}
+        setting = json.loads(raw)
     else:
         if not os.path.exists(FILE_PATH):
             return {"success": False, "error": "setting file not found"}

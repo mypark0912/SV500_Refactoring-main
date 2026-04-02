@@ -3982,23 +3982,20 @@ def query_trend_data(
 
     # 이미 pivot된 데이터 처리 (훨씬 간단)
     results = []
+    last_date = None
+
     for table in tables:
         for record in table.records:
-            # 시간 포맷팅
-            row = {
-                '_time': record.get_time().astimezone().strftime('%Y-%m-%d %H:%M:%S'),
-                'channel': channel
-            }
+            results.append(record.values)
 
-            # 모든 필드 값 추가
-            for key, value in record.values.items():
-                if key not in ['result', 'table', '_start', '_stop', '_time', '_measurement', 'channel']:
-                    row[key] = value
-
-            results.append(row)
+            if record.get_time():
+                utc_time = record.get_time()
+                local_time = utc_time.astimezone()
+                last_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
 
     return {
         "results": results,
+        "last_date": last_date,
         "bucket_used": bucket,
         "count": len(results)
     }
@@ -4091,9 +4088,7 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
 
         results = result["results"]
         bucket_used = result["bucket_used"]
-
-        # 마지막 날짜
-        last_date = results[-1]['_time'] if results else None
+        last_date = result["last_date"]
 
         if request.fields and len(request.fields) > 0:
             fields_str = "_".join(request.fields)
