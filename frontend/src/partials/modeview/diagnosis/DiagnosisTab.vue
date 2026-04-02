@@ -18,11 +18,6 @@
         >
           <div class="item-card-left">
             <span class="item-name">{{ item.name }}</span>
-            <span
-              v-if="isAlert(item)"
-              class="item-alert-tag"
-              :style="{ color: STATUS_COLORS[item.status], backgroundColor: STATUS_COLORS[item.status] + '10', borderColor: STATUS_COLORS[item.status] + '20' }"
-            >{{ STATUS_TEXT[item.status] }}</span>
           </div>
           <div class="status-blocks">
             <div

@@ -192,6 +192,12 @@
         "PowerQuality": "電力品質状態",
         "Event": "イベント状態"
     },
+    "category": {
+      "voltage-inverter": "入力電圧/インバータ",
+      "components": "変圧器構成要素",
+      "mechanical": "機械的特性項目",
+      "electrical": "電気的特性項目"
+    },
     "tabContext": {
         "th_title": "項目",
         "th_value": "値",

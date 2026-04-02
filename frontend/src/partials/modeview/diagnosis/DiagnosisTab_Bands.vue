@@ -8,15 +8,13 @@
         <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">{{ data_state }} / {{ data_recordtime || '-' }}</span>
       </div>
 
-      <!-- 4컬럼 카테고리 -->
-      <div class="columns-grid">
+      <!-- 카테고리 -->
+      <div :class="['columns-grid', isTransformer ? 'cols-4' : 'cols-3']">
         <div v-for="cat in categories" :key="cat.id" class="category-column">
           <!-- 카테고리 헤더 -->
           <div class="col-header">
             <div class="col-color-bar" :style="{ backgroundColor: cat.color }"></div>
             <span class="col-label">{{ cat.label }}</span>
-            <span v-if="getAlertCount(cat) > 0" class="col-badge col-badge--danger">{{ getAlertCount(cat) }}</span>
-            <span v-if="getWarnCount(cat) > 0" class="col-badge col-badge--warn">{{ getWarnCount(cat) }}</span>
           </div>
           <!-- 항목 리스트 -->
           <div class="col-items">
@@ -28,11 +26,6 @@
             >
               <div class="item-card-left">
                 <span class="item-name">{{ item.name }}</span>
-                <span
-                  v-if="isAlert(item)"
-                  class="item-alert-tag"
-                  :style="{ color: STATUS_COLORS[item.status], backgroundColor: STATUS_COLORS[item.status] + '10', borderColor: STATUS_COLORS[item.status] + '20' }"
-                >{{ STATUS_TEXT[item.status] }}</span>
               </div>
               <div class="status-blocks">
                 <div
@@ -146,10 +139,10 @@ export default {
     /* ───────── 카테고리 데이터 (API → 변환) ───────── */
     const categories = computed(() => {
       const cats = [
-        { id: 'voltage-inverter', label: 'Voltage / Inverter', color: CATEGORY_COLORS['voltage-inverter'], items: [] },
-        { id: 'components',       label: 'Components',         color: CATEGORY_COLORS['components'],       items: [] },
-        { id: 'mechanical',       label: 'Mechanical',         color: CATEGORY_COLORS['mechanical'],       items: [] },
-        { id: 'electrical',       label: 'Electrical',         color: CATEGORY_COLORS['electrical'],       items: [] },
+        { id: 'voltage-inverter', label: t('diagnosis.category.voltage-inverter'), color: CATEGORY_COLORS['voltage-inverter'], items: [] },
+        { id: 'components',       label: t('diagnosis.category.components'),       color: CATEGORY_COLORS['components'],       items: [] },
+        { id: 'mechanical',       label: t('diagnosis.category.mechanical'),       color: CATEGORY_COLORS['mechanical'],       items: [] },
+        { id: 'electrical',       label: t('diagnosis.category.electrical'),       color: CATEGORY_COLORS['electrical'],       items: [] },
       ]
       const catMap = {}
       cats.forEach(c => { catMap[c.id] = c })
@@ -211,6 +204,14 @@ export default {
       }
     })
 
+    const isTransformer = computed(() => {
+      if (channel.value === 'Main') {
+        return asset.value.assetType_main === 'Transformer' || asset.value.assetType_main === 'PrimaryTransformer'
+      } else {
+        return asset.value.assetType_sub === 'Transformer' || asset.value.assetType_sub === 'PrimaryTransformer'
+      }
+    })
+
     provide('data_recordtime', computed(() => data_recordtime.value))
     provide('data_state', computed(() => data_state.value))
 
@@ -218,7 +219,7 @@ export default {
       t, categories, allTreeData,
       data_recordtime, data_state, channel, mode,
       STATUS_COLORS, STATUS_TEXT, STATUS_LEGEND,
-      getAlertCount, getWarnCount, isAlert,
+      getAlertCount, getWarnCount, isAlert, isTransformer,
     }
   }
 }
@@ -229,12 +230,18 @@ export default {
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-/* 4컬럼 레이아웃 */
+/* 컬럼 레이아웃 */
 .columns-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   padding: 16px 20px;
+}
+.columns-grid.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.columns-grid.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
 }
 .category-column {
   display: flex;
@@ -315,12 +322,17 @@ export default {
 :is(.dark) .item-name {
   color: #e2e8f0;
 }
-.item-alert-tag {
-  font-size: 10px;
+/* 카드 오른쪽 (상태텍스트 + 상태바) */
+.item-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.item-status-text {
+  font-size: 11px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 8px;
-  border: 1px solid;
+  white-space: nowrap;
 }
 
 /* 상태 블록 (배터리 세그먼트) */
@@ -379,13 +391,15 @@ export default {
 
 /* 반응형 */
 @media (max-width: 768px) {
-  .columns-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .columns-grid.cols-4,
+  .columns-grid.cols-3 {
+    grid-template-columns: repeat(2, auto);
   }
 }
 @media (max-width: 480px) {
-  .columns-grid {
-    grid-template-columns: 1fr;
+  .columns-grid.cols-4,
+  .columns-grid.cols-3 {
+    grid-template-columns: auto;
   }
 }
 </style>

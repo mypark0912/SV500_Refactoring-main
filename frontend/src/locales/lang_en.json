@@ -420,6 +420,12 @@
       "detailTitle_trend": "Equipment detail item trend",
       "detailTitle_trend_pq": "Power Quality detail item trend"
     },
+    "category": {
+      "voltage-inverter": "Input Voltage / Inverter",
+      "components": "Transformer Components",
+      "mechanical": "Mechanical Characteristics",
+      "electrical": "Electrical Characteristics"
+    },
     "tabContext": {
       "th_title": "Item",
       "th_assembly": "Module",

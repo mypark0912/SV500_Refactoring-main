@@ -419,6 +419,12 @@
       "detailTitle_trend": "설비상태 세부항목 트렌드",
       "detailTitle_trend_pq": "전력품질상태 세부항목 트렌드"
     },
+    "category": {
+      "voltage-inverter": "입력전압/인버터",
+      "components": "변압기 구성요소",
+      "mechanical": "기계적 특성 항목",
+      "electrical": "전기적 특성 항목"
+    },
     "tabContext": {
       "th_title": "항목",
       "th_assembly": "모듈",

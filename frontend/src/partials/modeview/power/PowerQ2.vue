@@ -147,6 +147,7 @@ import DiagnosisTab from "../../inners/diagnosis/DiagnosisTab.vue";
 import { tailwindConfig } from "../../../utils/Utils";
 import { useI18n } from "vue-i18n";
 import { useSetupStore } from '@/store/setup'
+import { useAuthStore } from '@/store/auth'
 
 export default {
   name: "PowerQ",
@@ -164,6 +165,7 @@ export default {
     const { t } = useI18n();
     const route = useRoute();
     const setupStore = useSetupStore();
+    const authStore = useAuthStore();
 
     // ========== 모든 ref/reactive 먼저 선언 ==========
     const sidebarOpen = ref(true);
@@ -287,8 +289,10 @@ export default {
         options: [],
       };
 
+      const showStatus = authStore.getOpMode === 'device3';
+
       if (driveType.value === 'VFD') {
-        return [
+        const result = [
           {
             name: "Harmonics",
             label: t("pq.tabs.harmonics"),
@@ -298,10 +302,11 @@ export default {
             ],
           },
           waveformTab,
-          statusTab,
         ];
+        if (showStatus) result.push(statusTab);
+        return result;
       } else {
-        return [
+        const result = [
           {
             name: "Harmonics",
             label: t("pq.tabs.harmonics"),
@@ -312,8 +317,9 @@ export default {
             ],
           },
           waveformTab,
-          statusTab,
         ];
+        if (showStatus) result.push(statusTab);
+        return result;
       }
     });
 
