@@ -1146,8 +1146,8 @@ import { useAuthStore } from "@/store/auth"; // ✅ Pinia Store 사용
 import { useSetupStore } from "@/store/setup"; // ✅ Pinia Store 사용
 import { useDark } from "@vueuse/core";
 import { useI18n } from "vue-i18n"; // ✅ 추가
-import logoLight from "@/images/CI_logo.png";
-import logoDark from "@/images/ci_logo_light.png";
+import logoLight from "@/images/sv_06.png";
+import logoDark from "@/images/sv_06.png";
 
 export default {
   name: "Sidebar",
