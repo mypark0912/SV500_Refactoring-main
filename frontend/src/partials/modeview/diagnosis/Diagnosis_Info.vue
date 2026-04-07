@@ -50,13 +50,13 @@
 
 <script>
 import { ref, computed, inject } from 'vue'
-import motorImg from '@/images/motor_icon.png'
-import fanImg from '@/images/fan_icon.png'
-import pumpImg from '@/images/pump_icon.png'
-import compImg from '@/images/comp_icon.png'
-import powerImg from '@/images/power_icon.png'
+import motorImg from '@/images/motor_m.png'
+import fanImg from '@/images/fan_m.png'
+import pumpImg from '@/images/pump_m.png'
+import compImg from '@/images/comp_m.png'
+import powerImg from '@/images/power_m.png'
 import defaultImg from '@/images/cleaned_logo.png'
-import transImg from '@/images/transformer_icon.png'
+import transImg from '@/images/trans.png'
 import { useI18n } from 'vue-i18n'
 
 export default {
