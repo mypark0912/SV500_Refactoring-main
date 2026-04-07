@@ -9,7 +9,7 @@
       <div class="flex items-center gap-5">
         <!-- 장비 이미지 -->
         <img :src="equipImageSrc" alt="장비 이미지"
-          class="w-28 h-20 object-contain rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
+          class="w-20 h-20 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
 
         <!-- 장비 이름 & 타입 (수직 정렬) -->
         <div class="flex flex-col space-y-2">
