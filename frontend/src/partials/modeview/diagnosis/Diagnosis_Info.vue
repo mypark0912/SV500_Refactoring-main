@@ -8,9 +8,9 @@
     <div class="card-body px-4 py-3">
       <div class="flex items-center gap-5">
         <!-- 장비 이미지 -->
-        <!--img :src="equipImageSrc" alt="장비 이미지"
-          class="w-28 h-20 object-contain rounded-lg shadow-md border border-gray-300 dark:border-gray-600" /-->
-        <MotorIcon class="w-16 text-blue-500" />
+        <img :src="equipImageSrc" alt="장비 이미지"
+          class="w-28 h-20 object-contain rounded-lg shadow-md border border-gray-300 dark:border-gray-600" />
+
         <!-- 장비 이름 & 타입 (수직 정렬) -->
         <div class="flex flex-col space-y-2">
           <!-- 이름 -->
@@ -57,14 +57,10 @@ import compImg from '@/images/comp_icon.png'
 import powerImg from '@/images/power_icon.png'
 import defaultImg from '@/images/cleaned_logo.png'
 import transImg from '@/images/transformer_icon.png'
-import MotorIcon from '../iconVue/motorIcon.vue'
 import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'Diagnosis_Info',
-  components:{
-    MotorIcon,
-  },
   props: {
     asset:{
       type: Object,
