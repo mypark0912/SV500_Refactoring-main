@@ -1,5 +1,5 @@
 <template>
-  <svg viewBox="0 0 512 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="512" height="320" viewBox="0 0 512 320" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#F7FBFF"/>
@@ -71,3 +71,10 @@
 
 <script setup>
 </script>
+
+<style scoped>
+svg {
+  width: 100%;
+  height: auto;
+}
+</style>
