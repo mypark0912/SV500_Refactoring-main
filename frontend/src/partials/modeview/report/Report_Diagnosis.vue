@@ -17,14 +17,12 @@
           <span v-if="timestamp" class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">{{ formatTimestamp(timestamp) }}</span>
         </div>
 
-        <!-- 4컬럼 카테고리 -->
-        <div class="columns-grid">
+        <!-- 카테고리 -->
+        <div :class="['columns-grid', isTransformer ? 'cols-4' : 'cols-3']">
           <div v-for="cat in categories" :key="cat.id" class="category-column">
             <div class="col-header">
               <div class="col-color-bar" :style="{ backgroundColor: cat.color }"></div>
               <span class="col-label">{{ cat.label }}</span>
-              <span v-if="getAlertCount(cat) > 0" class="col-badge col-badge--danger">{{ getAlertCount(cat) }}</span>
-              <span v-if="getWarnCount(cat) > 0" class="col-badge col-badge--warn">{{ getWarnCount(cat) }}</span>
             </div>
             <div class="col-items">
               <div
@@ -35,11 +33,6 @@
               >
                 <div class="item-card-left">
                   <span class="item-name">{{ item.name }}</span>
-                  <span
-                    v-if="isAlert(item)"
-                    class="item-alert-tag"
-                    :style="{ color: STATUS_COLORS[item.status], backgroundColor: STATUS_COLORS[item.status] + '10', borderColor: STATUS_COLORS[item.status] + '20' }"
-                  >{{ STATUS_TEXT[item.status] }}</span>
                 </div>
                 <div class="status-blocks">
                   <div
@@ -104,7 +97,7 @@ const CATEGORY_COLORS = {
   'electrical': '#0ea5e9',
 }
 const ITEM_CATEGORY_MAP = {
-  'Incoming Voltage': 'voltage-inverter',
+  'IncomingVoltage': 'voltage-inverter',
   'DCLink': 'voltage-inverter',
   'Rectifier': 'voltage-inverter',
   'Switching': 'voltage-inverter',
@@ -198,6 +191,14 @@ export default {
         }
       }
       return cats.filter(c => c.items.length > 0)
+    })
+
+    const isTransformer = computed(() => {
+      if (props.channel === 'Main') {
+        return asset.value.assetType_main === 'Transformer' || asset.value.assetType_main === 'PrimaryTransformer'
+      } else {
+        return asset.value.assetType_sub === 'Transformer' || asset.value.assetType_sub === 'PrimaryTransformer'
+      }
     })
 
     const getAlertCount = (cat) => cat.items.filter(i => i.status >= 3).length
@@ -354,7 +355,7 @@ export default {
       t, isLoading, items, chartOptions, timestamp, categories,
       channel: props.channel, mode: props.mode,
       STATUS_COLORS, STATUS_TEXT, STATUS_LEGEND,
-      getAlertCount, getWarnCount, isAlert, formatTimestamp,
+      getAlertCount, getWarnCount, isAlert, isTransformer, formatTimestamp,
     }
   }
 }
@@ -366,9 +367,15 @@ export default {
 }
 .columns-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   padding: 16px 20px;
+}
+.columns-grid.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.columns-grid.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
 }
 .category-column {
   display: flex;
@@ -505,13 +512,15 @@ export default {
   border-radius: 50%;
 }
 @media (max-width: 768px) {
-  .columns-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .columns-grid.cols-4,
+  .columns-grid.cols-3 {
+    grid-template-columns: repeat(2, auto);
   }
 }
 @media (max-width: 480px) {
-  .columns-grid {
-    grid-template-columns: 1fr;
+  .columns-grid.cols-4,
+  .columns-grid.cols-3 {
+    grid-template-columns: auto;
   }
 }
 </style>
