@@ -365,9 +365,9 @@
                     for="line-frequency"
                     >Line Frequency (Hz)</label
                   >
-                  <input
+                  <select
                     :value="getInputDict().ptInfo.linefrequency"
-                    @input="
+                    @change="
                       updateNestedField(
                         'ptInfo',
                         'linefrequency',
@@ -375,12 +375,11 @@
                       )
                     "
                     id="line-frequency"
-                    class="form-input w-full"
-                    type="number"
-                    step="1"
-                    min="0"
-                    :maxlength="20"
-                  />
+                    class="form-select w-full"
+                  >
+                    <option :value="50">50Hz</option>
+                    <option :value="60">60Hz</option>
+                  </select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
