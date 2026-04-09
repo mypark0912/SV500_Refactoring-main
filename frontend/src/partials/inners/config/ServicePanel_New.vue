@@ -60,10 +60,10 @@
               </button>
             </div>
 
-            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <div v-if="isNtek" class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
             
             <!-- Factory Default 버튼 -->
-            <button
+            <button v-if="isNtek"
               class="btn h-9 px-5 bg-violet-900 text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white flex items-center"
               @click="ResetAll"
             >
@@ -77,7 +77,7 @@
             </button>
             
             <!-- Set Default IP 버튼 -->
-            <button
+            <button v-if="isNtek"
               class="btn h-9 px-5 bg-sky-900 text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white flex items-center"
               @click.stop="feedbackModalOpen = true"
             >

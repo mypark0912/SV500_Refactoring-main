@@ -874,16 +874,7 @@ export default {
     const getTime = async () => {
       try {
         const response = await axios.get('/config/calibrate/gettime');
-        const deviceDate = new Date(response.data.deviceTime);
-        deviceTime.value = deviceDate.toLocaleString(navigator.language, {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        });
+        deviceTime.value = response.data.deviceTime;
         timemode.value = "Device Time - "
         // 시간 차이 계산 (초 단위)
         // const browserDate = new Date();

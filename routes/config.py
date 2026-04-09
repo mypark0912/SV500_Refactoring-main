@@ -264,10 +264,11 @@ async def get_device_time():
     현재 장비 시간 조회
     """
     try:
+        result = subprocess.run("date '+%Y/%m/%d %H:%M:%S'", shell=True, capture_output=True, text=True)
+        device_time = result.stdout.strip()
         return {
             "success": True,
-            "deviceTime": datetime.now().isoformat(),
-            "timestamp": datetime.now().timestamp()
+            "deviceTime": device_time
         }
     except Exception as e:
         return {"success": False }
@@ -300,7 +301,8 @@ async def check_device_time(request: TimeSetRequest):
     클라이언트 시간과 장비 시간 비교하여 상태 반환
     """
     try:
-        device_now = datetime.now()
+        result = subprocess.run("date --iso-8601=seconds", shell=True, capture_output=True, text=True)
+        device_now = datetime.fromisoformat(result.stdout.strip()).replace(tzinfo=None)
 
         # 클라이언트 시간 파싱 (YYYY-MM-DD HH:mm:ss 형식)
         client_dt = datetime.strptime(request.datetime_str, '%Y-%m-%d %H:%M:%S')
