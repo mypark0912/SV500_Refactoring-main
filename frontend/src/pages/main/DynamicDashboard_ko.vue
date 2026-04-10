@@ -48,14 +48,15 @@
                 :channel-state="ChannelState"
                 :channel="channel"
               />
-              <SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+              <!--SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+                :channel-state="ChannelState"
+                :channel="channel"
+              /-->
+              <SingleChannel_NewCSS v-else-if="dashboardLayout === 'SingleChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
               />
-              <!--SingleChannel_NewCSS v-else-if="dashboardLayout === 'SingleChannelLayout'"
-                :channel-state="ChannelState"
-                :channel="channel" />
-              <MeasureLayout v-else-if="dashboardLayout === 'MeasuringLayout'"
+              <!--MeasureLayout v-else-if="dashboardLayout === 'MeasuringLayout'"
                 :channel-state="ChannelState"
                 :channel="channel" /-->
               <DualChannelLayout v-else-if="dashboardLayout === 'DualChannelLayout'"
@@ -80,7 +81,7 @@
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
-  import DualChannelLayout from '../layouts/DualChannelLayout.vue'
+  import DualChannelLayout from '../layouts/DualChannel_NewCSS.vue'
   import IntegratedLayout from '../layouts/IntegratedLayout3.vue'  
   import MeasureLayout from '../layouts/MeasuringLayout.vue'
   import SingleChannel_NewCSS from '../layouts/SingleChannel_NewCSS.vue'

@@ -1,9 +1,22 @@
 <template>
-    <div class="col-span-full xl:col-span-3 meter-card">
-      <div class="meter-card-header">
-        <h3 class="meter-card-title meter-accent-teal">{{ t(`meter.cardContext.${data[index].subTitle}`) }} {{ title }}</h3>
+    <div class="col-span-full xl:col-span-3 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
+     
+      <div class="card">
+      <div class="premium-card-header">
+        <div class="header-content">
+          <div class="header-left">
+            <h2 class="card-title">
+             {{ t(`meter.cardContext.${data[index].subTitle}`)   }} {{ title }}
+            </h2>    
+          </div>  
+        </div>
       </div>
-      <div class="meter-card-body">
+  
+    </div>
+      <!-- <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+        <h2 class="font-semibold text-gray-800 dark:text-gray-100">{{ t(`meter.cardContext.${data[index].subTitle}`)   }} {{ title }}</h2>
+      </header> -->
+      <div class="p-3 space-y-4">
         <div class="flex items-start ml-4">
           <!--div class="text-xs font-bold text-black-400 dark:text-black-500 uppercase mb-1">{{ data[0].subTitle }}</div-->
           <div class="text-xl font-bold text-gray-800 dark:text-gray-100 mr-2">{{data[index].data[0].value.toFixed(2) }} {{ data[0].data[0].unit }}</div>
@@ -53,6 +66,7 @@
       }
     }
     </script>
-    <style scoped>
-      @import '../../../css/meter-card.css';
+    <style>
+      /* CSS 파일 import */
+      @import '../../../css/card-styles.css';
     </style>

@@ -1,9 +1,20 @@
 <template>
-  <div class="col-span-full xl:col-span-5 meter-card">
-    <div class="meter-card-header">
-      <h3 class="meter-card-title meter-accent-indigo">{{ t('meter.cardTitle.title_phase') }}</h3>
-    </div>
-    <div class="meter-card-body flex justify-center items-center">
+  <div class="col-span-full xl:col-span-5 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
+  <div class="card">
+    <div class="premium-card-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h2 class="card-title">
+            {{t('meter.cardTitle.title_phase')  }}
+          </h2>    
+        </div>  
+      </div>
+    </div> 
+  </div>
+    <!-- <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+      <h2 class="font-semibold text-gray-800 dark:text-gray-100">{{ t('meter.cardTitle.title_phase') }}</h2>
+    </header> -->
+    <div class="p-2 flex justify-center items-center">
       <canvas v-if="channel === 'Main'" ref="mainCanvasRef" width="420" height="420"/>
       <canvas v-else ref="subCanvasRef" width="420" height="420" />
     </div>
@@ -398,6 +409,9 @@ export default {
 };
 </script>
 
-<style scoped>
-@import '../../../css/meter-card.css';
+<style>
+/* CSS 파일 import */
+@import '../../../css/card-styles.css';
+
+
 </style>

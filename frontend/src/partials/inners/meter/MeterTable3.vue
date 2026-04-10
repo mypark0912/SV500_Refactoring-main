@@ -1,8 +1,8 @@
 <template>
-    <div class="overflow-x-auto py-1">
+    <div class="overflow-x-auto py-4">
       <table class="table-auto w-full dark:text-white">
         <!-- Table header -->
-        <thead class="text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-50/80 dark:bg-gray-700/50">
+        <thead class="text-xs uppercase text-gray-400 bg-gray-50 dark:bg-gray-300 dark:text-gray-200 dark:bg-opacity-50 rounded-sm">
           <tr>
             <th class="p-2">
               <div class="font-bold text-left">{{ t('meter.Table.th_tilte') }}</div>
