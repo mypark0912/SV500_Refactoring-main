@@ -2082,6 +2082,10 @@ def reset():
                     json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상
 
                 redis_state.client.hdel("System", "setup")
+                with open(setting_path, "w", encoding="utf-8") as f:
+                    json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상
+                threading.Timer(2, apply_network_setting, args=[defaults["General"]["tcpip"]]).start()
+                threading.Timer(2, apply_sntp_setting, args=[defaults["General"]["sntpInfo"]]).start()
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
