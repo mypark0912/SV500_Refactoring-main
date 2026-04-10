@@ -276,20 +276,20 @@
                 <div class="flex flex-col space-y-2">
                   
                   <!-- 설비 진단 -->
-                  <Report_Diagnosis 
-                    v-if="activeTab === 'Equipment' && mode" 
+                  <Report_Diagnosis
+                    v-if="activeTab === 'Equipment' && mode"
                     ref="diagnosisRef"
-                    :channel="channelComputed" 
+                    :channel="channelComputed"
                     :mode="'diagnosis'"
                     :reportData="diagnosisReportData"
-                    :key="`diag-${channelComputed}`" 
+                    :key="`diag-${channelComputed}`"
                   />
                   
                   <!-- 전력품질 진단 -->
-                  <Report_Diagnosis 
-                    v-if="activeTab === 'PowerQuality'" 
+                  <Report_Diagnosis
+                    v-if="activeTab === 'PowerQuality'"
                     ref="pqDiagnosisRef"
-                    :channel="channelComputed" 
+                    :channel="channelComputed"
                     :mode="'powerquality'"
                     :reportData="pqReportData"
                     :key="`pq-diag-${channelComputed}`" 
@@ -775,9 +775,10 @@ export default {
 
     watch(channelStatus, (newVal) => { setupMenu.value = newVal; }, { immediate: true });
 
-    watch(mode, (newVal) => {
+    watch(mode, async (newVal) => {
       if (newVal) {
         activeTab.value = "Equipment";
+        await initialLoad();
       } else {
         activeTab.value = "PowerQuality";
       }
@@ -785,6 +786,7 @@ export default {
 
     // === Mounted ===
     onMounted(async () => {
+      await setupStore.checkSetting();
       await fetchDates();
       await fetchEN50160Data();
       if (mode.value) await initialLoad();

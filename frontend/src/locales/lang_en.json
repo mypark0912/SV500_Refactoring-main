@@ -183,7 +183,8 @@
     "device0": "Data Acquisition Device",
     "device1": "Diagnostic Device",
     "device2": "Interchangeably operated transformer",
-    "device3": "Integrated Server",
+    "device3": "Measuring Device",
+    "device4": "Inverter Measuring Device",
     "name": "Name",
     "account": "Account",
     "accountType": "Account Type",
@@ -292,6 +293,20 @@
       "pqfe2": "Low",
       "pqfe3": "Medium",
       "pqfe4": "High"
+    },
+    "powerCard": "Power Factor · Power",
+    "activePower": "Active Power (P)",
+    "reactivePower": "Reactive Power (Q)",
+    "apparentPower": "Apparent Power (S)",
+    "pfGood": "Good",
+    "pfWarn": "Caution",
+    "pfBad": "Below Standard",
+    "alarmLog": "Alarm / Event Log",
+    "alarmTable": {
+      "time": "Time",
+      "criteria": "Criteria",
+      "status": "Status",
+      "value": "Value"
     },
     "kwh": "Total power consumption",
     "kwh_realtime": {
@@ -404,6 +419,12 @@
       "detailTitle_fault": "Fault detail item status",
       "detailTitle_trend": "Equipment detail item trend",
       "detailTitle_trend_pq": "Power Quality detail item trend"
+    },
+    "category": {
+      "voltage-inverter": "Input Voltage / Inverter",
+      "components": "Transformer Components",
+      "mechanical": "Mechanical Characteristics",
+      "electrical": "Electrical Characteristics"
     },
     "tabContext": {
       "th_title": "Item",
@@ -576,7 +597,8 @@
     },
     "tabs": {
       "harmonics": "Harmonics",
-      "waveform": "Waveform"
+      "waveform": "Waveform",
+      "status": "Status"
     },
     "options": {
       "phaseVoltage": "Phase Voltage",

@@ -53,7 +53,8 @@
                     <option value="0">{{  t('signup.device0') }}</option>
                     <option value="1">{{  t('signup.device1') }}</option>
                     <option value="2">{{  t('signup.device2') }}</option>
-                    <!--option value="3">{{  t('signup.device3') }}</option-->
+                    <option value="3">{{  t('signup.device3') }}</option>
+                    <option value="4">{{  t('signup.device4') }}</option>
                   </select>
                 </div>
               </div>

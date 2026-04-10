@@ -48,7 +48,7 @@
                     <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
                         <!-- 차트 컨테이너 -->
                         <div class="flex flex-col space-y-2"> 
-                            <DiagnosisTab v-if="activeTab === 'Status'" :channel="channel" :asset="asset" :mode="activeTab" :key="`tab-${channel}-${activeTab}`"/>
+                            <DiagnosisTab_Bands v-if="activeTab === 'Status'" :channel="channel" :asset="asset" :mode="activeTab" :key="`tab-${channel}-${activeTab}`"/>
                             <DiagnosisTab v-else-if="activeTab === 'PowerQuality'" :channel="channel" :asset="asset" :mode="activeTab" />     
                             <DiagnosisTab v-else-if="activeTab === 'Fault'" :channel="channel" :asset="asset" :mode="activeTab" />  
                             <DiagnosisTab v-else :channel="channel" :asset="asset" :mode="activeTab" />                    
@@ -81,6 +81,8 @@ import Footer from "../common/Footer.vue";
 import DiagnosisTab from '../../partials/inners/diagnosis/DiagnosisTab.vue'
 //import Diagnosis_Info from '../../partials/dashboard/Diagnosis_Info_Trans.vue'
 import Diagnosis_Info from '../../partials/inners/diagnosis/Diagnosis_Info.vue'
+import DiagnosisTab_New from '../../partials/inners/diagnosis/DiagnosisTab_New.vue'
+import DiagnosisTab_Bands from '../../partials/inners/diagnosis/DiagnosisTab_Bands.vue'
 import { useI18n } from 'vue-i18n'  
 import { useAuthStore } from '@/store/auth';
 export default {
@@ -92,6 +94,8 @@ export default {
     Footer,
     DiagnosisTab,
     Diagnosis_Info,
+    //DiagnosisTab_New,
+    DiagnosisTab_Bands,
   },
   setup(props) {
     const { t } = useI18n();

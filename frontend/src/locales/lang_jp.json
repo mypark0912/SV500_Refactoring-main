@@ -27,7 +27,15 @@
 	},
 	"signup":{
 		"link":"登録",
-		"msg":"管理者アカウントを登録しますか？"
+		"msg":"管理者アカウントを登録しますか？",
+		"title1": "言語およびデバイス設定",
+		"title2": "管理者アカウント登録",
+		"deviceType": "デバイスタイプ",
+		"device0": "データ取得装置",
+		"device1": "診断装置",
+		"device2": "統合設備診断装置",
+		"device3": "計測装置",
+		"device4": "インバータ計測装置"
 	},
   "header": {
     "profile": "プロフィール",
@@ -61,22 +69,52 @@
     "sitemap": "ダッシュボード",
     "meter": {
       "title": "計測状況",
+      "singletitle": "電圧/電流/周波数",
       "subtitle_main":"メインチャンネル",
       "subtitle_sub":"サブチャンネル",
       "voltage": "電圧",
       "current": "電流",
+      "avgvoltage": "平均電圧",
+      "totcurrent": "平均電流",
       "activepower": "有効電力",
       "activeenergy": "有効電力量",
       "frequency": "周波数"
     },
     "pq": {
       "title": "電力品質状況",
+      "singletitle": "不平衡率/THD/力率",
       "subtitle_main":"メインチャンネル",
       "subtitle_sub":"サブチャンネル",
       "voltageunbalance": "電圧不平衡率",
       "currentunbalance": "電流不平衡率",
+      "unbalance": "不平衡率",
       "powerfactor": "力率",
       "THD": "総合高調波歪み率"
+    },
+    "powerCard": "力率 · 電力",
+    "activePower": "有効電力 (P)",
+    "reactivePower": "無効電力 (Q)",
+    "apparentPower": "皮相電力 (S)",
+    "pfGood": "良好",
+    "pfWarn": "注意",
+    "pfBad": "基準未満",
+    "alarmLog": "アラーム / イベントログ",
+    "alarmTable": {
+      "time": "時間",
+      "criteria": "基準",
+      "status": "状態",
+      "value": "値"
+    },
+    "kwh": "電力量状況",
+    "kwh_realtime": {
+      "today": "今日",
+      "comparetoyesterday": "前日比",
+      "thisweek": "今週",
+      "comparetolastweek": "前週比",
+      "thismonth": "今月",
+      "comparetolastmonth": "前月比",
+      "thisyear": "年間",
+      "comparetolastyyear": "前年比"
     },
     "diagnosis": {
       "title": "診断状況",
@@ -153,6 +191,12 @@
         "Fault": "故障状態",
         "PowerQuality": "電力品質状態",
         "Event": "イベント状態"
+    },
+    "category": {
+      "voltage-inverter": "入力電圧/インバータ",
+      "components": "変圧器構成要素",
+      "mechanical": "機械的特性項目",
+      "electrical": "電気的特性項目"
     },
     "tabContext": {
         "th_title": "項目",
@@ -249,7 +293,8 @@
     },
     "tabs": {
       "harmonics": "高調波",
-      "waveform": "波形"
+      "waveform": "波形",
+      "status": "状態"
     },
     "options": {
       "phaseVoltage": "相電圧",

@@ -48,10 +48,16 @@
                 :channel-state="ChannelState"
                 :channel="channel"
               />
-              <SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+              <!--SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
-              />
+              /-->
+              <SingleChannel_NewCSS v-else-if="dashboardLayout === 'SingleChannelLayout'"
+                :channel-state="ChannelState"
+                :channel="channel" />
+              <MeasureLayout v-else-if="dashboardLayout === 'MeasuringLayout'"
+                :channel-state="ChannelState"
+                :channel="channel" />
               <DualChannelLayout v-else-if="dashboardLayout === 'DualChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
@@ -74,8 +80,10 @@
   import Sidebar from '../common/SideBar3.vue'
   import Header from '../common/Header.vue'
   import SingleChannelLayout from '../layouts/SingleChannelLayout.vue'
-  import DualChannelLayout from '../layouts/DualChannelLayout.vue' 
+  import DualChannelLayout from '../layouts/DualChannel_NewCSS.vue'
   import IntegratedLayout from '../layouts/IntegratedLayout3.vue'  
+  import MeasureLayout from '../layouts/MeasuringLayout.vue'
+  import SingleChannel_NewCSS from '../layouts/SingleChannel_NewCSS.vue'
   import Footer from "../common/Footer.vue"
   import { useSetupStore } from '@/store/setup'
   import { useAuthStore } from '@/store/auth'
@@ -92,6 +100,8 @@
       SingleChannelLayout,
       DualChannelLayout,
       IntegratedLayout,
+      MeasureLayout,
+      SingleChannel_NewCSS,
     },
     setup(props) {
       const sidebarOpen = ref(false)
@@ -119,19 +129,26 @@
       const dashboardLayout = computed(() => {
         if (opMode.value === 'device2') {
           return 'DualChannelLayout'
-        } else {
+        } else if (opMode.value === 'device3') {
           if (ChannelState.value?.SubEnable && ChannelState.value?.MainEnable)
             return 'DualChannelLayout'
-          else{
+          else {
             if (ChannelState.value?.MainEnable)
               channel.value = 'main'
             else
               channel.value = 'sub'
-            
+            return 'MeasuringLayout'
+          }
+        } else {
+          if (ChannelState.value?.SubEnable && ChannelState.value?.MainEnable)
+            return 'DualChannelLayout'
+          else {
+            if (ChannelState.value?.MainEnable)
+              channel.value = 'main'
+            else
+              channel.value = 'sub'
             return 'SingleChannelLayout'
           }
-
-          //return ChannelState.value?.SubEnable ? 'DualChannelLayout' : 'SingleChannelLayout'
         }
       })
   
