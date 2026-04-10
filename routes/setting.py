@@ -3099,31 +3099,30 @@ def save_ai_configs_to_redis(setting_dict: dict):
 
 def initialize_alarm_configs(channel, alams):
     rediskey = f"alarm_status:{channel}"
+    # redis_state.client_db1.execute_command("SELECT", 1)
+    redis_state.client_db1.delete(rediskey)
     alarmdict = {}
     for j in range(1, 33):
         if alams[str(j)][0] != 0:
             alarmdict[str(j)] = alams[str(j)]
-    if len(alarmdict.keys()) > 0:
-        # redis_state.client_db1.execute_command("SELECT", 1)
-        redis_state.client_db1.delete(rediskey)
-        for key in alarmdict:
-            if alarmdict[key][1] == 0:
-                condstr = 'UNDER'
-            else:
-                condstr = 'OVER'
-            init_data = {
-                "status": 0,
-                "count": 0,
-                "condition": condstr,
-                "value": 0,
-                "chan": alarmdict[key][0],
-                "cond": alarmdict[key][1],
-                "level": alarmdict[key][3],
-                "chan_text": parameter_options[alarmdict[key][0]],
-                "last_update": int(datetime.now().timestamp()),
-                "status_text": "None"
-            }
-            redis_state.client_db1.hset(rediskey, key, json.dumps(init_data))
+    for key in alarmdict:
+        if alarmdict[key][1] == 0:
+            condstr = 'UNDER'
+        else:
+            condstr = 'OVER'
+        init_data = {
+            "status": 0,
+            "count": 0,
+            "condition": condstr,
+            "value": 0,
+            "chan": alarmdict[key][0],
+            "cond": alarmdict[key][1],
+            "level": alarmdict[key][3],
+            "chan_text": parameter_options[alarmdict[key][0]],
+            "last_update": int(datetime.now().timestamp()),
+            "status_text": "None"
+        }
+        redis_state.client_db1.hset(rediskey, key, json.dumps(init_data))
 
 @router.post('/savefile/{channel}')  # save setup.json
 async def saveSetting(channel: str, request: Request):
