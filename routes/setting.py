@@ -2146,6 +2146,7 @@ def reset():
                     defaults = json.load(f)
 
                 defaults["mode"] = nowSetup["mode"]
+                defaults["lang"] = nowSetup["lang"]
                 defaults["General"]["deviceInfo"]["mac_address"] = get_mac_address()
                 defaults["General"]["deviceInfo"]["serial_number"] = get_mac_address()
 
@@ -2155,6 +2156,11 @@ def reset():
                 redis_state.client.hdel("System", "setup")
                 with open(setting_path, "w", encoding="utf-8") as f:
                     json.dump(defaults, f, indent=2)  # indent 추가로 가독성 향상
+
+                redis_state.client.hset("System", "setup", json.dumps(defaults))
+                redis_state.client.hset("System", "mode", nowSetup["mode"])
+                redis_state.client.hset("Service", "save", 1)
+                redis_state.client.hset("Service", "restart", 1)
                 threading.Timer(2, apply_network_setting, args=[defaults["General"]["tcpip"]]).start()
                 threading.Timer(2, apply_sntp_setting, args=[defaults["General"]["sntpInfo"]]).start()
         except Exception as e:
