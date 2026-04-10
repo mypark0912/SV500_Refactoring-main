@@ -48,16 +48,16 @@
                 :channel-state="ChannelState"
                 :channel="channel"
               />
-              <!--SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
+              <SingleChannelLayout v-else-if="dashboardLayout === 'SingleChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"
-              /-->
-              <SingleChannel_NewCSS v-else-if="dashboardLayout === 'SingleChannelLayout'"
+              />
+              <!--SingleChannel_NewCSS v-else-if="dashboardLayout === 'SingleChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel" />
               <MeasureLayout v-else-if="dashboardLayout === 'MeasuringLayout'"
                 :channel-state="ChannelState"
-                :channel="channel" />
+                :channel="channel" /-->
               <DualChannelLayout v-else-if="dashboardLayout === 'DualChannelLayout'"
                 :channel-state="ChannelState"
                 :channel="channel"

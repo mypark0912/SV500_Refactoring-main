@@ -48,7 +48,7 @@
                     <div v-if="activeTab === tab.name" class="text-gray-700 dark:text-white text-left pt-3 px-4">
                         <!-- 차트 컨테이너 -->
                         <div class="flex flex-col space-y-2"> 
-                            <DiagnosisTab_Bands v-if="activeTab === 'Status'" :channel="channel" :asset="asset" :mode="activeTab" :key="`tab-${channel}-${activeTab}`"/>
+                            <DiagnosisTab v-if="activeTab === 'Status'" :channel="channel" :asset="asset" :mode="activeTab" :key="`tab-${channel}-${activeTab}`"/>
                             <DiagnosisTab v-else-if="activeTab === 'PowerQuality'" :channel="channel" :asset="asset" :mode="activeTab" />     
                             <DiagnosisTab v-else-if="activeTab === 'Fault'" :channel="channel" :asset="asset" :mode="activeTab" />  
                             <DiagnosisTab v-else :channel="channel" :asset="asset" :mode="activeTab" />                    

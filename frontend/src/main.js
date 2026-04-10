@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia'; // ✅ Pinia 추가
-import router from './router_ko';
+import router from './router2';
 import App from './App.vue';
 import i18n from './i18n'
 //import { useAuthStore } from '@/store/auth'; // ✅ Pinia Store 사용
