@@ -495,7 +495,7 @@
 
           <!-- ========== DiagnosisTrend Tab ========== -->
           <template v-else-if="parquetTab === 'trend'">
-            <div v-if="trendFiles.length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+            <div v-if="Object.keys(trendFiles).length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
               No trend files found.
             </div>
             <div v-else>
@@ -513,34 +513,39 @@
                   Download All
                 </button>
               </div>
-              <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="bg-gray-50 dark:bg-gray-700">
-                    <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">File Name</th>
-                    <th class="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-300 w-24">Download</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                  <tr v-for="file in trendFiles" :key="file" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ file }}</td>
-                    <td class="px-3 py-2 text-center">
-                      <button
-                        class="inline-flex items-center text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
-                        @click="downloadTrend(file)"
-                        :disabled="parquetDownloading"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="7 10 12 15 17 10"/>
-                          <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <div v-for="(files, channel) in trendFiles" :key="channel" class="mb-4">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
+                  Channel: {{ channel }}
+                </h4>
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-gray-50 dark:bg-gray-700">
+                        <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">File Name</th>
+                        <th class="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-300 w-24">Download</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                      <tr v-for="file in files" :key="file" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ file }}</td>
+                        <td class="px-3 py-2 text-center">
+                          <button
+                            class="inline-flex items-center text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+                            @click="downloadTrend(channel, file)"
+                            :disabled="parquetDownloading"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </template>
         </div>
@@ -673,7 +678,7 @@ export default {
     const parquetModalOpen = ref(false);
     const parquetTab = ref('report');
     const reportFiles = ref({});
-    const trendFiles = ref([]);
+    const trendFiles = ref({});
     const parquetLoading = ref(false);
     const parquetDownloading = ref(false);
 
@@ -871,10 +876,10 @@ export default {
       parquetLoading.value = true;
       try {
         const response = await axios.get('/setting/backup/parquet/trend/list');
-        trendFiles.value = response.data.success ? response.data.data : [];
+        trendFiles.value = response.data.success ? response.data.data : {};
       } catch (error) {
         console.error('Trend list failed:', error);
-        trendFiles.value = [];
+        trendFiles.value = {};
       } finally {
         parquetLoading.value = false;
       }
@@ -982,11 +987,11 @@ export default {
       }
     };
 
-    const downloadTrend = async (filename) => {
+    const downloadTrend = async (channel, filename) => {
       try {
         parquetDownloading.value = true;
         const response = await axios.get('/setting/backup/parquet/trend/download', {
-          params: { filename },
+          params: { channel, filename },
           responseType: 'blob',
         });
         triggerDownload(new Blob([response.data]), filename);

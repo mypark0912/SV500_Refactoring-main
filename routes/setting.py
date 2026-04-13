@@ -1253,24 +1253,35 @@ async def download_report_parquet(channel: str, date: str):
 
 @router.get("/backup/parquet/trend/list")
 async def list_trend_files():
-    """DiagnosisTrend CSV 파일 목록 조회"""
+    """DiagnosisTrend parquet 파일 목록 조회 (채널 폴더별 그룹)"""
     try:
         trend_dir = Path("/usr/local/sv500/trendcsv")
         if not trend_dir.exists():
             return {"success": False, "message": "Trend directory not found"}
 
-        files = sorted([f.name for f in trend_dir.glob("*.parquet")], reverse=True)
-        return {"success": True, "data": files}
+        result = {}
+        for ch_dir in sorted(trend_dir.iterdir()):
+            if not ch_dir.is_dir():
+                continue
+            files = sorted([f.name for f in ch_dir.glob("*.parquet")], reverse=True)
+            if files:
+                result[ch_dir.name] = files
+
+        return {"success": True, "data": result}
     except Exception as e:
         logging.error(f"❌ Trend list error: {e}")
         return {"success": False, "message": str(e)}
 
 
 @router.get("/backup/parquet/trend/download")
-async def download_trend_file(filename: str):
-    """DiagnosisTrend CSV 파일 개별 다운로드"""
+async def download_trend_file(filename: str, channel: str = ""):
+    """DiagnosisTrend parquet 파일 개별 다운로드 (채널 폴더 기준)"""
     try:
-        filepath = Path("/usr/local/sv500/trendcsv") / filename
+        base_dir = Path("/usr/local/sv500/trendcsv")
+        if channel:
+            filepath = base_dir / channel / filename
+        else:
+            filepath = base_dir / filename
         if not filepath.exists() or filepath.suffix != '.parquet':
             return {"success": False, "message": f"File not found: {filename}"}
 
@@ -1344,10 +1355,10 @@ async def download_all_reports():
 
 @router.get("/backup/parquet/trend/download-all")
 async def download_all_trends():
-    """DiagnosisTrend CSV 전체 tar.gz 다운로드"""
+    """DiagnosisTrend parquet 전체 tar.gz 다운로드 (채널 폴더 구조 유지)"""
     try:
         trend_dir = Path("/usr/local/sv500/trendcsv")
-        if not trend_dir.exists() or not any(trend_dir.glob("*.csv")):
+        if not trend_dir.exists() or not any(trend_dir.rglob("*.parquet")):
             return {"success": False, "message": "No trend files found"}
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -1355,8 +1366,13 @@ async def download_all_trends():
         collect_dir = os.path.join(temp_dir, "trendcsv")
         os.makedirs(collect_dir, exist_ok=True)
 
-        for f in trend_dir.glob("*.csv"):
-            shutil.copy2(str(f), collect_dir)
+        for ch_dir in trend_dir.iterdir():
+            if not ch_dir.is_dir():
+                continue
+            dst = os.path.join(collect_dir, ch_dir.name)
+            os.makedirs(dst, exist_ok=True)
+            for f in ch_dir.glob("*.parquet"):
+                shutil.copy2(str(f), dst)
 
         backup_name = f"backup_trend_all_{timestamp}"
         parent_dir = os.path.dirname(temp_dir)
