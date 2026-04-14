@@ -6,6 +6,7 @@ import os, httpx, csv, psutil, struct, tempfile
 import ujson as json
 import shutil, logging, subprocess, asyncio
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec
 from collections import defaultdict
 from typing import Dict, Any, List
@@ -15,6 +16,7 @@ from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
 import asyncio, time
 from .demand import check_demand_downsampling_status, create_demand_downsampling_tasks
+from .config import TimeSetRequest
 import sqlite3
 
 # Path 객체 절대경로
@@ -2178,7 +2180,8 @@ def reset():
                 redis_state.client.hset("Service", "save", 1)
                 redis_state.client.hset("Service", "restart", 1)
                 threading.Timer(2, apply_network_setting, args=[defaults["General"]["tcpip"]]).start()
-                threading.Timer(2, apply_sntp_setting, args=[defaults["General"]["sntpInfo"]]).start()
+                threading.Timer(2, apply_timezone_setting, args=[defaults["General"].get("deviceInfo", {}).get("timezone", "")]).start()
+                threading.Timer(2, apply_sntp_setting, args=[defaults["General"].get("sntpInfo", {})]).start()
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
@@ -3404,7 +3407,8 @@ async def apply(request: Request):
 
     redis_state.client.hset("System", "setup", json.dumps(saveData))
 
-    apply_sntp_setting(saveData["General"]["sntpInfo"])
+    apply_timezone_setting(saveData["General"].get("deviceInfo", {}).get("timezone", ""))
+    apply_sntp_setting(saveData["General"].get("sntpInfo", {}))
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice, "restartCore": restartCore}
 
@@ -3521,21 +3525,25 @@ UseRoutes=true
         os.system("systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
 
-def apply_sntp_setting(sntp_data):
-    TIMESYNCD_CONF = "/etc/systemd/timesyncd.conf"
-    tz = sntp_data.get("timezone", "")
-    ntp_server = sntp_data.get("host", "")
+def apply_timezone_setting(timezone):
+    """장비 타임존 설정. 변경 있을 때만 적용."""
+    if not timezone:
+        return {"result": False}
+    try:
+        result = subprocess.run(["timedatectl", "show", "--property=Timezone"],
+                                capture_output=True, text=True)
+        current_tz = result.stdout.strip().replace("Timezone=", "")
+        if current_tz != timezone:
+            subprocess.run(["timedatectl", "set-timezone", timezone])
+    except Exception:
+        subprocess.run(["timedatectl", "set-timezone", timezone])
+    return {"result": True}
 
-    # ⭐ 타임존 변경 비교 — 변경 있을 때만 적용
-    if tz:
-        try:
-            result = subprocess.run(["timedatectl", "show", "--property=Timezone"],
-                                    capture_output=True, text=True)
-            current_tz = result.stdout.strip().replace("Timezone=", "")
-            if current_tz != tz:
-                subprocess.run(["timedatectl", "set-timezone", tz])
-        except Exception:
-            subprocess.run(["timedatectl", "set-timezone", tz])
+
+def apply_sntp_setting(sntp_data):
+    """SNTP/NTP 서버 설정 적용. host가 없으면 timesyncd 비활성화."""
+    TIMESYNCD_CONF = "/etc/systemd/timesyncd.conf"
+    ntp_server = (sntp_data or {}).get("host", "")
 
     # ⭐ NTP 설정 변경 비교
     ntpflag = False
@@ -3571,6 +3579,28 @@ def apply_sntp_setting(sntp_data):
 
     return {"result": True}
 
+def get_system_timezone():
+    """장비 OS의 현재 타임존을 조회. 실패 시 'Asia/Seoul' 반환."""
+    try:
+        result = subprocess.run(
+            ["timedatectl", "show", "--property=Timezone", "--value"],
+            capture_output=True, text=True, check=True, timeout=2
+        )
+        tz = result.stdout.strip()
+        if tz:
+            return tz
+    except Exception:
+        pass
+    try:
+        with open("/etc/timezone", "r") as f:
+            tz = f.read().strip()
+            if tz:
+                return tz
+    except Exception:
+        pass
+    return "Asia/Seoul"
+
+
 def save_redis_setup(setupData):
     modbus = setupData["General"].get("modbus", {})
     if safe_int(modbus.get("rtu_use", 0)) == 1:
@@ -3579,6 +3609,10 @@ def save_redis_setup(setupData):
     else:
         serialUse = False
         redis_state.client.delete("SerialModbus")
+    device_timezone = setupData["General"].get("deviceInfo", {}).get("timezone")
+    if not device_timezone:
+        device_timezone = get_system_timezone()
+    redis_state.client.hset("Device", "Timezone", device_timezone)
     if len(setupData["channel"]) > 0:
         for ch in setupData["channel"]:
             if "channel" in ch and "alarm" in ch:
@@ -5077,3 +5111,41 @@ async def set_defaultIP(request:Request):
         return {"success": True}
     except Exception as e:
         return {"success" : False}
+
+@router.post("/setSystemTime")
+async def setup_system_time(data: TimeSetRequest, request: Request):
+    """
+    클라이언트 로컬 시간을 받아서, Redis에 저장된 장비 타임존 시간으로 변환 후 장비시간으로 설정.
+    Redis에 저장된 타임존이 없으면 OS의 현재 타임존을 사용.
+    """
+    try:
+        # 1. 장비 타깃 타임존 결정 (Redis 저장값 → 없으면 OS 시스템 타임존)
+        saved_tz = redis_state.client.hget("Device", "Timezone")
+        if isinstance(saved_tz, bytes):
+            saved_tz = saved_tz.decode()
+        if not saved_tz:
+            saved_tz = get_system_timezone()
+
+        # 2. 클라이언트 로컬 시간 → 타깃 타임존 시간으로 변환
+        client_dt = datetime.strptime(data.datetime_str, '%Y-%m-%d %H:%M:%S')
+        client_tz = ZoneInfo(data.timezone)
+        client_dt_aware = client_dt.replace(tzinfo=client_tz)
+        target_dt = client_dt_aware.astimezone(ZoneInfo(saved_tz))
+        target_dt_str = target_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        # 3. 장비에 타깃 타임존 + 변환된 시간 설정
+        subprocess.run(f"timedatectl set-timezone {saved_tz}", shell=True, check=True)
+        subprocess.run(f"date -s '{target_dt_str}'", shell=True, check=True, capture_output=True, text=True)
+        subprocess.run("hwclock -w", shell=True, check=True)
+
+        current = subprocess.run("date", shell=True, capture_output=True, text=True)
+        updateLog("Set Time", request)
+        return {
+            "success": True,
+            "message": "System time updated",
+            "current_time": current.stdout.strip(),
+            "timezone": saved_tz
+        }
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return { "success": False }

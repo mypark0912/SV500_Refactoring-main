@@ -22,6 +22,7 @@ export function useInputDict() {
       location:"",
       serial_number: "",
       mac_address: "",
+      timezone: "",
     },
     tcpip: {
       ip_address: "",
@@ -62,7 +63,6 @@ export function useInputDict() {
     },
     sntpInfo: {
       host: "",
-      timezone: "",
     },
     MQTT :{
       Use:"",

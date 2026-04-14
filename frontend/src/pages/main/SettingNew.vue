@@ -15,10 +15,10 @@
   
         <main class="grow">
           <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
-            <div class="mb-4">
-              <h2
-                class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"
-              >
+
+            <!-- Non-device 모드 (User Management 등): 단순 타이틀만 -->
+            <div v-if="mode != 'Device'" class="mb-4">
+              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold">
                 <template
                   v-if="
                     ![
@@ -35,51 +35,50 @@
                 {{ t(`config.sitemap.${formattedChannel}`) }}
               </h2>
             </div>
-  
-            <!-- Sticky Header Section -->
+
+            <!-- Device 모드: 타이틀 + 토글 + Save/Apply 통합 sticky 헤더 -->
             <div
               v-if="mode == 'Device'"
-              class="sticky top-16 z-20 bg-white dark:bg-gray-800 rounded-xl mb-4 p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+              class="sticky top-16 z-20 mb-1 -mx-2 sm:-mx-4 lg:-mx-6 px-2 sm:px-4 lg:px-6 bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm"
             >
-              <div class="flex justify-between items-center">
+              <!-- 상단: 타이틀 + Save/Apply -->
+              <div class="flex justify-between items-center py-3">
+                <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold">
+                  {{ t("config.sitemap.title") }} > {{ t(`config.sitemap.${formattedChannel}`) }}
+                </h2>
+                <div class="flex items-center space-x-2">
+                  <button
+                    class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSaving"
+                    @click.prevent="openSaveModal"
+                  >
+                    <svg v-if="!isSaving" class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <svg v-else class="animate-spin h-4 w-4 mr-1.5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ isSaving ? t("config.saving") || "Saving..." : t("config.save") }}
+                  </button>
+                  <button
+                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSaving"
+                    @click.stop.prevent="apply"
+                  >
+                    <svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {{ t("config.apply") }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 하단: 채널/옵션 pill 영역 -->
+              <div class="flex justify-between items-center py-3 border-t border-gray-200 dark:border-gray-700/60">
                 <!-- Left: Channel Controls -->
                 <div class="flex items-center space-x-4">
-                  <!-- General -->
-                  <div
-                    v-if="mode == 'Device'"
-                    class="inline-flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600 shadow-sm"
-                  >
-                    <div class="flex items-center mr-3">
-                      <svg class="w-3.5 h-3.5 mr-1.5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                      </svg>
-                      <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {{ t("sidebar.general") }}
-                      </span>
-                    </div>
-                    <div class="w-px h-4 bg-gray-300 dark:bg-gray-500 mr-3"></div>
-                    <div class="flex items-center space-x-3">
-                      <button
-                        class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
-                        :class="getFTPButtonClass()"
-                        :disabled="isDiagnosisEnabled || isSaving"
-                        @click="toggleFTP"
-                      >
-                        <span class="relative z-10">{{ t("config.plansPanel.useWaveFormFTP") }}</span>
-                        <div v-if="inputDict.useFuction.ftp" class="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full animate-pulse"></div>
-                        <div v-if="isDiagnosisEnabled || isSaving" class="absolute inset-0 bg-gray-500 bg-opacity-70 rounded-md"></div>
-                      </button>
-                      <button
-                        class="btn h-6 relative overflow-hidden transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 rounded-md px-3 text-xs font-medium shadow-sm whitespace-nowrap"
-                        :class="inputDict.useFuction.sntp ? 'bg-lime-900 text-lime-100 hover:bg-lime-800 dark:bg-lime-100 dark:text-lime-800 dark:hover:bg-white' : 'bg-gray-600 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white'"
-                        :disabled="isSaving"
-                        @click="inputDict.useFuction.sntp = inputDict.useFuction.sntp === 1 ? 0 : 1"
-                      >
-                        <span class="relative z-10">{{ t("config.plansPanel.useSNTP") }}</span>
-                        <div v-if="inputDict.useFuction.sntp" class="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full animate-pulse"></div>
-                      </button>
-                    </div>
-                  </div>
+                  <!-- General pill 제거됨 (FTP/SNTP/Modbus/MQTT 토글은 PlansPanel의 Device Function 카드로 이동) -->
 
                   <!-- Main Channel -->
                   <div
@@ -154,49 +153,9 @@
                   </div>
                 </div>
 
-                <!-- Right: Action Buttons -->
-                <div class="flex items-center space-x-3">
-                  <button
-                    class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isSaving"
-                    @click.prevent="openSaveModal"
-                  >
-                    <svg v-if="!isSaving" class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <svg v-else class="animate-spin h-4 w-4 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {{ isSaving ? t("config.saving") || "Saving..." : t("config.save") }}
-                  </button>
-                  <button
-                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-6 py-2 shadow-lg transition-all duration-200 hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isSaving"
-                    @click.stop.prevent="apply"
-                  >
-                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {{ t("config.apply") }}
-                  </button>
-                </div>
               </div>
 
-              <!-- Conflict Warning -->
-              <div
-                v-if="showConflictWarning"
-                class="mt-3 p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg"
-              >
-                <div class="flex items-center">
-                  <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="text-yellow-800 dark:text-yellow-200 text-xs font-medium">
-                    ⚠️ FTP와 Diagnosis는 동시에 사용할 수 없습니다. (Main/Sub 채널 진단 모두 포함) 하나를 비활성화해주세요.
-                  </span>
-                </div>
-              </div>
+              <!-- Conflict Warning은 DeviceFunctionCard로 이동됨 -->
             </div>
 
             <div v-if="mode == 'Device' && false" class="mb-6">

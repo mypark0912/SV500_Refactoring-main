@@ -1,7 +1,7 @@
 <template>
   <div class="grow dark:text-white">
     <!-- Panel body -->
-    <div class="p-6 space-y-6">
+    <div class="px-6 pt-3 pb-6 space-y-6">
       <!-- Plans -->
       <section>
         <div class="mb-4">
@@ -48,9 +48,9 @@
                 aria-hidden="true"
               ></div>
               <div
-                class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+                class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
               >
-                <header class="flex items-center mb-2">
+                <header class="flex items-center">
                   <div class="w-6 h-6 rounded-full shrink-0 bg-green-500 mr-3">
                     <svg
                       class="w-6 h-6 fill-current text-white"
@@ -323,9 +323,9 @@
                 aria-hidden="true"
               ></div>
               <div
-                class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+                class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
               >
-                <header class="flex items-center mb-2">
+                <header class="flex items-center">
                   <div class="w-6 h-6 rounded-full shrink-0 bg-sky-500 mr-3">
                     <svg
                       class="w-6 h-6 fill-current text-white"
@@ -500,9 +500,9 @@
                 aria-hidden="true"
               ></div>
               <div
-                class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+                class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
               >
-                <header class="flex items-center mb-2">
+                <header class="flex items-center">
                   <div class="w-6 h-6 rounded-full shrink-0 bg-blue-500 mr-3">
                     <svg
                       class="w-6 h-6 fill-current text-white"
@@ -608,9 +608,9 @@
                 aria-hidden="true"
               ></div>
               <div
-                class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+                class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
               >
-                <header class="flex items-center mb-2">
+                <header class="flex items-center">
                   <div class="w-6 h-6 rounded-full shrink-0 bg-blue-500 mr-3">
                     <svg
                       class="w-6 h-6 fill-current text-white"
@@ -756,6 +756,10 @@
             />
             <AISetting :channel="channel" />
             <DOAlarmCard v-if="isConfigureStatus" :channel="channel" />
+          </div>
+          <!-- 채널 비활성화 안내 -->
+          <div v-else class="text-center py-3 text-sm text-gray-500 dark:text-gray-400">
+            {{ t("config.channelPanel.disabledMessage") }}
           </div>
         </div>
       </section>

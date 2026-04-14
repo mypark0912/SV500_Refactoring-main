@@ -2,16 +2,16 @@
   <!-- Waveform FTP -->
   <div
     v-if="showFTP"
-    class="relative col-span-full xl:col-span-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
+    class="relative col-span-full xl:col-span-6 h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
   >
     <div
       class="absolute top-0 left-0 right-0 h-0.5 bg-orange-500"
       aria-hidden="true"
     ></div>
     <div
-      class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+      class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
     >
-      <header class="flex items-center justify-between mb-2">
+      <header class="flex items-center justify-between">
         <div class="flex items-center">
           <div class="w-6 h-6 rounded-full shrink-0 bg-orange-500 mr-3">
             <svg

@@ -275,14 +275,14 @@ export class SettingValidator {
       if (inputDict.sntpInfo.host) {
         this.validateIPAddress(inputDict.sntpInfo.host, 'SNTP Host');
       }
-      
-      if (inputDict.sntpInfo.timezone !== undefined) {
-        this.validateRequired(inputDict.sntpInfo.timezone, 'Timezone');
-      }
     } else {
       this.warnings.push('SNTP is enabled but SNTP settings are not configured');
     }
-    
+
+    if (inputDict.deviceInfo && inputDict.deviceInfo.timezone !== undefined) {
+      this.validateRequired(inputDict.deviceInfo.timezone, 'Timezone');
+    }
+
     return this.errors.length === 0;
   }
 

@@ -15,9 +15,9 @@
         <path d="M8 4a.75.75 0 0 1 .75.75v2.69l1.78 1.78a.75.75 0 1 1-1.06 1.06l-2-2A.75.75 0 0 1 7.25 8V4.75A.75.75 0 0 1 8 4Z" />
       </svg>
       <!-- 상태 표시 띵 -->
-      <div 
-        class="absolute top-0 right-0 w-2.5 h-2.5 border-2 border-gray-100 dark:border-gray-900 rounded-full" 
-        :class="status ? 'bg-green-500' : 'bg-red-500'"
+      <div
+        class="absolute top-0 right-0 w-2.5 h-2.5 border-2 border-gray-100 dark:border-gray-900 rounded-full"
+        :class="timeStatus ? 'bg-green-500' : 'bg-red-500'"
       ></div>
     </button>
     
@@ -102,7 +102,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import axios from 'axios'
 
 export default {
@@ -111,31 +111,51 @@ export default {
     align: {
       type: String,
       default: 'right'
-    },
-    status: {
-      type: Boolean,
-      default: true
-    },
-    deviceTime: {
-      type: String,
-      default: null
     }
   },
-  emits: ['time-synced', 'sync-error', 'refresh-time'],
+  emits: ['sync-error'],
   setup(props, { emit }) {
     const dropdownOpen = ref(false)
     const trigger = ref(null)
     const dropdown = ref(null)
-    
+
     const syncing = ref(false)
     const refreshing = ref(false)
     const syncMessage = ref('')
     const syncSuccess = ref(false)
 
+    const deviceTime = ref(null)
+    const timeStatus = ref(true)
+
+    const getDeviceTime = async () => {
+      try {
+        const now = new Date()
+        const datetimeStr = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0') + ':' +
+          String(now.getSeconds()).padStart(2, '0')
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+        const response = await axios.post('/config/checktime', {
+          datetime_str: datetimeStr,
+          timezone: timezone
+        })
+        if (response.data.success) {
+          deviceTime.value = response.data.deviceTime
+          timeStatus.value = response.data.status
+        }
+      } catch (error) {
+        console.log("장비 시간 가져오기 실패:", error)
+        timeStatus.value = false
+      }
+    }
+
     // 장비 시간 포맷팅
     const formattedDeviceTime = computed(() => {
-      if (!props.deviceTime) return '--'
-      const date = new Date(props.deviceTime)
+      if (!deviceTime.value) return '--'
+      const date = new Date(deviceTime.value)
       return date.toLocaleString(navigator.language, {
         year: 'numeric',
         month: '2-digit',
@@ -150,7 +170,7 @@ export default {
     // 시간 새로고침
     const refreshTime = async () => {
       refreshing.value = true
-      emit('refresh-time')
+      await getDeviceTime()
       setTimeout(() => {
         refreshing.value = false
       }, 500)
@@ -172,7 +192,7 @@ export default {
         
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
         
-        const response = await axios.post('/config/calibrate/setSystemTime', {
+        const response = await axios.post('/setting/setSystemTime', {
           datetime_str: datetimeStr,
           timezone: timezone
         })
@@ -180,7 +200,7 @@ export default {
         if (response.data.success) {
           syncMessage.value = 'Success!'
           syncSuccess.value = true
-          emit('time-synced')
+          await getDeviceTime()
           refreshTime()
         } else {
           syncMessage.value = 'Failed'
@@ -212,9 +232,17 @@ export default {
       dropdownOpen.value = false
     }
 
-    onMounted(() => {
+    // 드롭다운 열릴 때마다 장비 시간 새로 가져오기
+    watch(dropdownOpen, (isOpen) => {
+      if (isOpen) {
+        getDeviceTime()
+      }
+    })
+
+    onMounted(async () => {
       document.addEventListener('click', clickHandler)
       document.addEventListener('keydown', keyHandler)
+      await getDeviceTime()
     })
 
     onUnmounted(() => {
@@ -230,6 +258,7 @@ export default {
       refreshing,
       syncMessage,
       syncSuccess,
+      timeStatus,
       formattedDeviceTime,
       syncTime,
       refreshTime,

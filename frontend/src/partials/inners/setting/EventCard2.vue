@@ -7,9 +7,9 @@
       aria-hidden="true"
     ></div>
     <div
-      class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60"
+      class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
     >
-      <header class="flex items-center mb-2">
+      <header class="flex items-center">
         <div class="w-6 h-6 rounded-full shrink-0 bg-purple-500 mr-3">
           <svg
             class="w-6 h-6 fill-current text-white"

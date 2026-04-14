@@ -788,14 +788,23 @@
         "name": "이름",
         "loc": "위치",
         "sn": "Serial 번호",
-        "mac": "Mac 주소"
+        "mac": "Mac 주소",
+        "timezone": "시간대"
       },
       "communication": {
         "title": "통신 설정",
         "ip": "IP 주소",
         "sm": "서브넷 마스크",
         "gw": "게이트웨이",
-        "dns": "DNS 서버"
+        "dns": "DNS 서버",
+        "logEnable": "로그 활성화"
+      },
+      "deviceFunction": {
+        "title": "장치 기능",
+        "ftpDxConflict": "⚠️ FTP와 진단은 동시에 사용할 수 없습니다. 하나를 비활성화해주세요."
+      },
+      "etc": {
+        "title": "기타 정보"
       },
       "modbus": {
         "title": "Modbus",
@@ -836,6 +845,8 @@
       }
     },
     "channelPanel": {
+      "disabledTitle": "비활성화된 채널",
+      "disabledMessage": "이 채널은 비활성화 상태입니다. 상단의 채널 토글을 켜면 설정을 변경할 수 있습니다.",
       "tempR":"온도 R상",
       "tempS":"온도 S상",
       "tempT":"온도 T상",

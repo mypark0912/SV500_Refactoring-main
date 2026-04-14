@@ -791,14 +791,23 @@
         "name": "Name",
         "loc": "Location",
         "sn": "Serial Number",
-        "mac": "Mac Address"
+        "mac": "Mac Address",
+        "timezone": "Timezone"
       },
       "communication": {
         "title": "Communication",
         "ip": "IP Address",
         "sm": "Subnet Mask",
         "gw": "Gateway",
-        "dns": "DNS Server"
+        "dns": "DNS Server",
+        "logEnable": "Log enable"
+      },
+      "deviceFunction": {
+        "title": "Device Function",
+        "ftpDxConflict": "⚠️ FTP and Diagnosis cannot be used simultaneously. Please disable one."
+      },
+      "etc": {
+        "title": "ETC"
       },
       "modbus": {
         "title": "Modbus",
@@ -841,6 +850,8 @@
     "channelPanel": {
       "selEnable": "Enable",
       "selPQ": "PowerQuality",
+      "disabledTitle": "Channel Disabled",
+      "disabledMessage": "This channel is currently disabled. Enable it from the channel toggle above to configure settings.",
       "tempR": "Temp R",
       "tempS": "Temp S",
       "tempT": "Temp T",

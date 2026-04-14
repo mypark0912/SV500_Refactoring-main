@@ -4,8 +4,8 @@
     class="relative col-span-full xl:col-span-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg"
   >
     <div class="absolute top-0 left-0 right-0 h-0.5 bg-orange-500" aria-hidden="true"></div>
-    <div class="px-5 pt-5 pb-6 border-b border-gray-200 dark:border-gray-700/60">
-      <header class="flex items-center mb-2">
+    <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60">
+      <header class="flex items-center">
         <div class="w-6 h-6 rounded-full shrink-0 bg-orange-500 mr-3">
           <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <circle cx="17" cy="17" r="4" stroke="currentColor" stroke-width="2" fill="none" />

@@ -56,12 +56,7 @@
         <!-- Header: Right side -->
         <div class="flex items-center space-x-3">
           <Notifications align="right" :status="sysIcon" :data="sysData" :smart="smartData" />
-          <DeviceTime 
-            align="right" 
-            :status="timeStatus" 
-            :device-time="deviceTime"
-            @time-synced="onTimeSynced" @refresh-time="onTimeSynced"
-          />
+          <DeviceTime align="right" />
           <hr class="w-px h-6 bg-gray-200 dark:bg-gray-700/60 border-none" />
           <Help align="right" />
           <DropdownLanguage align="right" />
@@ -111,8 +106,6 @@ export default {
     const location = computed(()=> setupStore.getDevLocation);
     const channelSetting = computed(()=> setupStore.getChannelSetting);
     let updateInterval = null;
-    const deviceTime = ref(null);
-    const timeStatus = ref(true);  // true: 정상, false: 24시간 이상 차이
 
     const getSysStatus = async()=>{
       try {
@@ -135,48 +128,16 @@ export default {
       } 
     }
 
-    const getDeviceTime = async () => {
-      try {
-        const now = new Date();
-        const datetimeStr = now.getFullYear() + '-' +
-          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-          String(now.getDate()).padStart(2, '0') + ' ' +
-          String(now.getHours()).padStart(2, '0') + ':' +
-          String(now.getMinutes()).padStart(2, '0') + ':' +
-          String(now.getSeconds()).padStart(2, '0');
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
-        const response = await axios.post('/config/checktime', {
-          datetime_str: datetimeStr,
-          timezone: timezone
-        });
-        if (response.data.success) {
-          deviceTime.value = response.data.deviceTime;
-          timeStatus.value = response.data.status;
-        }
-      } catch (error) {
-        console.log("장비 시간 가져오기 실패:", error);
-        timeStatus.value = false;
-      }
-    }
-
-    // ✅ 시간 동기화 완료 핸들러
-    const onTimeSynced = async () => {
-      //console.log('시간 동기화 완료!');
-      await getDeviceTime();  // 동기화 후 시간 다시 가져오기
-    }
-
     onMounted(async () => {
       // 기존 인터벌 정리
       if (updateInterval) {
         clearInterval(updateInterval)
         updateInterval = null
       }
-      
+
       // 초기 데이터 로드
       await getSysStatus();
-      await getDeviceTime();
-      
+
       // ✅ async 함수로 수정
       updateInterval = setInterval(async () => {
         await getSysStatus()
@@ -203,9 +164,6 @@ export default {
       location,
       sysIcon,
       sysData,
-      deviceTime,      // ✅ 추가
-      timeStatus,      // ✅ 추가
-      onTimeSynced,    // ✅ 추가
       smartData,
       channelSetting,
     }
