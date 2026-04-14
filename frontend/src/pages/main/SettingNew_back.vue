@@ -17,7 +17,7 @@
           <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
             <div class="mb-4">
               <h2
-                class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"
+                class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold"
               >
                 <template
                   v-if="

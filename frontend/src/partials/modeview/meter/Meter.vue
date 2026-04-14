@@ -18,7 +18,7 @@
 
             <!-- Left: Title -->
             <div class="mb-4 sm:mb-0">
-              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold ml-1">{{ channel == 'Main' ? t('meter.sitemap.main'):t('meter.sitemap.sub') }} {{ assetName }} > {{ t('meter.sitemap.title') }}</h2>
+              <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold ml-1">{{ channel == 'Main' ? t('meter.sitemap.main'):t('meter.sitemap.sub') }} {{ assetName }} > {{ t('meter.sitemap.title') }}</h2>
             </div>
 
           </div>

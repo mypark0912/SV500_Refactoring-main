@@ -14,11 +14,11 @@
         />
   
         <main class="grow">
-          <div class="px-2 sm:px-4 lg:px-6 py-4 w-full max-w-full">
+          <div class="px-2 sm:px-4 lg:px-6 pt-2 pb-4 w-full max-w-full">
 
             <!-- Non-device 모드 (User Management 등): 단순 타이틀만 -->
             <div v-if="mode != 'Device'" class="mb-4">
-              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold">
+              <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold">
                 <template
                   v-if="
                     ![
@@ -41,41 +41,15 @@
               v-if="mode == 'Device'"
               class="sticky top-16 z-20 mb-1 -mx-2 sm:-mx-4 lg:-mx-6 px-2 sm:px-4 lg:px-6 bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm"
             >
-              <!-- 상단: 타이틀 + Save/Apply -->
-              <div class="flex justify-between items-center py-3">
+              <!-- 상단: 타이틀 -->
+              <div class="pt-0 pb-0">
                 <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold">
                   {{ t("config.sitemap.title") }} > {{ t(`config.sitemap.${formattedChannel}`) }}
                 </h2>
-                <div class="flex items-center space-x-2">
-                  <button
-                    class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isSaving"
-                    @click.prevent="openSaveModal"
-                  >
-                    <svg v-if="!isSaving" class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <svg v-else class="animate-spin h-4 w-4 mr-1.5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {{ isSaving ? t("config.saving") || "Saving..." : t("config.save") }}
-                  </button>
-                  <button
-                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isSaving"
-                    @click.stop.prevent="apply"
-                  >
-                    <svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {{ t("config.apply") }}
-                  </button>
-                </div>
               </div>
 
               <!-- 하단: 채널/옵션 pill 영역 -->
-              <div class="flex justify-between items-center py-3 border-t border-gray-200 dark:border-gray-700/60">
+              <div class="flex justify-between items-center py-3">
                 <!-- Left: Channel Controls -->
                 <div class="flex items-center space-x-4">
                   <!-- General pill 제거됨 (FTP/SNTP/Modbus/MQTT 토글은 PlansPanel의 Device Function 카드로 이동) -->
@@ -151,6 +125,34 @@
                       </button>
                     </div>
                   </div>
+                </div>
+
+                <!-- Right: Save / Apply -->
+                <div class="flex items-center space-x-2">
+                  <button
+                    class="btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSaving"
+                    @click.prevent="openSaveModal"
+                  >
+                    <svg v-if="!isSaving" class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <svg v-else class="animate-spin h-4 w-4 mr-1.5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ isSaving ? t("config.saving") || "Saving..." : t("config.save") }}
+                  </button>
+                  <button
+                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white px-5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSaving"
+                    @click.stop.prevent="apply"
+                  >
+                    <svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {{ t("config.apply") }}
+                  </button>
                 </div>
 
               </div>

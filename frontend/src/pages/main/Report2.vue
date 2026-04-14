@@ -18,7 +18,7 @@
   
               <!-- Left: Title -->
               <div class="mb-4 sm:mb-0">
-                <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold"> {{ t('report.sitemap.title') }} > {{ channelComputed == 'Main'?t('report.sitemap.main'):t('report.sitemap.sub') }} </h2>
+                <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold"> {{ t('report.sitemap.title') }} > {{ channelComputed == 'Main'?t('report.sitemap.main'):t('report.sitemap.sub') }} </h2>
               </div>
               <button
                   class="btn h-6 px-5 bg-sky-900 text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"

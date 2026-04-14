@@ -23,7 +23,7 @@
           <div class="sm:flex sm:justify-between sm:items-center mb-5">
             <!-- Left: Title -->
             <div class="mb-3 sm:mb-0">
-              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold">{{ t('trend.sitemap.title') }} > {{ channel == 'Main' ? t('trend.sitemap.main'):t('trend.sitemap.sub') }} {{ assetName }}</h2>
+              <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold">{{ t('trend.sitemap.title') }} > {{ channel == 'Main' ? t('trend.sitemap.main'):t('trend.sitemap.sub') }} {{ assetName }}</h2>
             </div>
           </div>
           <!-- 날짜 범위 선택 및 Apply 버튼 -->

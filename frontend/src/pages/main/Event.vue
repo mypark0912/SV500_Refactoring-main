@@ -16,7 +16,7 @@
               <div class="sm:flex sm:justify-between sm:items-center mb-4">
                 <!-- Left: Title -->
                 <div class="mb-4 sm:mb-0">
-                  <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold">{{ t('event.sitemap.title') }} > {{ channel == 'Main' ? t('event.sitemap.main'):t('event.sitemap.sub') }} {{ assetName }}</h2>
+                  <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold">{{ t('event.sitemap.title') }} > {{ channel == 'Main' ? t('event.sitemap.main'):t('event.sitemap.sub') }} {{ assetName }}</h2>
                 </div>
               </div>
 

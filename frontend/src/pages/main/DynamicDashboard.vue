@@ -13,7 +13,7 @@
           <!-- Dashboard actions -->
           <div v-if="opMode != 'device2'" class="sm:flex sm:justify-between sm:items-center mb-4">
             <div class="mb-4 sm:mb-0">
-              <h2 class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold ml-1">
+              <h2 class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold ml-1">
                 {{ t('dashboard.sitemap') }}
               </h2>
             </div>

@@ -16,8 +16,13 @@ from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
 import asyncio, time
 from .demand import check_demand_downsampling_status, create_demand_downsampling_tasks
-from .config import TimeSetRequest
+from pydantic import BaseModel
 import sqlite3
+
+
+class TimeSetRequest(BaseModel):
+    datetime_str: str
+    timezone: str = "Asia/Seoul"
 
 # Path 객체 절대경로
 from pathlib import Path

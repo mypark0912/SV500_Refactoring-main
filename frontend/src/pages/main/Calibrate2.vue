@@ -17,7 +17,7 @@
             <!-- Left: Title -->
             <div class="mb-4 sm:mb-0">
               <h2
-                class="text-xl md:text-2xl text-gray-800 dark:text-gray-100 font-bold mb-3"
+                class="text-lg md:text-xl text-gray-800 dark:text-gray-100 font-bold mb-3"
               >
 
               <template
