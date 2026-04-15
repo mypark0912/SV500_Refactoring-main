@@ -255,7 +255,7 @@
       "frequency": "주파수"
     },
     "pq": {
-      "title": "전력 품질 현황",
+      "title": "전력품질 현황",
       "singletitle": "불평형률/총고조파왜곡률/역률",
       "title2": "총 고조파 왜곡률",
       "subtitle_main": "채널 1",
@@ -272,7 +272,7 @@
       "subtitle_main": "채널 1",
       "subtitle_sub": "채널 2",
       "equipment": "설비",
-      "pq": "전력 품질",
+      "pq": "전력품질",
       "diagnostic": "설비",
       "event": "이벤트 상태",
       "fault": "전기적 이상 상태",
@@ -410,7 +410,7 @@
     "tabTitle": {
       "Dignosis Status": "설비",
       "Fault": "전기적 이상",
-      "PowerQuality": "전력품질 상태",
+      "PowerQuality": "전력품질",
       "Event": "이벤트",
       "detailTitle": "세부항목 상태",
       "detailTitle_pq": "세부항목 상태",
@@ -439,9 +439,9 @@
       "st4": "점검",
       "pqfe0": "정지",
       "pqfe1": "정상",
-      "pqfe2": "주의",
-      "pqfe3": "경고",
-      "pqfe4": "위험",
+      "pqfe2": "낮음",
+      "pqfe3": "중간",
+      "pqfe4": "높음",
       "fe2": "낮음",
       "fe3": "중간",
       "fe4": "높음"
@@ -509,7 +509,7 @@
       "monthlyEngUsage": "월간 사용 추이",
       "reportData": "보고서 데이터",
 
-      "Diagnosis": "설비 상태",
+      "Diagnosis": "설비",
       "Energy": "전력량",
       "Energy2": "전력량 & 부하율 추이",
       "parameter": "전력품질 파라미터 추이",
@@ -588,7 +588,7 @@
   },
   "pq": {
     "sitemap": {
-      "title": "전력 품질",
+      "title": "전력품질",
       "main": "채널 1",
       "sub": "채널 2"
     },
@@ -717,8 +717,8 @@
     },
     "tabTitle": {
       "Meter": "계측",
-      "Power Quality": "전력 품질",
-      "Diagnosis": "설비 상태",
+      "Power Quality": "전력품질",
+      "Diagnosis": "설비",
       "Parameters": "파라미터",
       "Energy1": "수전 전력량",
       "Energy2":"전력량",

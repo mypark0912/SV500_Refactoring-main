@@ -98,17 +98,15 @@ export default {
     const timestamp = computed(() => props.reportData?.timestamp || null)
 
     const isLoading = ref(false)
-    const items = ref([])
-    const chartOptions = ref([])
-    const bandItems = ref([])
+    const trendCache = ref({})
 
-    const STATUS_LEGEND = [
+    const STATUS_LEGEND = computed(() => [
       { key: 0, text: t('diagnosis.tabContext.st0'), color: '#c4c4c4' },
       { key: 1, text: t('diagnosis.tabContext.st1'), color: '#16a34a' },
       { key: 2, text: t('diagnosis.tabContext.st2'), color: '#ca8a04' },
       { key: 3, text: t('diagnosis.tabContext.st3'), color: '#ea580c' },
       { key: 4, text: t('diagnosis.tabContext.st4'), color: '#dc2626' },
-    ]
+    ])
 
     const isAlert = (item) => item.status >= 3
 
@@ -121,73 +119,35 @@ export default {
       })
     }
 
-    const setChartData = async (itemName, title) => {
-      let option = {}
-      const chName = props.channel == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub
-      try {
-        const response = await axios.get(`/report/status_trend/${props.mode}/${chName}/${itemName}`)
-        if (response.data.success) {
-          const trendData = response.data.data.trend
-          if (trendData && trendData.length > 0) {
-            option = {
-              lineLabels: trendData.map(item => item.timestamp),
-              lineData: [{ name: title, data: trendData.map(item => item.status), isThreshold: false }],
-              lineTitle: title,
-              mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality'
-            }
-          } else {
-            option = { lineLabels: [], lineData: [], lineTitle: title, mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality' }
-          }
-        } else {
-          option = { lineLabels: [], lineData: [], lineTitle: title, mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality' }
-        }
-      } catch (error) {
-        console.error('트렌드 데이터 요청 실패:', error)
-        option = { lineLabels: [], lineData: [], lineTitle: title, mode: props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality' }
-      }
-      return option
-    }
+    const chartMode = computed(() => props.mode === 'diagnosis' ? 'DiagnosisDetail' : 'PowerQuality')
 
-    const loadTrendCharts = async (chartList) => {
-      const options = []
-      const seenNames = new Set()
-      const uniqueItems = []
-      for (const item of chartList) {
-        if (!seenNames.has(item.Name)) {
-          seenNames.add(item.Name)
-          uniqueItems.push(item)
-        }
-      }
-      for (const item of uniqueItems) {
-        const titleName = item.Title || item.Name
-        const chartValue = await setChartData(item.Name, titleName)
-        if (chartValue.lineLabels.length > 0) options.push(chartValue)
-      }
-      return options
-    }
+    /* ───────── raw main (bands용, locale 무관) ───────── */
+    const rawMain = computed(() => {
+      const { main = [] } = props.reportData || {}
+      return main.map(m => ({
+        rawName: (m.item_name || '').replace(/\s/g, ''),
+        status: m.status || 0,
+        Titles: {
+          en: m.title_en || m.title || m.item_name,
+          ko: m.title_ko || m.title || m.item_name,
+          ja: m.title_ja || m.title || m.item_name,
+        },
+      }))
+    })
 
-    const transformInfluxData = (main, detail) => {
-      // bands 데이터 생성 (플랫 나열)
-      const bands = []
-      for (let i = 0; i < main.length; i++) {
-        const titleKey = `title_${locale.value}`
-        const displayName = main[i][titleKey] || main[i].title || main[i].item_name
-        bands.push({
-          name: displayName,
-          rawName: (main[i].item_name || '').replace(/\s/g, ''),
-          status: main[i].status || 0,
-        })
-      }
+    /* ───────── raw 그룹 데이터 (locale 무관) ───────── */
+    const groupedParents = computed(() => {
+      const { main = [], detail = [] } = props.reportData || {}
+      if (main.length === 0) return []
 
       const mainByName = {}
-      for (let i = 0; i < main.length; i++) {
-        const key = main[i].item_name.replace(/\s/g, '')
-        mainByName[key] = main[i]
+      for (const m of main) {
+        mainByName[m.item_name.replace(/\s/g, '')] = m
       }
 
       const groupedByParent = {}
-      for (let i = 0; i < detail.length; i++) {
-        const parentName = detail[i].parent_name
+      for (const d of detail) {
+        const parentName = d.parent_name
         const parentKey = parentName.replace(/\s/g, '')
         if (!groupedByParent[parentName]) {
           const parentInfo = mainByName[parentKey] || {}
@@ -197,83 +157,113 @@ export default {
             Titles: {
               en: parentInfo.title_en || parentName,
               ko: parentInfo.title_ko || parentName,
-              ja: parentInfo.title_ja || parentName
+              ja: parentInfo.title_ja || parentName,
             },
             Descriptions: {
               en: parentInfo.description_en || '',
               ko: parentInfo.description_ko || '',
-              ja: parentInfo.description_ja || ''
+              ja: parentInfo.description_ja || '',
             },
-            children: []
+            children: [],
           }
         }
-        if (detail[i].status > groupedByParent[parentName].status) {
-          groupedByParent[parentName].status = detail[i].status
+        if (d.status > groupedByParent[parentName].status) {
+          groupedByParent[parentName].status = d.status
         }
-        groupedByParent[parentName].children.push(detail[i])
+        groupedByParent[parentName].children.push(d)
       }
 
-      const itemsResult = [], chartList = []
-      for (const parentName in groupedByParent) {
-        const parent = groupedByParent[parentName]
-        if (parent.status > 1) {
-          const childDict = []
-          for (let j = 0; j < parent.children.length; j++) {
-            const child = parent.children[j]
-            if (child.status > 1) {
-              const childTitle = child[`title_${locale.value}`] || child.title || child.item_name
-              childDict.push({
-                Title: childTitle,
-                Assembly: child.assembly_id,
-                Value: child.value !== undefined ? child.value : 'NaN'
-              })
-            }
-          }
-          if (childDict.length > 0) {
-            chartList.push({
-              Name: parentName.replace(/\s/g, ''),
-              Title: parent.Titles[locale.value],
-              Status: parent.status
-            })
-            itemsResult.push({
-              Item: {
-                Name: parentName,
-                Title: parent.Titles[locale.value],
-                Titles: parent.Titles,
-                Descriptions: parent.Descriptions,
-                Status: parent.status
-              },
-              Child: childDict
-            })
-          }
+      const result = []
+      for (const name in groupedByParent) {
+        const parent = groupedByParent[name]
+        if (parent.status <= 1) continue
+        const alertChildren = parent.children.filter(c => c.status > 1)
+        if (alertChildren.length === 0) continue
+        result.push({
+          Name: name.replace(/\s/g, ''),
+          ParentName: name,
+          Titles: parent.Titles,
+          Descriptions: parent.Descriptions,
+          Status: parent.status,
+          children: alertChildren,
+        })
+      }
+      return result
+    })
+
+    /* ───────── bandItems (locale 반응) ───────── */
+    const bandItems = computed(() => {
+      const currentLocale = locale.value
+      return rawMain.value.map(m => ({
+        name: m.Titles[currentLocale],
+        rawName: m.rawName,
+        status: m.status,
+      }))
+    })
+
+    /* ───────── items (locale 반응) ───────── */
+    const items = computed(() => {
+      const currentLocale = locale.value
+      return groupedParents.value.map(p => ({
+        Item: {
+          Name: p.ParentName,
+          Title: p.Titles[currentLocale],
+          Titles: p.Titles,
+          Descriptions: p.Descriptions,
+          Status: p.Status,
+        },
+        Child: p.children.map(child => ({
+          Title: child[`title_${currentLocale}`] || child.title || child.item_name,
+          Assembly: child.assembly_id,
+          Value: child.value !== undefined ? child.value : 'NaN',
+        })),
+      }))
+    })
+
+    /* ───────── chartOptions (trendCache + locale) ───────── */
+    const chartOptions = computed(() => {
+      const currentLocale = locale.value
+      const cache = trendCache.value
+      const mode = chartMode.value
+      const options = []
+      for (const p of groupedParents.value) {
+        const trend = cache[p.Name]
+        if (!trend || trend.length === 0) continue
+        const title = p.Titles[currentLocale]
+        options.push({
+          lineLabels: trend.map(t => t.timestamp),
+          lineData: [{ name: title, data: trend.map(t => t.status), isThreshold: false }],
+          lineTitle: title,
+          mode,
+        })
+      }
+      return options
+    })
+
+    /* ───────── 트렌드 데이터 fetch (reportData 변경 시만) ───────── */
+    const fetchTrends = async () => {
+      const chName = props.channel == 'Main' ? asset.value.assetName_main : asset.value.assetName_sub
+      const newCache = {}
+      for (const p of groupedParents.value) {
+        if (newCache[p.Name]) continue
+        try {
+          const response = await axios.get(`/report/status_trend/${props.mode}/${chName}/${p.Name}`)
+          newCache[p.Name] = response.data.success ? (response.data.data.trend || []) : []
+        } catch (e) {
+          console.error('트렌드 데이터 요청 실패:', e)
+          newCache[p.Name] = []
         }
       }
-      return { bands, items: itemsResult, chartList }
-    }
-
-    const processReportData = async () => {
-      const { main, detail } = props.reportData
-      if (!main || main.length === 0) {
-        bandItems.value = []
-        items.value = []
-        chartOptions.value = []
-        return
-      }
-      isLoading.value = true
-      const { bands, items: it, chartList } = transformInfluxData(main, detail)
-      bandItems.value = bands
-      items.value = it
-      chartOptions.value = await loadTrendCharts(chartList)
-      isLoading.value = false
+      trendCache.value = newCache
     }
 
     watch(() => props.reportData, async (newVal) => {
       if (newVal && newVal.main && newVal.main.length > 0) {
-        await processReportData()
+        isLoading.value = true
+        await fetchTrends()
+        isLoading.value = false
       } else {
-        bandItems.value = []
-        items.value = []
-        chartOptions.value = []
+        trendCache.value = {}
       }
     }, { deep: true, immediate: true })
 

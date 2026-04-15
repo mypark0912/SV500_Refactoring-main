@@ -187,10 +187,10 @@
         "Rated Current": "定格電流"
     },
     "tabTitle": {
-        "Dignosis Status": "診断状態",
-        "Fault": "故障状態",
-        "PowerQuality": "電力品質状態",
-        "Event": "イベント状態",
+        "Dignosis Status": "設備",
+        "Fault": "電気的異常",
+        "PowerQuality": "電力品質",
+        "Event": "イベント",
         "detailTitle": "詳細項目の状態"
     },
     "category": {
@@ -236,7 +236,7 @@
     "cardTitle": {
       "Channel": "チャンネル状態",
       "PowerQuality": "電力品質",
-      "Diagnosis": "診断状態",
+      "Diagnosis": "設備",
       "Energy": "電力量",
       "DemandPowerTrend": "デマンド電力トレンド",
       "DemandPatternAnalysis": "デマンドパターン分析",
@@ -253,7 +253,8 @@
       "st4": "修理",
       "info": {
         "equip": "設備情報",
-        "status": "状態情報",
+        "status": "状態項目",
+        "pq": "電力品質情報",
         "energy": "総電力量"
       },
       "pqInfo": {

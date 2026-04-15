@@ -508,7 +508,7 @@
       "monthlyEngUsage": "Monthly Energy Usage",
       "installation": "installation place",
       "EN50160": "EN50160 Report",
-      "Diagnosis": "Equipment Status",
+      "Diagnosis": "Equipment",
       "Energy": "Active Energy",
       "Energy2": "Energy & Load Rate Trend",
       "parameter": "Trend of Power Quality Parameters",
@@ -557,7 +557,7 @@
       "low": "Low",
       "info": {
         "equip": "Equipment Information",
-        "status": "Equipment Status",
+        "status": "Status Items",
         "pq": "Power Quality Information",
         "energy": "Total Energy"
       },
@@ -721,7 +721,7 @@
     "tabTitle": {
       "Meter": "Meter",
       "Power Quality": "PowerQuality",
-      "Diagnosis": "Equipment Status",
+      "Diagnosis": "Equipment",
       "Parameters": "Parameters",
       "Energy1": "Import Energy",
       "Energy2": "Energy",
