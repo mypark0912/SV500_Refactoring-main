@@ -140,7 +140,7 @@
             </h3>
           </div>
           <div class="harmonics-container">
-            <DashboardCard_THD  :data="data2" :asset="assetConfig" :channelmode="channelSetup"
+            <DashboardCard_THD :data="data2" :channelmode="channelSetup"
               :height="120" />
           </div>
         </div>
@@ -222,13 +222,6 @@ export default {
         else
           return 0
       }
-    });
-    const assetConfig = computed(()=> {
-      const configdict = setupStore.getAssetConfig;
-      let config = {};
-      config['name'] = channel.value == 'Main'? configdict.assetName_main:configdict.assetName_sub;
-      config['driveType'] = channel.value == 'Main'? configdict.assetdriveType_main:configdict.assetdriveType_sub;
-      return config;
     });
     // 전체 시스템 상태 판정
 
@@ -312,7 +305,6 @@ export default {
       onChartReady,
       //onDataChange,
       unbalMode,
-      assetConfig,
       channelSetup,
     };
   },

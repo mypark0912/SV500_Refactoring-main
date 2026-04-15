@@ -22,14 +22,12 @@
 </template>
 
 <script>
-import { computed, ref, watch, onBeforeUnmount } from 'vue'
-import axios from 'axios'
+import { computed } from 'vue'
 
 export default {
   name: 'DualMeasCard_THD',
   props: {
     data: { type: Object, default: () => ({}) },
-    asset: { type: Object, default: () => ({}) },
     height: { type: [String, Number], default: 120 },
     dataKeys: { type: Array, default: () => ['thdu total', 'thdi total', 'tddi total'] },
     labels: { type: Array, default: () => ['THD-U', 'THD-I', 'TDD-I'] },
@@ -37,92 +35,22 @@ export default {
     channelmode: { type: Number, default: 0 },
   },
   setup(props) {
-    const chartData = ref([])
-    const pollTimer = ref(null)
-
-    const getTHD = async () => {
-      try {
-        const assetName = props.asset?.name || ''
-        if (!assetName) return
-        const response = await axios.get(`/api/getRealTimeTHD/${assetName}`)
-        if (response.data.success) {
-          chartData.value = response.data.data
-        }
-      } catch (err) {
-        console.error('THD 데이터 실패:', err)
-      }
-    }
-
-    const isInverter = computed(() => {
-      if (props.channelmode > 1) {
-        return props.asset['driveType'] !== 'DOL'
-      }
-      return false
-    })
-
     const chartItems = computed(() => {
-      let values, items
-
-      if (isInverter.value) {
-        values = chartData.value.map(item => parseFloat(item.Value || 0))
-        const maxValue = 100
-        items = chartData.value.map((item, index) => {
-          const val = parseFloat(item.Value || 0)
-          const height = Math.min(Math.max((val / maxValue) * 100, 5), 100)
-          return {
-            label: props.labels[index] || item.Title,
-            value: val.toFixed(1),
-            height,
-            colorClass: `bar-${props.colors[index % props.colors.length]}`,
-          }
-        })
-      } else {
-        values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
-        const maxValue = 100
-        items = props.labels.map((label, index) => {
-          const val = values[index]
-          const height = Math.min(Math.max((val / maxValue) * 100, 5), 100)
-          return {
-            label,
-            value: val.toFixed(1),
-            height,
-            colorClass: `bar-${props.colors[index]}`,
-          }
-        })
-      }
-
-      return items
+      const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
+      const maxValue = 100
+      return props.labels.map((label, index) => {
+        const val = values[index]
+        const height = Math.min(Math.max((val / maxValue) * 100, 5), 100)
+        return {
+          label,
+          value: val.toFixed(1),
+          height,
+          colorClass: `bar-${props.colors[index]}`,
+        }
+      })
     })
 
-    const startPolling = () => {
-      stopPolling()
-      getTHD()
-      pollTimer.value = setInterval(getTHD, 5 * 60 * 1000)
-    }
-
-    const stopPolling = () => {
-      if (pollTimer.value) {
-        clearInterval(pollTimer.value)
-        pollTimer.value = null
-      }
-    }
-
-    watch(
-      () => props.asset,
-      () => {
-        if (isInverter.value) {
-          startPolling()
-        } else {
-          stopPolling()
-          chartData.value = []
-        }
-      },
-      { immediate: true, deep: true }
-    )
-
-    onBeforeUnmount(() => { stopPolling() })
-
-    return { chartItems, isInverter }
+    return { chartItems }
   },
 }
 </script>

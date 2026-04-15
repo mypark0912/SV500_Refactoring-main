@@ -96,7 +96,7 @@
           <span class="detail-block-title">{{ t('pq.tabs.harmonics') }}</span>
           <div class="phase-section">
             <div class="harmonics-container">
-              <DashboardCard_THD :data="data2" :asset="assetConfig" :channelmode="channelSetup" :height="120" />
+              <DashboardCard_THD :data="data2" :channelmode="channelSetup" :height="120" />
             </div>
           </div>
         </div>
@@ -145,14 +145,6 @@ export default {
       }
     })
 
-    const assetConfig = computed(() => {
-      const configdict = setupStore.getAssetConfig
-      return {
-        name: channel.value === 'Main' ? configdict.assetName_main : configdict.assetName_sub,
-        driveType: channel.value === 'Main' ? configdict.assetdriveType_main : configdict.assetdriveType_sub,
-      }
-    })
-
     const getPhaseVoltage = (idx) => {
       if (isPT.value) return data2.value[`Upp${idx}`] || 0
       return data2.value[`U${idx}`] || 0
@@ -197,7 +189,7 @@ export default {
 
     return {
       t, data2, avgVoltage, channel,
-      ubalVoltage, ubalCurrent, assetConfig, channelSetup,
+      ubalVoltage, ubalCurrent, channelSetup,
       getPhaseVoltage,
       getVoltageDotClass, getCurrentDotClass, getFreqDotClass, getPfDotClass,
       getVoltageTextClass, getUnbalColor,
