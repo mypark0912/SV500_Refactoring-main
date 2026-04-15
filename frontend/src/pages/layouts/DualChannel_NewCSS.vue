@@ -23,8 +23,13 @@
 </template>
 
 <script>
+<<<<<<< Updated upstream
 import DualMeasCard_Meter from '../../partials/modeview/dashboard2/DualMeasCard_Meter.vue'
 import DualMeasCard_Diagnosis from '../../partials/modeview/dashboard2/DualMeasCard_Diagnosis.vue'
+=======
+import DualMeasCard_Meter from '../../partials/modeview/dashboard2/DualMeasCard_Meter_v2.vue'
+import DualMeasCard_Diagnosis from '../../partials/modeview/dashboard2/DualMeasCard_Diagnosis_v2.vue'
+>>>>>>> Stashed changes
 
 export default {
   name: 'DualChannel_NewCSS',
