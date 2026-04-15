@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import DualMeasCard_Meter from '../../partials/modeview/dashboard2/DualMeasCard_Meter.vue'
+import DualMeasCard_Meter from '../../partials/modeview/dashboard2/DualMeasCard_Meter_v2.vue'
 import DualMeasCard_Diagnosis from '../../partials/modeview/dashboard2/DualMeasCard_Diagnosis.vue'
 
 export default {
