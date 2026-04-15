@@ -3296,6 +3296,14 @@ def get_OneSecond(channel, unbal):
         keyname = get_RedisKey(channel, "meter")
         if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
+        power_thd_keys = (
+                extract_key_list(RedisMapDetail2.a_powers_keys) +
+                extract_key_list(RedisMapDetail2.r_powers_keys) +
+                extract_key_list(RedisMapDetail2.ap_powers_keys) +
+                extract_key_list(RedisMapDetail2.thdu_keys) +
+                extract_key_list(RedisMapDetail2.thdi_keys) +
+                extract_key_list(RedisMapDetail2.tddi_keys)
+        )
         if int(unbal) == 1:
             field_keys = (
                     extract_key_list(RedisMapDetail2.p_voltage_keys) +
@@ -3303,7 +3311,8 @@ def get_OneSecond(channel, unbal):
                     extract_key_list(RedisMapDetail2.l_voltage_keys) +
                     extract_key_list(RedisMapDetail2.current_keys) +
                     extract_key_list(RedisMapDetail2.unbal_keys) +
-                    extract_key_list(RedisMapDetail2.pf_keys)
+                    extract_key_list(RedisMapDetail2.pf_keys) +
+                    power_thd_keys
             )
         else:
             field_keys = (
@@ -3312,7 +3321,8 @@ def get_OneSecond(channel, unbal):
                     extract_key_list(RedisMapDetail2.l_voltage_keys) +
                     extract_key_list(RedisMapDetail2.current_keys) +
                     extract_key_list(RedisMapDetail2.unbal_keys2) +
-                    extract_key_list(RedisMapDetail2.pf_keys)
+                    extract_key_list(RedisMapDetail2.pf_keys) +
+                    power_thd_keys
             )
         field_keys = list(set(field_keys))
 
@@ -3338,6 +3348,16 @@ def get_OneSecond(channel, unbal):
                     RedisMapDetail2.unbal_keys2 +
                     RedisMapDetail2.pf_keys
             )}
+        powers = {k["key"]: flat_fields.get(k["key"]) for k in (
+                RedisMapDetail2.a_powers_keys +
+                RedisMapDetail2.r_powers_keys +
+                RedisMapDetail2.ap_powers_keys
+        )}
+        thd = {k["key"]: flat_fields.get(k["key"]) for k in (
+                RedisMapDetail2.thdu_keys +
+                RedisMapDetail2.thdi_keys +
+                RedisMapDetail2.tddi_keys
+        )}
         full_data = redis_state.client_db1.hgetall(keyname)
         if channel == 'Main':
             ch = 'main'
@@ -3356,6 +3376,12 @@ def get_OneSecond(channel, unbal):
             current_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.current_keys, 'A')
             pf_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.pf_keys, '%')
             unbal_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.unbal_keys, '%')
+            a_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.a_powers_keys, 'kW')
+            r_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.r_powers_keys, 'kVar')
+            ap_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.ap_powers_keys, 'kVA')
+            thdu_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdu_keys, '%')
+            thdi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdi_keys, '%')
+            tddi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.tddi_keys, '%')
         else:
             processor = redis_state.processor
             handler = redis_state.handler
@@ -3376,6 +3402,12 @@ def get_OneSecond(channel, unbal):
                 unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys, '%')
             else:
                 unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys2, '%')
+            a_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.a_powers_keys, 'kW')
+            r_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.r_powers_keys, 'kVar')
+            ap_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.ap_powers_keys, 'kVA')
+            thdu_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdu_keys, '%')
+            thdi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdi_keys, '%')
+            tddi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.tddi_keys, '%')
 
         result = {
             "success": True,
@@ -3395,6 +3427,16 @@ def get_OneSecond(channel, unbal):
                     {"subTitle": "Frequency", "data": freq_data},
                     {"subTitle": "PF", "data": pf_data},
                     {"subTitle": "Unbalance", "data": unbal_data},
+                ],
+                "powerData": [
+                    {"subTitle": "Active Power", "data": a_power_data},
+                    {"subTitle": "Reactive Power", "data": r_power_data},
+                    {"subTitle": "Apparent Power", "data": ap_power_data}
+                ],
+                "thdData": [
+                    {"subTitle": "THD-U", "data": thdu_data},
+                    {"subTitle": "THD-I", "data": thdi_data},
+                    {"subTitle": "TDD-I", "data": tddi_data}
                 ]
             }
         }
@@ -3466,102 +3508,24 @@ def get_onemfromRedis(channel):
 @router.get("/getFifthMfromRedis/{channel}")
 def get_FifthMfromRedis(channel):
     try:
-        # redis_state.client.execute_command("SELECT", 1)
         keyname = get_RedisKey(channel, "meter")
 
         if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
-        # 모든 필요한 필드 키 모으기
-        field_keys = (
-                extract_key_list(RedisMapDetail2.a_powers_keys) +
-                extract_key_list(RedisMapDetail2.r_powers_keys) +
-                extract_key_list(RedisMapDetail2.ap_powers_keys) +
-                extract_key_list(RedisMapDetail2.thdu_keys) +
-                extract_key_list(RedisMapDetail2.thdi_keys) +
-                extract_key_list(RedisMapDetail2.tddi_keys)
-        )
-        field_keys = list(set(field_keys))
-
-        # Redis에서 가져오기
-        values = redis_state.client_db1.hmget(keyname, field_keys)
-        flat_fields = {k: try_float(v) for k, v in zip(field_keys, values)}
-        # 그룹핑
-
-        powers = {k["key"]: flat_fields.get(k["key"]) for k in (
-                RedisMapDetail2.a_powers_keys +
-                RedisMapDetail2.r_powers_keys +
-                RedisMapDetail2.ap_powers_keys
-        )}
-
-        thd = {k["key"]: flat_fields.get(k["key"]) for k in (
-                RedisMapDetail2.thdu_keys +
-                RedisMapDetail2.thdi_keys +
-                RedisMapDetail2.tddi_keys
-        )}
-
-        # maxmin은 접두어 기반으로 따로 추출
-        full_data = redis_state.client_db1.hgetall(keyname)
-        if channel == 'Main':
-            ch = 'main'
-        else:
-            ch = 'sub'
         if os_spec.os == 'Windows':
-            maxmin = {
-                k: try_float(v)
-                for k, v in full_data.items()
-                if k.endswith("_max") or k.endswith("_min")
-            }
-
-            a_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.a_powers_keys, 'kW')
-            r_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.r_powers_keys, 'kVar')
-            ap_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.ap_powers_keys, 'kVA')
-
-            thdu_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdu_keys, '%')
-            thdi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdi_keys, '%')
-            tddi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.tddi_keys, '%')
-
             result = {
                 "success": True,
-                "retData": {
-                    "powerData": [
-                        {"subTitle": "Active Power", "data": a_power_data},
-                        {"subTitle": "Reactive Power", "data": r_power_data},
-                        {"subTitle": "Apparent Power", "data": ap_power_data}
-                    ],
-                    "thdData": [
-                        {"subTitle": "THD-U", "data": thdu_data},
-                        {"subTitle": "THD-I", "data": thdi_data},
-                        {"subTitle": "TDD-I", "data": tddi_data}
-                    ]
-                }
+                "retData": {}
             }
         else:
-            processor = redis_state.processor
-            handler = redis_state.handler
-            parsed = processor.get_and_parse(
-                config_name="maxmin_15min",
-                key=f"MAXMIN_{ch}",
-                data_type=RedisDataType.HASH,
-                field="15min"  # 필수
-            )
-            if parsed is None:
-                logging.error('Fifth Maxmin is None')
-            a_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.a_powers_keys, 'kW')
-            r_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.r_powers_keys, 'kVar')
-            ap_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.ap_powers_keys, 'kVA')
-
-            thdu_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdu_keys, '%')
-            thdi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdi_keys, '%')
-            tddi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.tddi_keys, '%')
-
             processor = redis_state.processor
 
             parsed_demand = processor.get_and_parse(
                 config_name="demand",
-                key="Demand",  # ← Redis Hash 키
-                data_type=RedisDataType.HASH,  # ← Hash 타입 지정
-                field=channel  # ← Hash 필드명
+                key="Demand",
+                data_type=RedisDataType.HASH,
+                field=channel
             )
 
             formatted_data = DemandDataFormatter.format_demand_data(parsed_demand)
@@ -3569,16 +3533,6 @@ def get_FifthMfromRedis(channel):
             result = {
                 "success": True,
                 "retData": {
-                    "powerData": [
-                        {"subTitle": "Active Power", "data": a_power_data},
-                        {"subTitle": "Reactive Power", "data": r_power_data},
-                        {"subTitle": "Apparent Power", "data": ap_power_data}
-                    ],
-                    "thdData": [
-                        {"subTitle": "THD-U", "data": thdu_data},
-                        {"subTitle": "THD-I", "data": thdi_data},
-                        {"subTitle": "TDD-I", "data": tddi_data}
-                    ],
                     "demandDataP": [
                         {"subTitle": "Active", "data": formatted_data['power_demand']},
                         {"subTitle": "Reactive", "data": formatted_data['reactive_demand']},

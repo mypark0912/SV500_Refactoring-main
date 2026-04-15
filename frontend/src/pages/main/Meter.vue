@@ -228,8 +228,21 @@ export default {
       try {
         const response = await axios.get(`/api/getOnesfromRedis/${ch}/${unbal.value}`);
         if (response.data.success) {
-          Object.assign(meterDatas.value, response.data.retData.retData);
-          //console.log(meterDatas.value);
+          const data = response.data.retData.retData;
+          Object.assign(meterDatas.value, data);
+
+          if (data.powerData) {
+            data.powerData.forEach(section => {
+              section.data.forEach(item => {
+                item.value = (item.value / 1000).toFixed(2);
+              });
+            });
+          }
+          powerThd.value = {
+            ...powerThd.value,
+            powerData: data.powerData,
+            thdData: data.thdData,
+          };
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
@@ -251,13 +264,12 @@ export default {
       try {
         const response = await axios.get(`/api/getFifthMfromRedis/${ch}`);
         if (response.data.success) {
-          powerThd.value = response.data.retData.retData;
-          powerThd.value.powerData.forEach(section => {
-            section.data.forEach(item => {
-              item.value = (item.value / 1000).toFixed(2);
-            });
-          });
-          //console.log(powerThd.value)
+          const data = response.data.retData.retData;
+          powerThd.value = {
+            ...powerThd.value,
+            demandDataP: data.demandDataP,
+            demandDataI: data.demandDataI,
+          };
         }
       } catch (error) {
         console.log("데이터 가져오기 실패:", error);
