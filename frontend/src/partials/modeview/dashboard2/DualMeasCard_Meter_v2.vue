@@ -218,7 +218,7 @@ export default {
   min-height: 80px;
 }
 .summary-label {
-  @apply text-xs text-gray-600 dark:text-gray-400 mb-1.5;
+  @apply text-[13px] text-gray-600 dark:text-gray-400 mb-1.5;
 }
 .summary-value {
   @apply text-xl font-extrabold text-gray-800 dark:text-white tabular-nums flex items-center justify-center gap-1;
