@@ -3393,6 +3393,14 @@ def get_OneSecond(channel, unbal):
             )
             if parsed is None:
                 logging.error('OneS Maxmin is None')
+            parsed_15m = processor.get_and_parse(
+                config_name="maxmin_15min",
+                key=f"MAXMIN_{ch}",
+                data_type=RedisDataType.HASH,
+                field="15min"
+            )
+            if parsed_15m is None:
+                logging.error('15min Maxmin is None')
             p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.p_voltage_keys, 'V')
             freq_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.freq_keys, 'Hz')
             l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.l_voltage_keys, 'V')
@@ -3402,12 +3410,12 @@ def get_OneSecond(channel, unbal):
                 unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys, '%')
             else:
                 unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys2, '%')
-            a_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.a_powers_keys, 'kW')
-            r_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.r_powers_keys, 'kVar')
-            ap_power_data = handler.get_data_dict(powers, parsed, RedisMapDetail2.ap_powers_keys, 'kVA')
-            thdu_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdu_keys, '%')
-            thdi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.thdi_keys, '%')
-            tddi_data = handler.get_data_dict(thd, parsed, RedisMapDetail2.tddi_keys, '%')
+            a_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.a_powers_keys, 'kW')
+            r_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.r_powers_keys, 'kVar')
+            ap_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.ap_powers_keys, 'kVA')
+            thdu_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdu_keys, '%')
+            thdi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdi_keys, '%')
+            tddi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.tddi_keys, '%')
 
         result = {
             "success": True,
