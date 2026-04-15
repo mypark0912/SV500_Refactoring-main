@@ -272,10 +272,6 @@ export default {
       type: String,
       default: "",
     },
-    isVfd:{
-      type:Boolean,
-      default:false,
-    }
   },
   components: {
     LineChart,
@@ -286,7 +282,6 @@ export default {
     const { t } = useI18n();
     const channel = ref(props.channel);
     const tap = ref(props.tap);
-    const isVfd = ref(props.isVfd);
     const items = ref([]);
     const authStore = useAuthStore();
     const saveCsv = ref(0);
@@ -305,7 +300,7 @@ export default {
     const lastDate = ref("");
 
     // 트리 데이터 및 파라미터 맵은 @/composables/useTrendTree.js 에서 import
-    const trendTreeData = getTrendTreeData(isVfd.value);
+    const trendTreeData = getTrendTreeData();
     const nameToTitleMap = buildNameToTitleMap(trendTreeData, energyTreeData, demandTreeData);
 
     const isNtek = computed(() => {
@@ -1445,7 +1440,6 @@ export default {
       isNtek,
       withFreq,
       withCurrent,
-      isVfd,
     };
   },
 };

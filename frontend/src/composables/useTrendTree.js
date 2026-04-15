@@ -94,31 +94,6 @@ const baseTreeData = [
   },
 ];
 
-// VFD일 때 THD/TDD: 평균값만 표시
-const thdTreeData_vfd = {
-  ID: 31,
-  Name: "THD",
-  Title: "THD",
-  Titles: { en: "THD", ko: "THD", ja: "THD" },
-  isParent: true,
-  children: [
-    { ID: 45, Name: "THD_V", Title: "THD Voltage (Avg)", Titles: { en: "THD Voltage (Avg)", ko: "THD 전압 (평균)", ja: "THD 電圧 (平均)" } },
-    { ID: 46, Name: "THD_I", Title: "THD Current (Avg)", Titles: { en: "THD Current (Avg)", ko: "THD 전류 (평균)", ja: "THD 電流 (平均)" } },
-  ],
-};
-
-const tddTreeData_vfd = {
-  ID: 41,
-  Name: "TDD",
-  Title: "TDD",
-  Titles: { en: "TDD", ko: "TDD", ja: "TDD" },
-  isParent: true,
-  children: [
-    { ID: 47, Name: "TDD_I", Title: "TDD Current (Avg)", Titles: { en: "TDD Current (Avg)", ko: "TDD 전류 (평균)", ja: "TDD 電流 (平均)" } },
-  ],
-};
-
-// VFD가 아닐 때 THD/TDD: 개별 상 + 평균값
 const thdTreeData_normal = {
   ID: 31,
   Name: "THD",
@@ -154,12 +129,11 @@ const tddTreeData_normal = {
   ],
 };
 
-// Meter 탭용 트리 데이터 (VFD 여부에 따라 THD/TDD 구조가 다름)
-export function getTrendTreeData(isVfd) {
+export function getTrendTreeData() {
   return [
     ...baseTreeData,
-    isVfd ? thdTreeData_vfd : thdTreeData_normal,
-    isVfd ? tddTreeData_vfd : tddTreeData_normal,
+    thdTreeData_normal,
+    tddTreeData_normal,
   ];
 }
 
