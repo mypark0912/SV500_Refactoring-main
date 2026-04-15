@@ -47,30 +47,27 @@
         </div>
       </div>
 
-      <!-- 상세 정보 4컬럼 -->
-      <div class="detail-grid-4col">
-        <!-- 전압 -->
+      <!-- 상세 정보 3컬럼 -->
+      <div class="detail-grid-3col">
+        <!-- 전압 / 전류 -->
         <div class="detail-block">
-          <span class="detail-block-title">{{ t('dashboard.meter.voltage') }}</span>
-          <div class="phase-section">
-            <div v-for="(phase, index) in ['L1', 'L2', 'L3']" :key="phase" class="phase-row">
-              <span class="phase-label" :class="`phase-dot-${index + 1}`">{{ phase }}</span>
-              <span class="phase-value" :class="getVoltageTextClass(getPhaseVoltage(index + 1))">
-                {{ getPhaseVoltage(index + 1).toFixed(1) }} <span class="phase-unit">V</span>
-              </span>
+          <span class="detail-block-title">{{ t('dashboard.meter.voltage') }} / {{ t('dashboard.meter.current') }}</span>
+          <div class="vi-grid">
+            <div class="vi-col">
+              <div v-for="(phase, index) in ['L1', 'L2', 'L3']" :key="`v-${phase}`" class="phase-row">
+                <span class="phase-label">{{ phase }}</span>
+                <span class="phase-value">
+                  {{ getPhaseVoltage(index + 1).toFixed(1) }} <span class="phase-unit">V</span>
+                </span>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <!-- 전류 -->
-        <div class="detail-block">
-          <span class="detail-block-title">{{ t('dashboard.meter.current') }}</span>
-          <div class="phase-section">
-            <div v-for="(phase, index) in ['L1', 'L2', 'L3']" :key="phase" class="phase-row">
-              <span class="phase-label" :class="`phase-dot-${index + 1}`">{{ phase }}</span>
-              <span class="phase-value">
-                {{ (data2[`I${index + 1}`] || 0).toFixed(2) }} <span class="phase-unit">A</span>
-              </span>
+            <div class="vi-col">
+              <div v-for="(phase, index) in ['L1', 'L2', 'L3']" :key="`i-${phase}`" class="phase-row">
+                <span class="phase-label">{{ phase }}</span>
+                <span class="phase-value">
+                  {{ (data2[`I${index + 1}`] || 0).toFixed(2) }} <span class="phase-unit">A</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -166,12 +163,6 @@ export default {
       if (v < 95) return 'dot-warn'
       return 'dot-good'
     }
-    const getVoltageTextClass = (v) => {
-      if (!v) return 'text-gray-400'
-      if (v < 200 || v > 240) return 'text-red-500 dark:text-red-400'
-      if (v < 210 || v > 230) return 'text-amber-500 dark:text-amber-400'
-      return 'text-green-600 dark:text-green-400'
-    }
     const getUnbalColor = (v) => {
       if (v >= 3) return '#ef4444'
       if (v >= 2) return '#f59e0b'
@@ -184,7 +175,7 @@ export default {
       ubalVoltage, ubalCurrent,
       getPhaseVoltage,
       getVoltageDotClass, getCurrentDotClass, getFreqDotClass, getPfDotClass,
-      getVoltageTextClass, getUnbalColor,
+      getUnbalColor,
     }
   },
 }
@@ -245,14 +236,15 @@ export default {
 .dot-danger { @apply bg-red-500; }
 .dot-unknown { @apply bg-gray-400; }
 
-/* Detail grid 4-column : 전압/전류/불평형률 좁게, 고조파 넓게 */
-.detail-grid-4col {
-  @apply grid grid-cols-1 gap-3;
+/* Detail grid 3-column (equal) */
+.detail-grid-3col {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-3;
 }
-@media (min-width: 1024px) {
-  .detail-grid-4col {
-    grid-template-columns: 0.8fr 0.8fr 1fr 1.2fr;
-  }
+.vi-grid {
+  @apply grid grid-cols-2 gap-x-3 px-3 py-2;
+}
+.vi-col {
+  @apply space-y-2;
 }
 .detail-block {
   @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg overflow-hidden;
@@ -268,13 +260,10 @@ export default {
   @apply flex items-center gap-2;
 }
 .phase-label {
-  @apply text-sm font-bold w-6 flex-shrink-0;
+  @apply text-sm font-bold w-6 flex-shrink-0 text-gray-500 dark:text-gray-400;
 }
-.phase-dot-1 { @apply text-red-500; }
-.phase-dot-2 { @apply text-yellow-500; }
-.phase-dot-3 { @apply text-blue-500; }
 .phase-value {
-  @apply text-base font-bold tabular-nums;
+  @apply text-base font-bold tabular-nums text-green-600 dark:text-green-400;
 }
 .phase-unit {
   @apply text-xs font-medium text-gray-600 dark:text-gray-400;
