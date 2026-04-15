@@ -491,7 +491,7 @@ export default {
   @apply border border-gray-200 dark:border-gray-700;
 }
 .status-title {
-  @apply text-sm font-bold text-gray-700 dark:text-white flex-shrink-0;
+  @apply text-[13px] font-bold text-gray-700 dark:text-white flex-shrink-0;
   @apply w-16;
 }
 .status-dots {
