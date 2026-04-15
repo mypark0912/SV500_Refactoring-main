@@ -372,7 +372,7 @@ export default {
   @apply text-[9px] font-medium text-gray-500 dark:text-gray-400;
 }
 .ring-label {
-  @apply text-[10px] font-semibold text-gray-600 dark:text-gray-400;
+  @apply text-xs font-semibold text-gray-600 dark:text-gray-400;
 }
 
 /* 반응형 개선 */
