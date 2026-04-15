@@ -106,88 +106,46 @@
 </template>
 
 <script>
-import { watch, ref, computed,onBeforeUnmount } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRealtimeStore } from '@/store/realtime' 
-import axios from "axios";
+import { useRealtimeStore } from '@/store/realtime'
 export default {
   name: 'DashboardCard_PowerQuality',
   props: {
     channel: String,
     asset: String,
-    isInv : Boolean,
   },
-  // emits: ['data-change'],
   setup(props) {
     const { t } = useI18n()
     const channel = computed(() => props.channel)
     const asset = computed(() => props.asset)
-    const isInverter = computed(() => props.isInv)
     const store = useRealtimeStore()
     const data2 = computed(() => {
       // 'main' → 'Main' 변환 (Store의 getter가 'Main'/'Sub'를 기대)
       const channelName = channel.value?.toLowerCase() === 'main' ? 'Main' : 'Sub'
       return store.getChannelData(channelName) || {}
     })
-    const chartData = ref([]);
-    const pollTimer = ref(null);
-  
-    const getTHD = async () => {
-      try {
-        const response = await axios.get(`/api/getRealTimeTHD/${asset.value}`)
-        if (response.data.success) {
-          chartData.value = response.data.data;
-        }
-      } catch (err) {
-        console.error(`❌ ${channel.value} 채널 실패:`, err)
-      }
-    }
 
-    // 데이터 존재 확인
-    const hasData = computed(() => {
-      if (isInverter.value) {
-        return chartData.value.length > 0
-      }
-      return Object.keys(data2.value).length > 0
-    })
-    // 고조파 차트 데이터 설정
+    const hasData = computed(() => Object.keys(data2.value).length > 0)
+
     const dataKeys = ['thdu total', 'thdi total', 'tddi total']
     const labels = ['THD-U', 'THD-I', 'TDD-I']
     const colors = ['pink', 'indigo', 'teal']
 
-    // 차트 아이템 계산
     const chartItems = computed(() => {
-      if (isInverter.value) {
-        // API 데이터 사용 (getRealTimeTHD)
-        const values = chartData.value.map(item => parseFloat(item.Value || 0))
-        const maxValue = Math.max(...values, 10)
+      const values = dataKeys.map(key => parseFloat(data2.value[key] || 0))
+      const maxValue = Math.max(...values, 10)
 
-        return chartData.value.map((item, index) => {
-          const value = parseFloat(item.Value || 0).toFixed(1)
-          const height = (parseFloat(item.Value || 0) / maxValue) * 100
-          return {
-            label: labels[index],
-            value,
-            height: Math.max(height, 5),
-            colorClass: `bar-${colors[index % colors.length]}`
-          }
-        })
-      } else {
-        // 기존 store 데이터 사용
-        const values = dataKeys.map(key => parseFloat(data2.value[key] || 0))
-        const maxValue = Math.max(...values, 10)
-
-        return labels.map((label, index) => {
-          const value = values[index].toFixed(1)
-          const height = (values[index] / maxValue) * 100
-          return {
-            label,
-            value,
-            height: Math.max(height, 5),
-            colorClass: `bar-${colors[index]}`
-          }
-        })
-      }
+      return labels.map((label, index) => {
+        const value = values[index].toFixed(1)
+        const height = (values[index] / maxValue) * 100
+        return {
+          label,
+          value,
+          height: Math.max(height, 5),
+          colorClass: `bar-${colors[index]}`
+        }
+      })
     })
 
     // 불평형률 상태 클래스 - 다크모드 개선
@@ -207,39 +165,6 @@ export default {
       return 'text-red-600 dark:text-red-400'
     }
 
-    // props.data 감시
-    const startPolling = () => {
-      stopPolling()
-      getTHD() // 즉시 1회 호출
-      pollTimer.value = setInterval(getTHD, 5 * 60 * 1000) // 5분
-    }
-
-    const stopPolling = () => {
-      if (pollTimer.value) {
-        clearInterval(pollTimer.value)
-        pollTimer.value = null
-      }
-    }
-
-    // chartItems computed는 이전과 동일 ...
-
-    watch(
-      () => props.asset,
-      () => {
-        if (isInverter.value) {
-          startPolling()
-        } else {
-          stopPolling()
-          chartData.value = []
-        }
-      },
-      { immediate: true, deep: true }
-    )
-
-    onBeforeUnmount(() => {
-      stopPolling()
-    })
-
     return {
       channel,
       data2,
@@ -249,8 +174,6 @@ export default {
       chartItems,
       hasData,
       asset,
-      chartData,
-      isInverter,
     }
   },
 }

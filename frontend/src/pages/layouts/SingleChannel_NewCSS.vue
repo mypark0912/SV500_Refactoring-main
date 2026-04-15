@@ -5,11 +5,11 @@
     <DashboardCard_Meter_Single v-else-if="channelState.SubEnable" :channel="channel" />
 
     <DashboardCard_PQ_Claude
-      v-if="channelState.MainEnable" :asset="computedAssetName" :isInv="isInverter"
+      v-if="channelState.MainEnable" :asset="computedAssetName"
       :channel="computedChannel"
     />
     <DashboardCard_PQ_Claude
-      v-else-if="channelState.SubEnable" :asset="computedAssetName" :isInv="isInverter"
+      v-else-if="channelState.SubEnable" :asset="computedAssetName"
       :channel="computedChannel"
     />
 
@@ -89,25 +89,12 @@ export default {
 
     const computedType = computed(() => computedChannel.value == 'Main' ? AssetInfo.value.assetType_main : AssetInfo.value.assetType_sub)
     const computedAssetName = computed(() => computedChannel.value == 'Main' ? AssetInfo.value.assetName_main : AssetInfo.value.assetName_sub)
-    const isInverter = computed(() => {
-      const Diagenables = computedChannel.value == 'Main' ? props.channelState.MainDiagnosis : props.channelState.SubDiagnosis
-      if (Diagenables) {
-        const drivetype = computedChannel.value == 'Main' ? AssetInfo.value.assetdriveType_main : AssetInfo.value.assetdriveType_sub
-        if (drivetype == "DOL")
-          return false
-        else
-          return true
-      } else {
-        return false
-      }
-    })
 
     return {
       computedType,
       computedChannel,
       AssetInfo,
       computedAssetName,
-      isInverter,
     }
   }
 }

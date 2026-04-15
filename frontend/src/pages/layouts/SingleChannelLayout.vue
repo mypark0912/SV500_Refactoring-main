@@ -4,13 +4,13 @@
     <DashboardCard_Meter_Single v-if="channelState.MainEnable" :channel="channel" />
     <DashboardCard_Meter_Single v-else-if="channelState.SubEnable" :channel="channel" />
     
-    <DashboardCard_PQ_Claude 
-      v-if="channelState.MainEnable" :asset="computedAssetName" :isInv = "isInverter"
-      :channel="computedChannel"  
+    <DashboardCard_PQ_Claude
+      v-if="channelState.MainEnable" :asset="computedAssetName"
+      :channel="computedChannel"
     />
-    <DashboardCard_PQ_Claude 
-      v-else-if="channelState.SubEnable" :asset="computedAssetName" :isInv = "isInverter"
-      :channel="computedChannel"  
+    <DashboardCard_PQ_Claude
+      v-else-if="channelState.SubEnable" :asset="computedAssetName"
+      :channel="computedChannel"
     />
     
     <Dashboard_TransInfo_final v-if="computedType === 'Transformer' && channelState.MainDiagnosis"
@@ -52,7 +52,7 @@ import Dashboard_Single from '../../partials/inners/dashboard/Dashboard_Single.v
 import DashboardCard_kwh from '../../partials/inners/dashboard/DashboardCard_kwh_realtime.vue'
 import DashboardCard_Diagnosis from '../../partials/inners/dashboard/DashboardCard_Diagnosis.vue'
 import { useSetupStore } from '@/store/setup'
-import { computed, inject } from 'vue'
+import { computed } from 'vue'
 
 export default {
   name: 'SingleChannelLayout',
@@ -88,29 +88,12 @@ export default {
     //console.log(computedChannel.value);
     const computedType = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetType_main: AssetInfo.value.assetType_sub)
     const computedAssetName = computed(()=> computedChannel.value == 'Main' ? AssetInfo.value.assetName_main: AssetInfo.value.assetName_sub)
-    const isInverter = computed(()=>{
-      const Diagenables = computedChannel.value == 'Main' ? props.channelState.MainDiagnosis : props.channelState.SubDiagnosis
-      if(Diagenables){
-          const drivetype = computedChannel.value == 'Main' ? AssetInfo.value.assetdriveType_main: AssetInfo.value.assetdriveType_sub;
-          if (drivetype == "DOL")
-            return false;
-          else
-            return true;
-      }else{
-        return false;
-      }
-    })
-    //const mainData = inject('meterDictMain');
-    //const subData = inject('meterDictSub');
+
     return {
-      //opMode,
-      //mainData,
-      //subData,
       computedType,
       computedChannel,
       AssetInfo,
       computedAssetName,
-      isInverter,
     }
   }
 }
