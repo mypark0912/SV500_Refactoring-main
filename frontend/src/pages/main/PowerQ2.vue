@@ -52,9 +52,7 @@
 
                   <!-- 콤보박스 (Harmonics / Waveform 탭만) -->
                   <div v-if="activeTab !== 'Status'" class="mt-2 mb-4 flex items-center gap-x-2">
-                    <span v-if="isShowDriveType">DriveType : {{ driveType }}</span>
-                    <span v-if="isShowDriveType" class="mx-3 text-gray-300 dark:text-gray-600">|</span>
-                    <label :for="tab.name + '-select'" 
+                    <label :for="tab.name + '-select'"
                       class="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Select Option
                     </label>
@@ -80,43 +78,31 @@
 
                   <!-- 차트 컨테이너 (Harmonics / Waveform 탭만) -->
                   <div v-if="activeTab !== 'Status'" class="flex flex-col space-y-4">
-                    <!-- DOL 모드: 3개 차트 -->
-                    <template v-if="driveType !== 'VFD'">
-                      <BarChart v-if="
-                        activeTab === 'Harmonics' &&
-                        tbdataH !== null &&
-                        btnOptions === 'chart'
-                      " :data="chartData" :width="600" :height="250" :mode="mode1"
-                        :key="`harmonics-chart1-${chartUpdateKey}`" />
-                      <BarChart v-if="
-                        activeTab === 'Harmonics' &&
-                        tbdataH !== null &&
-                        btnOptions === 'chart'
-                      " :data="chartData2" :width="600" :height="250" :mode="mode2"
-                        :key="`harmonics-chart2-${chartUpdateKey}`" />
-                      <BarChart v-if="
-                        activeTab === 'Harmonics' &&
-                        tbdataH !== null &&
-                        btnOptions === 'chart'
-                      " :data="chartData3" :width="600" :height="250" :mode="mode3"
-                        :key="`harmonics-chart3-${chartUpdateKey}`" />
-                    </template>
-                    <!-- VFD 모드: 1개 차트 -->
-                    <template v-else>
-                      <BarChart v-if="
-                        activeTab === 'Harmonics' &&
-                        tbdataH !== null &&
-                        btnOptions === 'chart'
-                      " :data="chartData" :width="600" :height="350" :mode="vfdChartMode"
-                        :key="`harmonics-vfd-chart-${chartUpdateKey}`" />
-                    </template>
-                    
+                    <BarChart v-if="
+                      activeTab === 'Harmonics' &&
+                      tbdataH !== null &&
+                      btnOptions === 'chart'
+                    " :data="chartData" :width="600" :height="250" :mode="mode1"
+                      :key="`harmonics-chart1-${chartUpdateKey}`" />
+                    <BarChart v-if="
+                      activeTab === 'Harmonics' &&
+                      tbdataH !== null &&
+                      btnOptions === 'chart'
+                    " :data="chartData2" :width="600" :height="250" :mode="mode2"
+                      :key="`harmonics-chart2-${chartUpdateKey}`" />
+                    <BarChart v-if="
+                      activeTab === 'Harmonics' &&
+                      tbdataH !== null &&
+                      btnOptions === 'chart'
+                    " :data="chartData3" :width="600" :height="250" :mode="mode3"
+                      :key="`harmonics-chart3-${chartUpdateKey}`" />
+
                     <PowerQ_Table v-if="
                       activeTab === 'Harmonics' &&
                       tbdataH !== null &&
                       btnOptions === 'table'
-                    " :data="tbdataH" :option="selectedOptions.Harmonics" :driveType="driveType"
-                      :key="`harmonics-table-${selectedOptions.Harmonics}-${driveType}`" />
+                    " :data="tbdataH" :option="selectedOptions.Harmonics"
+                      :key="`harmonics-table-${selectedOptions.Harmonics}`" />
                     
                     <LineChart v-if="activeTab === 'Waveform'" :data="linechartData" width="495" height="348"
                       :mode="'Voltage'" />
@@ -217,105 +203,32 @@ export default {
       }
     });
 
-    const driveType = computed(() => {
-      if (channelComputed.value == 'Main' || channelComputed.value == 'main'){
-        console.log(setupStore.getChannelSetting.MainDiagnosis);
-        if(setupStore.getChannelSetting.MainDiagnosis){
-          return setupStore.getAssetConfig.assetdriveType_main;
-        }else{
-          return 'DOL';
-        }
-      }        
-      else{
-        if(setupStore.getChannelSetting.SubDiagnosis){
-          return setupStore.getAssetConfig.assetdriveType_sub;
-        }else{
-          return 'DOL';
-        }
-      }
-    });
-
-    const asset = computed(() => {
-      if (channelComputed.value == 'Main' || channelComputed.value == 'main')
-        return setupStore.getAssetConfig.assetName_main;
-      else
-        return setupStore.getAssetConfig.assetName_sub;
-    });
-
     const assetConfig = computed(() => setupStore.getAssetConfig);
 
-    const isShowDriveType = computed(()=>{
-      if (channelComputed.value == 'Main' || channelComputed.value == 'main'){
-        const isTrans = setupStore.getAssetConfig.assetType_main == 'Transformer' || setupStore.getAssetConfig.assetType_main == 'PrimaryTransformer';
-        if (setupStore.getChannelSetting.MainDiagnosis && !isTrans)
-        {
-          return true;
-        }else{
-          return false;
-        }
-      }else{
-        const isTrans = setupStore.getAssetConfig.assetType_sub == 'Transformer' || setupStore.getAssetConfig.assetType_sub == 'PrimaryTransformer'
-        if (setupStore.getChannelSetting.SubDiagnosis && !isTrans)
-        {
-          return true;
-        }else{
-          return false;
-        }
-      }
-    });
-
-    // VFD 차트 모드
-    const vfdChartMode = computed(() => {
-      return selectedOptions.Harmonics === 'Voltage' ? 'Voltage' : 'Current';
-    });
-
-    // driveType에 따른 탭 옵션 - Waveform은 VFD 여부와 관계없이 동일
-    const tabs = computed(() => {
-      // Waveform 옵션은 VFD 여부와 관계없이 동일
-      const waveformTab = {
+    const tabs = computed(() => [
+      {
+        name: "Harmonics",
+        label: t("pq.tabs.harmonics"),
+        options: [
+          { key: "phaseVoltage", label: t("pq.options.phaseVoltage") },
+          { key: "lineVoltage", label: t("pq.options.lineVoltage") },
+          { key: "current", label: t("pq.options.current") },
+        ],
+      },
+      {
         name: "Waveform",
         label: t("pq.tabs.waveform"),
         options: [
           { key: "phaseVoltage", label: t("pq.options.phaseVoltage") },
           { key: "lineVoltage", label: t("pq.options.lineVoltage") },
         ],
-      };
-
-      const statusTab = {
+      },
+      {
         name: "Status",
         label: t("pq.tabs.status"),
         options: [],
-      };
-
-      if (driveType.value === 'VFD') {
-        return [
-          {
-            name: "Harmonics",
-            label: t("pq.tabs.harmonics"),
-            options: [
-              { key: "Voltage", label: t("pq.options.lineVoltage") },
-              { key: "Current", label: t("pq.options.current") },
-            ],
-          },
-          waveformTab,
-          statusTab,
-        ];
-      } else {
-        return [
-          {
-            name: "Harmonics",
-            label: t("pq.tabs.harmonics"),
-            options: [
-              { key: "phaseVoltage", label: t("pq.options.phaseVoltage") },
-              { key: "lineVoltage", label: t("pq.options.lineVoltage") },
-              { key: "current", label: t("pq.options.current") },
-            ],
-          },
-          waveformTab,
-          statusTab,
-        ];
-      }
-    });
+      },
+    ]);
 
     // ========== 상수 ==========
     const waveMap = {
@@ -334,14 +247,8 @@ export default {
 
     // ========== 함수들 ==========
     
-    // selectedOptions 초기화 함수 - Waveform은 항상 동일
     const initSelectedOptions = () => {
-      if (driveType.value === 'VFD') {
-        selectedOptions.Harmonics = 'Voltage';
-      } else {
-        selectedOptions.Harmonics = 'phaseVoltage';
-      }
-      // Waveform은 항상 동일
+      selectedOptions.Harmonics = 'phaseVoltage';
       selectedOptions.Waveform = 'phaseVoltage';
     };
 
@@ -357,35 +264,6 @@ export default {
       if (!Array.isArray(waveform) || typeof iscale !== "number") return [];
       const scaleFactor = Number(iscale.toFixed(5));
       return waveform.map((y) => y * scaleFactor);
-    };
-
-    // VFD용 차트 업데이트
-    const updateVfdChart = (option) => {
-      if (!tbdataH.value) return;
-
-      const isVoltage = option === 'Voltage';
-      const harmonicsData = isVoltage
-        ? tbdataH.value.voltage
-        : tbdataH.value.current;
-
-      if (!harmonicsData || harmonicsData.length === 0) {
-        console.log('VFD 하모닉스 데이터 없음:', option);
-        return;
-      }
-
-      chartData.value = {
-        labels: Array.from({ length: harmonicsData.length }, (_, i) => i + 2),
-        datasets: [
-          {
-            label: isVoltage ? 'Voltage Harmonics' : 'Current Harmonics',
-            data: harmonicsData,
-            backgroundColor: isVoltage
-              ? tailwindConfig().theme.colors.violet[500]
-              : tailwindConfig().theme.colors.sky[500],
-            borderRadius: 4,
-          },
-        ],
-      };
     };
 
     const updateChartByOption = async (tab, option) => {
@@ -466,55 +344,48 @@ export default {
       else if (tab === "Harmonics") {
         if (!tbdataH.value) return;
 
-        // VFD 모드
-        if (driveType.value === 'VFD') {
-          updateVfdChart(option);
+        const [k1, k2, k3] = harmonicsMap[option] || [];
+
+        if (!k1 || !k2 || !k3) {
+          console.log('유효하지 않은 옵션:', option);
+          return;
         }
-        // DOL 모드
-        else {
-          const [k1, k2, k3] = harmonicsMap[option] || [];
 
-          if (!k1 || !k2 || !k3) {
-            console.log('유효하지 않은 옵션:', option);
-            return;
-          }
+        chartData.value = {
+          labels: Array.from({ length: 62 }, (_, i) => i + 2),
+          datasets: [
+            {
+              label: "L1",
+              data: tbdataH.value[k1]?.slice(2) || [],
+              backgroundColor: tailwindConfig().theme.colors.violet[500],
+              borderRadius: 4,
+            },
+          ],
+        };
 
-          chartData.value = {
-            labels: Array.from({ length: 62 }, (_, i) => i + 2),
-            datasets: [
-              {
-                label: "L1",
-                data: tbdataH.value[k1]?.slice(2) || [],
-                backgroundColor: tailwindConfig().theme.colors.violet[500],
-                borderRadius: 4,
-              },
-            ],
-          };
+        chartData2.value = {
+          labels: Array.from({ length: 62 }, (_, i) => i + 2),
+          datasets: [
+            {
+              label: "L2",
+              data: tbdataH.value[k2]?.slice(2) || [],
+              backgroundColor: tailwindConfig().theme.colors.sky[500],
+              borderRadius: 4,
+            },
+          ],
+        };
 
-          chartData2.value = {
-            labels: Array.from({ length: 62 }, (_, i) => i + 2),
-            datasets: [
-              {
-                label: "L2",
-                data: tbdataH.value[k2]?.slice(2) || [],
-                backgroundColor: tailwindConfig().theme.colors.sky[500],
-                borderRadius: 4,
-              },
-            ],
-          };
-
-          chartData3.value = {
-            labels: Array.from({ length: 62 }, (_, i) => i + 2),
-            datasets: [
-              {
-                label: "L3",
-                data: tbdataH.value[k3]?.slice(2) || [],
-                backgroundColor: tailwindConfig().theme.colors.lime[500],
-                borderRadius: 4,
-              },
-            ],
-          };
-        }
+        chartData3.value = {
+          labels: Array.from({ length: 62 }, (_, i) => i + 2),
+          datasets: [
+            {
+              label: "L3",
+              data: tbdataH.value[k3]?.slice(2) || [],
+              backgroundColor: tailwindConfig().theme.colors.lime[500],
+              borderRadius: 4,
+            },
+          ],
+        };
 
         chartUpdateKey.value++;
         await nextTick();
@@ -622,62 +493,11 @@ export default {
       }
     };
 
-    const fetchDataVFD = async () => {
-      try {
-        if (!isComponentActive.value) return;
-
-        const response = await axios.get(`/api/getRealTimeHarmonics/${channelComputed.value}/${asset.value}`);
-
-        if (response.data && response.data.success) {
-          if (!isComponentActive.value) return;
-
-          tbdataH.value = response.data.data;
-
-          updateChartByOption('Harmonics', selectedOptions.Harmonics);
-
-          if (response.data.request) {
-            const res = await axios.get(`/setting/HarmTrigger/${channelComputed.value}`);
-            if (res.success) {
-              console.warn("VFD Waveform file trigger 전송");
-            }
-          }
-        } else {
-          tbdataH.value = null;
-        }
-      } catch (error) {
-        if (isComponentActive.value) {
-          console.log("VFD 데이터 가져오기 실패:", error);
-        }
-      }
-    };
-
-    const fetchInterval = async () => {
-      if (driveType.value == 'VFD'){
-        try {
-          const response = await axios.get(`/api/getInterval/sampling/${channelComputed.value}`);
-          if (response.data.success) {
-            timeout_harmonics = parseInt(response.data.data);
-            console.log('timeout_harmonics 설정됨:', timeout_harmonics);
-          }
-        } catch (error) {
-          console.log("인터벌 데이터 가져오기 실패:", error);
-          timeout_harmonics = 5;
-        }
-      }else{
-        timeout_harmonics = 5;
-      }
-    };
-
     const refreshData = async () => {
-      //console.log('=== refreshData 호출 ===');
       if (!isComponentActive.value) return;
 
       if (channel.value && activeTab.value === 'Harmonics') {
-        if (driveType.value === 'VFD') {
-          await fetchDataVFD();
-        } else {
-          await fetchData(channel.value);
-        }
+        await fetchData(channel.value);
       }
     };
 
@@ -690,15 +510,11 @@ export default {
 
     const startInterval = async () => {
       stopInterval();
-      
+
       if (!isComponentActive.value) return;
 
-       tbdataH.value = null;
-      
-      await fetchInterval();
-      
-      console.log('=== startInterval === timeout:', timeout_harmonics);
-      
+      tbdataH.value = null;
+
       if (activeTab.value === 'Harmonics' && isComponentActive.value) {
         await refreshData();
         dataInterval.value = setInterval(refreshData, timeout_harmonics * 1000);
@@ -953,10 +769,6 @@ export default {
       startWaveInterval,
       stopWaveInterval,
       stopAllIntervals,
-      driveType,
-      vfdChartMode,
-      asset,
-      isShowDriveType,
       assetConfig,
       statusRefreshKey,
     };
