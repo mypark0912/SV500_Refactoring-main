@@ -357,10 +357,10 @@ export default {
       { text: t('dashboard.diagnosis.st4'), fill: fills[3] },
     ])
     const pqStatuses = computed(() => [
-      { text: t('dashboard.diagnosis.pqfe1'), fill: fills[0] },
-      { text: t('dashboard.diagnosis.pqfe2'), fill: fills[1] },
-      { text: t('dashboard.diagnosis.pqfe3'), fill: fills[2] },
-      { text: t('dashboard.diagnosis.pqfe4'), fill: fills[3] },
+      { text: t('dashboard.diagnosis.st1'), fill: fills[0] },
+      { text: t('dashboard.diagnosis.st2'), fill: fills[1] },
+      { text: t('dashboard.diagnosis.st3'), fill: fills[2] },
+      { text: t('dashboard.diagnosis.st4'), fill: fills[3] },
     ])
 
     return {

@@ -61,18 +61,18 @@
     mode.value = props.mode;
   });
 
-  watch(locale, (newLocale) => {
-  if (props.item?.Descriptions?.[newLocale]) {
-    descStr.value = props.item.Descriptions[newLocale];
+  watch([locale, () => props.item], ([newLocale, newItem]) => {
+  if (newItem?.Descriptions?.[newLocale]) {
+    descStr.value = newItem.Descriptions[newLocale];
   } else {
     descStr.value = "-";
   }
-  if(props.item?.Titles?.[newLocale]){
-    itemTitle.value = props.item.Titles[newLocale];
-  }else{
-    itemTitle.value = props.item.Title;
+  if (newItem?.Titles?.[newLocale]) {
+    itemTitle.value = newItem.Titles[newLocale];
+  } else {
+    itemTitle.value = newItem?.Title ?? '';
   }
-}, { immediate: true });
+}, { immediate: true, deep: true });
 
   const getStatusColor2 = (status) => {
         switch (status) {
@@ -87,12 +87,12 @@
       const getStatusCText = (status) => {
         switch (status) {
           case 'OK': return t('diagnosis.tabContext.pqfe1');
-          case 'Low': return t('diagnosis.tabContext.fe2');
-          case 'Medium': return t('diagnosis.tabContext.fe3');
-          case 'High': return t('diagnosis.tabContext.fe4');
+          case 'Low': return t('diagnosis.tabContext.pqfe2');
+          case 'Medium': return t('diagnosis.tabContext.pqfe3');
+          case 'High': return t('diagnosis.tabContext.pqfe4');
           default: return t('diagnosis.tabContext.pqfe0');
         }
-      }; 
+      };
 
       const getStatusText = (status) => {
         switch (status) {

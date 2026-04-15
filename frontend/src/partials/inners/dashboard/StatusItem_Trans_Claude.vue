@@ -72,19 +72,12 @@ const displayedStatuses = computed(() => {
     'bg-red-500',        // 수리 - 기존 빨강 유지
   ]
 
-  const texts = props.mode === 'diagnosis'
-    ? [
-        t('dashboard.diagnosis.st1'),
-        t('dashboard.diagnosis.st2'),
-        t('dashboard.diagnosis.st3'),
-        t('dashboard.diagnosis.st4'),
-      ]
-    : [
-        t('dashboard.diagnosis.pqfe1'),
-        t('dashboard.diagnosis.pqfe2'),
-        t('dashboard.diagnosis.pqfe3'),
-        t('dashboard.diagnosis.pqfe4'),
-      ]
+  const texts = [
+    t('dashboard.diagnosis.st1'),
+    t('dashboard.diagnosis.st2'),
+    t('dashboard.diagnosis.st3'),
+    t('dashboard.diagnosis.st4'),
+  ]
 
   return texts.map((text, i) => ({
     text,
@@ -95,11 +88,9 @@ const displayedStatuses = computed(() => {
 // 현재 상태 텍스트 가져오기
 const getCurrentStatusText = () => {
   if (stData.value.devStatus === 0) {
-    return props.mode === 'diagnosis' 
-      ? t('dashboard.diagnosis.st0') 
-      : t('dashboard.diagnosis.pqfe0')
+    return t('dashboard.diagnosis.st0')
   }
-  
+
   const statusIndex = stData.value.devStatus - 1
   return displayedStatuses.value[statusIndex]?.text || '알 수 없음'
 }

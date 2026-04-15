@@ -128,16 +128,18 @@ export default {
     const groupedTree = ref([])
     const mode = ref(props.mode)
 
-    const STATUS_LEGEND = [
+    const STATUS_LEGEND = computed(() => [
       { key: 0, text: t('diagnosis.tabContext.st0'), color: '#c4c4c4' },
       { key: 1, text: t('diagnosis.tabContext.st1'), color: '#16a34a' },
       { key: 2, text: t('diagnosis.tabContext.st2'), color: '#ca8a04' },
       { key: 3, text: t('diagnosis.tabContext.st3'), color: '#ea580c' },
       { key: 4, text: t('diagnosis.tabContext.st4'), color: '#dc2626' },
-    ]
+    ])
 
     /* ───────── 카테고리 데이터 (API → 변환) ───────── */
     const categories = computed(() => {
+      const currentLocale = locale.value
+      const tree = groupedTree.value
       const cats = [
         { id: 'voltage-inverter', label: t('diagnosis.category.voltage-inverter'), color: CATEGORY_COLORS['voltage-inverter'], items: [] },
         { id: 'components',       label: t('diagnosis.category.components'),       color: CATEGORY_COLORS['components'],       items: [] },
@@ -147,14 +149,14 @@ export default {
       const catMap = {}
       cats.forEach(c => { catMap[c.id] = c })
 
-      for (const node of groupedTree.value) {
+      for (const node of tree) {
         if (!node.children) continue
         for (const child of node.children) {
           const itemName = child.Name || child.Title || ''
           const catId = ITEM_CATEGORY_MAP[itemName]
           if (catId && catMap[catId]) {
             catMap[catId].items.push({
-              name: child.Titles?.[locale.value] || child.Title || child.Name,
+              name: child.Titles?.[currentLocale] || child.Title || child.Name,
               rawName: itemName,
               status: child.Status || 0,
             })

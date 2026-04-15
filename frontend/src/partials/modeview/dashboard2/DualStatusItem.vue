@@ -64,19 +64,12 @@ const displayedStatuses = computed(() => {
     'bg-red-500',
   ]
 
-  const texts = props.mode === 'diagnosis'
-    ? [
-        t('dashboard.diagnosis.st1'),
-        t('dashboard.diagnosis.st2'),
-        t('dashboard.diagnosis.st3'),
-        t('dashboard.diagnosis.st4'),
-      ]
-    : [
-        t('dashboard.diagnosis.pqfe1'),
-        t('dashboard.diagnosis.pqfe2'),
-        t('dashboard.diagnosis.pqfe3'),
-        t('dashboard.diagnosis.pqfe4'),
-      ]
+  const texts = [
+    t('dashboard.diagnosis.st1'),
+    t('dashboard.diagnosis.st2'),
+    t('dashboard.diagnosis.st3'),
+    t('dashboard.diagnosis.st4'),
+  ]
 
   return texts.map((text, i) => ({
     text,

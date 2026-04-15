@@ -61,22 +61,21 @@
     mode.value = props.mode;
   });
 
-watch(locale, (newLocale) => {
-  if (props.item?.Descriptions?.[newLocale]) {
-    //descStr.value = props.item.Descriptions[newLocale];
-    if(props.item.Status > 1)
-      descStr.value = props.item.Descriptions[newLocale];
+watch([locale, () => props.item], ([newLocale, newItem]) => {
+  if (newItem?.Descriptions?.[newLocale]) {
+    if (newItem.Status > 1)
+      descStr.value = newItem.Descriptions[newLocale];
     else
       descStr.value = "-";
   } else {
     descStr.value = "-";
   }
-  if(props.item?.Titles?.[newLocale]){
-    itemTitle.value = props.item.Titles[newLocale];
-  }else{
-    itemTitle.value = props.item.Title;
+  if (newItem?.Titles?.[newLocale]) {
+    itemTitle.value = newItem.Titles[newLocale];
+  } else {
+    itemTitle.value = newItem?.Title ?? '';
   }
-}, { immediate: true });
+}, { immediate: true, deep: true });
 
   const formatValue = (value) => {
     return (value == null || value == NaN || value == 'NaN') ? '-' : parseFloat(value).toFixed(2);
@@ -141,11 +140,11 @@ watch(locale, (newLocale) => {
 
       const getStatusCTextPQ = (status) => {
         switch (status) {
-          case 'OK': return t('diagnosis.tabContext.pqfe1');
-          case 'Low': return t('diagnosis.tabContext.pqfe2');
-          case 'Medium': return t('diagnosis.tabContext.pqfe3');
-          case 'High': return t('diagnosis.tabContext.pqfe4');
-          default: return t('diagnosis.tabContext.pqfe0');
+          case 'OK': return t('diagnosis.tabContext.st1');
+          case 'Low': return t('diagnosis.tabContext.st2');
+          case 'Medium': return t('diagnosis.tabContext.st3');
+          case 'High': return t('diagnosis.tabContext.st4');
+          default: return t('diagnosis.tabContext.st0');
         }
       }
   

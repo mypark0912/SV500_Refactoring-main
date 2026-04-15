@@ -86,22 +86,26 @@ export default {
     const items = ref([]);
     const mode=ref(props.mode);
 
-    const STATUS_LEGEND = [
+    const STATUS_LEGEND = computed(() => [
       { key: 0, text: t('diagnosis.tabContext.st0'), color: '#c4c4c4' },
       { key: 1, text: t('diagnosis.tabContext.st1'), color: '#16a34a' },
       { key: 2, text: t('diagnosis.tabContext.st2'), color: '#ca8a04' },
       { key: 3, text: t('diagnosis.tabContext.st3'), color: '#ea580c' },
       { key: 4, text: t('diagnosis.tabContext.st4'), color: '#dc2626' },
-    ]
+    ])
 
     /* Map chartdata to flat band items */
     const bandItems = computed(() => {
       if (!chartdata.value) return []
+      const currentLocale = locale.value
+      const titles = chartdata.value.Titles || []
+      const names = chartdata.value.Names || []
+      const values = chartdata.value.Values || []
       const result = []
-      for (let i = 0; i < chartdata.value.Names.length; i++) {
+      for (let i = 0; i < names.length; i++) {
         result.push({
-          name: chartdata.value.Names[i],
-          status: chartdata.value.Values[i] || 0,
+          name: titles[i]?.[currentLocale] || names[i],
+          status: values[i] || 0,
         })
       }
       return result
