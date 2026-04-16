@@ -1,0 +1,156 @@
+================================================================================
+SV500 웹 서버 - 리눅스 명령어 실행 목록
+================================================================================
+
+[1] routes/config.py
+================================================================================
+
+#--- 시간 관련 ---
+L267  date '+%Y/%m/%d %H:%M:%S'              # 현재 시간 조회
+L280  timedatectl set-timezone {timezone}     # 타임존 설정
+L282  date -s '{datetime_str}'                # 시스템 시간 설정
+L285  hwclock -w                              # 하드웨어 시계 동기화
+L286  date                                    # 현재 시간 조회
+L304  date --iso-8601=seconds                 # ISO 형식 시간 조회
+
+#--- 로그 조회 ---
+L514  journalctl -u {service} -n {lines} --no-pager -o short   # 서비스 로그 조회
+L568  tail -n {lines} {file_path}                               # 파일 로그 조회
+
+#--- 학습 데이터 수집/압축 ---
+L595  /home/root/shared_venv/bin/python3 /home/root/core/collect_train.py   # 학습 데이터 수집
+L612  tar -czf {tar_file} -C {dir} train                                    # 학습 데이터 압축
+
+#--- InfluxDB 백업/복원 ---
+L656  tar -xzf {tar_file} -C {temp_dir}                        # 백업 압축 해제
+L673  systemctl stop influxdb                                   # InfluxDB 중지
+L678  influx restore {path} --full                              # InfluxDB 복원
+L693  systemctl start influxdb                                  # InfluxDB 시작
+
+#--- 설정 백업 복원 ---
+L729  tar -xzf {tar_file} -C {temp_dir}                        # 설정 백업 압축 해제
+
+
+[2] routes/setting.py
+================================================================================
+
+#--- InfluxDB CLI 환경 설정 ---
+L260  sudo bash -c '{influx_token_setup_script}'               # InfluxDB 환경변수 스크립트 실행
+
+#--- 백업/압축 (리포트, 트렌드, 통합, InfluxDB, 로그) ---
+L1227 tar --ignore-failed-read -czf {tar} -C {dir} {name}     # 리포트 백업 압축
+L1331 tar --ignore-failed-read -czf {tar} -C {dir} reports    # 전체 리포트 백업 압축
+L1388 tar --ignore-failed-read -czf {tar} -C {dir} trendcsv   # 트렌드 백업 압축
+L1429 asyncio.create_subprocess_exec(...)                       # 비동기 subprocess 헬퍼 (통합 백업용)
+L1628 influx backup {path}                                      # InfluxDB 백업
+L1670 tar --ignore-failed-read -czf {tar} -C {dir} {name}     # 통합 백업 압축
+L1721 influx backup {path}                                      # InfluxDB 단독 백업
+L1733 tar -czf {tar} -C {dir} {name}                           # InfluxDB 백업 압축
+L1782 tar --ignore-failed-read -czf {tar} -C {dir} {name}     # 로그 백업 압축
+
+#--- 파일 권한 변경 ---
+L256  chmod +x /etc/profile.d/influx.sh                         # InfluxDB 환경변수 스크립트 실행권한 (bash -c 내부)
+L4225 os.chmod(file_path, 0o600)                                # 업로드된 파일 권한 설정 (600)
+L4447 os.chmod(script_path, 0o755)                              # frpc-restart-monitor.sh 실행권한 부여
+
+#--- 스크립트/서비스 파일 생성 ---
+L4415 /usr/local/bin/frpc-restart-monitor.sh 생성               # frpc 모니터링 스크립트 생성 + 실행권한
+L4450 /etc/systemd/system/frpc-restart-monitor.service 생성     # frpc 모니터 systemd 서비스 등록
+L4481 /etc/systemd/system/{service_name}.service 생성           # 범용 systemd 서비스 파일 생성 (create_service_file 함수)
+       → /etc/systemd/system/ 에 서비스 파일 직접 write
+
+#--- SmartSystem 설치 스크립트 ---
+L2310 {install_script} --fresh                                  # SmartSystem 재설치 스크립트
+L4976 sh /usr/local/sv500/iss/install.sh --fresh               # ISS fresh 설치
+L5015 sh /usr/local/sv500/iss/install.sh                       # ISS 일반 설치
+
+#--- 네트워크 설정 ---
+L3449 ip addr show {IFACE}                                      # 현재 IP 조회
+L3508 systemctl stop frpc-restart-monitor                       # frpc 모니터 중지
+L3510 systemctl restart systemd-networkd                        # 네트워크 재시작
+L3517 systemctl start frpc-restart-monitor                      # frpc 모니터 시작
+L3524 systemctl restart systemd-networkd                        # 네트워크 재시작 (DHCP 실패 시)
+L3526 systemctl start frpc-restart-monitor                      # frpc 모니터 시작
+L3530 systemctl start frpc-restart-monitor                      # frpc 모니터 시작 (static 모드)
+
+#--- 타임존 설정 ---
+L3538 timedatectl show --property=Timezone                      # 현재 타임존 조회
+L3542 timedatectl set-timezone {timezone}                       # 타임존 변경
+L3544 timedatectl set-timezone {timezone}                       # 타임존 변경 (예외 시)
+L3590 timedatectl show --property=Timezone --value              # 타임존 조회
+
+#--- NTP/시간 동기화 ---
+L3572 systemctl is-enabled systemd-timesyncd                    # timesyncd 활성화 상태 확인
+L3575 systemctl stop systemd-timesyncd                          # timesyncd 중지
+L3576 systemctl disable systemd-timesyncd                       # timesyncd 비활성화
+L3582 systemctl enable systemd-timesyncd                        # timesyncd 활성화
+L3583 systemctl restart systemd-timesyncd                       # timesyncd 재시작
+
+#--- 시간 설정 (v2) ---
+L5142 timedatectl set-timezone {saved_tz}                       # 타임존 설정
+L5143 date -s '{target_dt_str}'                                 # 시스템 시간 설정
+L5144 hwclock -w                                                # 하드웨어 시계 동기화
+L5146 date                                                      # 현재 시간 조회
+
+#--- 서비스 상태 확인/제어 ---
+L4151 systemctl is-enabled {name}                               # 서비스 자동시작 여부 확인
+L4529 sudo systemctl {cmd} {service}                            # 서비스 제어 (start/stop/restart 등)
+L4525 sudo systemctl daemon-reload                              # systemd 데몬 리로드
+
+
+[3] routes/auth.py
+================================================================================
+
+#--- 서비스 상태 확인 ---
+L82   systemctl is-active {service_name}                        # 서비스 활성화 상태 확인
+
+
+[4] utils/util.py
+================================================================================
+
+#--- 서비스 상태 확인 ---
+L355  systemctl is-active {name}                                # 서비스 활성화 상태 확인
+L368  systemctl list-unit-files {name}                          # 서비스 존재 여부 확인
+
+#--- 서비스 제어 ---
+L395  sudo systemctl {cmd} {service}                            # 서비스 제어 (start/stop/restart 등)
+       대상 서비스: Redis, InfluxDB, SmartSystems, SmartAPI,
+                    Core, WebServer, A35, MQTTClient, frpc, frpc-restart-monitor
+
+
+================================================================================
+명령어 분류 요약
+================================================================================
+
+[시간/타임존]
+  - date, timedatectl set-timezone, date -s, hwclock -w, date --iso-8601=seconds
+
+[서비스 제어 - systemctl]
+  - systemctl start/stop/restart/enable/disable/is-active/is-enabled/daemon-reload
+  - 대상: influxdb, systemd-networkd, systemd-timesyncd, frpc-restart-monitor,
+          redis, smartsystemsservice, smartsystemsrestapiservice, core,
+          webserver, sv500A35, mqClient, frpc
+
+[로그 조회]
+  - journalctl -u {service}
+  - tail -n {lines} {file}
+
+[압축/해제]
+  - tar -czf (압축)
+  - tar -xzf (해제)
+
+[네트워크]
+  - ip addr show {iface}
+
+[InfluxDB]
+  - influx backup, influx restore --full
+
+[스크립트 실행]
+  - /home/root/core/collect_train.py (python3)
+  - /usr/local/sv500/iss/install.sh (--fresh / 일반)
+  - InfluxDB 환경변수 설정 스크립트 (bash -c)
+
+[파일 권한/서비스 등록]
+  - os.chmod (파일 실행권한 부여)
+  - /etc/systemd/system/ 에 서비스 파일 직접 생성 (frpc-restart-monitor 등)
+  - /usr/local/bin/ 에 스크립트 파일 생성

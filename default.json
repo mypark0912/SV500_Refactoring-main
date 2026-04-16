@@ -12,7 +12,8 @@
       "mac_address": "",
       "serial_number": "",
       "name": "SV-500",
-      "location": ""
+      "location": "",
+      "timezone": "Asia\/Seoul"
     },
     "tcpip": {
       "ip_address": "192.168.2.10",
@@ -51,8 +52,7 @@
       "upload_sub": ""
     },
     "sntpInfo": {
-      "host": "",
-      "timezone": "Asia\/Seoul"
+      "host": ""
     },    
     "MQTT" :{
       "Use":0,

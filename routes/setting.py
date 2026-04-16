@@ -3758,7 +3758,7 @@ Type=simple
 ExecStart={frpc_binary_path} -c {frpc_config_path}
 Restart=on-failure
 RestartSec=10
-User=root
+User=ntekadmin
 
 [Install]
 WantedBy=multi-user.target
@@ -4457,7 +4457,7 @@ Type=simple
 ExecStart={script_path}
 Restart=always
 RestartSec=5
-User=root
+User=ntekadmin
 
 [Install]
 WantedBy=multi-user.target
@@ -4483,7 +4483,7 @@ def create_service_file(
         description: str,
         exec_start: str,
         working_directory: str,
-        user: str = "root",
+        user: str = "ntekadmin",
         after: str = "network.target",
         restart: str = "always",
         wanted_by: str = "multi-user.target"

@@ -1,0 +1,35 @@
+# /etc/sudoers.d/sv500-web
+# SV500 Web Server - ntekadmin sudoers configuration
+# Installed by install.sh
+
+# ---- 시간/타임존 ----
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-timezone *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-ntp *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-local-rtc *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/date -s *
+ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock -w
+ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock --systohc --utc
+
+# ---- 서비스 제어 (systemctl) ----
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl start *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl disable *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl daemon-reload
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl daemon-reexec
+
+# ---- InfluxDB ----
+ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx backup *
+ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx restore *
+
+# ---- 설치 스크립트 ----
+ntekadmin ALL=(ALL) NOPASSWD: /bin/sh /usr/local/sv500/iss/install.sh
+ntekadmin ALL=(ALL) NOPASSWD: /bin/sh /usr/local/sv500/iss/install.sh *
+
+# ---- 서비스 파일/스크립트 생성 (tee) ----
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/system/*
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /usr/local/bin/*
+
+# ---- bash (InfluxDB 환경변수 설정 등) ----
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/bash -c *
