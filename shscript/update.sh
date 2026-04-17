@@ -75,6 +75,8 @@ if [ -f "$SUDOERS_SRC" ]; then
     chmod 440 "$SUDOERS_DST"
     chown root:root "$SUDOERS_DST"
     log_info "Sudoers file installed: $SUDOERS_DST"
+    # 업로드본 정리 (이미 /etc/sudoers.d/ 에 복사 완료)
+    rm -f "$SUDOERS_SRC"
 else
     log_warn "Sudoers file not found: $SUDOERS_SRC"
 fi
