@@ -94,8 +94,9 @@ chmod -R g+w /home/root/webserver 2>/dev/null || true
 chmod -R g+w /home/root/core 2>/dev/null || true
 
 # config 폴더에 그룹 쓰기 권한 부여 (webserver 가 db/json/csv 파일 생성할 수 있도록)
+# SQLite 가 .db-journal / .db-wal 파일 생성하려면 디렉토리 g+w 필수
 if [ -d /home/root/config ]; then
-    chmod g+w /home/root/config 2>/dev/null || true
+    chmod 775 /home/root/config 2>/dev/null || true
     find /home/root/config -maxdepth 1 -type f \
         \( -name "*.db" -o -name "*.json" -o -name "*.csv" \) \
         -exec chmod g+w {} \; 2>/dev/null || true
