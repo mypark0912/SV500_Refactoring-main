@@ -191,7 +191,7 @@ export default {
   @apply text-lg font-bold text-gray-800 dark:text-gray-100;
 }
 .equip-image {
-  @apply w-14 h-14 object-cover rounded-lg shadow-md border border-gray-300 dark:border-gray-600;
+  @apply w-14 h-14 object-contain rounded-lg shadow-md border border-gray-300 dark:border-gray-600;
 }
 
 /* 반응형 */

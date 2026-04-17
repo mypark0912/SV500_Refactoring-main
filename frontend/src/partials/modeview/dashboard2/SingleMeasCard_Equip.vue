@@ -198,7 +198,7 @@ export default {
 }
 
 .avatar-image {
-  @apply w-12 h-12 rounded-xl object-cover;
+  @apply w-12 h-12 rounded-xl object-contain;
   @apply shadow-sm border border-white dark:border-gray-600;
 }
 

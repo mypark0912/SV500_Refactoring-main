@@ -422,7 +422,7 @@ export default {
 }
 .equip-avatar { @apply flex-shrink-0; }
 .avatar-image {
-  @apply w-10 h-10 rounded-lg object-cover;
+  @apply w-10 h-10 rounded-lg object-contain;
   @apply shadow-sm border border-gray-200 dark:border-gray-600;
 }
 .equip-info { @apply flex flex-col min-w-0 flex-1; }
