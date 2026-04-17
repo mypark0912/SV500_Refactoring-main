@@ -327,6 +327,16 @@ chmod -R g+w /usr/local/sv500 2>/dev/null || true
 chmod -R g+w /home/root/webserver 2>/dev/null || true
 chmod -R g+w /home/root/core 2>/dev/null || true
 
+# config 폴더 및 db/json/csv 파일에 그룹 쓰기 권한 부여
+# (기존 root 소유 파일을 ntekadmin 이 root 그룹 멤버로 쓸 수 있도록)
+if [ -d /home/root/config ]; then
+    chmod g+w /home/root/config 2>/dev/null || true
+    find /home/root/config -maxdepth 1 -type f \
+        \( -name "*.db" -o -name "*.json" -o -name "*.csv" \) \
+        -exec chmod g+w {} \; 2>/dev/null || true
+    log_info "✅ Group write permission granted to /home/root/config (folder + db/json/csv)"
+fi
+
 log_section "6. Reload systemd and Restart Services"
 
 sudo chmod +x /home/root/SV500/fw_cortex_m33.sh
