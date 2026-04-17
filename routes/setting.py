@@ -1523,7 +1523,7 @@ async def _backup_all_bg(task_id: str, request: Request):
 
         token = aesState.decrypt(config["cipher"])
         returncode, stdout, stderr = await _run_cmd(
-            'influx', 'backup', temp_influx_backup, '-t', token, timeout=600
+            'sudo', '/usr/local/bin/influx', 'backup', temp_influx_backup, '-t', token, timeout=600
         )
         if returncode > 1:
             raise Exception(f"InfluxDB backup failed: {stderr}")
@@ -1626,7 +1626,7 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
         temp_influx_backup = os.path.join(temp_dir, f"temp_influx_{timestamp}")
 
         result = subprocess.run(
-            ['influx', 'backup', temp_influx_backup],
+            ['sudo', '/usr/local/bin/influx', 'backup', temp_influx_backup],
             check=True,
             capture_output=True,
             text=True,
@@ -1719,7 +1719,7 @@ async def _backup_influxdb(temp_dir: str, timestamp: str):
         backup_path = os.path.join(temp_dir, backup_name)
 
         result = subprocess.run(
-            ['influx', 'backup', backup_path],
+            ['sudo', '/usr/local/bin/influx', 'backup', backup_path],
             check=True,
             capture_output=True,
             text=True,
@@ -2308,7 +2308,7 @@ async def reinstall_smartsystem():
 
         # 스크립트 실행
         result = subprocess.run(
-            [install_script, "--fresh"],  # 또는 적절한 옵션
+            ['sudo', '/bin/sh', install_script, "--fresh"],  # 또는 적절한 옵션
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -3505,29 +3505,29 @@ UseRoutes=true
         f.write(new_content)
 
     # ⭐ 연쇄 재시작 방지
-    os.system("systemctl stop frpc-restart-monitor")
+    os.system("sudo systemctl stop frpc-restart-monitor")
     time.sleep(0.5)
-    os.system("systemctl restart systemd-networkd")
+    os.system("sudo systemctl restart systemd-networkd")
 
     if dhcp == 1:
         for i in range(10):
             time.sleep(2)
             current = get_current_ip(IFACE)
             if current:
-                os.system("systemctl start frpc-restart-monitor")
+                os.system("sudo systemctl start frpc-restart-monitor")
                 return {"result": True, "mode": "dhcp", "ip": current["ip"]}
 
         # DHCP 실패 → static fallback
         content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
         with open(NETWORK_FILE, "w") as f:
             f.write(content)
-        os.system("systemctl restart systemd-networkd")
+        os.system("sudo systemctl restart systemd-networkd")
         time.sleep(3)
-        os.system("systemctl start frpc-restart-monitor")
+        os.system("sudo systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
     else:
         time.sleep(3)
-        os.system("systemctl start frpc-restart-monitor")
+        os.system("sudo systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
 
 def apply_timezone_setting(timezone):
@@ -3539,9 +3539,9 @@ def apply_timezone_setting(timezone):
                                 capture_output=True, text=True)
         current_tz = result.stdout.strip().replace("Timezone=", "")
         if current_tz != timezone:
-            subprocess.run(["timedatectl", "set-timezone", timezone])
+            subprocess.run(["sudo", "timedatectl", "set-timezone", timezone])
     except Exception:
-        subprocess.run(["timedatectl", "set-timezone", timezone])
+        subprocess.run(["sudo", "timedatectl", "set-timezone", timezone])
     return {"result": True}
 
 
@@ -3572,15 +3572,15 @@ def apply_sntp_setting(sntp_data):
             result = subprocess.run(["systemctl", "is-enabled", "systemd-timesyncd"],
                                     capture_output=True, text=True)
             if result.stdout.strip() == "enabled":
-                subprocess.run(["systemctl", "stop", "systemd-timesyncd"])
-                subprocess.run(["systemctl", "disable", "systemd-timesyncd"])
+                subprocess.run(["sudo", "systemctl", "stop", "systemd-timesyncd"])
+                subprocess.run(["sudo", "systemctl", "disable", "systemd-timesyncd"])
         except Exception:
             pass
         return {"result": True}
 
     if ntpflag:
-        subprocess.run(["systemctl", "enable", "systemd-timesyncd"])
-        subprocess.run(["systemctl", "restart", "systemd-timesyncd"])
+        subprocess.run(["sudo", "systemctl", "enable", "systemd-timesyncd"])
+        subprocess.run(["sudo", "systemctl", "restart", "systemd-timesyncd"])
 
     return {"result": True}
 
@@ -4428,8 +4428,8 @@ ip monitor link | while read line; do
         if echo "$line" | grep -q "$iface"; then
             if echo "$line" | grep -q "state UP"; then
                 sleep {restart_delay}
-                systemctl restart frpc
-                systemctl restart mqClient
+                sudo systemctl restart frpc
+                sudo systemctl restart mqClient
             fi
         fi
     done
@@ -4974,7 +4974,7 @@ async def update_smartsystem(mode, request: Request):
         reset_assetInfo('Main','Sub')
         try:
             result = subprocess.run(
-                ['sh', '/usr/local/sv500/iss/install.sh', '--fresh'],
+                ['sudo', '/bin/sh', '/usr/local/sv500/iss/install.sh', '--fresh'],
                 capture_output=True,
                 text=True,
                 check=True
@@ -5013,7 +5013,7 @@ async def update_smartsystem(mode, request: Request):
     else:
         try:
             result = subprocess.run(
-                ['sh', '/usr/local/sv500/iss/install.sh'],
+                ['sudo', '/bin/sh', '/usr/local/sv500/iss/install.sh'],
                 capture_output=True,
                 text=True,
                 check=True
@@ -5139,9 +5139,23 @@ async def setup_system_time(data: TimeSetRequest, request: Request):
         target_dt_str = target_dt.strftime('%Y-%m-%d %H:%M:%S')
 
         # 3. 장비에 타깃 타임존 + 변환된 시간 설정
-        subprocess.run(f"timedatectl set-timezone {saved_tz}", shell=True, check=True)
-        subprocess.run(f"date -s '{target_dt_str}'", shell=True, check=True, capture_output=True, text=True)
-        subprocess.run("hwclock -w", shell=True, check=True)
+        # NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화
+        subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
+
+        r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", saved_tz],
+                              capture_output=True, text=True)
+        if r_tz.returncode != 0:
+            logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
+
+        r_date = subprocess.run(["sudo", "date", "-s", target_dt_str],
+                                capture_output=True, text=True)
+        if r_date.returncode != 0:
+            logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
+            return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
+
+        r_hw = subprocess.run(["sudo", "hwclock", "-w"], capture_output=True, text=True)
+        if r_hw.returncode != 0:
+            logging.error(f"hwclock -w failed (rc={r_hw.returncode}): {r_hw.stderr}")
 
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)

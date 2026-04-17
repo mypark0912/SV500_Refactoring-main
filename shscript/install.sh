@@ -83,6 +83,9 @@ fi
 # ntekadmin을 root 그룹에 추가 (디렉토리 접근용)
 usermod -aG root $ADMIN_USER 2>/dev/null || true
 
+# /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
+chmod 750 /home/root 2>/dev/null || true
+
 # 쓰기 필요한 디렉토리에 그룹 쓰기 권한 부여
 chmod -R g+w /usr/local/sv500 2>/dev/null || true
 chmod -R g+w /home/root/webserver 2>/dev/null || true

@@ -6,18 +6,18 @@
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-timezone *
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-ntp *
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-local-rtc *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/date -s *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/date -s *
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock -w
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock --systohc --utc
 
 # ---- 서비스 제어 (systemctl) ----
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl start *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl disable *
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl daemon-reload
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl daemon-reexec
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl start *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl stop *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl restart *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl enable *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl disable *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl daemon-reload
+ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl daemon-reexec
 
 # ---- InfluxDB ----
 ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx backup *
@@ -32,4 +32,4 @@ ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/system/*
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /usr/local/bin/*
 
 # ---- bash (InfluxDB 환경변수 설정 등) ----
-ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/bash -c *
+ntekadmin ALL=(ALL) NOPASSWD: /bin/bash -c *

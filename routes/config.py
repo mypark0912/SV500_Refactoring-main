@@ -276,13 +276,23 @@ async def get_device_time():
 @router.post("/calibrate/setSystemTime")
 async def set_system_time(data: TimeSetRequest, request: Request):
     try:
-        tz_cmd = f"timedatectl set-timezone {data.timezone}"
-        subprocess.run(tz_cmd, shell=True, check=True)
-        date_cmd = f"date -s '{data.datetime_str}'"
-        result = subprocess.run(date_cmd, shell=True, check=True, capture_output=True, text=True)
-        # print(f"System time set to: {data.datetime_str}")
+        # NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화
+        subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
 
-        subprocess.run("hwclock -w", shell=True, check=True)
+        r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", data.timezone],
+                              capture_output=True, text=True)
+        if r_tz.returncode != 0:
+            logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
+
+        r_date = subprocess.run(["sudo", "date", "-s", data.datetime_str],
+                                capture_output=True, text=True)
+        if r_date.returncode != 0:
+            logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
+            return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
+
+        r_hw = subprocess.run(["sudo", "hwclock", "-w"], capture_output=True, text=True)
+        if r_hw.returncode != 0:
+            logging.error(f"hwclock -w failed (rc={r_hw.returncode}): {r_hw.stderr}")
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)
         return {
@@ -670,13 +680,13 @@ async def restore_influxdb(file: UploadFile = File(...)):
         restore_path = os.path.join(temp_dir, extracted_dirs[0])
 
         # InfluxDB 서비스 중지
-        subprocess.run(['systemctl', 'stop', 'influxdb'], check=True, timeout=30)
+        subprocess.run(['sudo', 'systemctl', 'stop', 'influxdb'], check=True, timeout=30)
         logging.info("InfluxDB service stopped for restore")
 
         try:
             # influx restore 실행
             result = subprocess.run(
-                ['influx', 'restore', restore_path, '--full'],
+                ['sudo', '/usr/local/bin/influx', 'restore', restore_path, '--full'],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -690,7 +700,7 @@ async def restore_influxdb(file: UploadFile = File(...)):
             return {"success": True, "message": "InfluxDB 복원이 완료되었습니다."}
         finally:
             # 복원 성공/실패 관계없이 서비스 재시작
-            subprocess.run(['systemctl', 'start', 'influxdb'], timeout=30)
+            subprocess.run(['sudo', 'systemctl', 'start', 'influxdb'], timeout=30)
             logging.info("InfluxDB service restarted")
 
     except subprocess.TimeoutExpired:
