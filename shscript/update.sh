@@ -55,7 +55,7 @@ log_info "Update mode: $MODE"
 log_section "0. Check ntekadmin User"
 
 ADMIN_USER="ntekadmin"
-ADMIN_PASS="Ntek@dm1n2025!"
+ADMIN_PASS="Ntek@dmin2026!"
 
 if id "$ADMIN_USER" &>/dev/null; then
     log_info "User $ADMIN_USER already exists"
