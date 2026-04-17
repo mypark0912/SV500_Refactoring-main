@@ -326,6 +326,12 @@ chmod 750 /home/root 2>/dev/null || true
 chmod -R g+w /usr/local/sv500 2>/dev/null || true
 chmod -R g+w /home/root/webserver 2>/dev/null || true
 chmod -R g+w /home/root/core 2>/dev/null || true
+chmod -R g+w /home/root/mqClient 2>/dev/null || true
+
+# 상위 폴더 자체도 775 로 명시적 지정 (하위 파일 생성 및 cd 를 위해)
+chmod 775 /home/root/webserver 2>/dev/null || true
+chmod 775 /home/root/core 2>/dev/null || true
+chmod 775 /home/root/mqClient 2>/dev/null || true
 
 # config 폴더 및 db/json/csv 파일에 그룹 쓰기 권한 부여
 # (기존 root 소유 파일을 ntekadmin 이 root 그룹 멤버로 쓸 수 있도록)

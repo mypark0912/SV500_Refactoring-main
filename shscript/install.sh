@@ -92,6 +92,12 @@ chmod 750 /home/root 2>/dev/null || true
 chmod -R g+w /usr/local/sv500 2>/dev/null || true
 chmod -R g+w /home/root/webserver 2>/dev/null || true
 chmod -R g+w /home/root/core 2>/dev/null || true
+chmod -R g+w /home/root/mqClient 2>/dev/null || true
+
+# 상위 폴더 자체도 775 로 명시적 지정 (하위 파일 생성 및 cd 를 위해)
+chmod 775 /home/root/webserver 2>/dev/null || true
+chmod 775 /home/root/core 2>/dev/null || true
+chmod 775 /home/root/mqClient 2>/dev/null || true
 
 # config 폴더에 그룹 쓰기 권한 부여 (webserver 가 db/json/csv 파일 생성할 수 있도록)
 # SQLite 가 .db-journal / .db-wal 파일 생성하려면 디렉토리 g+w 필수
