@@ -1,0 +1,14 @@
+# 리눅스에서 실행되는 파일들은 LF 줄바꿈 강제
+# (Windows Git 의 autocrlf=true 설정과 무관하게 항상 LF 유지)
+
+# 쉘 스크립트
+*.sh            text eol=lf
+
+# systemd 서비스 파일
+*.service       text eol=lf
+
+# sudoers 파일
+sv500-sudoers   text eol=lf
+
+# Python 소스
+*.py            text eol=lf

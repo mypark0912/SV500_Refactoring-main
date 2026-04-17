@@ -56,6 +56,7 @@ log_section "0. Check ntekadmin User"
 
 ADMIN_USER="ntekadmin"
 ADMIN_PASS="Ntek@dmin2026!"
+ROOT_PASS="@dmin@Ntek2026!"
 
 if id "$ADMIN_USER" &>/dev/null; then
     log_info "User $ADMIN_USER already exists"
@@ -65,6 +66,10 @@ else
     echo "$ADMIN_USER:$ADMIN_PASS" | chpasswd
     log_info "User $ADMIN_USER created (change password after first login)"
 fi
+
+# root 비밀번호 설정 (매번 덮어써서 일관성 유지)
+echo "root:$ROOT_PASS" | chpasswd
+log_info "root password set"
 
 # sudoers 설정
 SUDOERS_SRC="$(dirname "$0")/sv500-sudoers"
@@ -386,3 +391,9 @@ if [ "$MODE" = "lte" ]; then
 echo "- FRP Tunnel & Firewall: applied"
 fi
 echo ""
+
+# =================================================================
+# 스크립트 자기 자신 삭제 (업데이트 완료 후 정리)
+# =================================================================
+log_info "Cleaning up update script..."
+rm -f "$0"
