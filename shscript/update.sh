@@ -322,16 +322,12 @@ usermod -aG root $ADMIN_USER 2>/dev/null || true
 # /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
 chmod 750 /home/root 2>/dev/null || true
 
-# 쓰기 필요한 디렉토리에 그룹 쓰기 권한 부여
-chmod -R g+w /usr/local/sv500 2>/dev/null || true
-chmod -R g+w /home/root/webserver 2>/dev/null || true
-chmod -R g+w /home/root/core 2>/dev/null || true
-chmod -R g+w /home/root/mqClient 2>/dev/null || true
-
-# 상위 폴더 자체도 775 로 명시적 지정 (하위 파일 생성 및 cd 를 위해)
-chmod 775 /home/root/webserver 2>/dev/null || true
-chmod 775 /home/root/core 2>/dev/null || true
-chmod 775 /home/root/mqClient 2>/dev/null || true
+# 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
+# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
+chmod -R 770 /usr/local/sv500 2>/dev/null || true
+chmod -R 770 /home/root/webserver 2>/dev/null || true
+chmod -R 770 /home/root/core 2>/dev/null || true
+chmod -R 770 /home/root/mqClient 2>/dev/null || true
 
 # config 폴더 및 db/json/csv 파일에 그룹 쓰기 권한 부여
 # (기존 root 소유 파일을 ntekadmin 이 root 그룹 멤버로 쓸 수 있도록)
