@@ -388,15 +388,6 @@
       @close-modal="parquetModalOpen = false"
       title="PARQUET Download"
     >
-      <template #header-extra>
-        <button
-          class="px-3 py-1 text-xs font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-md transition-colors disabled:opacity-50"
-          :disabled="trainLoading"
-          @click.stop="goToGetTrain"
-        >
-          {{ trainLoading ? 'Loading...' : 'GetTrainData' }}
-        </button>
-      </template>
       <div style="min-width: 560px;">
         <!-- Tabs -->
         <div class="flex border-b border-gray-200 dark:border-gray-700/60">
@@ -495,56 +486,49 @@
 
           <!-- ========== DiagnosisTrend Tab ========== -->
           <template v-else-if="parquetTab === 'trend'">
-            <div v-if="Object.keys(trendFiles).length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
-              No trend files found.
-            </div>
-            <div v-else>
-              <div class="flex justify-end mb-3">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <div class="flex-1 text-sm min-h-[1.5rem]">
+                <span v-if="collectState.status === 'running'" class="inline-flex items-center text-indigo-600 dark:text-indigo-400">
+                  <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Collecting trend data... {{ formatElapsed(collectState.elapsedSec) }}
+                </span>
+                <span v-else-if="collectState.status === 'failed'" class="text-red-500">
+                  Failed: {{ collectState.error }}
+                </span>
+                <span v-else-if="collectState.status === 'completed'" class="text-green-600 dark:text-green-400">
+                  Collection completed ({{ formatElapsed(collectState.elapsedSec) }})
+                </span>
+                <span v-else class="text-gray-500 dark:text-gray-400">
+                  Press "Collect Data" to build the training dataset.
+                </span>
+              </div>
+              <div class="flex gap-2 shrink-0">
                 <button
-                  class="btn-sm bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 flex items-center"
-                  @click="downloadAllTrends"
-                  :disabled="parquetDownloading"
+                  class="btn-sm bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 flex items-center disabled:opacity-50"
+                  @click="startTrendCollect"
+                  :disabled="collectState.status === 'running'"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  {{ collectState.status === 'running' ? 'Collecting...' : 'Collect Data' }}
+                </button>
+                <button
+                  class="btn-sm bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 flex items-center disabled:opacity-50"
+                  @click="downloadTrainData"
+                  :disabled="collectState.status === 'running' || trainDownloading"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="7 10 12 15 17 10"/>
                     <line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  Download All
+                  {{ trainDownloading ? 'Downloading...' : 'Download' }}
                 </button>
-              </div>
-              <div v-for="(files, channel) in trendFiles" :key="channel" class="mb-4">
-                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
-                  Channel: {{ channel }}
-                </h4>
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="bg-gray-50 dark:bg-gray-700">
-                        <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">File Name</th>
-                        <th class="text-center px-3 py-2 font-medium text-gray-600 dark:text-gray-300 w-24">Download</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                      <tr v-for="file in files" :key="file" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-3 py-2 text-gray-800 dark:text-gray-200">{{ file }}</td>
-                        <td class="px-3 py-2 text-center">
-                          <button
-                            class="inline-flex items-center text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
-                            @click="downloadTrend(channel, file)"
-                            :disabled="parquetDownloading"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                              <polyline points="7 10 12 15 17 10"/>
-                              <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
               </div>
             </div>
           </template>
@@ -678,9 +662,20 @@ export default {
     const parquetModalOpen = ref(false);
     const parquetTab = ref('report');
     const reportFiles = ref({});
-    const trendFiles = ref({});
     const parquetLoading = ref(false);
     const parquetDownloading = ref(false);
+
+    // 학습 데이터 수집/다운로드 상태 (DiagnosisTrend 탭)
+    const collectState = ref({
+      status: 'idle',   // idle | running | completed | failed
+      taskId: null,
+      startedAt: 0,
+      elapsedSec: 0,
+      error: null,
+    });
+    const trainDownloading = ref(false);
+    let collectElapsedTimer = null;
+    let collectPollTimer = null;
 
     const devMode = computed(() => authStore.getOpMode);
     const isNtek = computed(() => authStore.getUser == 'ntek' ? true:false);
@@ -872,40 +867,98 @@ export default {
       }
     };
 
-    const fetchTrendList = async () => {
-      parquetLoading.value = true;
+    const formatElapsed = (sec) => {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m > 0 ? `${m}m ${s}s` : `${s}s`;
+    };
+
+    const stopCollectTimers = () => {
+      if (collectElapsedTimer) { clearInterval(collectElapsedTimer); collectElapsedTimer = null; }
+      if (collectPollTimer)    { clearInterval(collectPollTimer);    collectPollTimer = null; }
+    };
+
+    const pollCollectStatus = async () => {
+      const taskId = collectState.value.taskId;
+      if (!taskId) return;
       try {
-        const response = await axios.get('/setting/backup/parquet/trend/list');
-        trendFiles.value = response.data.success ? response.data.data : {};
-      } catch (error) {
-        console.error('Trend list failed:', error);
-        trendFiles.value = {};
-      } finally {
-        parquetLoading.value = false;
+        const res = await axios.get(`/config/getTrain/status/${taskId}`);
+        if (!res.data.success) return;
+        if (res.data.status === 'completed') {
+          collectState.value.status = 'completed';
+          stopCollectTimers();
+        } else if (res.data.status === 'failed') {
+          collectState.value.status = 'failed';
+          collectState.value.error = res.data.error || 'Collection failed';
+          stopCollectTimers();
+        }
+      } catch (err) {
+        console.error('Collect status poll failed:', err);
       }
     };
 
-    const trainLoading = ref(false);
-    const goToGetTrain = async () => {
+    const startTrendCollect = async () => {
+      if (collectState.value.status === 'running') return;
       try {
-        trainLoading.value = true;
-        const response = await axios.get('/config/getTrain', {
+        const res = await axios.post('/config/getTrain/start');
+        if (!res.data.success) {
+          collectState.value = {
+            status: 'failed', taskId: null, startedAt: 0, elapsedSec: 0,
+            error: res.data.message || 'Start failed',
+          };
+          return;
+        }
+        collectState.value = {
+          status: 'running',
+          taskId: res.data.task_id,
+          startedAt: Date.now(),
+          elapsedSec: 0,
+          error: null,
+        };
+        collectElapsedTimer = setInterval(() => {
+          collectState.value.elapsedSec = Math.floor((Date.now() - collectState.value.startedAt) / 1000);
+          // 30분 넘으면 클라이언트 측에서도 실패 처리
+          if (collectState.value.elapsedSec > 1800 && collectState.value.status === 'running') {
+            collectState.value.status = 'failed';
+            collectState.value.error = 'Collection timeout';
+            stopCollectTimers();
+          }
+        }, 1000);
+        collectPollTimer = setInterval(pollCollectStatus, 3000);
+      } catch (err) {
+        console.error('Start collect failed:', err);
+        collectState.value = {
+          status: 'failed', taskId: null, startedAt: 0, elapsedSec: 0,
+          error: err.message || 'Start failed',
+        };
+      }
+    };
+
+    const downloadTrainData = async () => {
+      if (trainDownloading.value) return;
+      try {
+        trainDownloading.value = true;
+        const response = await axios.get('/config/getTrain/download', {
           responseType: 'blob',
         });
-        const contentDisposition = response.headers['content-disposition'];
-        let filename = 'train_data.zip';
-        if (contentDisposition) {
-          const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-          if (match && match[1]) {
-            filename = match[1].replace(/['"]/g, '');
-          }
+        // 서버가 에러 JSON을 blob으로 줄 수 있음 — 감지해서 알림
+        const contentType = response.headers['content-type'] || '';
+        if (contentType.includes('application/json')) {
+          const text = await response.data.text();
+          const parsed = JSON.parse(text);
+          alert(parsed.message || 'Download failed');
+          return;
         }
+        const cd = response.headers['content-disposition'] || '';
+        let filename = 'train_data.tar';
+        const match = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (match && match[1]) filename = match[1].replace(/['"]/g, '');
         triggerDownload(new Blob([response.data]), filename);
       } catch (error) {
-        console.error('GetTrainData 다운로드 실패:', error);
-        alert('GetTrainData 다운로드 실패');
+        console.error('TrainData 다운로드 실패:', error);
+        alert('TrainData 다운로드 실패');
       } finally {
-        trainLoading.value = false;
+        trainDownloading.value = false;
       }
     };
 
@@ -918,7 +971,6 @@ export default {
     const switchParquetTab = (tab) => {
       parquetTab.value = tab;
       if (tab === 'report') fetchReportList();
-      else fetchTrendList();
     };
 
     const formatDate = (d) => {
@@ -966,37 +1018,6 @@ export default {
         triggerDownload(new Blob([response.data]), `backup_report_all.tar.gz`);
       } catch (error) {
         console.error('Report download-all failed:', error);
-        alert('Download failed');
-      } finally {
-        parquetDownloading.value = false;
-      }
-    };
-
-    const downloadAllTrends = async () => {
-      try {
-        parquetDownloading.value = true;
-        const response = await axios.get('/setting/backup/parquet/trend/download-all', {
-          responseType: 'blob',
-        });
-        triggerDownload(new Blob([response.data]), `backup_trend_all.tar.gz`);
-      } catch (error) {
-        console.error('Trend download-all failed:', error);
-        alert('Download failed');
-      } finally {
-        parquetDownloading.value = false;
-      }
-    };
-
-    const downloadTrend = async (channel, filename) => {
-      try {
-        parquetDownloading.value = true;
-        const response = await axios.get('/setting/backup/parquet/trend/download', {
-          params: { channel, filename },
-          responseType: 'blob',
-        });
-        triggerDownload(new Blob([response.data]), filename);
-      } catch (error) {
-        console.error('Trend download failed:', error);
         alert('Download failed');
       } finally {
         parquetDownloading.value = false;
@@ -1077,6 +1098,7 @@ export default {
         clearInterval(influxReadyTimer);
         influxReadyTimer = null;
       }
+      stopCollectTimers();
     });
 
     return {
@@ -1101,9 +1123,10 @@ export default {
       parquetModalOpen,
       parquetTab,
       reportFiles,
-      trendFiles,
       parquetLoading,
       parquetDownloading,
+      collectState,
+      trainDownloading,
       showMessage,
       openLogModal,
       formatSize,
@@ -1114,14 +1137,13 @@ export default {
       ResetAll,
       saveIPAddress,
       openParquetModal,
-      goToGetTrain,
-      trainLoading,
       switchParquetTab,
       formatDate,
+      formatElapsed,
       downloadReport,
       downloadAllReports,
-      downloadTrend,
-      downloadAllTrends,
+      startTrendCollect,
+      downloadTrainData,
       csvModalOpen,
       csvChannel,
       csvStartDate,

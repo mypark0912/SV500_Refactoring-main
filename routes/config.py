@@ -1,9 +1,13 @@
 from fastapi import APIRouter, UploadFile, File, Request
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from states.global_state import redis_state, aesState
 import os, csv, sqlite3, shutil, logging, tempfile
 import ujson as json
 import struct, subprocess
+import asyncio
+import uuid
+from typing import Dict
 from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
@@ -595,53 +599,132 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@router.get('/getTrain')
-def get_train():
-    """collect_train.py 실행 후 학습 데이터 parquet 파일을 tar.gz로 다운로드"""
-    import tempfile
-    from starlette.background import BackgroundTask
-    TRAIN_DIR = Path("/usr/local/sv500/train")
+# ── 학습 데이터 수집 태스크 관리 ──
+_train_tasks: Dict[str, dict] = {}
+_train_running = False
+
+TRAIN_DIR = Path("/usr/local/sv500/train")
+TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")  # 디스크 경로 (/tmp 사용 금지)
+COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
+SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
+
+
+async def _run_cmd_async(*args, timeout=600):
+    """비동기 subprocess 실행 헬퍼 (이벤트 루프 논블로킹)"""
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    return proc.returncode, stdout.decode(errors='replace'), stderr.decode(errors='replace')
+
+
+async def _collect_train_bg(task_id: str):
+    """collect_train.py 실행을 백그라운드에서 감싸는 태스크"""
+    global _train_running
+    task = _train_tasks[task_id]
     try:
-        process = subprocess.Popen(
-            ["/home/root/shared_venv/bin/python3", "/home/root/core/collect_train.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+        returncode, stdout, stderr = await _run_cmd_async(
+            SHARED_PYTHON, COLLECT_TRAIN_PY, timeout=1800  # 30분 여유
         )
-        stdout, stderr = process.communicate(timeout=300)
+        if returncode != 0:
+            raise Exception(stderr.strip() or f"collect_train.py exit={returncode}")
 
-        if process.returncode != 0:
-            return {"success": False, "message": stderr.decode()}
+        if stdout:
+            logging.info(f"[getTrain] stdout: {stdout.strip()}")
+        if stderr:
+            logging.info(f"[getTrain] stderr: {stderr.strip()}")
 
-        if not TRAIN_DIR.exists() or not any(TRAIN_DIR.rglob("*.parquet")):
-            return {"success": False, "message": "생성된 학습 데이터 파일이 없습니다."}
-
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        temp_dir = tempfile.mkdtemp()
-        tar_file = os.path.join(temp_dir, f"train_data_{timestamp}.tar.gz")
-
-        subprocess.run(
-            ['tar', '-czf', tar_file, '-C', str(TRAIN_DIR.parent), 'train'],
-            capture_output=True, text=True, timeout=60
-        )
-
-        def cleanup():
-            try:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-            except Exception:
-                pass
-
-        return FileResponse(
-            path=tar_file,
-            filename=f"train_data_{timestamp}.tar.gz",
-            media_type='application/gzip',
-            background=BackgroundTask(cleanup)
-        )
-    except subprocess.TimeoutExpired:
-        process.kill()
-        return {"success": False, "message": "프로세스 타임아웃 (300초 초과)"}
+        task["status"] = "completed"
+    except asyncio.TimeoutError:
+        logging.error("[getTrain] collect_train.py timeout (1800s)")
+        task["status"] = "failed"
+        task["error"] = "Collection timeout"
     except Exception as e:
-        logging.error(f"getTrain Error: {e}")
+        logging.error(f"[getTrain] collect failed: {e}")
+        task["status"] = "failed"
+        task["error"] = str(e)
+    finally:
+        _train_running = False
+
+
+@router.post('/getTrain/start')
+async def start_train_collect():
+    """학습 데이터 수집 시작 (백그라운드). 즉시 task_id 반환."""
+    global _train_running
+    if _train_running:
+        return {"success": False, "message": "Collection already in progress"}
+
+    task_id = str(uuid.uuid4())
+    _train_tasks[task_id] = {
+        "status": "running",
+        "error": None,
+    }
+    _train_running = True
+
+    asyncio.create_task(_collect_train_bg(task_id))
+    return {"success": True, "task_id": task_id}
+
+
+@router.get('/getTrain/status/{task_id}')
+async def get_train_status(task_id: str):
+    task = _train_tasks.get(task_id)
+    if not task:
+        return {"success": False, "message": "Task not found"}
+    return {
+        "success": True,
+        "status": task["status"],   # running | completed | failed
+        "error": task["error"],
+    }
+
+
+@router.get('/getTrain/download')
+async def download_train():
+    """이미 수집된 /usr/local/sv500/train 을 tar로 묶어 다운로드.
+    parquet은 snappy 내부 압축이라 gzip 생략 (CPU/메모리 절약).
+    저장/작업 경로는 모두 디스크(/usr/local/sv500/backup/train)에서만.
+    """
+    if not TRAIN_DIR.exists() or not any(TRAIN_DIR.rglob("*.parquet")):
+        return {"success": False, "message": "생성된 학습 데이터 파일이 없습니다."}
+
+    TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    tar_file = TRAIN_TAR_DIR / f"train_data_{timestamp}.tar"
+
+    try:
+        returncode, stdout, stderr = await _run_cmd_async(
+            'tar', '--ignore-failed-read', '-cf', str(tar_file),
+            '-C', str(TRAIN_DIR.parent), TRAIN_DIR.name,
+            timeout=120,
+        )
+        if returncode > 1:
+            raise Exception(f"tar failed (rc={returncode}): {stderr.strip()}")
+        if not tar_file.exists():
+            raise Exception("tar file not created")
+    except asyncio.TimeoutError:
+        if tar_file.exists():
+            tar_file.unlink()
+        return {"success": False, "message": "tar 타임아웃 (120초 초과)"}
+    except Exception as e:
+        logging.error(f"[getTrain] tar error: {e}")
+        if tar_file.exists():
+            tar_file.unlink()
         return {"success": False, "message": str(e)}
+
+    def cleanup():
+        try:
+            if tar_file.exists():
+                tar_file.unlink()
+        except Exception as e:
+            logging.error(f"[getTrain] cleanup error: {e}")
+
+    return FileResponse(
+        path=str(tar_file),
+        filename=tar_file.name,
+        media_type='application/x-tar',
+        background=BackgroundTask(cleanup),
+    )
 
 
 @router.post('/backup/restore/influxdb')
