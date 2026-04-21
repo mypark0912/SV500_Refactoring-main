@@ -609,24 +609,42 @@ COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
 SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
 
 
-async def _run_cmd_async(*args, timeout=600):
+async def _run_cmd_async(*args, timeout=600, env=None):
     """비동기 subprocess 실행 헬퍼 (이벤트 루프 논블로킹)"""
     proc = await asyncio.create_subprocess_exec(
         *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=env,
     )
     stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     return proc.returncode, stdout.decode(errors='replace'), stderr.decode(errors='replace')
+
+
+def _read_progress_file(progress_file: Path):
+    """진행파일을 읽어 dict 반환. 없거나 손상 시 None."""
+    if not progress_file or not progress_file.exists():
+        return None
+    try:
+        with open(progress_file, "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 
 async def _collect_train_bg(task_id: str):
     """collect_train.py 실행을 백그라운드에서 감싸는 태스크"""
     global _train_running
     task = _train_tasks[task_id]
+    progress_file: Path = task["progress_file"]
     try:
+        # collect_train.py에 진행파일 경로 전달
+        sub_env = os.environ.copy()
+        sub_env["TRAIN_PROGRESS_FILE"] = str(progress_file)
+
         returncode, stdout, stderr = await _run_cmd_async(
-            SHARED_PYTHON, COLLECT_TRAIN_PY, timeout=1800  # 30분 여유
+            SHARED_PYTHON, COLLECT_TRAIN_PY, timeout=1800,  # 30분 여유
+            env=sub_env,
         )
         if returncode != 0:
             raise Exception(stderr.strip() or f"collect_train.py exit={returncode}")
@@ -646,6 +664,15 @@ async def _collect_train_bg(task_id: str):
         task["status"] = "failed"
         task["error"] = str(e)
     finally:
+        # 마지막 진행상태 캡처 후 파일 정리
+        last = _read_progress_file(progress_file)
+        if last is not None:
+            task["last_progress"] = last
+        try:
+            if progress_file.exists():
+                progress_file.unlink()
+        except Exception as e:
+            logging.error(f"[getTrain] progress cleanup error: {e}")
         _train_running = False
 
 
@@ -656,10 +683,15 @@ async def start_train_collect():
     if _train_running:
         return {"success": False, "message": "Collection already in progress"}
 
+    TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
     task_id = str(uuid.uuid4())
+    progress_file = TRAIN_TAR_DIR / f"progress_{task_id}.json"
+
     _train_tasks[task_id] = {
         "status": "running",
         "error": None,
+        "progress_file": progress_file,
+        "last_progress": None,
     }
     _train_running = True
 
@@ -672,10 +704,15 @@ async def get_train_status(task_id: str):
     task = _train_tasks.get(task_id)
     if not task:
         return {"success": False, "message": "Task not found"}
+
+    # 진행파일 우선, 없으면 최종 캡처 사용
+    progress = _read_progress_file(task.get("progress_file")) or task.get("last_progress")
+
     return {
         "success": True,
         "status": task["status"],   # running | completed | failed
         "error": task["error"],
+        "progress": progress,       # {phase, channel, channel_index, total_channels, day, total_days, date}
     }
 
 

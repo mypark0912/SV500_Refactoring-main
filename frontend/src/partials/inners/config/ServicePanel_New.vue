@@ -488,13 +488,18 @@
           <template v-else-if="parquetTab === 'trend'">
             <div class="flex items-center justify-between gap-3 mb-4">
               <div class="flex-1 text-sm min-h-[1.5rem]">
-                <span v-if="collectState.status === 'running'" class="inline-flex items-center text-indigo-600 dark:text-indigo-400">
-                  <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
-                  Collecting trend data... {{ formatElapsed(collectState.elapsedSec) }}
-                </span>
+                <div v-if="collectState.status === 'running'" class="text-indigo-600 dark:text-indigo-400">
+                  <span class="inline-flex items-center">
+                    <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Collecting trend data... {{ formatElapsed(collectState.elapsedSec) }}
+                  </span>
+                  <div v-if="collectState.progress" class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                    {{ formatProgress(collectState.progress) }}
+                  </div>
+                </div>
                 <span v-else-if="collectState.status === 'failed'" class="text-red-500">
                   Failed: {{ collectState.error }}
                 </span>
@@ -672,6 +677,7 @@ export default {
       startedAt: 0,
       elapsedSec: 0,
       error: null,
+      progress: null,   // { phase, channel, channel_index, total_channels, day, total_days, date }
     });
     const trainDownloading = ref(false);
     let collectElapsedTimer = null;
@@ -873,6 +879,19 @@ export default {
       return m > 0 ? `${m}m ${s}s` : `${s}s`;
     };
 
+    const formatProgress = (p) => {
+      if (!p) return '';
+      if (p.phase === 'starting') return 'Initializing...';
+      if (p.phase === 'done') return `Done (${p.success_count}/${p.total_channels} channels)`;
+      const ch = p.channel || '-';
+      const ci = p.channel_index || 0;
+      const tc = p.total_channels || 0;
+      const day = p.day || 0;
+      const td = p.total_days || 0;
+      const date = p.date ? ` [${p.date}]` : '';
+      return `${ch} (${ci}/${tc}) — day ${day}/${td}${date}`;
+    };
+
     const stopCollectTimers = () => {
       if (collectElapsedTimer) { clearInterval(collectElapsedTimer); collectElapsedTimer = null; }
       if (collectPollTimer)    { clearInterval(collectPollTimer);    collectPollTimer = null; }
@@ -884,6 +903,9 @@ export default {
       try {
         const res = await axios.get(`/config/getTrain/status/${taskId}`);
         if (!res.data.success) return;
+        if (res.data.progress !== undefined) {
+          collectState.value.progress = res.data.progress;
+        }
         if (res.data.status === 'completed') {
           collectState.value.status = 'completed';
           stopCollectTimers();
@@ -904,7 +926,7 @@ export default {
         if (!res.data.success) {
           collectState.value = {
             status: 'failed', taskId: null, startedAt: 0, elapsedSec: 0,
-            error: res.data.message || 'Start failed',
+            error: res.data.message || 'Start failed', progress: null,
           };
           return;
         }
@@ -914,6 +936,7 @@ export default {
           startedAt: Date.now(),
           elapsedSec: 0,
           error: null,
+          progress: null,
         };
         collectElapsedTimer = setInterval(() => {
           collectState.value.elapsedSec = Math.floor((Date.now() - collectState.value.startedAt) / 1000);
@@ -929,7 +952,7 @@ export default {
         console.error('Start collect failed:', err);
         collectState.value = {
           status: 'failed', taskId: null, startedAt: 0, elapsedSec: 0,
-          error: err.message || 'Start failed',
+          error: err.message || 'Start failed', progress: null,
         };
       }
     };
@@ -1140,6 +1163,7 @@ export default {
       switchParquetTab,
       formatDate,
       formatElapsed,
+      formatProgress,
       downloadReport,
       downloadAllReports,
       startTrendCollect,
