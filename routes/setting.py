@@ -150,6 +150,7 @@ async def checkInitDB():
 @router.get('/checkInfluxStatus')
 async def check_influxStatus():
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+
     if not os.path.exists(file_path):
         # InitDB 전: InfluxDB가 준비 상태인지 health check
         try:
@@ -160,6 +161,8 @@ async def check_influxStatus():
                 return {'result': True, 'status': 0, 'ready': is_ready}
         except Exception:
             return {'result': True, 'status': 0, 'ready': False}
+    elif os.path.getsize(file_path) == 0:
+        return {'result': True, 'status': -1, 'ready': False}
     else:
         ret = await check_downsampling_status()
         return ret
@@ -226,6 +229,63 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
         influx_state._error = f"Exception during init: {str(e)}"
         return {"success": False, "message": str(e)}
 
+@router.get("/restoreInflux/{org_id}/{token}")
+def restore_influxToken(org_id:str, token:str):
+    file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+    data = {
+        "username": "admin",
+        "password": "ntek9135",
+        "org": "ntek",
+        "bucket": "nteks",
+        "retentionPeriodSeconds": 0
+    }
+    try:
+        cipher = aesState.encrypt(token)
+        influxdata = {
+            "token": cipher,
+            "org": "ntek",
+            "org_id": org_id,
+            "retention": data.get("retentionPeriodSeconds")
+        }
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(influxdata, f, indent=4)
+
+        import shlex
+        token_escaped = shlex.quote(token)
+        org_escaped = shlex.quote("ntek")
+
+        # 파일 생성, 권한 설정, source 적용을 한 번에
+        content = f"""export INFLUX_TOKEN={token_escaped}
+export INFLUX_HOST="http://localhost:8086"
+export INFLUX_ORG={org_escaped}
+export INFLUX_BUCKET=nteks
+"""
+
+        with open("/etc/profile.d/influx.sh", "w") as f:
+            f.write(content)
+
+        os.chmod("/etc/profile.d/influx.sh", 0o755)
+
+        # 현재 프로세스 환경변수 설정
+        os.environ.update({
+            'INFLUX_TOKEN': token,
+            'INFLUX_HOST': "http://localhost:8086",
+            'INFLUX_ORG': "ntek",
+            'INFLUX_BUCKET': "nteks"
+        })
+
+        return {
+            "success": True,
+            "message": "InfluxDB CLI environment initiated.",
+            "file": "/etc/profile.d/influx.sh"
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Influxdb Init Error: {e}")
+        influx_state._client = None
+        influx_state._error = f"Exception during init: {str(e)}"
+        return {"success": False, "message": str(e)}
 
 @router.get("/initInfluxCLI")
 def init_influxcli():

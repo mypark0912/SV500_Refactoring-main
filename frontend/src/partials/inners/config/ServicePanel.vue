@@ -63,7 +63,10 @@
         </svg>
         Influx Update
       </button>
-        </div>
+      <span v-else-if="updateInflux == -1" class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center whitespace-nowrap transition-all bg-red-500/20 text-red-700 font-semibold">
+          InfluxDB Configuration Restore Required
+      </span>
+      </div>
 
       <!--div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
       <button 
@@ -567,7 +570,6 @@
     const checkInfluxStatus = async()=>{
       try{
           const response = await axios.get("/setting/checkInfluxStatus");
-          console.log(response.data);
           if(response.data.result){
               
              updateInflux.value = response.data.status;
