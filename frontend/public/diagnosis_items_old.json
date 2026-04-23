@@ -1,0 +1,140 @@
+{
+    "Diagnosis":{
+        "Compressor": [
+            {"Title": "Turbulence", "Component": "Turbulence_CMP"},
+            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
+            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
+            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
+            {"Title": "Load", "Component": "Load_MFD"},
+            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
+            {"Title": "Rotor", "Component": "Rotor_ROT"},
+            {"Title": "Stator", "Component": "Stator_STA"},
+            {"Title": "Bearing", "Component": "Bearing_MIB"},
+            {"Title": "DCLink", "Component": "DCLink_MFD"}
+        ],
+        "Fan": [
+            {"Title": "Turbulence", "Component": "Turbulence_FAN"},
+            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
+            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
+            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
+            {"Title": "Load", "Component": "Load_MFD"},
+            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
+            {"Title": "Rotor", "Component": "Rotor_ROT"},
+            {"Title": "Stator", "Component": "Stator_STA"},
+            {"Title": "Bearing", "Component": "Bearing_MIB"},
+            {"Title": "DCLink", "Component": "DCLink_MFD"}
+        ],
+        "Pump": [
+            {"Title": "Cavitation", "Component": "Cavitation_PMP"},
+            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
+            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
+            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
+            {"Title": "Load", "Component": "Load_MFD"},
+            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
+            {"Title": "Rotor", "Component": "Rotor_ROT"},
+            {"Title": "Stator", "Component": "Stator_STA"},
+            {"Title": "Bearing", "Component": "Bearing_MIB"},
+            {"Title": "DCLink", "Component": "DCLink_MFD"}
+        ],
+        "Motor": [
+            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
+            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MOT"},
+            {"Title": "SoftFoot", "Component": "SoftFoot_MOT"},
+            {"Title": "Load", "Component": "Load_MFD"},
+            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
+            {"Title": "Rotor", "Component": "Rotor_ROT"},
+            {"Title": "Stator", "Component": "Stator_STA"},
+            {"Title": "Bearing", "Component": "Bearing_MIB"},
+            {"Title": "DCLink", "Component": "DCLink_MFD"}
+        ],
+        "MotorFeed": [
+            {"Title": "Load", "Component": "Load_MFD"},
+            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
+            {"Title": "DCLink", "Component": "DCLink_MFD"}
+        ],
+        "PSupply": [
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
+        ],
+        "Transformer": [
+            {"Title": "Core", "Component": "Core_TRA"},
+            {"Title": "Load", "Component": "Load_TRA"},
+            {"Title": "GroundFaultD", "Component": "GroundFaultD_TRA"},
+            {"Title": "Capacitor", "Component": "Capacitor_PTR"},
+            {"Title": "TapChanger", "Component": "TapChanger_PTR"},
+            {"Title": "Bushings", "Component": "Bushings_PTR"},
+            {"Title": "Stress", "Component": "Stress_PTR"},
+            {"Title": "LoadUnbalance", "Component": "LoadUnbalance_PTR"},
+            {"Title": "CableConnection", "Component": "CableConnection_PTR"},
+            {"Title": "Winding", "Component": "Winding_PTR"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
+        ],
+        "PrimaryTransformer": [
+            {"Title": "Capacitor", "Component": "Capacitor_PTR"},
+            {"Title": "TapChanger", "Component": "TapChanger_PTR"},
+            {"Title": "Bushings", "Component": "Bushings_PTR"},
+            {"Title": "Stress", "Component": "Stress_PTR"},
+            {"Title": "LoadUnbalance", "Component": "LoadUnbalance_PTR"},
+            {"Title": "CableConnection", "Component": "CableConnection_PTR"},
+            {"Title": "Winding", "Component": "Winding_PTR"},
+            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
+            {"Title": "Heat", "Component": "Heat_PWS"},
+            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
+        ]
+    },
+    "PQ": [
+        {"Title": "VoltagePhaseAngle", "Component": "VoltagePhaseAngle"},
+        {"Title": "CurrentRMS", "Component": "CurrentRMS"},
+        {"Title": "CrestFactor", "Component": "CrestFactor"},
+        {"Title": "Unbalance", "Component": "Unbalance"},
+        {"Title": "Harmonics", "Component": "Harmonics"},
+        {"Title": "ZeroSequence", "Component": "ZeroSequence"},
+        {"Title": "NegativeSequence", "Component": "NegativeSequence"},
+        {"Title": "CurrentPhaseAngle", "Component": "CurrentPhaseAngle"},
+        {"Title": "PhaseAngle", "Component": "PhaseAngle"},
+        {"Title": "PowerFactor", "Component": "PowerFactor"},
+        {"Title": "TotalDemandDistortion", "Component": "TotalDemandDistortion"},
+        {"Title": "Power", "Component": "Power"},
+        {"Title": "VoltageRMS", "Component": "VoltageRMS"},
+        {"Title": "DC", "Component": "DC"},
+        {"Title": "Events", "Component": "Events"}
+    ],
+    "Faults": [
+        {"Title": "PhaseOrder", "Component": "PhaseOrder"},
+        {"Title": "NoLoad", "Component": "NoLoad"},
+        {"Title": "OverCurrent", "Component": "OverCurrent"},
+        {"Title": "CF", "Component": "CF"},
+        {"Title": "NoPower", "Component": "NoPower"},
+        {"Title": "OverVoltage", "Component": "OverVoltage"},
+        {"Title": "UnderVoltage", "Component": "UnderVoltage"},
+        {"Title": "LowFrequency", "Component": "LowFrequency"},
+        {"Title": "VF", "Component": "VF"}
+    ],
+    "Events": [
+        {"Title": "TransientCurrentEvent", "Component": "TransientCurrentEvent"},
+        {"Title": "OverCurrentEvent", "Component": "OverCurrentEvent"},
+        {"Title": "UnderCurrentEvent", "Component": "UnderCurrentEvent"},
+        {"Title": "SagEvent", "Component": "SagEvent"},
+        {"Title": "SwellEvent", "Component": "SwellEvent"},
+        {"Title": "InterruptionEvent", "Component": "InterruptionEvent"},
+        {"Title": "TransientVoltageEvent", "Component": "TransientVoltageEvent"}
+    ]
+}

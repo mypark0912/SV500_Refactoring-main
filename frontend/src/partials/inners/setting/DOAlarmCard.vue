@@ -34,10 +34,19 @@
           <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60">
             Equipment Status
           </h4>
-          <div class="grid grid-cols-[minmax(140px,1fr)_60px_110px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
+          <div class="grid grid-cols-[200px_60px_1fr_100px_150px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
             <div class="text-left">Parameter</div>
-            <div class="text-center">Enable</div>
-            <div class="text-center">Select Level</div>
+            <div class="text-left">Module</div>
+            <div></div>
+            <div class="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                v-model="allEquipmentEnabled"
+                class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
+              />
+              <span>Enable</span>
+            </div>
+            <div class="text-center">Level</div>
           </div>
           <div v-if="equipmentItems.length === 0" class="text-center py-8 text-gray-400">
             <p class="text-sm">No items available for this asset type</p>
@@ -46,24 +55,28 @@
             <div
               v-for="(item, idx) in equipmentItems"
               :key="idx"
-              class="grid grid-cols-[minmax(140px,1fr)_60px_110px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+              class="grid grid-cols-[200px_60px_1fr_100px_150px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
             >
               <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center min-w-0">
-                <span class="truncate">{{ item.name }}</span>
+                <span class="truncate">{{ item.parameter }}</span>
               </div>
+              <div class="text-left text-xs text-gray-600 dark:text-gray-300">
+                {{ item.module }}
+              </div>
+              <div></div>
               <div class="flex justify-center">
                 <input
                   type="checkbox"
-                  v-model="item.enabled"
+                  v-model="item.enable"
                   class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
                 />
               </div>
               <div class="flex justify-center">
                 <select
                   v-model="item.level"
-                  :disabled="!item.enabled"
+                  :disabled="!item.enable"
                   class="w-24 px-2 py-1.5 text-xs border rounded-md transition-all"
-                  :class="!item.enabled
+                  :class="!item.enable
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600 cursor-not-allowed'
                     : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500'"
                 >
@@ -81,10 +94,17 @@
           <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60">
             PQ Status
           </h4>
-          <div class="grid grid-cols-[minmax(140px,1fr)_60px_110px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
+          <div class="grid grid-cols-[minmax(140px,1fr)_100px_150px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
             <div class="text-left">Parameter</div>
-            <div class="text-center">Enable</div>
-            <div class="text-center">Select Level</div>
+            <div class="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                v-model="allPqEnabled"
+                class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
+              />
+              <span>Enable</span>
+            </div>
+            <div class="text-center">Level</div>
           </div>
           <div v-if="pqItems.length === 0" class="text-center py-8 text-gray-400">
             <p class="text-sm">No items available</p>
@@ -93,24 +113,24 @@
             <div
               v-for="(item, idx) in pqItems"
               :key="idx"
-              class="grid grid-cols-[minmax(140px,1fr)_60px_110px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+              class="grid grid-cols-[minmax(140px,1fr)_100px_150px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
             >
               <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center min-w-0">
-                <span class="truncate">{{ item.name }}</span>
+                <span class="truncate">{{ item.parameter }}</span>
               </div>
               <div class="flex justify-center">
                 <input
                   type="checkbox"
-                  v-model="item.enabled"
+                  v-model="item.enable"
                   class="w-4 h-4 cursor-pointer text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
                 />
               </div>
               <div class="flex justify-center">
                 <select
                   v-model="item.level"
-                  :disabled="!item.enabled"
+                  :disabled="!item.enable"
                   class="w-24 px-2 py-1.5 text-xs border rounded-md transition-all"
-                  :class="!item.enabled
+                  :class="!item.enable
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600 cursor-not-allowed'
                     : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 focus:ring-violet-500 focus:border-violet-500'"
                 >
@@ -141,6 +161,7 @@ const props = defineProps({
 
 const mainData = inject('channel_main');
 const subData = inject('channel_sub');
+const diagnosis_detail = inject('diagnosis_detail');
 
 // 현재 채널 데이터
 const channelData = computed(() =>
@@ -164,9 +185,82 @@ const isUseDO = computed(() => {
 
 // Asset type
 const AssetType = computed(() => channelData.value?.assetInfo?.type || '');
+const assetDriveType = computed(() => channelData.value?.assetInfo?.driveType || '');
+
+const channelKey = computed(() => (props.channel === 'Main' ? 'main' : 'sub'));
+const tableData = computed(() => diagnosis_detail?.value?.[channelKey.value]?.tableData || []);
 
 const equipmentItems = ref([]);
 const pqItems = ref([]);
+
+const allEquipmentEnabled = computed({
+  get: () => equipmentItems.value.length > 0 && equipmentItems.value.every(i => i.enable),
+  set: (val) => { equipmentItems.value.forEach(i => { i.enable = val; }); },
+});
+const allPqEnabled = computed({
+  get: () => pqItems.value.length > 0 && pqItems.value.every(i => i.enable),
+  set: (val) => { pqItems.value.forEach(i => { i.enable = val; }); },
+});
+
+const findTableValue = (name, assemblyId) => {
+  const entry = tableData.value.find(t => t.Name === name && t.AssemblyID === assemblyId);
+  if (!entry) return null;
+  const raw = entry.Value;
+  if (raw === undefined || raw === null || raw === '') return null;
+  const num = typeof raw === 'string' ? parseFloat(raw) : raw;
+  return Number.isNaN(num) ? null : num;
+};
+
+const resolveSetup = (item, assetType, driveType) => {
+  if (assetType === 'PSupply' || assetType === 'PrimaryTransformer') return true;
+
+  if (assetType === 'Transformer') {
+    if (item.Title === 'NeutralLoading') {
+      return findTableValue('ConnectionType', 'VOL') === 0;
+    }
+    if (item.Title === 'Switching' && item.AssemblyId === 'MFD') {
+      const v = findTableValue('SwitchingFrequency', 'TRA');
+      return v != null && v > 0;
+    }
+    if (item.Title === 'Rectifier' && item.AssemblyId === 'MFD') {
+      const v = findTableValue('PulseNumber', 'TRA');
+      return v != null && v > 0;
+    }
+    return true;
+  }
+
+  const rotatingTypes = ['Motor', 'MotorFeed', 'Compressor', 'Fan', 'Pump'];
+  if (rotatingTypes.includes(assetType)) {
+    const isVFD = driveType === 'VFD';
+
+    if (item.Title === 'DCLink' && item.AssemblyId === 'MFD') return isVFD;
+    if (item.Title === 'Switching' && item.AssemblyId === 'MFD') {
+      if (!isVFD) return false;
+      const v = findTableValue('SwitchingFrequency', 'MFD');
+      return v != null && v > 0;
+    }
+    if (item.Title === 'Rectifier' && item.AssemblyId === 'MFD') {
+      if (!isVFD) return false;
+      const v = findTableValue('PulseNumber', 'MFD');
+      return v != null && v > 0;
+    }
+    if (item.Title === 'Blade') {
+      const v = findTableValue('NumberOfBlades', item.AssemblyId);
+      return v != null && v > 0;
+    }
+    if (item.Title === 'Vane' && assetType === 'Pump') {
+      const v = findTableValue('NumberOfVanes', item.AssemblyId);
+      return v != null && v > 0;
+    }
+    if (item.Title === 'Bearing' && assetType !== 'MotorFeed') {
+      const v = findTableValue('BearingType', item.AssemblyId);
+      return v != null && v > 0;
+    }
+    return true;
+  }
+
+  return true;
+};
 
 const fetchData = async () => {
   if (!AssetType.value) {
@@ -177,11 +271,30 @@ const fetchData = async () => {
   try {
     const res = await fetch('/diagnosis_items.json');
     const data = await res.json();
-    equipmentItems.value = (data.Diagnosis[AssetType.value] || []).map(item => ({
-      name: item.Title, component: item.Component, enabled: false, level: 2,
-    }));
+    const rawDiagnosis = data.Diagnosis?.[AssetType.value] || [];
+
+    console.groupCollapsed(
+      `[DOAlarmCard] resolveSetup — channel=${props.channel}, assetType=${AssetType.value}, driveType=${assetDriveType.value}`
+    );
+    console.log('tableData (Name/AssemblyID/Value):',
+      tableData.value.map(t => ({ Name: t.Name, AssemblyID: t.AssemblyID, Value: t.Value }))
+    );
+    const evaluated = rawDiagnosis.map(item => {
+      const setup = resolveSetup(item, AssetType.value, assetDriveType.value);
+      return { Title: item.Title, AssemblyId: item.AssemblyId, Setup: setup };
+    });
+    console.table(evaluated);
+    console.log('kept:', evaluated.filter(e => e.Setup).map(e => `${e.Title}/${e.AssemblyId}`));
+    console.log('dropped:', evaluated.filter(e => !e.Setup).map(e => `${e.Title}/${e.AssemblyId}`));
+    console.groupEnd();
+
+    equipmentItems.value = rawDiagnosis
+      .filter(item => resolveSetup(item, AssetType.value, assetDriveType.value))
+      .map(item => ({
+        parameter: item.Title, module: item.AssemblyId, enable: false, level: 2,
+      }));
     pqItems.value = (data.PQ || []).map(item => ({
-      name: item.Title, component: item.Component, enabled: false, level: 2,
+      parameter: item.Title, module: item.AssemblyId, enable: false, level: 2,
     }));
     return true;
   } catch (e) {
@@ -190,40 +303,54 @@ const fetchData = async () => {
   }
 };
 
+const matchSaved = (item, saved) => {
+  if (saved.Parameter !== undefined) {
+    return saved.Parameter === item.parameter && (saved.Module ?? '') === (item.module ?? '');
+  }
+  return saved.name === item.parameter;
+};
+
 const loadSavedData = () => {
   const statusInfo = stDict.value;
   if (!statusInfo) return;
 
-  equipmentItems.value.forEach(item => { item.enabled = false; item.level = 2; });
+  equipmentItems.value.forEach(item => { item.enable = false; item.level = 2; });
   (statusInfo.diagnosis || []).forEach(saved => {
-    const item = equipmentItems.value.find(d => d.name === saved.name);
-    if (item) { item.enabled = true; item.level = saved.level; }
+    const item = equipmentItems.value.find(d => matchSaved(d, saved));
+    if (item) {
+      item.enable = saved.Enable ?? true;
+      item.level = saved.Level ?? saved.level ?? 2;
+    }
   });
 
-  pqItems.value.forEach(item => { item.enabled = false; item.level = 2; });
+  pqItems.value.forEach(item => { item.enable = false; item.level = 2; });
   (statusInfo.pq || []).forEach(saved => {
-    const item = pqItems.value.find(d => d.name === saved.name);
-    if (item) { item.enabled = true; item.level = saved.level; }
+    const item = pqItems.value.find(d => matchSaved(d, saved));
+    if (item) {
+      item.enable = saved.Enable ?? true;
+      item.level = saved.Level ?? saved.level ?? 2;
+    }
   });
 };
+
+const toConfEntry = i => ({
+  Parameter: i.parameter,
+  Module: i.module,
+  Enable: i.enable,
+  Level: i.level,
+});
 
 const updateInputDict = () => {
   const statusInfo = stDict.value;
   if (!statusInfo) return;
-  statusInfo.diagnosis = equipmentItems.value
-    .filter(i => i.enabled)
-    .map(i => ({ name: i.name, level: i.level }));
-  statusInfo.pq = pqItems.value
-    .filter(i => i.enabled)
-    .map(i => ({ name: i.name, level: i.level }));
+  statusInfo.diagnosis = equipmentItems.value.map(toConfEntry);
+  statusInfo.pq = pqItems.value.map(toConfEntry);
 };
 
-watch(AssetType, async (newType, oldType) => {
-  if (newType !== oldType) {
-    await fetchData();
-    if (isDataLoaded.value) loadSavedData();
-  }
-});
+watch([AssetType, assetDriveType, tableData], async () => {
+  await fetchData();
+  if (isDataLoaded.value) loadSavedData();
+}, { deep: true });
 
 watch([equipmentItems, pqItems], () => {
   if (isDataLoaded.value) updateInputDict();

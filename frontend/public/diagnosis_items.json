@@ -1,140 +1,726 @@
 {
-    "Diagnosis":{
-        "Compressor": [
-            {"Title": "Turbulence", "Component": "Turbulence_CMP"},
-            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
-            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
-            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
-            {"Title": "Load", "Component": "Load_MFD"},
-            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
-            {"Title": "Rotor", "Component": "Rotor_ROT"},
-            {"Title": "Stator", "Component": "Stator_STA"},
-            {"Title": "Bearing", "Component": "Bearing_MIB"},
-            {"Title": "DCLink", "Component": "DCLink_MFD"}
-        ],
-        "Fan": [
-            {"Title": "Turbulence", "Component": "Turbulence_FAN"},
-            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
-            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
-            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
-            {"Title": "Load", "Component": "Load_MFD"},
-            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
-            {"Title": "Rotor", "Component": "Rotor_ROT"},
-            {"Title": "Stator", "Component": "Stator_STA"},
-            {"Title": "Bearing", "Component": "Bearing_MIB"},
-            {"Title": "DCLink", "Component": "DCLink_MFD"}
-        ],
-        "Pump": [
-            {"Title": "Cavitation", "Component": "Cavitation_PMP"},
-            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MDE"},
-            {"Title": "SoftFoot", "Component": "SoftFoot_MDE"},
-            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
-            {"Title": "Load", "Component": "Load_MFD"},
-            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
-            {"Title": "Rotor", "Component": "Rotor_ROT"},
-            {"Title": "Stator", "Component": "Stator_STA"},
-            {"Title": "Bearing", "Component": "Bearing_MIB"},
-            {"Title": "DCLink", "Component": "DCLink_MFD"}
-        ],
-        "Motor": [
-            {"Title": "TorqueRipple", "Component": "TorqueRipple_MOT"},
-            {"Title": "MechanicalUnbalance", "Component": "MechanicalUnbalance_MOT"},
-            {"Title": "SoftFoot", "Component": "SoftFoot_MOT"},
-            {"Title": "Load", "Component": "Load_MFD"},
-            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
-            {"Title": "Rotor", "Component": "Rotor_ROT"},
-            {"Title": "Stator", "Component": "Stator_STA"},
-            {"Title": "Bearing", "Component": "Bearing_MIB"},
-            {"Title": "DCLink", "Component": "DCLink_MFD"}
-        ],
-        "MotorFeed": [
-            {"Title": "Load", "Component": "Load_MFD"},
-            {"Title": "CableConnection", "Component": "CableConnection_MFD"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"},
-            {"Title": "DCLink", "Component": "DCLink_MFD"}
-        ],
+    "Diagnosis": {
         "PSupply": [
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
-        ],
-        "Transformer": [
-            {"Title": "Core", "Component": "Core_TRA"},
-            {"Title": "Load", "Component": "Load_TRA"},
-            {"Title": "GroundFaultD", "Component": "GroundFaultD_TRA"},
-            {"Title": "Capacitor", "Component": "Capacitor_PTR"},
-            {"Title": "TapChanger", "Component": "TapChanger_PTR"},
-            {"Title": "Bushings", "Component": "Bushings_PTR"},
-            {"Title": "Stress", "Component": "Stress_PTR"},
-            {"Title": "LoadUnbalance", "Component": "LoadUnbalance_PTR"},
-            {"Title": "CableConnection", "Component": "CableConnection_PTR"},
-            {"Title": "Winding", "Component": "Winding_PTR"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            }
         ],
         "PrimaryTransformer": [
-            {"Title": "Capacitor", "Component": "Capacitor_PTR"},
-            {"Title": "TapChanger", "Component": "TapChanger_PTR"},
-            {"Title": "Bushings", "Component": "Bushings_PTR"},
-            {"Title": "Stress", "Component": "Stress_PTR"},
-            {"Title": "LoadUnbalance", "Component": "LoadUnbalance_PTR"},
-            {"Title": "CableConnection", "Component": "CableConnection_PTR"},
-            {"Title": "Winding", "Component": "Winding_PTR"},
-            {"Title": "NoiseVibration", "Component": "NoiseVibration_PWS"},
-            {"Title": "Heat", "Component": "Heat_PWS"},
-            {"Title": "IncomingVoltage", "Component": "IncomingVoltage_VOL"}
+            {
+                "Title": "Capacitor",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "TapChanger",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Bushings",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Stress",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "LoadUnbalance",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Winding",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            }
+        ],
+        "Transformer": [
+            {
+                "Title": "Core",
+                "AssemblyId": "TRA",
+                "Setup": false
+            },
+            {
+                "Title": "Load",
+                "AssemblyId": "TRA",
+                "Setup": false
+            },
+            {
+                "Title": "NeutralLoading",
+                "AssemblyId": "TRA",
+                "Setup": false
+            },
+            {
+                "Title": "Capacitor",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "TapChanger",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Bushings",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Stress",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "LoadUnbalance",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Winding",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "PTR",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            }
+        ],
+        "MotorFeed": [
+            {
+                "Title": "Load",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "DCLink",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            }
+        ],
+        "Motor": [
+            {
+                "Title": "TorqueRipple",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "MechanicalUnbalance",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "SoftFoot",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "Load",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "Rotor",
+                "AssemblyId": "ROT",
+                "Setup": false
+            },
+            {
+                "Title": "Stator",
+                "AssemblyId": "STA",
+                "Setup": false
+            },
+            {
+                "Title": "DCLink",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MOB",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            }
+        ],
+        "Pump": [
+            {
+                "Title": "Cavitation",
+                "AssemblyId": "PMP",
+                "Setup": false
+            },
+            {
+                "Title": "MechanicalUnbalance",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "SoftFoot",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "TorqueRipple",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "Load",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "Rotor",
+                "AssemblyId": "ROT",
+                "Setup": false
+            },
+            {
+                "Title": "Stator",
+                "AssemblyId": "STA",
+                "Setup": false
+            },
+            {
+                "Title": "Vane",
+                "AssemblyId": "PMP",
+                "Setup": false
+            },
+            {
+                "Title": "DCLink",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MOB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "PIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "POB",
+                "Setup": false
+            }
+        ],
+        "Fan": [
+            {
+                "Title": "Turbulence",
+                "AssemblyId": "FAN",
+                "Setup": false
+            },
+            {
+                "Title": "MechanicalUnbalance",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "SoftFoot",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "TorqueRipple",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "Load",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "Rotor",
+                "AssemblyId": "ROT",
+                "Setup": false
+            },
+            {
+                "Title": "Stator",
+                "AssemblyId": "STA",
+                "Setup": false
+            },
+            {
+                "Title": "Blade",
+                "AssemblyId": "FAN",
+                "Setup": false
+            },
+            {
+                "Title": "DCLink",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MOB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "FIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "FOB",
+                "Setup": false
+            }
+        ],
+        "Compressor": [
+            {
+                "Title": "Turbulence",
+                "AssemblyId": "CMP",
+                "Setup": false
+            },
+            {
+                "Title": "MechanicalUnbalance",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "SoftFoot",
+                "AssemblyId": "MDE",
+                "Setup": false
+            },
+            {
+                "Title": "TorqueRipple",
+                "AssemblyId": "MOT",
+                "Setup": false
+            },
+            {
+                "Title": "Load",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Heat",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "CableConnection",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "NoiseVibration",
+                "AssemblyId": "PWS",
+                "Setup": false
+            },
+            {
+                "Title": "IncomingVoltage",
+                "AssemblyId": "VOL",
+                "Setup": false
+            },
+            {
+                "Title": "Rotor",
+                "AssemblyId": "ROT",
+                "Setup": false
+            },
+            {
+                "Title": "Stator",
+                "AssemblyId": "STA",
+                "Setup": false
+            },
+            {
+                "Title": "DCLink",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Switching",
+                "AssemblyId": "MFD",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "MOB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "CIB",
+                "Setup": false
+            },
+            {
+                "Title": "Bearing",
+                "AssemblyId": "COB",
+                "Setup": false
+            },
+            {
+                "Title": "Blade",
+                "AssemblyId": "CMP",
+                "Setup": false
+            },
+            {
+                "Title": "Rectifier",
+                "AssemblyId": "MFD",
+                "Setup": false
+            }
         ]
     },
     "PQ": [
-        {"Title": "VoltagePhaseAngle", "Component": "VoltagePhaseAngle"},
-        {"Title": "CurrentRMS", "Component": "CurrentRMS"},
-        {"Title": "CrestFactor", "Component": "CrestFactor"},
-        {"Title": "Unbalance", "Component": "Unbalance"},
-        {"Title": "Harmonics", "Component": "Harmonics"},
-        {"Title": "ZeroSequence", "Component": "ZeroSequence"},
-        {"Title": "NegativeSequence", "Component": "NegativeSequence"},
-        {"Title": "CurrentPhaseAngle", "Component": "CurrentPhaseAngle"},
-        {"Title": "PhaseAngle", "Component": "PhaseAngle"},
-        {"Title": "PowerFactor", "Component": "PowerFactor"},
-        {"Title": "TotalDemandDistortion", "Component": "TotalDemandDistortion"},
-        {"Title": "Power", "Component": "Power"},
-        {"Title": "VoltageRMS", "Component": "VoltageRMS"},
-        {"Title": "DC", "Component": "DC"},
-        {"Title": "Events", "Component": "Events"}
+        {
+            "Title": "VoltagePhaseAngle",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "CurrentRMS",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "CrestFactor",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "Unbalance",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "Harmonics",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "ZeroSequence",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "NegativeSequence",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "CurrentPhaseAngle",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "PhaseAngle",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "PowerFactor",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "TotalDemandDistortion",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "Power",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "Events",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "VoltageRMS",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "Frequency",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "DC",
+            "AssemblyId": "VOL",
+            "Setup": false
+        }
     ],
     "Faults": [
-        {"Title": "PhaseOrder", "Component": "PhaseOrder"},
-        {"Title": "NoLoad", "Component": "NoLoad"},
-        {"Title": "OverCurrent", "Component": "OverCurrent"},
-        {"Title": "CF", "Component": "CF"},
-        {"Title": "NoPower", "Component": "NoPower"},
-        {"Title": "OverVoltage", "Component": "OverVoltage"},
-        {"Title": "UnderVoltage", "Component": "UnderVoltage"},
-        {"Title": "LowFrequency", "Component": "LowFrequency"},
-        {"Title": "VF", "Component": "VF"}
+        {
+            "Title": "NoLoad",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "OverCurrent",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "PhaseOrder",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "NoPower",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "OverVoltage",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "UnderVoltage",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "FrequencyRange",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "VF",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "CF",
+            "AssemblyId": "MFD",
+            "Setup": false
+        },
+        {
+            "Title": "PhaseOrderVI",
+            "AssemblyId": "MFD",
+            "Setup": false
+        }
     ],
     "Events": [
-        {"Title": "TransientCurrentEvent", "Component": "TransientCurrentEvent"},
-        {"Title": "OverCurrentEvent", "Component": "OverCurrentEvent"},
-        {"Title": "UnderCurrentEvent", "Component": "UnderCurrentEvent"},
-        {"Title": "SagEvent", "Component": "SagEvent"},
-        {"Title": "SwellEvent", "Component": "SwellEvent"},
-        {"Title": "InterruptionEvent", "Component": "InterruptionEvent"},
-        {"Title": "TransientVoltageEvent", "Component": "TransientVoltageEvent"}
+        {
+            "Title": "TransientCurrentEvent",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "OverCurrentEvent",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "UnderCurrentEvent",
+            "AssemblyId": "PWS",
+            "Setup": false
+        },
+        {
+            "Title": "SagEvent",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "SwellEvent",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "InterruptionEvent",
+            "AssemblyId": "VOL",
+            "Setup": false
+        },
+        {
+            "Title": "TransientVoltageEvent",
+            "AssemblyId": "VOL",
+            "Setup": false
+        }
     ]
 }
