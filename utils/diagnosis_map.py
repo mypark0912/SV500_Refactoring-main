@@ -18,8 +18,8 @@ class AlarmStatusMatcher:
         pass
 
     def _normalize_name(self, name: str) -> str:
-        """이름 정규화 (공백 제거, 소문자)"""
-        return name.replace(" ", "").lower()
+        """이름 정규화 (모든 whitespace 제거, 소문자)"""
+        return "".join(name.split()).lower()
 
     def parse_status_info(self, status_info: Dict) -> Dict[str, int]:
 
