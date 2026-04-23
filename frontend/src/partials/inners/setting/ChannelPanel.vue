@@ -754,7 +754,7 @@
               "
               :key="currentDiagnosis + '-' + channel"
             />
-            <AISetting :channel="channel" />
+            <AISetting v-if="isUseAISetup" :channel="channel" />
             <DOAlarmCard
               v-if="isConfigureStatus && tableData.length > 0 && paramData.length > 0"
               :channel="channel"
@@ -1320,14 +1320,39 @@ export default {
         }
       }
     );
+    // Clear status_Info when confStatus toggles 1 → 0
+    watch(
+      () => getInputDict()?.confStatus,
+      (newVal, oldVal) => {
+        if (oldVal && !newVal) {
+          const currentDict = getInputDict();
+          if (currentDict?.status_Info) {
+            currentDict.status_Info.diagnosis = [];
+            currentDict.status_Info.pq = [];
+          }
+        }
+      }
+    );
+    // Clear ai_modbus when useAI toggles 1 → 0
+    watch(
+      () => getInputDict()?.useAI,
+      (newVal, oldVal) => {
+        if (oldVal && !newVal) {
+          const currentDict = getInputDict();
+          if (currentDict) {
+            currentDict.ai_modbus = [];
+          }
+        }
+      }
+    );
     // Reset Configure Status, DO Alarm, and AI Setup to disabled
     const resetDiagnosisRelatedSettings = () => {
       const currentDict = getInputDict();
-      
+
       currentDict.confStatus = 0;  // Disable Configure Status
       currentDict.useDO = 0;       // Disable DO Alarm
       currentDict.useAI = 0;       // Disable AI Setup
-      
+
       console.log(`[${channel.value}] Reset diagnosis-related settings: confStatus, useDO, useAI → 0`);
     };
     onMounted(async () => {
@@ -1650,6 +1675,10 @@ export default {
       const currentDict = getInputDict();
       return currentDict.useDO === 1 || currentDict.useDO === true;
     });
+    const isUseAISetup = computed(() => {
+      const currentDict = getInputDict();
+      return currentDict.useAI === 1 || currentDict.useAI === true;
+    });
     const setNameplateConfig = async () => {
       try {
         const plainTableData = tableData.value.map((item) => ({ ...item }));
@@ -1835,6 +1864,7 @@ export default {
       isConfigureStatus,
       assetDriveType,
       isUseDOAlarm,
+      isUseAISetup,
     };
   },
 };

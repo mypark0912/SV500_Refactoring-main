@@ -246,12 +246,7 @@
             },
             {
                 "Title": "Bearing",
-                "AssemblyId": "MIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "MOB",
+                "AssemblyId": "",
                 "Setup": false
             },
             {
@@ -338,22 +333,7 @@
             },
             {
                 "Title": "Bearing",
-                "AssemblyId": "MIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "MOB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "PIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "POB",
+                "AssemblyId": "",
                 "Setup": false
             }
         ],
@@ -435,22 +415,7 @@
             },
             {
                 "Title": "Bearing",
-                "AssemblyId": "MIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "MOB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "FIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "FOB",
+                "AssemblyId": "",
                 "Setup": false
             }
         ],
@@ -522,22 +487,7 @@
             },
             {
                 "Title": "Bearing",
-                "AssemblyId": "MIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "MOB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "CIB",
-                "Setup": false
-            },
-            {
-                "Title": "Bearing",
-                "AssemblyId": "COB",
+                "AssemblyId": "",
                 "Setup": false
             },
             {

@@ -34,9 +34,8 @@
           <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60">
             Equipment Status
           </h4>
-          <div class="grid grid-cols-[200px_60px_1fr_100px_150px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
+          <div class="grid grid-cols-[200px_1fr_100px_150px] gap-3 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1 mb-2 border-b pb-2">
             <div class="text-left">Parameter</div>
-            <div class="text-left">Module</div>
             <div></div>
             <div class="flex items-center justify-center gap-1">
               <input
@@ -55,13 +54,10 @@
             <div
               v-for="(item, idx) in equipmentItems"
               :key="idx"
-              class="grid grid-cols-[200px_60px_1fr_100px_150px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+              class="grid grid-cols-[200px_1fr_100px_150px] gap-3 items-center border-b border-gray-200 dark:border-gray-700/60 py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30"
             >
               <div class="text-left text-xs text-gray-800 dark:text-gray-200 flex items-center min-w-0">
                 <span class="truncate">{{ item.parameter }}</span>
-              </div>
-              <div class="text-left text-xs text-gray-600 dark:text-gray-300">
-                {{ item.module }}
               </div>
               <div></div>
               <div class="flex justify-center">
@@ -203,8 +199,8 @@ const allPqEnabled = computed({
   set: (val) => { pqItems.value.forEach(i => { i.enable = val; }); },
 });
 
-const findTableValue = (name, assemblyId) => {
-  const entry = tableData.value.find(t => t.Name === name && t.AssemblyID === assemblyId);
+const findTableValueByName = (name) => {
+  const entry = tableData.value.find(t => t.Name === name);
   if (!entry) return null;
   const raw = entry.Value;
   if (raw === undefined || raw === null || raw === '') return null;
@@ -212,19 +208,29 @@ const findTableValue = (name, assemblyId) => {
   return Number.isNaN(num) ? null : num;
 };
 
+const anyTableValuePositive = (name) => {
+  return tableData.value.some(t => {
+    if (t.Name !== name) return false;
+    const raw = t.Value;
+    if (raw === undefined || raw === null || raw === '') return false;
+    const num = typeof raw === 'string' ? parseFloat(raw) : raw;
+    return !Number.isNaN(num) && num > 0;
+  });
+};
+
 const resolveSetup = (item, assetType, driveType) => {
   if (assetType === 'PSupply' || assetType === 'PrimaryTransformer') return true;
 
   if (assetType === 'Transformer') {
     if (item.Title === 'NeutralLoading') {
-      return findTableValue('ConnectionType', 'VOL') === 0;
+      return findTableValueByName('ConnectionType') === 0;
     }
-    if (item.Title === 'Switching' && item.AssemblyId === 'MFD') {
-      const v = findTableValue('SwitchingFrequency', 'TRA');
+    if (item.Title === 'Switching') {
+      const v = findTableValueByName('SwitchingFrequency');
       return v != null && v > 0;
     }
-    if (item.Title === 'Rectifier' && item.AssemblyId === 'MFD') {
-      const v = findTableValue('PulseNumber', 'TRA');
+    if (item.Title === 'Rectifier') {
+      const v = findTableValueByName('PulseNumber');
       return v != null && v > 0;
     }
     return true;
@@ -234,28 +240,27 @@ const resolveSetup = (item, assetType, driveType) => {
   if (rotatingTypes.includes(assetType)) {
     const isVFD = driveType === 'VFD';
 
-    if (item.Title === 'DCLink' && item.AssemblyId === 'MFD') return isVFD;
-    if (item.Title === 'Switching' && item.AssemblyId === 'MFD') {
+    if (item.Title === 'DCLink') return isVFD;
+    if (item.Title === 'Switching') {
       if (!isVFD) return false;
-      const v = findTableValue('SwitchingFrequency', 'MFD');
+      const v = findTableValueByName('SwitchingFrequency');
       return v != null && v > 0;
     }
-    if (item.Title === 'Rectifier' && item.AssemblyId === 'MFD') {
+    if (item.Title === 'Rectifier') {
       if (!isVFD) return false;
-      const v = findTableValue('PulseNumber', 'MFD');
+      const v = findTableValueByName('PulseNumber');
       return v != null && v > 0;
     }
     if (item.Title === 'Blade') {
-      const v = findTableValue('NumberOfBlades', item.AssemblyId);
+      const v = findTableValueByName('NumberOfBlades');
       return v != null && v > 0;
     }
     if (item.Title === 'Vane' && assetType === 'Pump') {
-      const v = findTableValue('NumberOfVanes', item.AssemblyId);
+      const v = findTableValueByName('NumberOfVanes');
       return v != null && v > 0;
     }
     if (item.Title === 'Bearing' && assetType !== 'MotorFeed') {
-      const v = findTableValue('BearingType', item.AssemblyId);
-      return v != null && v > 0;
+      return anyTableValuePositive('BearingType');
     }
     return true;
   }
@@ -279,10 +284,10 @@ const fetchData = async () => {
     equipmentItems.value = rawDiagnosis
       .filter(item => resolveSetup(item, AssetType.value, assetDriveType.value))
       .map(item => ({
-        parameter: item.Title, module: item.AssemblyId, enable: false, level: 2,
+        parameter: item.Title, enable: false, level: 2,
       }));
     pqItems.value = (data.PQ || []).map(item => ({
-      parameter: item.Title, module: item.AssemblyId, enable: false, level: 2,
+      parameter: item.Title, enable: false, level: 2,
     }));
     return true;
   } catch (e) {
@@ -294,12 +299,7 @@ const fetchData = async () => {
   }
 };
 
-const matchSaved = (item, saved) => {
-  if (saved.Parameter !== undefined) {
-    return saved.Parameter === item.parameter && (saved.Module ?? '') === (item.module ?? '');
-  }
-  return saved.name === item.parameter;
-};
+const matchSaved = (item, saved) => saved.name === item.parameter;
 
 const loadSavedData = async () => {
   const statusInfo = stDict.value;
@@ -314,8 +314,8 @@ const loadSavedData = async () => {
     if (saved) {
       return {
         ...item,
-        enable: saved.Enable ?? true,
-        level: saved.Level ?? saved.level ?? 2,
+        enable: true,
+        level: saved.level ?? 2,
       };
     }
     return { ...item, enable: false, level: 2 };
@@ -326,8 +326,8 @@ const loadSavedData = async () => {
     if (saved) {
       return {
         ...item,
-        enable: saved.Enable ?? true,
-        level: saved.Level ?? saved.level ?? 2,
+        enable: true,
+        level: saved.level ?? 2,
       };
     }
     return { ...item, enable: false, level: 2 };
@@ -338,17 +338,15 @@ const loadSavedData = async () => {
 };
 
 const toConfEntry = i => ({
-  Parameter: i.parameter,
-  Module: i.module,
-  Enable: i.enable,
-  Level: i.level,
+  name: i.parameter,
+  level: i.level,
 });
 
 const updateInputDict = () => {
   const statusInfo = stDict.value;
   if (!statusInfo) return;
-  statusInfo.diagnosis = equipmentItems.value.map(toConfEntry);
-  statusInfo.pq = pqItems.value.map(toConfEntry);
+  statusInfo.diagnosis = equipmentItems.value.filter(i => i.enable).map(toConfEntry);
+  statusInfo.pq = pqItems.value.filter(i => i.enable).map(toConfEntry);
 };
 
 watch([AssetType, assetDriveType, tableData], async () => {
