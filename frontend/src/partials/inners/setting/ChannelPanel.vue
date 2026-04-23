@@ -755,7 +755,10 @@
               :key="currentDiagnosis + '-' + channel"
             />
             <AISetting :channel="channel" />
-            <DOAlarmCard v-if="isConfigureStatus" :channel="channel" />
+            <DOAlarmCard
+              v-if="isConfigureStatus && tableData.length > 0 && paramData.length > 0"
+              :channel="channel"
+            />
           </div>
           <!-- 채널 비활성화 안내 -->
           <div v-else class="text-center py-3 text-sm text-gray-500 dark:text-gray-400">

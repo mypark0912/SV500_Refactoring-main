@@ -154,6 +154,7 @@ import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 const isDataLoaded = ref(false);
+const isLoading = ref(false);
 
 const props = defineProps({
   channel: { type: String, default: '' },
@@ -263,30 +264,17 @@ const resolveSetup = (item, assetType, driveType) => {
 };
 
 const fetchData = async () => {
+  isLoading.value = true;
   if (!AssetType.value) {
     equipmentItems.value = [];
     pqItems.value = [];
+    isLoading.value = false;
     return false;
   }
   try {
     const res = await fetch('/diagnosis_items.json');
     const data = await res.json();
     const rawDiagnosis = data.Diagnosis?.[AssetType.value] || [];
-
-    console.groupCollapsed(
-      `[DOAlarmCard] resolveSetup — channel=${props.channel}, assetType=${AssetType.value}, driveType=${assetDriveType.value}`
-    );
-    console.log('tableData (Name/AssemblyID/Value):',
-      tableData.value.map(t => ({ Name: t.Name, AssemblyID: t.AssemblyID, Value: t.Value }))
-    );
-    const evaluated = rawDiagnosis.map(item => {
-      const setup = resolveSetup(item, AssetType.value, assetDriveType.value);
-      return { Title: item.Title, AssemblyId: item.AssemblyId, Setup: setup };
-    });
-    console.table(evaluated);
-    console.log('kept:', evaluated.filter(e => e.Setup).map(e => `${e.Title}/${e.AssemblyId}`));
-    console.log('dropped:', evaluated.filter(e => !e.Setup).map(e => `${e.Title}/${e.AssemblyId}`));
-    console.groupEnd();
 
     equipmentItems.value = rawDiagnosis
       .filter(item => resolveSetup(item, AssetType.value, assetDriveType.value))
@@ -300,6 +288,9 @@ const fetchData = async () => {
   } catch (e) {
     console.error("데이터 가져오기 실패:", e);
     return false;
+  } finally {
+    await nextTick();
+    isLoading.value = false;
   }
 };
 
@@ -310,27 +301,40 @@ const matchSaved = (item, saved) => {
   return saved.name === item.parameter;
 };
 
-const loadSavedData = () => {
+const loadSavedData = async () => {
   const statusInfo = stDict.value;
   if (!statusInfo) return;
 
-  equipmentItems.value.forEach(item => { item.enable = false; item.level = 2; });
-  (statusInfo.diagnosis || []).forEach(saved => {
-    const item = equipmentItems.value.find(d => matchSaved(d, saved));
-    if (item) {
-      item.enable = saved.Enable ?? true;
-      item.level = saved.Level ?? saved.level ?? 2;
+  isLoading.value = true;
+  const savedDiag = statusInfo.diagnosis || [];
+  const savedPq = statusInfo.pq || [];
+
+  equipmentItems.value = equipmentItems.value.map(item => {
+    const saved = savedDiag.find(s => matchSaved(item, s));
+    if (saved) {
+      return {
+        ...item,
+        enable: saved.Enable ?? true,
+        level: saved.Level ?? saved.level ?? 2,
+      };
     }
+    return { ...item, enable: false, level: 2 };
   });
 
-  pqItems.value.forEach(item => { item.enable = false; item.level = 2; });
-  (statusInfo.pq || []).forEach(saved => {
-    const item = pqItems.value.find(d => matchSaved(d, saved));
-    if (item) {
-      item.enable = saved.Enable ?? true;
-      item.level = saved.Level ?? saved.level ?? 2;
+  pqItems.value = pqItems.value.map(item => {
+    const saved = savedPq.find(s => matchSaved(item, s));
+    if (saved) {
+      return {
+        ...item,
+        enable: saved.Enable ?? true,
+        level: saved.Level ?? saved.level ?? 2,
+      };
     }
+    return { ...item, enable: false, level: 2 };
   });
+
+  await nextTick();
+  isLoading.value = false;
 };
 
 const toConfEntry = i => ({
@@ -349,27 +353,33 @@ const updateInputDict = () => {
 
 watch([AssetType, assetDriveType, tableData], async () => {
   await fetchData();
-  if (isDataLoaded.value) loadSavedData();
+  if (isDataLoaded.value) await loadSavedData();
 }, { deep: true });
 
 watch([equipmentItems, pqItems], () => {
-  if (isDataLoaded.value) updateInputDict();
+  if (isDataLoaded.value && !isLoading.value) updateInputDict();
 }, { deep: true });
+
+const hasSavedData = () => {
+  const s = stDict.value;
+  if (!s) return false;
+  return (s.diagnosis && s.diagnosis.length > 0) || (s.pq && s.pq.length > 0);
+};
 
 onMounted(async () => {
   await fetchData();
   let retries = 0;
-  while (retries < 10) {
+  while (retries < 30) {
     const data = props.channel === 'Main' ? mainData.value : subData.value;
-    if (data?.status_Info) {
+    if (data?.assetInfo?.type || hasSavedData()) {
       await nextTick();
-      loadSavedData();
+      await loadSavedData();
       isDataLoaded.value = true;
       break;
     }
     await new Promise(r => setTimeout(r, 100));
     retries++;
   }
-  if (retries === 10) isDataLoaded.value = true;
+  if (retries === 30) isDataLoaded.value = true;
 });
 </script>
