@@ -165,7 +165,7 @@ export default {
         ? asset.value.assetName_main
         : asset.value.assetName_sub
       try {
-        const response = await axios.get(`/api/getDiagnosisGrouped/${chName}`)
+        const response = await axios.get(`/api/getDiagnosisDetail/${chName}`)
         if (response.data.success) {
           data_recordtime.value = response.data.data_recordtime
           data_state.value = response.data.data_state

@@ -80,7 +80,7 @@ const CATEGORY_COLORS = {
 
 const ITEM_CATEGORY_MAP = {
   // Voltage / Inverter
-  'Incoming Voltage': 'voltage-inverter',
+  'IncomingVoltage': 'voltage-inverter',
   'DCLink': 'voltage-inverter',
   'Rectifier': 'voltage-inverter',
   'Switching': 'voltage-inverter',
@@ -125,7 +125,8 @@ export default {
     const asset = ref(props.asset)
     const data_recordtime = ref('')
     const data_state = ref('')
-    const groupedTree = ref([])
+    const dataStatus = ref([])
+    const dataTree = ref([])
     const mode = ref(props.mode)
 
     const STATUS_LEGEND = computed(() => [
@@ -136,10 +137,9 @@ export default {
       { key: 4, text: t('diagnosis.tabContext.st4'), color: '#dc2626' },
     ])
 
-    /* ───────── 카테고리 데이터 (API → 변환) ───────── */
+    /* ───────── 배터리 차트 (BarGraph → 카테고리) ───────── */
     const categories = computed(() => {
       const currentLocale = locale.value
-      const tree = groupedTree.value
       const cats = [
         { id: 'voltage-inverter', label: t('diagnosis.category.voltage-inverter'), color: CATEGORY_COLORS['voltage-inverter'], items: [] },
         { id: 'components',       label: t('diagnosis.category.components'),       color: CATEGORY_COLORS['components'],       items: [] },
@@ -149,31 +149,22 @@ export default {
       const catMap = {}
       cats.forEach(c => { catMap[c.id] = c })
 
-      for (const node of tree) {
-        if (!node.children) continue
-        for (const child of node.children) {
-          const itemName = child.Name || child.Title || ''
-          const catId = ITEM_CATEGORY_MAP[itemName]
-          if (catId && catMap[catId]) {
-            catMap[catId].items.push({
-              name: child.Titles?.[currentLocale] || child.Title || child.Name,
-              rawName: itemName,
-              status: child.Status || 0,
-            })
-          }
+      for (const bar of dataStatus.value) {
+        const itemName = bar.Name || bar.Title || ''
+        const catId = ITEM_CATEGORY_MAP[itemName]
+        if (catId && catMap[catId]) {
+          catMap[catId].items.push({
+            name: bar.Titles?.[currentLocale] || bar.Title || bar.Name,
+            rawName: itemName,
+            status: bar.Status || 0,
+          })
         }
       }
       return cats.filter(c => c.items.length > 0)
     })
 
-    /* ───────── 트리테이블 데이터 (전체) ───────── */
-    const allTreeData = computed(() => {
-      const result = []
-      for (const node of groupedTree.value) {
-        if (node.children) result.push(...node.children)
-      }
-      return result
-    })
+    /* ───────── 트리테이블 (TreeList 기반 트리, 카테고리와 독립) ───────── */
+    const allTreeData = computed(() => dataTree.value)
 
     /* ───────── 헬퍼 ───────── */
     const getAlertCount = (cat) => cat.items.filter(i => i.status >= 3).length
@@ -186,11 +177,12 @@ export default {
         ? asset.value.assetName_main
         : asset.value.assetName_sub
       try {
-        const response = await axios.get(`/api/getDiagnosisGrouped/${chName}`)
+        const response = await axios.get(`/api/getDiagnosisDetail/${chName}`)
         if (response.data.success) {
           data_recordtime.value = response.data.data_recordtime
           data_state.value = response.data.data_state
-          groupedTree.value = response.data.data_tree
+          dataStatus.value = response.data.data_status || []
+          dataTree.value = response.data.data_tree || []
         }
       } catch (error) {
         console.log('데이터 가져오기 실패:', error)
