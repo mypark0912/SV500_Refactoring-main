@@ -151,7 +151,8 @@ export default {
 
       for (const bar of dataStatus.value) {
         const itemName = bar.Name || bar.Title || ''
-        const catId = ITEM_CATEGORY_MAP[itemName]
+        const lookupKey = itemName.replace(/\s+/g, '')
+        const catId = ITEM_CATEGORY_MAP[lookupKey]
         if (catId && catMap[catId]) {
           catMap[catId].items.push({
             name: bar.Titles?.[currentLocale] || bar.Title || bar.Name,
