@@ -1,7 +1,7 @@
 <template>
     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
     <td class="px-4 py-1 align-top">
-        <div :style="{ paddingLeft: level * 20 + 'px' }" class="flex items-start text-sm" :class="{'font-bold': isParent}">
+        <div class="flex items-start text-sm" :class="{'font-bold': isParent}">
         <button
             v-if="item.children"
             @click="expanded = !expanded"
@@ -12,17 +12,16 @@
             class="w-4 h-4"
             />
         </button>
-        <span v-else class="w-5"></span>
         {{ itemTitle }}
         </div>
     </td>
     <td class="px-4 py-1 text-sm align-top"> {{ item.Value }} </td>
     <td class="px-4 py-1 align-top">
-    
-        <div class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center" :class="getStatusColor2(getStatusText(item.Status))">
+
+        <div class="text-sm rounded-full px-3 py-1 min-w-[100px] w-fit text-center" :class="mode === 'Fault' ? getStatusColor2(getStatusText(item.Status)) : statusTextClass">
           {{ getStatusCText(getStatusText(item.Status)) }}
         </div>
-   
+
     </td>
     <td v-if="mode !='Event'" class="px-4 py-1 text-sm align-top"> {{ descStr }} </td>
     </tr>
@@ -49,6 +48,16 @@
   })
 
   const isParent = computed(() => props.item.children || props.item.isParent)
+
+  const statusTextClass = computed(() => {
+    switch (props.item.Status) {
+      case 1: return 'bg-green-500/20 text-green-700 font-semibold dark:bg-green-600/40 dark:text-green-300'
+      case 2: return 'bg-yellow-500/20 text-yellow-700 font-semibold dark:bg-yellow-600/40 dark:text-yellow-300'
+      case 3: return 'bg-orange-500/20 text-orange-700 font-semibold dark:bg-orange-600/40 dark:text-orange-300'
+      case 4: return 'bg-red-500/20 text-red-700 font-semibold dark:bg-red-600/40 dark:text-red-300'
+      default: return 'bg-gray-500/20 text-gray-500 font-semibold dark:bg-gray-600/40 dark:text-gray-400'
+    }
+  })
 
   const expanded = ref(false);
   const mode = ref('');
