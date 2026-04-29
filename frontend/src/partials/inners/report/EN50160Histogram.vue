@@ -291,7 +291,7 @@ export default {
           lineStyle: { color: '#f44336', type: 'dashed', width: 2 },
           label: {
             formatter: `Min: ${props.limitMin}${props.unit}`,
-            position: 'start',
+            position: 'end',
             fontSize: 10,
             color: colors.textColorSecondary
           }
