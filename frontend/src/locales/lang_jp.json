@@ -162,6 +162,7 @@
         "Reactive Power": "無効電力",
         "Apparent Power": "皮相電力",
         "THD-U":"THD-U",
+        "THD-Upp": "THD-Upp",
         "THD-I":"THD-I",
         "TDD-I":"TDD-I",
         "PF" : "力率"

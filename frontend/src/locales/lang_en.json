@@ -365,6 +365,7 @@
       "Reactive Power": "Reactive Power",
       "Apparent Power": "Apparent Power",
       "THD-U": "THD-U",
+      "THD-Upp": "THD-Upp",
       "THD-I": "THD-I",
       "TDD-I": "TDD-I",
       "PF": "Power Factor",

@@ -99,7 +99,7 @@
 
         <!-- 고조파 -->
         <div class="detail-block">
-          <span class="detail-block-title">{{ t('pq.tabs.harmonics') }}</span>
+          <span class="detail-block-title">{{ t('dashboard.pq.THD') }}</span>
           <DualMeasCard_THD_v2 :data="data2" />
         </div>
       </div>

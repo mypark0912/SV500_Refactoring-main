@@ -3224,6 +3224,7 @@ def get_OneSecond(channel, unbal):
                 extract_key_list(RedisMapDetail2.r_powers_keys) +
                 extract_key_list(RedisMapDetail2.ap_powers_keys) +
                 extract_key_list(RedisMapDetail2.thdu_keys) +
+                extract_key_list(RedisMapDetail2.thdupp_keys) +
                 extract_key_list(RedisMapDetail2.thdi_keys) +
                 extract_key_list(RedisMapDetail2.tddi_keys)
         )
@@ -3278,67 +3279,50 @@ def get_OneSecond(channel, unbal):
         )}
         thd = {k["key"]: flat_fields.get(k["key"]) for k in (
                 RedisMapDetail2.thdu_keys +
+                RedisMapDetail2.thdupp_keys +
                 RedisMapDetail2.thdi_keys +
                 RedisMapDetail2.tddi_keys
         )}
-        full_data = redis_state.client_db1.hgetall(keyname)
+        # full_data = redis_state.client_db1.hgetall(keyname)
         if channel == 'Main':
             ch = 'main'
         else:
             ch = 'sub'
 
-        if os_spec.os == 'Windows':
-            maxmin = {
-                k: v if k.endswith("_maxTime") or k.endswith("_minTime") else try_float(v)
-                for k, v in full_data.items()
-                if k.endswith("_max") or k.endswith("_min") or k.endswith("_maxTime") or k.endswith("_minTime")
-            }
-            p_voltage_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.p_voltage_keys, 'V')
-            freq_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.freq_keys, 'Hz')
-            l_voltage_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.l_voltage_keys, 'V')
-            current_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.current_keys, 'A')
-            pf_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.pf_keys, '%')
-            unbal_data = RedisMapDetail2.get_Datadict(meters, maxmin, RedisMapDetail2.unbal_keys, '%')
-            a_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.a_powers_keys, 'kW')
-            r_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.r_powers_keys, 'kVar')
-            ap_power_data = RedisMapDetail2.get_Datadict(powers, maxmin, RedisMapDetail2.ap_powers_keys, 'kVA')
-            thdu_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdu_keys, '%')
-            thdi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.thdi_keys, '%')
-            tddi_data = RedisMapDetail2.get_Datadict(thd, maxmin, RedisMapDetail2.tddi_keys, '%')
+        processor = redis_state.processor
+        handler = redis_state.handler
+        parsed = processor.get_and_parse(
+            config_name="maxmin_1sec",
+            key=f"MAXMIN_{ch}",
+            data_type=RedisDataType.HASH,
+            field="1sec"  # 필수
+        )
+        if parsed is None:
+            logging.error('OneS Maxmin is None')
+        parsed_15m = processor.get_and_parse(
+            config_name="maxmin_15min",
+            key=f"MAXMIN_{ch}",
+            data_type=RedisDataType.HASH,
+            field="15min"
+        )
+        if parsed_15m is None:
+            logging.error('15min Maxmin is None')
+        p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.p_voltage_keys, 'V')
+        freq_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.freq_keys, 'Hz')
+        l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.l_voltage_keys, 'V')
+        current_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.current_keys, 'A')
+        pf_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.pf_keys, '%')
+        if int(unbal) == 1:
+            unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys, '%')
         else:
-            processor = redis_state.processor
-            handler = redis_state.handler
-            parsed = processor.get_and_parse(
-                config_name="maxmin_1sec",
-                key=f"MAXMIN_{ch}",
-                data_type=RedisDataType.HASH,
-                field="1sec"  # 필수
-            )
-            if parsed is None:
-                logging.error('OneS Maxmin is None')
-            parsed_15m = processor.get_and_parse(
-                config_name="maxmin_15min",
-                key=f"MAXMIN_{ch}",
-                data_type=RedisDataType.HASH,
-                field="15min"
-            )
-            if parsed_15m is None:
-                logging.error('15min Maxmin is None')
-            p_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.p_voltage_keys, 'V')
-            freq_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.freq_keys, 'Hz')
-            l_voltage_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.l_voltage_keys, 'V')
-            current_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.current_keys, 'A')
-            pf_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.pf_keys, '%')
-            if int(unbal) == 1:
-                unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys, '%')
-            else:
-                unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys2, '%')
-            a_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.a_powers_keys, 'kW')
-            r_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.r_powers_keys, 'kVar')
-            ap_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.ap_powers_keys, 'kVA')
-            thdu_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdu_keys, '%')
-            thdi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdi_keys, '%')
-            tddi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.tddi_keys, '%')
+            unbal_data = handler.get_data_dict(meters, parsed, RedisMapDetail2.unbal_keys2, '%')
+        a_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.a_powers_keys, 'kW')
+        r_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.r_powers_keys, 'kVar')
+        ap_power_data = handler.get_data_dict(powers, parsed_15m, RedisMapDetail2.ap_powers_keys, 'kVA')
+        thdu_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdu_keys, '%')
+        thdupp_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdupp_keys, '%')
+        thdi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.thdi_keys, '%')
+        tddi_data = handler.get_data_dict(thd, parsed_15m, RedisMapDetail2.tddi_keys, '%')
 
         result = {
             "success": True,
@@ -3366,6 +3350,7 @@ def get_OneSecond(channel, unbal):
                 ],
                 "thdData": [
                     {"subTitle": "THD-U", "data": thdu_data},
+                    {"subTitle": "THD-Upp", "data": thdupp_data},
                     {"subTitle": "THD-I", "data": thdi_data},
                     {"subTitle": "TDD-I", "data": tddi_data}
                 ]

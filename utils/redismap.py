@@ -111,7 +111,7 @@ class RedisMapped:
         "meter":{"U1","U2","U3","U4","Upp1","Upp2","Upp3","Upp4","I1","I2","I3","I4","Itot","Ubal1","Ibal1","Freq","Ig","Temp", "Ubal_nema","Ibal_nema"},
         "power":{"P1","P2","P3","P4","PF4","PF1","PF2","PF3","S4", "Q4"},
         "energy":{"total_kwh_import","thismonth_kwh_import"},
-        "thd":{"THD_U1","THD_U2","THD_U3","THD_I1","THD_I2","THD_I3","TDD_I1","TDD_I2","TDD_I3"}
+        "thd":{"THD_U1","THD_U2","THD_U3","THD_Upp1","THD_Upp2","THD_Upp3","THD_I1","THD_I2","THD_I3","TDD_I1","TDD_I2","TDD_I3"}
     }
 
     dashboard_trans = {
@@ -170,6 +170,11 @@ class RedisMapDetail2:
         {"id": 0, "label": "L1", "key": "THD_U1"},
         {"id": 1, "label": "L2", "key": "THD_U2"},
         {"id": 2, "label": "L3", "key": "THD_U3"},
+    ]
+    thdupp_keys = [
+        {"id": 0, "label": "L1-L2", "key": "THD_Upp1"},
+        {"id": 1, "label": "L2-L3", "key": "THD_Upp2"},
+        {"id": 2, "label": "L3-L1", "key": "THD_Upp3"},
     ]
 
     thdi_keys = [

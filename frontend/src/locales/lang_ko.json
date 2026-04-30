@@ -364,6 +364,7 @@
       "Reactive Power": "무효 전력",
       "Apparent Power": "피상 전력",
       "THD-U": "THD-U",
+      "THD-Upp": "THD-Upp",
       "THD-I": "THD-I",
       "TDD-I": "TDD-I",
       "PF": "역률",
