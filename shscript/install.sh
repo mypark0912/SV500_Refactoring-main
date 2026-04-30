@@ -625,6 +625,8 @@ ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
 Restart=always
 RestartSec=5
 User=ntekadmin
+Group=root
+UMask=0007
 
 [Install]
 WantedBy=multi-user.target
@@ -653,7 +655,8 @@ WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Restart=always
 User=ntekadmin
-SyslogLevel=err
+Group=root
+UMask=0007
 StandardOutput=journal
 StandardError=journal
 
