@@ -4157,7 +4157,10 @@ def check_a35version():
     fw = redis_state.client.hget("version","fw")
     a35 = redis_state.client.hget("version","a35")
     webserver = redis_state.client.hget("version","webserver")
-    core = redis_state.client.hget("version", "core")
+    if redis_state.client.hexists("version", "core"):
+        core = redis_state.client.hget("version", "core")
+    else:
+        core = None
     if redis_state.client.hexists("version", "mqClient"):
         mqClient = redis_state.client.hget("version", "mqClient")
     else:
@@ -4588,7 +4591,8 @@ async def check_sysStatus():
             versionDict['fw'] = a35Dict['fw']
             versionDict['A35'] = a35Dict['A35']
             versionDict['WebServer'] = a35Dict['webserver']
-            versionDict['Core'] = a35Dict['core']
+            if a35Dict['core'] is not None:
+                versionDict['Core'] = a35Dict['core']
             # versionDict['MQTTClient'] = a35Dict['mqClient']
 
         # 서비스 목록 결정
