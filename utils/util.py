@@ -1,10 +1,12 @@
 import logging, socket
 import uuid, psutil, sqlite3, os, subprocess
+import httpx
 from pathlib import Path
 from datetime import date
 from pydantic import BaseModel
 from fastapi import Request
 from enum import IntEnum
+from states.global_state import redis_state, os_spec
 
 base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
@@ -21,6 +23,7 @@ class Post(BaseModel):
     w_version: str = ""
     c_version: str = ""
     smart_version: str = ""
+    mq_version: str = ""
     build_version: str = ""
 
 class WatchTarget(IntEnum):
@@ -108,17 +111,21 @@ def get_db_connection():
                 w_version TEXT,
                 c_version TEXT,
                 smart_version TEXT,
+                mq_version TEXT,
                 build_version TEXT,
                 date TEXT
             )
         ''')
         conn.commit()
 
-        # build_version 컬럼 마이그레이션 (기존 DB 대응)
+        # build_version, mq_version 컬럼 마이그레이션 (기존 DB 대응)
         cursor.execute("PRAGMA table_info(maintenance)")
         columns = [col[1] for col in cursor.fetchall()]
         if 'build_version' not in columns:
             cursor.execute("ALTER TABLE maintenance ADD COLUMN build_version TEXT DEFAULT ''")
+            conn.commit()
+        if 'mq_version' not in columns:
+            cursor.execute("ALTER TABLE maintenance ADD COLUMN mq_version TEXT DEFAULT ''")
             conn.commit()
 
         return conn
@@ -291,6 +298,135 @@ def getVersions():
                     version_dict[key.strip()] = value.strip()
     return version_dict
 
+VERSION_PATH = '/home/root/versionInfo.txt'
+
+REDIS_TO_LOCAL = {
+    "fw": "fw",
+    "A35": "a35",
+    "webserver": "web",
+    "core": "core",
+    "SmartSystems": "smartsystem",
+    "mqClient": "mqClient",
+}
+
+LOCAL_TO_SERVICE = {
+    "fw": None,
+    "a35": "sv500A35.service",
+    "web": "webserver.service",
+    "core": "core.service",
+    "smartsystem": "smartsystemsservice.service",
+    "mqClient": "mqClient.service",
+}
+
+def _ver_tuple(v):
+    try:
+        return tuple(int(x) for x in v.split('.'))
+    except (ValueError, AttributeError):
+        return (0,)
+
+def _latest(a, b):
+    if not a:
+        return b
+    if not b:
+        return a
+    return a if _ver_tuple(a) >= _ver_tuple(b) else b
+
+def _read_file_versions():
+    d = {}
+    if os.path.exists(VERSION_PATH):
+        with open(VERSION_PATH, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and '=' in line:
+                    k, v = line.split('=', 1)
+                    d[k.strip()] = v.strip()
+    return d
+
+def _read_redis_versions():
+    d = {}
+    if redis_state.client and redis_state.client.exists("version"):
+        for rk, lk in REDIS_TO_LOCAL.items():
+            if redis_state.client.hexists("version", rk):
+                val = redis_state.client.hget("version", rk)
+                if val:
+                    d[lk] = val
+    return d
+
+async def _fetch_smart_api():
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(f"http://{os_spec.restip}:5000/api/version")
+            return r.json().get("Version")
+    except Exception:
+        return None
+
+# 자기가 직접 hset하지 않는 외부 의존 컴포넌트만 getVersionNew가 Redis에 캐싱
+SELF_HSET_EXEMPT = {"smartsystem", "mqClient"}
+
+def _save_redis_version(local_key, value):
+    """SmartSystems/mqClient 한정으로 version 해시에 저장.
+    fw/a35/web/core는 각 컴포넌트가 시작 시 직접 hset하므로 덮어쓰지 않는다."""
+    if local_key not in SELF_HSET_EXEMPT:
+        return
+    if not redis_state.client or not value:
+        return
+    redis_key = next((rk for rk, lk in REDIS_TO_LOCAL.items() if lk == local_key), None)
+    if redis_key:
+        redis_state.client.hset("version", redis_key, value)
+
+async def getVersionNew():
+    """버전정보 통합 조회.
+    - smartsystem, mqClient: 서비스 미존재 시 "0.0.0"으로 dict 포함 + Redis 저장
+    - smartsystem: API가 최신 권위 (매번 호출), 실패 시 Redis → "1.0.0" fallback
+    - 그 외: versionInfo.txt vs Redis 최신값, 둘 다 없으면 "1.0.0"
+    - SmartSystems/mqClient에 한해 Redis와 다르면 갱신
+    """
+    file_v = _read_file_versions()
+    redis_v = _read_redis_versions()
+    file_exists = bool(file_v)
+    result = {}
+
+    for lk in REDIS_TO_LOCAL.values():
+        # smartsystem, mqClient는 서비스 존재 확인
+        if lk in SELF_HSET_EXEMPT:
+            svc = LOCAL_TO_SERVICE.get(lk)
+            if svc and not service_exists(svc):
+                result[lk] = "0.0.0"
+                if redis_v.get(lk) != "0.0.0":
+                    _save_redis_version(lk, "0.0.0")
+                continue
+
+        if lk == "smartsystem":
+            api_v = await _fetch_smart_api()
+            if api_v:
+                value = api_v
+                # API가 권위. Redis와 다르면 무조건 갱신 (다운그레이드 포함)
+                if redis_v.get(lk) != value:
+                    _save_redis_version(lk, value)
+            else:
+                # API 실패: Redis와 파일 중 최신값, 둘 다 없으면 "1.0.0". Redis 갱신 안 함
+                value = _latest(file_v.get(lk), redis_v.get(lk)) or "1.0.0"
+            result[lk] = value
+            continue
+
+        # 그 외: 파일 vs Redis 최신
+        if file_exists:
+            picked = _latest(file_v.get(lk), redis_v.get(lk))
+        else:
+            picked = redis_v.get(lk)
+
+        if picked:
+            result[lk] = picked
+            if redis_v.get(lk) != picked:
+                _save_redis_version(lk, picked)
+            continue
+
+        # 둘 다 없음 - fallback
+        result[lk] = "1.0.0"
+        _save_redis_version(lk, "1.0.0")
+
+    return result
+
 def save_post(data: Post, mode: int, idx:int):
     title = data.title
     context = data.context
@@ -301,6 +437,7 @@ def save_post(data: Post, mode: int, idx:int):
     w_version = data.w_version
     c_version = data.c_version
     smart_version = data.smart_version
+    mq_version = data.mq_version
     build_version = data.build_version
     today = date.today()
     formatted = today.strftime("%Y-%m-%d")
@@ -309,13 +446,13 @@ def save_post(data: Post, mode: int, idx:int):
         cursor = conn.cursor()
         if mode == 0:
             cursor.execute(
-                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version, build_version, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, build_version, formatted)
+                "INSERT INTO `maintenance` (title,context, mtype, utype, f_version, a_version, w_version,c_version, smart_version, mq_version, build_version, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (title, context, mtype, utype, f_version,a_version,w_version, c_version,smart_version, mq_version, build_version, formatted)
             )
         else:
             cursor.execute(
-                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, build_version=?, date=? where id=?",
-                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, build_version, formatted, idx )
+                "UPDATE `maintenance` SET title=?,context=?, mtype=?, utype=?, f_version=?, a_version=?, w_version=?,c_version=?, smart_version=?, mq_version=?, build_version=?, date=? where id=?",
+                (title, context, mtype, utype, f_version, a_version, w_version, c_version,smart_version, mq_version, build_version, formatted, idx )
             )
         conn.commit()
         conn.close()

@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from utils.util import save_post, Post, get_mac_address, getVersions, is_service_active, sysService, create_logdb_connection, get_ip_address
+from utils.util import save_post, Post, get_mac_address, getVersionNew, is_service_active, sysService, create_logdb_connection, get_ip_address
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 router = APIRouter()
 
@@ -223,52 +223,35 @@ def getLatestBuildVersion():
     except Exception:
         return ''
 
-def getVersionSave(Opmode):
-    version_dict = getVersions()
+async def getVersionSave(Opmode):
+    version_dict = await getVersionNew()
     build_ver = getLatestBuildVersion()
-    if version_dict:
-        if Opmode == 'device0':
-            install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
-                           f_version=version_dict['fw'],
-                           a_version=version_dict['a35'],
-                           w_version=version_dict['web'],
-                           c_version=version_dict['core'],
-                           smart_version='',
-                           build_version=build_ver
-                           )
-        else:
-            install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
-                           f_version=version_dict['fw'],
-                           a_version=version_dict['a35'],
-                           w_version=version_dict['web'],
-                           c_version=version_dict['core'],
-                           smart_version=version_dict['smartsystem'],
-                           build_version=build_ver
-                           )
+
+    if Opmode == 'device0':
+        utype = 'fw,a35,web,core'
+        smart = ''
     else:
-        if Opmode == 'device0':
-            install = Post(title='Fist Installation', context='SV-500 Installed',mtype=0, utype='fw,a35,web,core',
-                           f_version='1.0.0',
-                           a_version='1.0.0',
-                           w_version='1.0.0',
-                           c_version='1.0.0',
-                           smart_version='',
-                           build_version=build_ver
-                           )
-        else:
-            install = Post(title='Fist Installation', context='SV-500 Installed', mtype=0, utype='fw,a35,web,core,smartsystem',
-                           f_version='1.0.0',
-                           a_version='1.0.0',
-                           w_version='1.0.0',
-                           c_version='1.0.0',
-                           smart_version='1.0.0',
-                           build_version=build_ver)
+        utype = 'fw,a35,web,core,smartsystem'
+        smart = version_dict.get('smartsystem', '1.0.0')
+
+    install = Post(
+        title='Fist Installation',
+        context='SV-500 Installed',
+        mtype=0,
+        utype=utype,
+        f_version=version_dict.get('fw', '1.0.0'),
+        a_version=version_dict.get('a35', '1.0.0'),
+        w_version=version_dict.get('web', '1.0.0'),
+        c_version=version_dict.get('core', '1.0.0'),
+        smart_version=smart,
+        build_version=build_ver
+    )
     save_post(install, 0, 0)
 
 
 
 @router.post('/joinAdmin')
-def join_admin(data: SignupAdmin):
+async def join_admin(data: SignupAdmin):
     devType = data.devType
     name = data.username
     account = data.account
@@ -316,7 +299,7 @@ def join_admin(data: SignupAdmin):
             )
             join(client_admin)
             join(client_guest)
-            getVersionSave(mode)
+            await getVersionSave(mode)
             adminflag = True
         except Exception as e:
             return {"passOK": "0", "msg": str(e)}

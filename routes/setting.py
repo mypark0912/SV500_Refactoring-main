@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec, VersionInfo
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, getVersions, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
+from utils.util import get_mac_address, sysService, is_service_active, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
@@ -91,6 +91,9 @@ def init_setup():
 
     if not redis_state.client.hexists("version", "webserver"):
         redis_state.client.hset("version", "webserver", VersionInfo)
+    else:
+        if redis_state.client.hget("version", "webserver") != VersionInfo:
+            redis_state.client.hset("version", "webserver", VersionInfo)
 
     if redis_state.client.hexists("System", "setup"):
         logging.info("System setup 이미 존재함, 스킵")
@@ -4558,19 +4561,17 @@ async def check_sysStatus():
 
         return {"success": True, "data": data, "disk": [disk1]}
     else:
-        # 버전 정보, SmartVersion, A35 버전, 서비스 존재 여부를 병렬로 조회
-        version_dict_fut = asyncio.to_thread(getVersions)
-        smart_version_fut = check_SmartVersion()
-        a35_fut = asyncio.to_thread(check_a35version)
+        # 버전 정보(통합), 서비스 존재 여부를 병렬로 조회
         mqtt_exists_fut = asyncio.to_thread(service_exists, "mqClient.service")
         frpc_exists_fut = asyncio.to_thread(service_exists, "frpc.service")
         mqtt_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "MQTT")
 
-        version_dict, apiResult, a35Dict, has_mqtt_service, has_frpc, has_mqtt_flag = await asyncio.gather(
-            version_dict_fut, smart_version_fut, a35_fut,
+        version_local, has_mqtt_service, has_frpc, has_mqtt_flag = await asyncio.gather(
+            getVersionNew(),
             mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut
         )
 
+        # local 키 → 응답 키 매핑
         key_map = {
             'fw': 'fw',
             'a35': 'A35',
@@ -4579,22 +4580,7 @@ async def check_sysStatus():
             'smartsystem': 'SmartSystems',
             'mqClient': 'MQTTClient'
         }
-        versionDict = {}
-        if version_dict:
-            for src_key, dst_key in key_map.items():
-                versionDict[dst_key] = version_dict[src_key]
-
-        if apiResult:
-            versionDict['SmartSystems'] = apiResult['Version']
-
-        if a35Dict is not None:
-            versionDict['fw'] = a35Dict['fw']
-            versionDict['A35'] = a35Dict['A35']
-            versionDict['WebServer'] = a35Dict['webserver']
-            if a35Dict['core'] is not None:
-                versionDict['Core'] = a35Dict['core']
-            # versionDict['MQTTClient'] = a35Dict['mqClient']
-
+        versionDict = {key_map[k]: v for k, v in version_local.items() if k in key_map}
         # 서비스 목록 결정
         base_services = {
             'smartsystem': 'smartsystemsservice',
@@ -4935,9 +4921,10 @@ async def update_smartsystem(mode, request: Request):
     if lastpost["result"] == 1:
         idx = safe_int(lastpost["data"]["id"])
         smartVersion = lastpost["data"]["smart_version"]
-        dict = getVersions()
-        if smartVersion != dict["smartsystem"]:
-            smartVersion = dict["smartsystem"]
+        version_local = await getVersionNew()
+        new_smart = version_local.get("smartsystem")
+        if new_smart and smartVersion != new_smart:
+            smartVersion = new_smart
         update = Post(title='SW Update', context=c_text, mtype=1, utype='smartsystem',
                       smart_version=smartVersion)
         save_post(update, 1, idx)

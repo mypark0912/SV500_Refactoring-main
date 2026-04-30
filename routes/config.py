@@ -12,7 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersions,check_get_logdb, service_exists, updateLog
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersionNew, check_get_logdb, service_exists, updateLog
 from datetime import datetime
 router = APIRouter()
 
@@ -363,11 +363,11 @@ def get_post():
 
 
 @router.get('/getLastPost')
-def get_last():
+async def get_last():
     ret = get_lastpost()
     if ret.get("result") == 1:
         lastpost = ret.get("data", {})
-        version_dict = getVersions()
+        version_dict = await getVersionNew()
         updateList = []
 
         key_map = {
@@ -375,7 +375,8 @@ def get_last():
             'a35': 'a_version',
             'web': 'w_version',
             'core': 'c_version',
-            'smartsystem': 'smart_version'
+            'smartsystem': 'smart_version',
+            'mqClient': 'mq_version'
         }
 
         if version_dict:
@@ -398,6 +399,7 @@ def get_last():
                     w_version=lastpost.get('w_version'),
                     c_version=lastpost.get('c_version'),
                     smart_version=lastpost.get('smart_version'),
+                    mq_version=lastpost.get('mq_version', ''),
                     build_version=lastpost.get('build_version', '')
                 )
                 return {"result": 1, "data": update.dict(), "update":updateList}
