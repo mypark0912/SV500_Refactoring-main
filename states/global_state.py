@@ -16,6 +16,7 @@ base_dir = Path(__file__).resolve().parent
 SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
 INIT_PATH = file_path = os.path.join(SETTING_FOLDER, 'influx.json')
 ADMIN_PATH = os.path.join(SETTING_FOLDER, 'admin_secret.enc')
+VersionInfo = "1.8.3"
 
 AES_KEY = b'ntekSystem_20250721_mypark_caner'  # 16바이트 (AES-128)
 
