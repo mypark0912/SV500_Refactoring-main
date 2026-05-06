@@ -4475,6 +4475,8 @@ ExecStart={exec_start}
 WorkingDirectory={working_directory}
 Restart={restart}
 User={user}
+Group=root
+UMask=0007
 
 [Install]
 WantedBy={wanted_by}
