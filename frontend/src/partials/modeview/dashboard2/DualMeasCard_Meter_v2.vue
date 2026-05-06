@@ -100,7 +100,7 @@
         <!-- 고조파 -->
         <div class="detail-block">
           <span class="detail-block-title">{{ t('dashboard.pq.THD') }}</span>
-          <DualMeasCard_THD_v2 :data="data2" />
+          <DualMeasCard_THD_v2 :data="data2" :pt="isPT"/>
         </div>
       </div>
     </div>
@@ -171,7 +171,7 @@ export default {
     }
 
     return {
-      t, data2, avgVoltage, channel,
+      t, data2, avgVoltage, channel, isPT,
       ubalVoltage, ubalCurrent,
       getPhaseVoltage,
       getVoltageDotClass, getCurrentDotClass, getFreqDotClass, getPfDotClass,

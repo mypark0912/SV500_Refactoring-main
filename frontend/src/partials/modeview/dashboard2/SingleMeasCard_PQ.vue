@@ -107,24 +107,25 @@ export default {
 
     const hasData = computed(() => Object.keys(data2.value).length > 0)
 
-    const dataKeys = ['thdu total', 'thdi total', 'tddi total']
-    const labels = ['THD-U', 'THD-I', 'TDD-I']
-    const colors = ['pink', 'indigo', 'teal']
+    const isPT = computed(() => data2.value.DashPT !== 0)
 
     const chartItems = computed(() => {
-      const values = dataKeys.map(key => parseFloat(data2.value[key] || 0))
+      const voltageItem = isPT.value
+        ? { key: 'thdupp total', label: 'THD-Upp', color: 'pink' }
+        : { key: 'thdu total', label: 'THD-U', color: 'pink' }
+      const items = [
+        voltageItem,
+        { key: 'thdi total', label: 'THD-I', color: 'indigo' },
+        { key: 'tddi total', label: 'TDD-I', color: 'teal' },
+      ]
+      const values = items.map(it => parseFloat(data2.value[it.key] || 0))
       const maxValue = Math.max(...values, 10)
-
-      return labels.map((label, index) => {
-        const value = values[index].toFixed(1)
-        const height = (values[index] / maxValue) * 100
-        return {
-          label,
-          value,
-          height: Math.max(height, 5),
-          colorClass: `bar-${colors[index]}`
-        }
-      })
+      return items.map((it, index) => ({
+        label: it.label,
+        value: values[index].toFixed(1),
+        height: Math.max((values[index] / maxValue) * 100, 5),
+        colorClass: `bar-${it.color}`,
+      }))
     })
 
     // 불평형률 상태 클래스 - 다크모드 개선

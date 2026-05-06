@@ -27,17 +27,22 @@ export default {
   name: 'DualMeasCard_THD_v2',
   props: {
     data: { type: Object, default: () => ({}) },
-    dataKeys: { type: Array, default: () => ['thdu total', 'thdi total', 'tddi total'] },
-    labels: { type: Array, default: () => ['THD-U', 'THD-I', 'TDD-I'] },
-    colors: { type: Array, default: () => ['pink', 'indigo', 'teal'] },
+    pt: { type: Boolean, default: false },
   },
   setup(props) {
     const chartItems = computed(() => {
-      const values = props.dataKeys.map(key => parseFloat(props.data[key] || 0))
-      return props.labels.map((label, index) => ({
-        label,
-        value: values[index].toFixed(1),
-        colorClass: `bar-${props.colors[index]}`,
+      const voltageItem = props.pt
+        ? { key: 'thdupp total', label: 'THD-Upp', color: 'pink' }
+        : { key: 'thdu total', label: 'THD-U', color: 'pink' }
+      const items = [
+        voltageItem,
+        { key: 'thdi total', label: 'THD-I', color: 'indigo' },
+        { key: 'tddi total', label: 'TDD-I', color: 'teal' },
+      ]
+      return items.map(it => ({
+        label: it.label,
+        value: parseFloat(props.data[it.key] || 0).toFixed(1),
+        colorClass: `bar-${it.color}`,
       }))
     })
     return { chartItems }

@@ -2958,6 +2958,7 @@ def getMeterRedis2(channel, mode):
         # thd 계산도 그대로
         thd = redis_data.get("thd", {})
         meterdata["thdu total"] = sum([try_float(thd.get(k)) for k in ["THD_U1", "THD_U2", "THD_U3"]])/3
+        meterdata["thdupp total"] = sum([try_float(thd.get(k)) for k in ["THD_Upp1", "THD_Upp2", "THD_Upp3"]]) / 3
         meterdata["thdi total"] = sum([try_float(thd.get(k)) for k in ["THD_I1", "THD_I2", "THD_I3"]])/3
         meterdata["tddi total"] = sum([try_float(thd.get(k)) for k in ["TDD_I1", "TDD_I2", "TDD_I3"]])/3
 
