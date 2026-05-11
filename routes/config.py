@@ -294,9 +294,9 @@ async def set_system_time(data: TimeSetRequest, request: Request):
             logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
             return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
 
-        r_hw = subprocess.run(["sudo", "hwclock", "-w"], capture_output=True, text=True)
+        r_hw = subprocess.run(["sudo", "hwclock", "--systohc", "-f", "/dev/rtc1"], capture_output=True, text=True)
         if r_hw.returncode != 0:
-            logging.error(f"hwclock -w failed (rc={r_hw.returncode}): {r_hw.stderr}")
+            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)
         return {

@@ -90,27 +90,7 @@ fi
 # ntekadmin을 root 그룹에 추가 (디렉토리 접근용)
 usermod -aG root $ADMIN_USER 2>/dev/null || true
 
-# /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
-chmod 750 /home/root 2>/dev/null || true
-
-# 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
-# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
-chmod -R 770 /usr/local/sv500 2>/dev/null || true
-chmod -R 770 /home/root/webserver 2>/dev/null || true
-chmod -R 770 /home/root/core 2>/dev/null || true
-chmod -R 770 /home/root/mqClient 2>/dev/null || true
-
-# config 폴더에 그룹 쓰기 권한 부여 (webserver 가 db/json/csv 파일 생성할 수 있도록)
-# SQLite 가 .db-journal / .db-wal 파일 생성하려면 디렉토리 g+w 필수
-if [ -d /home/root/config ]; then
-    chmod 775 /home/root/config 2>/dev/null || true
-    find /home/root/config -maxdepth 1 -type f \
-        \( -name "*.db" -o -name "*.json" -o -name "*.csv" \) \
-        -exec chmod g+w {} \; 2>/dev/null || true
-    log_info "✅ Group write permission granted to /home/root/config"
-fi
-
-log_info "ntekadmin setup complete"
+log_info "ntekadmin setup complete (file permissions applied at end of install)"
 
 #######################################
 # backup profile
@@ -127,12 +107,12 @@ echo "1. Locale changed : zh_CN.UTF-8 → en_US.UTF-8"
 sudo timedatectl set-timezone Asia/Seoul
 echo "2. Timezone changed : Asia/Seoul"
 
-sudo timedatectl set-ntp true  
-sudo systemctl restart systemd-timesyncd  
-sleep 5  
-sudo timedatectl set-local-rtc 0  
-sudo hwclock --systohc --utc  
-timedatectl status && hwclock -r
+sudo timedatectl set-ntp true
+sudo systemctl restart systemd-timesyncd
+sleep 5
+sudo timedatectl set-local-rtc 0
+sudo hwclock --systohc --utc -f /dev/rtc1
+timedatectl status && hwclock -r -f /dev/rtc1
 timedatectl set-ntp false
 
 echo "2.5. RTC Enable and NTP disable"
@@ -321,6 +301,19 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# Install rtc-sync.service (RTC1 -> system clock sync at boot)
+RTC_SYNC_SRC="$(dirname "$0")/rtc-sync.service"
+RTC_SYNC_DST="/etc/systemd/system/rtc-sync.service"
+if [ -f "$RTC_SYNC_SRC" ]; then
+    cp "$RTC_SYNC_SRC" "$RTC_SYNC_DST"
+    chmod 644 "$RTC_SYNC_DST"
+    chown root:root "$RTC_SYNC_DST"
+    log_info "rtc-sync.service installed: $RTC_SYNC_DST"
+    rm -f "$RTC_SYNC_SRC"
+else
+    log_warn "rtc-sync.service not found: $RTC_SYNC_SRC"
+fi
 
 # =================================================================
 # 2.5 시스템 패키지 설치 (APT 패키지)
@@ -732,12 +725,47 @@ sudo systemctl restart systemd-journald
 sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
+# Enable RTC sync (must run before other services to set correct system time)
+sudo systemctl enable rtc-sync.service
+
 # Enable main services
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
 sudo systemctl enable webserver.service
 sudo systemctl enable core.service
 sudo systemctl enable startup-helper.service
+
+# =================================================================
+# 8.5 Apply File Permissions (서비스 start 전에 반드시 적용)
+# webserver(ntekadmin)가 시작 즉시 로그 파일을 만들기 때문에,
+# /usr/local/sv500/logs/web 등에 그룹 쓰기 권한이 미리 잡혀 있어야 함.
+# =================================================================
+log_section "8.5 Apply File Permissions"
+
+# /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
+chown root:root /home/root 2>/dev/null || true
+chmod 750       /home/root 2>/dev/null || true
+
+# 웹서버/core/mqClient 관련 디렉토리: root:root + 770
+# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
+for dir in /usr/local/sv500 /home/root/webserver /home/root/core /home/root/mqClient /home/root/config; do
+    if [ -d "$dir" ]; then
+        chown -R root:root "$dir" 2>/dev/null || true
+        chmod -R 770       "$dir" 2>/dev/null || true
+        log_info "  permissions applied: $dir"
+    else
+        log_warn "  directory missing (skipped): $dir"
+    fi
+done
+
+# InfluxDB 백업 디렉토리는 influxdb 사용자 소유로 복원
+# (위 chown -R root:root /usr/local/sv500 이 덮어쓴 것을 되돌림)
+if [ -d /usr/local/sv500/backup/influxdb ]; then
+    chown -R influxdb:influxdb /usr/local/sv500/backup/influxdb 2>/dev/null || true
+    chmod 775                  /usr/local/sv500/backup/influxdb 2>/dev/null || true
+fi
+
+log_info "✅ File permissions applied (pre-service-start)"
 
 # Start services
 log_info "Starting services..."

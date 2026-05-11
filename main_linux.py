@@ -20,7 +20,7 @@ sys.dont_write_bytecode = True
 mimetypes.add_type("application/javascript", ".js")
 
 base_dir = Path(__file__).resolve().parent
-SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
+SETTING_FOLDER = base_dir.parent / "config"  # ⬅️ 두 단계 상위로
 dist_dir = base_dir / "frontend" / "dist"
 index_file = dist_dir / "index.html"
 
