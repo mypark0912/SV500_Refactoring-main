@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from states.global_state import init_redis, redis_state, os_spec, cleanup_global_resources
+from states.global_state import init_redis, redis_state, os_spec, cleanup_global_resources, SETTING_FOLDER
 from starlette.middleware.base import BaseHTTPMiddleware
 import mimetypes, os, logging
 from pathlib import Path
@@ -20,7 +20,7 @@ sys.dont_write_bytecode = True
 mimetypes.add_type("application/javascript", ".js")
 
 base_dir = Path(__file__).resolve().parent
-SETTING_FOLDER = base_dir.parent / "config"  # ⬅️ 두 단계 상위로
+# SETTING_FOLDER = base_dir.parent / "config"  # ⬅️ 두 단계 상위로
 dist_dir = base_dir / "frontend" / "dist"
 index_file = dist_dir / "index.html"
 
