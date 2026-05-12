@@ -270,10 +270,16 @@ export INFLUX_ORG={org_escaped}
 export INFLUX_BUCKET=nteks
 """
 
-        with open("/etc/profile.d/influx.sh", "w") as f:
-            f.write(content)
-
-        os.chmod("/etc/profile.d/influx.sh", 0o755)
+        full_command = f"""cat > /etc/profile.d/influx.sh << 'EOF'
+{content}EOF
+chmod 755 /etc/profile.d/influx.sh
+"""
+        subprocess.run(
+            ['sudo', 'bash', '-c', full_command],
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
         # 현재 프로세스 환경변수 설정
         os.environ.update({
@@ -3468,8 +3474,11 @@ UseRoutes=true
         pass
 
     # ⭐ 변경 있을 때만 아래 실행
-    with open(NETWORK_FILE, "w") as f:
-        f.write(new_content)
+    full_command = f"cat > {NETWORK_FILE} << 'EOF'\n{new_content}EOF\n"
+    subprocess.run(
+        ['sudo', 'bash', '-c', full_command],
+        check=True, capture_output=True, text=True
+    )
 
     # ⭐ 연쇄 재시작 방지
     os.system("sudo systemctl stop frpc-restart-monitor")
@@ -3486,8 +3495,11 @@ UseRoutes=true
 
         # DHCP 실패 → static fallback
         content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
-        with open(NETWORK_FILE, "w") as f:
-            f.write(content)
+        full_command = f"cat > {NETWORK_FILE} << 'EOF'\n{content}EOF\n"
+        subprocess.run(
+            ['sudo', 'bash', '-c', full_command],
+            check=True, capture_output=True, text=True
+        )
         os.system("sudo systemctl restart systemd-networkd")
         time.sleep(3)
         os.system("sudo systemctl start frpc-restart-monitor")
