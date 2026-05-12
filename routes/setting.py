@@ -2386,7 +2386,7 @@ async def resetAll(request:Request):
                 redis_state.client.hdel("System", "mode")
             if redis_state.client.exists("Equipment"):
                 redis_state.client.delete("Equipment")
-            rt = delete_channel_data()
+            # rt = delete_channel_data()  # /sv500 램디스크는 재부팅 시 자동 초기화되므로 ntekadmin 권한 부족 문제 회피
             sysService("start", "Core")
             if service_exists("smartsystemsservice.service"):
                 sysService("start", "SmartSystems")

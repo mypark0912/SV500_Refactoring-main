@@ -269,9 +269,7 @@ ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Restart=always
-User=ntekadmin
-Group=root
-UMask=0007
+User=root
 StandardOutput=journal
 StandardError=journal
 
@@ -326,6 +324,9 @@ sudo chmod +x /home/root/SV500/install.sh
 
 # ntekadmin을 root 그룹에 추가 (디렉토리 접근용)
 usermod -aG root $ADMIN_USER 2>/dev/null || true
+
+# ntekadmin을 influxdb 그룹에 추가 (백업 디렉토리 쓰기 권한용)
+usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
 
 # /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
 chmod 750 /home/root 2>/dev/null || true

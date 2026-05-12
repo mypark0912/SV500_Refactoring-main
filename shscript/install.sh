@@ -382,6 +382,9 @@ sudo systemctl stop influxdb2-custom 2>/dev/null || true
 # Create InfluxDB user
 sudo useradd -r -s /bin/false influxdb 2>/dev/null || true
 
+# ntekadmin을 influxdb 그룹에 추가 (백업 디렉토리 쓰기 권한용)
+usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
+
 # Install InfluxDB (using offline package)
 if [ -f "$OFFLINE_DIR/binaries/influxdb2-2.7.11_linux_arm64.tar.gz" ]; then
     log_info "Extracting InfluxDB..."
@@ -647,9 +650,7 @@ ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Restart=always
-User=ntekadmin
-Group=root
-UMask=0007
+User=root
 StandardOutput=journal
 StandardError=journal
 
