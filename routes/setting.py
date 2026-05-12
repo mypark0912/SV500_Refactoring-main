@@ -2301,7 +2301,7 @@ def delete_channel_data():
     """
     ch1, ch2의 waveform과 event 파일 삭제 (간단 버전)
     """
-    base_path = "/home/root"
+    base_path = "/sv500"
     directories_to_clean = [
         "ch1/waveform",
         "ch1/event",
