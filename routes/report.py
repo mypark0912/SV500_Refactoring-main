@@ -16,15 +16,26 @@ import pandas as pd
 import pyarrow.parquet as pq
 from datetime import datetime, timedelta, timezone
 import logging, os, json, tempfile, uuid
+import asyncio
+from starlette.background import BackgroundTask
 from utils.en50160_dataMap import EN50160ReportProcessor, WeeklyReportConfig
 from .api import get_asset, get_params, get_trendData, Trend
 from utils.weekly_report import generate_weekly_report
+from .config import _run_cmd_async, _read_progress_file, SHARED_PYTHON
 from pathlib import Path
 import warnings
 
 router = APIRouter()
 
 REPORTS_DIR = Path("/usr/local/sv500/reports")
+
+# ── 주간 워드 리포트 별도 프로세스 ──
+REPORT_WORK_DIR = Path("/usr/local/sv500/backup/report")  # 작업 파일 (입력 JSON / 진행상태 / 출력 docx)
+RUN_WEEKLY_REPORT_PY = "/home/root/core/run_weekly_report.py"
+WEEKLY_REPORT_TIMEOUT = 1200  # 20분
+
+_report_tasks: Dict[str, dict] = {}      # task_id → 상태
+_report_active: Dict[str, str] = {}      # f"{channel}|{date}|{locale}" → task_id (동일 요청 중복 방지)
 
 # matplotlib 기본 설정
 plt.rcParams['axes.unicode_minus'] = False
@@ -2506,3 +2517,228 @@ async def get_weekly_report_data(
 #     except Exception as e:
 #         logging.error(f"날짜 목록 조회 실패: {e}")
 #         return {"success": False, "msg": str(e)}
+
+
+# ============================================
+# 주간 워드 리포트 (별도 프로세스 / 비동기)
+# ============================================
+# 기존 /downloadWeeklyReport 핸들러는 동기 호출이라 차트 렌더링 중 워커가 죽는 문제가 있어,
+# 데이터 로딩은 웹 서버가 그대로 하고 docx 생성만 별도 프로세스로 분리한다.
+#
+# 흐름:
+#   1) GET /weeklyReport/start/{channel}/{date}  → 데이터 로드 + 입력 JSON 저장 + subprocess spawn → task_id 반환
+#   2) GET /weeklyReport/status/{task_id}        → 진행상태 / 완료 여부 폴링
+#   3) GET /weeklyReport/download/{task_id}      → 완료된 docx 다운로드 + cleanup
+
+
+def _json_default(obj):
+    """JSON 직렬화 fallback (datetime, numpy 등)."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return str(obj)
+
+
+async def _weekly_report_bg(task_id: str):
+    """run_weekly_report.py 실행을 백그라운드에서 감싸는 태스크."""
+    task = _report_tasks[task_id]
+    input_file: Path = task["input_file"]
+    progress_file: Path = task["progress_file"]
+    output_file: Path = task["output_file"]
+    dedup_key: str = task["dedup_key"]
+
+    try:
+        sub_env = os.environ.copy()
+        sub_env["REPORT_PROGRESS_FILE"] = str(progress_file)
+
+        returncode, stdout, stderr = await _run_cmd_async(
+            SHARED_PYTHON, RUN_WEEKLY_REPORT_PY,
+            "--input", str(input_file),
+            "--output", str(output_file),
+            timeout=WEEKLY_REPORT_TIMEOUT,
+            env=sub_env,
+        )
+
+        if stdout:
+            logging.info(f"[weeklyReport] stdout: {stdout.strip()}")
+        if stderr:
+            logging.info(f"[weeklyReport] stderr: {stderr.strip()}")
+
+        if returncode != 0:
+            raise Exception(stderr.strip() or f"run_weekly_report.py exit={returncode}")
+
+        if not output_file.exists():
+            raise Exception("docx 파일이 생성되지 않음")
+
+        task["status"] = "completed"
+
+    except asyncio.TimeoutError:
+        logging.error(f"[weeklyReport] timeout ({WEEKLY_REPORT_TIMEOUT}s)")
+        task["status"] = "failed"
+        task["error"] = "Generation timeout"
+    except Exception as e:
+        logging.error(f"[weeklyReport] failed: {e}")
+        task["status"] = "failed"
+        task["error"] = str(e)
+    finally:
+        last = _read_progress_file(progress_file)
+        if last is not None:
+            task["last_progress"] = last
+        # 진행상태 / 입력 JSON 정리 (출력 docx 는 다운로드 후 cleanup)
+        for f in (progress_file, input_file):
+            try:
+                if f.exists():
+                    f.unlink()
+            except Exception as e:
+                logging.warning(f"[weeklyReport] cleanup error: {e}")
+        if _report_active.get(dedup_key) == task_id:
+            _report_active.pop(dedup_key, None)
+
+
+@router.get("/weeklyReport/start/{channel}/{date}")
+async def start_weekly_report(
+        channel: str,
+        date: str,
+        locale: str = Query(default='en', regex='^(ko|en)$'),
+        asset_name: str = Query(default=None)
+):
+    """주간 리포트 생성 시작 (별도 프로세스). 즉시 task_id 반환."""
+    try:
+        # 동일 (channel, date, locale) 이 진행 중이면 기존 task_id 재사용
+        dedup_key = f"{channel}|{date}|{locale}"
+        if dedup_key in _report_active:
+            existing = _report_active[dedup_key]
+            existing_task = _report_tasks.get(existing)
+            if existing_task and existing_task["status"] == "running":
+                return {"success": True, "task_id": existing, "reused": True}
+
+        logging.info(f"📄 주간 리포트 시작: channel={channel}, date={date}, locale={locale}")
+
+        # 1) 데이터 로드 (가벼움 — 기존 함수 그대로 활용)
+        start_date, end_date = get_week_range_from_date(date)
+        report_period = f"{start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}"
+
+        asset_info = {
+            "name": asset_name or "Unknown",
+            "type": "Motor",
+            "channel": channel,
+            "ratedVoltage": 380,
+            "ratedCurrent": 100,
+            "ratedFrequency": 60,
+        }
+        if asset_name:
+            asset_info["name"] = asset_name
+
+        diagnosis_result = load_diagnosis_parquet(channel, date, asset_info["name"])
+        diagnosis_data = diagnosis_result.get("diagnosis") if diagnosis_result else None
+        powerquality_data = diagnosis_result.get("powerquality") if diagnosis_result else None
+
+        en50160_data = load_en50160_parquet(channel, date)
+        if en50160_data is None or en50160_data.get('summary') is None:
+            en50160_data = get_en50160_from_redis(channel, en50160_data)
+
+        energy_data = load_energy_data(channel, start_date, end_date)
+        itic_events = get_itic_data_for_report(channel)
+
+        # 2) 작업 파일 경로 준비
+        REPORT_WORK_DIR.mkdir(parents=True, exist_ok=True)
+        task_id = str(uuid.uuid4())
+        input_file = REPORT_WORK_DIR / f"input_{task_id}.json"
+        progress_file = REPORT_WORK_DIR / f"progress_{task_id}.json"
+        output_file = REPORT_WORK_DIR / f"weekly_{task_id}.docx"
+
+        # 3) 입력 JSON 저장
+        payload = {
+            "asset_info": asset_info,
+            "diagnosis_data": diagnosis_data,
+            "powerquality_data": powerquality_data,
+            "en50160_data": en50160_data,
+            "energy_data": energy_data,
+            "itic_events": itic_events,
+            "report_period": report_period,
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "locale": locale,
+        }
+        with open(input_file, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, default=_json_default)
+
+        # 4) task 등록 + subprocess spawn
+        _report_tasks[task_id] = {
+            "status": "running",
+            "error": None,
+            "channel": channel,
+            "date": date,
+            "locale": locale,
+            "input_file": input_file,
+            "progress_file": progress_file,
+            "output_file": output_file,
+            "filename": f"weekly_report_{channel}_{date}.docx",
+            "last_progress": None,
+            "dedup_key": dedup_key,
+        }
+        _report_active[dedup_key] = task_id
+
+        asyncio.create_task(_weekly_report_bg(task_id))
+        return {"success": True, "task_id": task_id}
+
+    except Exception as e:
+        logging.error(f"❌ 주간 리포트 시작 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/weeklyReport/status/{task_id}")
+async def get_weekly_report_status(task_id: str):
+    """주간 리포트 진행상태 조회 (폴링용)."""
+    task = _report_tasks.get(task_id)
+    if not task:
+        return {"success": False, "message": "Task not found"}
+
+    progress = _read_progress_file(task.get("progress_file")) or task.get("last_progress")
+    return {
+        "success": True,
+        "status": task["status"],   # running | completed | failed
+        "error": task["error"],
+        "channel": task["channel"],
+        "date": task["date"],
+        "progress": progress,
+    }
+
+
+@router.get("/weeklyReport/download/{task_id}")
+async def download_weekly_report_file(task_id: str):
+    """완료된 주간 리포트 docx 다운로드. 다운로드 후 작업 파일 정리."""
+    task = _report_tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task["status"] == "failed":
+        raise HTTPException(status_code=500, detail=task.get("error") or "Generation failed")
+    if task["status"] != "completed":
+        raise HTTPException(status_code=425, detail=f"Task not completed (status={task['status']})")
+
+    output_file: Path = task["output_file"]
+    if not output_file.exists():
+        raise HTTPException(status_code=410, detail="Output file expired or missing")
+
+    filename = task["filename"]
+
+    def cleanup():
+        try:
+            if output_file.exists():
+                output_file.unlink()
+        except Exception as e:
+            logging.warning(f"[weeklyReport] download cleanup error: {e}")
+        _report_tasks.pop(task_id, None)
+
+    return FileResponse(
+        path=str(output_file),
+        filename=filename,
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        background=BackgroundTask(cleanup),
+    )

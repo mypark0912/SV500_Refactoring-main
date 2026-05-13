@@ -7,6 +7,7 @@ import Meter from './partials/modeview/meter/Meter.vue'
 import PowerQ from './partials/modeview/power/PowerQ2.vue'
 import Diagnosis from './pages/main/Diagnosis_NewCSS.vue'
 import Report2 from './pages/main/ReportNew2.vue'
+import Report3 from './pages/main/ReportNew3.vue'
 import Event from './pages/main/Event.vue'
 import Setting from './pages/main/SettingNew.vue'
 import Signin from './pages/main/Signin.vue'
@@ -77,10 +78,16 @@ const router = createRouter({
     },
     {
       path: '/report/:channel',
-      component: Report2,
+      component: Report3,
       name : 'Report',
       props: true  // 🔹 params를 props로 자동 전달
     },
+    // {
+    //   path: '/report3/:channel',
+    //   component: Report3,
+    //   name : 'Report3',
+    //   props: true  // 🔹 ReportNew3 — 비동기 워드 리포트 (별도 프로세스)
+    // },
     {
       path: '/trend/:channel',
       component: Trend,

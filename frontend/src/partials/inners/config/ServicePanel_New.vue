@@ -486,6 +486,32 @@
 
           <!-- ========== DiagnosisTrend Tab ========== -->
           <template v-else-if="parquetTab === 'trend'">
+            <!-- 첫번째 행: 채널 + 기간 선택 -->
+            <div class="flex items-center gap-4 mb-3">
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">Channel:</label>
+                <select
+                  v-model="collectChannel"
+                  :disabled="collectState.status === 'running'"
+                  class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[110px] disabled:opacity-50"
+                >
+                  <option value="Main">Main</option>
+                  <option value="Sub">Sub</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">Period:</label>
+                <select
+                  v-model.number="collectDays"
+                  :disabled="collectState.status === 'running'"
+                  class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[130px] disabled:opacity-50"
+                >
+                  <option :value="7">Last week</option>
+                  <option :value="14">1 week ago</option>
+                  <option :value="28">3 weeks ago</option>
+                </select>
+              </div>
+            </div>
             <div class="flex items-center justify-between gap-3 mb-4">
               <div class="flex-1 text-sm min-h-[1.5rem]">
                 <div v-if="collectState.status === 'running'" class="text-indigo-600 dark:text-indigo-400">
@@ -510,7 +536,7 @@
                   Press "Collect Data" to build the training dataset.
                 </span>
               </div>
-              <div class="flex gap-2 shrink-0">
+              <div class="flex gap-2 shrink-0 items-center">
                 <button
                   class="btn-sm bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 flex items-center disabled:opacity-50"
                   @click="startTrendCollect"
@@ -679,6 +705,8 @@ export default {
       error: null,
       progress: null,   // { phase, channel, channel_index, total_channels, day, total_days, date }
     });
+    const collectChannel = ref('Main');   // 'Main' | 'Sub'
+    const collectDays = ref(7);           // 7=Last week, 14=1 week ago, 28=3 weeks ago
     const trainDownloading = ref(false);
     let collectElapsedTimer = null;
     let collectPollTimer = null;
@@ -883,13 +911,12 @@ export default {
       if (!p) return '';
       if (p.phase === 'starting') return 'Initializing...';
       if (p.phase === 'done') return `Done (${p.success_count}/${p.total_channels} channels)`;
+      // running 단계 — 1일 1파일 모드 기준: day = day_done, total_days = N, date = YYYYMMDD
       const ch = p.channel || '-';
-      const ci = p.channel_index || 0;
-      const tc = p.total_channels || 0;
       const day = p.day || 0;
-      const td = p.total_days || 0;
+      const total = p.total_days || 0;
       const date = p.date ? ` [${p.date}]` : '';
-      return `${ch} (${ci}/${tc}) — day ${day}/${td}${date}`;
+      return `${ch} — day ${day}/${total}${date}`;
     };
 
     const stopCollectTimers = () => {
@@ -922,7 +949,9 @@ export default {
     const startTrendCollect = async () => {
       if (collectState.value.status === 'running') return;
       try {
-        const res = await axios.post('/config/getTrain/start');
+        const res = await axios.post(
+          `/config/getTrain/start/${collectChannel.value}/${collectDays.value}`
+        );
         if (!res.data.success) {
           collectState.value = {
             status: 'failed', taskId: null, startedAt: 0, elapsedSec: 0,
@@ -961,9 +990,10 @@ export default {
       if (trainDownloading.value) return;
       try {
         trainDownloading.value = true;
-        const response = await axios.get('/config/getTrain/download', {
-          responseType: 'blob',
-        });
+        const response = await axios.get(
+          `/config/getTrain/download/${collectChannel.value}/${collectDays.value}`,
+          { responseType: 'blob' }
+        );
         // 서버가 에러 JSON을 blob으로 줄 수 있음 — 감지해서 알림
         const contentType = response.headers['content-type'] || '';
         if (contentType.includes('application/json')) {
@@ -1149,6 +1179,7 @@ export default {
       parquetLoading,
       parquetDownloading,
       collectState,
+      collectChannel,
       trainDownloading,
       showMessage,
       openLogModal,

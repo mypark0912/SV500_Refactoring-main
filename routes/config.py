@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
 from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersionNew, check_get_logdb, service_exists, updateLog
-from datetime import datetime
+from datetime import datetime, timedelta
 router = APIRouter()
 
 # Path 객체 절대경로
@@ -605,8 +605,8 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
 _train_tasks: Dict[str, dict] = {}
 _train_running = False
 
-TRAIN_DIR = Path("/usr/local/sv500/train")
-TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")  # 디스크 경로 (/tmp 사용 금지)
+TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report 둘 다 여기로 저장됨
+TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")    # 디스크 경로 (/tmp 사용 금지)
 COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
 SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
 
@@ -639,13 +639,23 @@ async def _collect_train_bg(task_id: str):
     global _train_running
     task = _train_tasks[task_id]
     progress_file: Path = task["progress_file"]
+    channel = task.get("channel")        # 특정 채널만 수집
+    days = int(task.get("days") or 14)   # 수집 기간 (일)
     try:
         # collect_train.py에 진행파일 경로 전달
         sub_env = os.environ.copy()
         sub_env["TRAIN_PROGRESS_FILE"] = str(progress_file)
 
+        # 옛 모드 (chunk=15 빠른 추출) — thresholds 미동봉
+        cmd = [SHARED_PYTHON, COLLECT_TRAIN_PY, "--days", str(days)]
+        if channel:
+            cmd += ["--channel", channel]
+
+        logging.info(f"[getTrain] subprocess CMD: {' '.join(cmd)}  (channel={channel!r}, days={days})")
+
         returncode, stdout, stderr = await _run_cmd_async(
-            SHARED_PYTHON, COLLECT_TRAIN_PY, timeout=1800,  # 30분 여유
+            *cmd,
+            timeout=1800,  # 30분 여유
             env=sub_env,
         )
         if returncode != 0:
@@ -678,9 +688,14 @@ async def _collect_train_bg(task_id: str):
         _train_running = False
 
 
-@router.post('/getTrain/start')
-async def start_train_collect():
-    """학습 데이터 수집 시작 (백그라운드). 즉시 task_id 반환."""
+@router.post('/getTrain/start/{channel}/{days}')
+async def start_train_collect(channel: str, days: int):
+    """학습 데이터 수집 시작 (백그라운드). 즉시 task_id 반환.
+
+    Args:
+        channel: 수집할 채널 (path). 예: Main, Sub
+        days: 수집 기간 일수 (path). 예: 7(1주), 14(2주), 28(4주)
+    """
     global _train_running
     if _train_running:
         return {"success": False, "message": "Collection already in progress"}
@@ -694,11 +709,13 @@ async def start_train_collect():
         "error": None,
         "progress_file": progress_file,
         "last_progress": None,
+        "channel": channel,
+        "days": days,
     }
     _train_running = True
 
     asyncio.create_task(_collect_train_bg(task_id))
-    return {"success": True, "task_id": task_id}
+    return {"success": True, "task_id": task_id, "channel": channel, "days": days}
 
 
 @router.get('/getTrain/status/{task_id}')
@@ -718,29 +735,66 @@ async def get_train_status(task_id: str):
     }
 
 
-@router.get('/getTrain/download')
-async def download_train():
-    """이미 수집된 /usr/local/sv500/train 을 tar로 묶어 다운로드.
-    parquet은 snappy 내부 압축이라 gzip 생략 (CPU/메모리 절약).
-    저장/작업 경로는 모두 디스크(/usr/local/sv500/backup/train)에서만.
+@router.get('/getTrain/download/{channel}/{days}')
+async def download_train(channel: str, days: int):
+    """수집된 채널 디렉토리에서 해당 기간(1주치) 파일만 tar 로 묶어 다운로드.
+
+    Args:
+        channel: 채널명 (Main / Sub)
+        days: 수집 옵션과 동일 의미.
+              7=최근 1주, 14=1주 전 1주치, 28=3주 전 1주치
     """
-    if not TRAIN_DIR.exists() or not any(TRAIN_DIR.rglob("*.parquet")):
-        return {"success": False, "message": "생성된 학습 데이터 파일이 없습니다."}
+    channel_dir = TRAIN_DIR / channel
+    if not channel_dir.exists():
+        return {"success": False, "message": f"{channel} 채널 디렉토리 없음"}
+
+    # 수집 시 사용한 end_time / start 와 동일한 매핑
+    offset_end = max(0, days - 7)
+    end_time = datetime.now() - timedelta(days=offset_end)
+    end_date = end_time.date()
+    start_date = (end_time - timedelta(days=7)).date()
+    end_str = end_date.strftime("%Y%m%d")
+
+    # 모든 파일이 TRAIN_DIR/{channel}/ 안에 있음 (trend_training_*, diagnosis_report_* 모두)
+    rel_names: list[str] = []
+
+    # 1) trend_training (1일 1파일) — 1주치 7일 글로빙
+    cursor = start_date
+    while cursor <= end_date:
+        date_str = cursor.strftime("%Y%m%d")
+        for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
+            rel_names.append(f"{channel}/{f.name}")
+        cursor += timedelta(days=1)
+
+    # 2) diagnosis_report — end_time 시점
+    for f in channel_dir.glob(f"diagnosis_report_*_{end_str}.parquet"):
+        rel_names.append(f"{channel}/{f.name}")
+
+    if not rel_names:
+        return {
+            "success": False,
+            "message": (
+                f"{channel} 채널의 해당 기간 파일 없음 "
+                f"({start_date} ~ {end_date}). 먼저 수집을 실행하세요."
+            ),
+        }
 
     TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    tar_file = TRAIN_TAR_DIR / f"train_data_{timestamp}.tar"
+    tar_file = TRAIN_TAR_DIR / f"train_data_{channel}_{end_str}_{timestamp}.tar"
 
     try:
         returncode, stdout, stderr = await _run_cmd_async(
             'tar', '--ignore-failed-read', '-cf', str(tar_file),
-            '-C', str(TRAIN_DIR.parent), TRAIN_DIR.name,
+            '-C', str(TRAIN_DIR), *rel_names,
             timeout=120,
         )
         if returncode > 1:
             raise Exception(f"tar failed (rc={returncode}): {stderr.strip()}")
         if not tar_file.exists():
             raise Exception("tar file not created")
+
+        logging.info(f"[getTrain] tar 묶음: {len(rel_names)}개 파일 → {tar_file.name}")
     except asyncio.TimeoutError:
         if tar_file.exists():
             tar_file.unlink()
