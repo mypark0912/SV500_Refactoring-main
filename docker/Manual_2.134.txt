@@ -1,0 +1,19 @@
+v18.13.16-2
+
+- Project     : sv500-8
+- InfluxDB    : http://localhost:8094
+- Redis       : localhost:6387
+- Web         : http://localhost:4007
+- SmartSystems: http://localhost:5007
+- Data dir    : ./data8
+- Compose     : docker-compose.8.yml
+- Env file    : .env8
+
+=== Container Names ===
+- sv500-influxdb-8
+- sv500-redis-8
+- sv500-web-8
+
+sudo ./update_docker.sh --number 8
+
+sudo ./restore.sh /data/docker/sites/SNTC134_202605/Other_backup_2.134.tar.gz  /data/docker/sites/SNTC134_202605/transfer_2.134.tar.gz --number 8

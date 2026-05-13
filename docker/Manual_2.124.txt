@@ -1,0 +1,14 @@
+v20.10.13
+
+- Project     : sv500-10
+- InfluxDB    : http://localhost:8096
+- Redis       : localhost:6389
+- Web         : http://localhost:4009
+- SmartSystems: http://localhost:5009
+- Data dir    : ./data10
+- Compose     : docker-compose.10.yml
+- Env file    : .env10
+
+sudo ./update_docker.sh --number 10
+
+sudo ./restore_with_config.sh /data/docker/sites/SNTC124_202605/Other_backup_2.124.tar.gz  /data/docker/sites/SNTC124_202605/transfer_2.124.tar.gz --number 10
