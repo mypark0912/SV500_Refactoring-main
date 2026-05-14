@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from states.global_state import redis_state, aesState
+from states.global_state import redis_state, aesState, influx_state
 import os, csv, sqlite3, shutil, logging, tempfile
 import ujson as json
 import struct, subprocess
@@ -640,18 +640,17 @@ async def _collect_train_bg(task_id: str):
     task = _train_tasks[task_id]
     progress_file: Path = task["progress_file"]
     channel = task.get("channel")        # 특정 채널만 수집
-    days = int(task.get("days") or 14)   # 수집 기간 (일)
+    start = task.get("start")            # 시작일 YYYY-MM-DD (필수)
     try:
         # collect_train.py에 진행파일 경로 전달
         sub_env = os.environ.copy()
         sub_env["TRAIN_PROGRESS_FILE"] = str(progress_file)
 
-        # 옛 모드 (chunk=15 빠른 추출) — thresholds 미동봉
-        cmd = [SHARED_PYTHON, COLLECT_TRAIN_PY, "--days", str(days)]
+        cmd = [SHARED_PYTHON, COLLECT_TRAIN_PY, "--start", start]
         if channel:
             cmd += ["--channel", channel]
 
-        logging.info(f"[getTrain] subprocess CMD: {' '.join(cmd)}  (channel={channel!r}, days={days})")
+        logging.info(f"[getTrain] subprocess CMD: {' '.join(cmd)}  (channel={channel!r}, start={start!r})")
 
         returncode, stdout, stderr = await _run_cmd_async(
             *cmd,
@@ -688,17 +687,77 @@ async def _collect_train_bg(task_id: str):
         _train_running = False
 
 
-@router.post('/getTrain/start/{channel}/{days}')
-async def start_train_collect(channel: str, days: int):
-    """학습 데이터 수집 시작 (백그라운드). 즉시 task_id 반환.
+@router.get('/getTrain/range/{channel}')
+def get_train_range(channel: str):
+    """trend 데이터의 첫/마지막 레코드 날짜 (UI 시작일 선택용).
+
+    bucket="ntek", _measurement="trend" 전체에 대해 조회. (채널별 태그명이 .NET
+    서비스 의존이라 안전하게 bucket-wide 로 가져옴 — 시작일 선택 가이드 용도).
+    channel 인자는 추후 channel-level 필터 적용 시 사용 가능하도록 path 유지.
+    """
+    try:
+        query_api = influx_state.query_api
+        if query_api is None:
+            return {"success": False, "message": "InfluxDB 미연결"}
+
+        bucket = "ntek"
+        flux_first = f'''
+from(bucket: "{bucket}")
+  |> range(start: 0)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> keep(columns: ["_time"])
+  |> first(column: "_time")
+'''
+        flux_last = f'''
+from(bucket: "{bucket}")
+  |> range(start: 0)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> keep(columns: ["_time"])
+  |> last(column: "_time")
+'''
+        first_time = None
+        last_time = None
+        for table in query_api.query(flux_first):
+            for rec in table.records:
+                t = rec.get_time()
+                if first_time is None or t < first_time:
+                    first_time = t
+        for table in query_api.query(flux_last):
+            for rec in table.records:
+                t = rec.get_time()
+                if last_time is None or t > last_time:
+                    last_time = t
+
+        if not first_time or not last_time:
+            return {"success": False, "message": "trend 데이터 없음"}
+
+        return {
+            "success": True,
+            "channel": channel,
+            "first": first_time.astimezone().strftime("%Y-%m-%d"),
+            "last": last_time.astimezone().strftime("%Y-%m-%d"),
+        }
+    except Exception as e:
+        logging.error(f"[getTrain/range] influx query error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.post('/getTrain/start/{channel}/{start}')
+async def start_train_collect(channel: str, start: str):
+    """학습 데이터 수집 시작 (백그라운드). start 부터 7일치 수집. 즉시 task_id 반환.
 
     Args:
         channel: 수집할 채널 (path). 예: Main, Sub
-        days: 수집 기간 일수 (path). 예: 7(1주), 14(2주), 28(4주)
+        start:   시작일 YYYY-MM-DD (path). 그 날부터 7일치 수집.
     """
     global _train_running
     if _train_running:
         return {"success": False, "message": "Collection already in progress"}
+
+    try:
+        datetime.strptime(start, "%Y-%m-%d")
+    except ValueError:
+        return {"success": False, "message": f"start 형식 오류 (YYYY-MM-DD): {start}"}
 
     TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
     task_id = str(uuid.uuid4())
@@ -710,12 +769,12 @@ async def start_train_collect(channel: str, days: int):
         "progress_file": progress_file,
         "last_progress": None,
         "channel": channel,
-        "days": days,
+        "start": start,
     }
     _train_running = True
 
     asyncio.create_task(_collect_train_bg(task_id))
-    return {"success": True, "task_id": task_id, "channel": channel, "days": days}
+    return {"success": True, "task_id": task_id, "channel": channel, "start": start}
 
 
 @router.get('/getTrain/status/{task_id}')
@@ -735,38 +794,40 @@ async def get_train_status(task_id: str):
     }
 
 
-@router.get('/getTrain/download/{channel}/{days}')
-async def download_train(channel: str, days: int):
-    """수집된 채널 디렉토리에서 해당 기간(1주치) 파일만 tar 로 묶어 다운로드.
+@router.get('/getTrain/download/{channel}/{start}')
+async def download_train(channel: str, start: str):
+    """채널 디렉토리에서 start~start+7일 범위 파일만 tar 로 묶어 다운로드.
 
     Args:
         channel: 채널명 (Main / Sub)
-        days: 수집 옵션과 동일 의미.
-              7=최근 1주, 14=1주 전 1주치, 28=3주 전 1주치
+        start:   시작일 YYYY-MM-DD. 그 날부터 7일치 (수집 시와 동일 의미).
     """
     channel_dir = TRAIN_DIR / channel
     if not channel_dir.exists():
         return {"success": False, "message": f"{channel} 채널 디렉토리 없음"}
 
-    # 수집 시 사용한 end_time / start 와 동일한 매핑
-    offset_end = max(0, days - 7)
-    end_time = datetime.now() - timedelta(days=offset_end)
-    end_date = end_time.date()
-    start_date = (end_time - timedelta(days=7)).date()
-    end_str = end_date.strftime("%Y%m%d")
+    try:
+        start_date = datetime.strptime(start, "%Y-%m-%d").date()
+    except ValueError:
+        return {"success": False, "message": f"start 형식 오류 (YYYY-MM-DD): {start}"}
 
-    # 모든 파일이 TRAIN_DIR/{channel}/ 안에 있음 (trend_training_*, diagnosis_report_* 모두)
+    # collect_train.py: end_time = start_date + 7일
+    # trend_training 파일 이름은 window_end 기준 → start+1 ~ start+7
+    end_date = start_date + timedelta(days=7)
+    end_str = end_date.strftime("%Y%m%d")
+    start_str = start_date.strftime("%Y%m%d")
+
     rel_names: list[str] = []
 
-    # 1) trend_training (1일 1파일) — 1주치 7일 글로빙
-    cursor = start_date
+    # 1) trend_training (1일 1파일) — start+1 ~ start+7
+    cursor = start_date + timedelta(days=1)
     while cursor <= end_date:
         date_str = cursor.strftime("%Y%m%d")
         for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
             rel_names.append(f"{channel}/{f.name}")
         cursor += timedelta(days=1)
 
-    # 2) diagnosis_report — end_time 시점
+    # 2) diagnosis_report — end_time(start+7) 시점
     for f in channel_dir.glob(f"diagnosis_report_*_{end_str}.parquet"):
         rel_names.append(f"{channel}/{f.name}")
 
@@ -781,7 +842,7 @@ async def download_train(channel: str, days: int):
 
     TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    tar_file = TRAIN_TAR_DIR / f"train_data_{channel}_{end_str}_{timestamp}.tar"
+    tar_file = TRAIN_TAR_DIR / f"train_data_{channel}_{start_str}_to_{end_str}_{timestamp}.tar"
 
     try:
         returncode, stdout, stderr = await _run_cmd_async(

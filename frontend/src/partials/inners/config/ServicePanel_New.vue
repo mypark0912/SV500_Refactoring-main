@@ -486,12 +486,13 @@
 
           <!-- ========== DiagnosisTrend Tab ========== -->
           <template v-else-if="parquetTab === 'trend'">
-            <!-- 첫번째 행: 채널 + 기간 선택 -->
-            <div class="flex items-center gap-4 mb-3">
+            <!-- 첫번째 행: 채널 + 시작일 -->
+            <div class="flex items-center gap-4 mb-2 flex-wrap">
               <div class="flex items-center gap-2">
                 <label class="text-sm text-gray-600 dark:text-gray-400">Channel:</label>
                 <select
                   v-model="collectChannel"
+                  @change="fetchTrainRange"
                   :disabled="collectState.status === 'running'"
                   class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[110px] disabled:opacity-50"
                 >
@@ -500,17 +501,26 @@
                 </select>
               </div>
               <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600 dark:text-gray-400">Period:</label>
-                <select
-                  v-model.number="collectDays"
+                <label class="text-sm text-gray-600 dark:text-gray-400">Start:</label>
+                <input
+                  type="date"
+                  v-model="collectStart"
+                  :min="trainRange.first || undefined"
+                  :max="trainRange.last || undefined"
                   :disabled="collectState.status === 'running'"
-                  class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[130px] disabled:opacity-50"
-                >
-                  <option :value="7">Last week</option>
-                  <option :value="14">1 week ago</option>
-                  <option :value="28">3 weeks ago</option>
-                </select>
+                  class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[150px] disabled:opacity-50"
+                />
               </div>
+            </div>
+            <!-- DB 가용 범위 안내 -->
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              <span v-if="trainRangeLoading">Loading available range...</span>
+              <span v-else-if="trainRangeError" class="text-red-500">{{ trainRangeError }}</span>
+              <span v-else-if="trainRange.first && trainRange.last">
+                DB available: <span class="font-mono">{{ trainRange.first }}</span>
+                ~ <span class="font-mono">{{ trainRange.last }}</span>
+                · downloads 1 week from selected start
+              </span>
             </div>
             <div class="flex items-center justify-between gap-3 mb-4">
               <div class="flex-1 text-sm min-h-[1.5rem]">
@@ -706,7 +716,10 @@ export default {
       progress: null,   // { phase, channel, channel_index, total_channels, day, total_days, date }
     });
     const collectChannel = ref('Main');   // 'Main' | 'Sub'
-    const collectDays = ref(7);           // 7=Last week, 14=1 week ago, 28=3 weeks ago
+    const collectStart = ref('');         // YYYY-MM-DD (시작일, 그 날부터 7일치 수집)
+    const trainRange = ref({ first: '', last: '' });  // DB 가용 범위
+    const trainRangeLoading = ref(false);
+    const trainRangeError = ref('');
     const trainDownloading = ref(false);
     let collectElapsedTimer = null;
     let collectPollTimer = null;
@@ -946,11 +959,44 @@ export default {
       }
     };
 
+    const fetchTrainRange = async () => {
+      trainRangeLoading.value = true;
+      trainRangeError.value = '';
+      trainRange.value = { first: '', last: '' };
+      try {
+        const res = await axios.get(`/config/getTrain/range/${collectChannel.value}`);
+        if (res.data.success) {
+          trainRange.value = { first: res.data.first, last: res.data.last };
+          // 시작일이 비어있으면 가용 범위의 마지막에서 7일 전으로 기본 세팅
+          if (!collectStart.value && res.data.last) {
+            const last = new Date(res.data.last + 'T00:00:00');
+            last.setDate(last.getDate() - 7);
+            collectStart.value = last.toISOString().slice(0, 10);
+            // 범위 밖이면 first 로 보정
+            if (res.data.first && collectStart.value < res.data.first) {
+              collectStart.value = res.data.first;
+            }
+          }
+        } else {
+          trainRangeError.value = res.data.message || 'Range unavailable';
+        }
+      } catch (err) {
+        console.error('Train range fetch failed:', err);
+        trainRangeError.value = err.message || 'Range fetch failed';
+      } finally {
+        trainRangeLoading.value = false;
+      }
+    };
+
     const startTrendCollect = async () => {
       if (collectState.value.status === 'running') return;
+      if (!collectStart.value) {
+        alert('Start date를 먼저 선택하세요.');
+        return;
+      }
       try {
         const res = await axios.post(
-          `/config/getTrain/start/${collectChannel.value}/${collectDays.value}`
+          `/config/getTrain/start/${collectChannel.value}/${collectStart.value}`
         );
         if (!res.data.success) {
           collectState.value = {
@@ -988,10 +1034,14 @@ export default {
 
     const downloadTrainData = async () => {
       if (trainDownloading.value) return;
+      if (!collectStart.value) {
+        alert('Start date를 먼저 선택하세요.');
+        return;
+      }
       try {
         trainDownloading.value = true;
         const response = await axios.get(
-          `/config/getTrain/download/${collectChannel.value}/${collectDays.value}`,
+          `/config/getTrain/download/${collectChannel.value}/${collectStart.value}`,
           { responseType: 'blob' }
         );
         // 서버가 에러 JSON을 blob으로 줄 수 있음 — 감지해서 알림
@@ -1024,6 +1074,7 @@ export default {
     const switchParquetTab = (tab) => {
       parquetTab.value = tab;
       if (tab === 'report') fetchReportList();
+      if (tab === 'trend') fetchTrainRange();
     };
 
     const formatDate = (d) => {
@@ -1180,6 +1231,11 @@ export default {
       parquetDownloading,
       collectState,
       collectChannel,
+      collectStart,
+      trainRange,
+      trainRangeLoading,
+      trainRangeError,
+      fetchTrainRange,
       trainDownloading,
       showMessage,
       openLogModal,
