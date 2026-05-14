@@ -639,8 +639,9 @@ async def _collect_train_bg(task_id: str):
     global _train_running
     task = _train_tasks[task_id]
     progress_file: Path = task["progress_file"]
-    channel = task.get("channel")        # 특정 채널만 수집
-    start = task.get("start")            # 시작일 YYYY-MM-DD (필수)
+    channel = task.get("channel")                       # 특정 채널만 수집
+    start = task.get("start")                           # 시작일 YYYY-MM-DD (필수)
+    with_thresholds = bool(task.get("with_thresholds")) # 모드 선택
     try:
         # collect_train.py에 진행파일 경로 전달
         sub_env = os.environ.copy()
@@ -649,8 +650,13 @@ async def _collect_train_bg(task_id: str):
         cmd = [SHARED_PYTHON, COLLECT_TRAIN_PY, "--start", start]
         if channel:
             cmd += ["--channel", channel]
+        if with_thresholds:
+            cmd += ["--with-thresholds"]
 
-        logging.info(f"[getTrain] subprocess CMD: {' '.join(cmd)}  (channel={channel!r}, start={start!r})")
+        logging.info(
+            f"[getTrain] subprocess CMD: {' '.join(cmd)} "
+            f"(channel={channel!r}, start={start!r}, with_thresholds={with_thresholds})"
+        )
 
         returncode, stdout, stderr = await _run_cmd_async(
             *cmd,
@@ -743,12 +749,13 @@ from(bucket: "{bucket}")
 
 
 @router.post('/getTrain/start/{channel}/{start}')
-async def start_train_collect(channel: str, start: str):
+async def start_train_collect(channel: str, start: str, with_thresholds: bool = False):
     """학습 데이터 수집 시작 (백그라운드). start 부터 7일치 수집. 즉시 task_id 반환.
 
     Args:
-        channel: 수집할 채널 (path). 예: Main, Sub
-        start:   시작일 YYYY-MM-DD (path). 그 날부터 7일치 수집.
+        channel:         수집할 채널 (path). 예: Main, Sub
+        start:           시작일 YYYY-MM-DD (path). 그 날부터 7일치 수집.
+        with_thresholds: True 면 thresholds 동봉 + 1주1파일 모드, False(기본) 면 1일1파일.
     """
     global _train_running
     if _train_running:
@@ -770,11 +777,16 @@ async def start_train_collect(channel: str, start: str):
         "last_progress": None,
         "channel": channel,
         "start": start,
+        "with_thresholds": with_thresholds,
     }
     _train_running = True
 
     asyncio.create_task(_collect_train_bg(task_id))
-    return {"success": True, "task_id": task_id, "channel": channel, "start": start}
+    return {
+        "success": True, "task_id": task_id,
+        "channel": channel, "start": start,
+        "with_thresholds": with_thresholds,
+    }
 
 
 @router.get('/getTrain/status/{task_id}')
@@ -795,12 +807,13 @@ async def get_train_status(task_id: str):
 
 
 @router.get('/getTrain/download/{channel}/{start}')
-async def download_train(channel: str, start: str):
+async def download_train(channel: str, start: str, with_thresholds: bool = False):
     """채널 디렉토리에서 start~start+7일 범위 파일만 tar 로 묶어 다운로드.
 
     Args:
-        channel: 채널명 (Main / Sub)
-        start:   시작일 YYYY-MM-DD. 그 날부터 7일치 (수집 시와 동일 의미).
+        channel:         채널명 (Main / Sub)
+        start:           시작일 YYYY-MM-DD. 그 날부터 7일치 (수집 시와 동일 의미).
+        with_thresholds: True 면 1주1파일 thresholds 모드의 파일을 찾음. False(기본) 면 1일1파일.
     """
     channel_dir = TRAIN_DIR / channel
     if not channel_dir.exists():
@@ -812,22 +825,32 @@ async def download_train(channel: str, start: str):
         return {"success": False, "message": f"start 형식 오류 (YYYY-MM-DD): {start}"}
 
     # collect_train.py: end_time = start_date + 7일
-    # trend_training 파일 이름은 window_end 기준 → start+1 ~ start+7
     end_date = start_date + timedelta(days=7)
     end_str = end_date.strftime("%Y%m%d")
     start_str = start_date.strftime("%Y%m%d")
 
     rel_names: list[str] = []
 
-    # 1) trend_training (1일 1파일) — start+1 ~ start+7
-    cursor = start_date + timedelta(days=1)
-    while cursor <= end_date:
-        date_str = cursor.strftime("%Y%m%d")
-        for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
+    if with_thresholds:
+        # 1주 1파일: trend_training_<asset>_<startYMD>_<endYMD>.parquet
+        for f in channel_dir.glob(f"trend_training_*_{start_str}_{end_str}.parquet"):
             rel_names.append(f"{channel}/{f.name}")
-        cursor += timedelta(days=1)
+    else:
+        # 1일 1파일: 파일명은 window_end 기준 → start+1 ~ start+7
+        cursor = start_date + timedelta(days=1)
+        while cursor <= end_date:
+            date_str = cursor.strftime("%Y%m%d")
+            for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
+                # 1주1파일 형식과 글로브가 겹치지 않도록 — 파일명에 _ 가 더 있으면 스킵
+                # (trend_training_<asset>_<YMD>.parquet 만 매칭, _<YMD>_<YMD>.parquet 는 제외)
+                stem_tail = f.stem.split("_")[-2:]  # [<asset_or_date>, <YMD>]
+                if len(stem_tail) >= 2 and len(stem_tail[-2]) == 8 and stem_tail[-2].isdigit():
+                    # 끝에서 두번째가 YYYYMMDD → 1주1파일 형식 → 스킵
+                    continue
+                rel_names.append(f"{channel}/{f.name}")
+            cursor += timedelta(days=1)
 
-    # 2) diagnosis_report — end_time(start+7) 시점
+    # diagnosis_report — 두 모드 공통, end_time(start+7) 시점
     for f in channel_dir.glob(f"diagnosis_report_*_{end_str}.parquet"):
         rel_names.append(f"{channel}/{f.name}")
 

@@ -511,6 +511,17 @@
                   class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[150px] disabled:opacity-50"
                 />
               </div>
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 dark:text-gray-400">Mode:</label>
+                <select
+                  v-model="collectMode"
+                  :disabled="collectState.status === 'running'"
+                  class="text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-0.5 min-w-[180px] disabled:opacity-50"
+                >
+                  <option value="standard">Standard (1 day / file)</option>
+                  <option value="thresholds">With thresholds (1 week / file)</option>
+                </select>
+              </div>
             </div>
             <!-- DB 가용 범위 안내 -->
             <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
@@ -520,6 +531,9 @@
                 DB available: <span class="font-mono">{{ trainRange.first }}</span>
                 ~ <span class="font-mono">{{ trainRange.last }}</span>
                 · downloads 1 week from selected start
+                <span v-if="collectMode === 'thresholds'" class="text-indigo-500">
+                  · includes per-point thresholds (th_min2-4, th_max2-4)
+                </span>
               </span>
             </div>
             <div class="flex items-center justify-between gap-3 mb-4">
@@ -717,6 +731,7 @@ export default {
     });
     const collectChannel = ref('Main');   // 'Main' | 'Sub'
     const collectStart = ref('');         // YYYY-MM-DD (시작일, 그 날부터 7일치 수집)
+    const collectMode = ref('standard');  // 'standard' | 'thresholds'
     const trainRange = ref({ first: '', last: '' });  // DB 가용 범위
     const trainRangeLoading = ref(false);
     const trainRangeError = ref('');
@@ -995,8 +1010,11 @@ export default {
         return;
       }
       try {
+        const withThresholds = collectMode.value === 'thresholds';
         const res = await axios.post(
-          `/config/getTrain/start/${collectChannel.value}/${collectStart.value}`
+          `/config/getTrain/start/${collectChannel.value}/${collectStart.value}`,
+          null,
+          { params: { with_thresholds: withThresholds } }
         );
         if (!res.data.success) {
           collectState.value = {
@@ -1040,9 +1058,13 @@ export default {
       }
       try {
         trainDownloading.value = true;
+        const withThresholds = collectMode.value === 'thresholds';
         const response = await axios.get(
           `/config/getTrain/download/${collectChannel.value}/${collectStart.value}`,
-          { responseType: 'blob' }
+          {
+            responseType: 'blob',
+            params: { with_thresholds: withThresholds },
+          }
         );
         // 서버가 에러 JSON을 blob으로 줄 수 있음 — 감지해서 알림
         const contentType = response.headers['content-type'] || '';
@@ -1232,6 +1254,7 @@ export default {
       collectState,
       collectChannel,
       collectStart,
+      collectMode,
       trainRange,
       trainRangeLoading,
       trainRangeError,
