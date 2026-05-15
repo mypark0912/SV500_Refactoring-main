@@ -3771,12 +3771,8 @@ async def check_comm(asset):
 @router.get('/checkSmart')
 def check_smart():
     if safe_int(os_spec.mode) != 3:
-        if is_service_active("smartsystemsrestapiservice"):
-            return {"success": True}
-        else:
-            return {"success": False}
-    else:
-        return {"success": True}
+        return is_service_active("smartsystemsrestapiservice")
+    return True
 
 
 @router.get('/manageSmart/{mode}')
@@ -5024,8 +5020,10 @@ async def update_smartsystem(mode, request: Request):
             return {"success": False, "message": "Health check timed out after 60s"}
 
         except subprocess.CalledProcessError as e:
+            logging.error(f"Update failed: {e.stderr}")
             return {"success": False, "message": f"Update failed: {e.stderr}"}
         except Exception as e:
+            logging.error(f"Update failed: {str(e)}")
             return {"success": False, "message": str(e)}
 
 
