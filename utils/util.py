@@ -302,7 +302,7 @@ VERSION_PATH = '/home/root/versionInfo.txt'
 
 REDIS_TO_LOCAL = {
     "fw": "fw",
-    "A35": "a35",
+    "a35": "a35",
     "webserver": "web",
     "core": "core",
     "SmartSystems": "smartsystem",
