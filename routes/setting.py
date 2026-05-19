@@ -4391,6 +4391,7 @@ def _apply_mqtt_services(setup):
 def save_frpc_restart_monitor(
         interfaces=["end1"],
         restart_delay=5,
+        debounce=30,
         script_path="/usr/local/bin/frpc-restart-monitor.sh",
         service_path="/etc/systemd/system/frpc-restart-monitor.service"
 ):
@@ -4401,16 +4402,41 @@ def save_frpc_restart_monitor(
         interfaces_str = " ".join(interfaces)
         script_content = f'''#!/bin/bash
 INTERFACES="{interfaces_str}"
+DEBOUNCE={debounce}
+LAST_RESTART=0
 
-ip monitor link | while read line; do
+WAS_DOWN=1   # 부팅 직후 첫 UP 은 복구로 간주(초기 연결 보장)
+
+ip monitor link | while read -r line; do
     for iface in $INTERFACES; do
-        if echo "$line" | grep -q "$iface"; then
-            if echo "$line" | grep -q "state UP"; then
-                sleep {restart_delay}
-                sudo systemctl restart frpc
-                sudo systemctl restart mqClient
-            fi
+        echo "$line" | grep -q "$iface" || continue
+
+        # 다운 계열 이벤트: 다음 UP 을 '실제 복구'로 인식하기 위한 표시만
+        if echo "$line" | grep -qE "NO-CARRIER|state DOWN|LOWERLAYERDOWN"; then
+            WAS_DOWN=1
+            continue
         fi
+
+        # 여기부터는 UP 이벤트
+        echo "$line" | grep -q "state UP" || continue
+
+        # 실제 DOWN -> UP 복구가 아닌 단순 UP 재통지는 무시.
+        # (링크가 안 끊겼는데 오는 UP 이벤트로 frpc/SSH 를 죽이지 않음)
+        [ "$WAS_DOWN" = "1" ] || continue
+
+        now=$(date +%s)
+        # 디바운스: 짧은 시간 내 down/up 반복(flap)은 1회만 처리
+        if [ $((now - LAST_RESTART)) -lt $DEBOUNCE ]; then
+            WAS_DOWN=0
+            continue
+        fi
+        LAST_RESTART=$now
+        WAS_DOWN=0
+        sleep {restart_delay}
+        # 링크가 실제로 끊겼다 복구된 경우에만 재시작 → web 빠르게 복구.
+        # (이 시점엔 기존 frpc 연결/SSH 는 이미 끊겨 있으므로 추가 피해 없음)
+        sudo systemctl restart frpc
+        sudo systemctl restart mqClient
     done
 done
 '''
