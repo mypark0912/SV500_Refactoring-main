@@ -269,7 +269,9 @@ ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Restart=always
-User=root
+User=ntekadmin
+Group=root
+UMask=0007
 StandardOutput=journal
 StandardError=journal
 
@@ -337,17 +339,7 @@ chmod -R 770 /usr/local/sv500 2>/dev/null || true
 chmod -R 770 /home/root/webserver 2>/dev/null || true
 chmod -R 770 /home/root/core 2>/dev/null || true
 chmod -R 770 /home/root/mqClient 2>/dev/null || true
-
-# config 폴더 및 db/json/csv 파일에 그룹 쓰기 권한 부여
-# (기존 root 소유 파일을 ntekadmin 이 root 그룹 멤버로 쓸 수 있도록)
-# SQLite 가 .db-journal / .db-wal 파일 생성하려면 디렉토리 g+w 필수
-if [ -d /home/root/config ]; then
-    chmod 775 /home/root/config 2>/dev/null || true
-    find /home/root/config -maxdepth 1 -type f \
-        \( -name "*.db" -o -name "*.json" -o -name "*.csv" \) \
-        -exec chmod g+w {} \; 2>/dev/null || true
-    log_info "✅ Group write permission granted to /home/root/config (folder + db/json/csv)"
-fi
+chmod -R 770 /home/root/config 2>/dev/null || true
 
 # 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
 #  - *.network      : 비교용 read (쓰기는 sudo 경유)
@@ -356,7 +348,7 @@ fi
 # 664 = owner rw / group rw / other r
 chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
 chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
-log_info "✅ Permissions granted: /etc/systemd/network/*.network, /etc/systemd/timesyncd.conf"
+
 
 log_section "6. Reload systemd and Restart Services"
 
