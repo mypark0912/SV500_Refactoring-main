@@ -358,6 +358,17 @@ chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
 chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
 log_info "✅ Permissions granted: /etc/systemd/network/*.network, /etc/systemd/timesyncd.conf"
 
+# /usr/local/sv500/backup : core(root) 와 webserver(ntekadmin, root그룹) 가 공유하는 작업 디렉토리.
+# 존재 시 그룹 쓰기 + setgid 부여 → ntekadmin 이 report input/progress/docx 기록 가능.
+if [ -d /usr/local/sv500/backup ]; then
+    chgrp -R root /usr/local/sv500/backup 2>/dev/null || true
+    chmod -R g+w  /usr/local/sv500/backup 2>/dev/null || true
+    find /usr/local/sv500/backup -type d -exec chmod g+s {} \; 2>/dev/null || true
+    log_info "✅ Permissions granted: /usr/local/sv500/backup (group-writable + setgid)"
+else
+    log_info "ℹ️  /usr/local/sv500/backup not found (skip)"
+fi
+
 log_section "6. Reload systemd and Restart Services"
 
 sudo chmod +x /home/root/SV500/fw_cortex_m33.sh

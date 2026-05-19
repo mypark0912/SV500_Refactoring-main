@@ -1,0 +1,45 @@
+
+  RTC0 시간 직접 읽기
+  
+  # 가장 확실 (root 필요)
+  sudo hwclock -r --rtc /dev/rtc0
+  #  또는
+  sudo hwclock --show --verbose          # 드리프트/방식까지
+  
+  # hwclock 없거나 권한 막히면 — sysfs 로 직접
+  cat /sys/class/rtc/rtc0/date
+  cat /sys/class/rtc/rtc0/time
+  cat /sys/class/rtc/rtc0/since_epoch    # epoch 초
+
+  # 한 줄 요약 (시스템시간 vs RTC 동시에)
+  timedatectl
+  #  → "Local time", "Universal time", "RTC time" 세 줄을 같이 보여줌
+
+  장비 일괄 점검용 한 줄
+
+  각 장비에서 이거 하나면 판정됩니다:
+  
+  echo "SYS: $(date '+%F %T')  |  RTC0: $(sudo hwclock -r --rtc /dev/rtc0 2>/dev/null || cat /sys/class/rtc/rtc0/date /sys/class/rtc/rtc0/time)"
+  - RTC0가 2023-03-03 / 현재와 크게 어긋남 → 그 장비도 RTC 백업 죽음(동일 문제 보유).
+  - RTC0가 현재시각과 일치 → 그 장비는 정상(또는 최근 보정됨).
+  
+  보조 확인 (원인·하드 상태)
+  
+  ls -la /sys/class/rtc/                  # rtc0 외 다른 rtc 있는지
+  dmesg | grep -i -E "rtc|hctosys|rtc0"   # 부팅 시 RTC 읽기/배터리 경고
+  cat /proc/driver/rtc 2>/dev/null        # 일부 플랫폼 상세
+  cat /etc/adjtime                        # RTC가 UTC/LOCAL 어느 모드인지
+  last -x reboot | head ; uptime -s       # 재부팅 이력 (모터 사이클과 대조)
+  
+  "배터리 죽었나" 실전 판정
+  
+  1. sudo hwclock -r 로 RTC0 읽어 메모.
+  2. sudo hwclock -w (시스템→RTC 기록, 시스템시간이 맞을 때) 후 다시 -r.
+  3. 장비 전원 완전 차단 후 잠깐 뒤 재투입 → 부팅 직후 sudo hwclock -r.
+    - 다시 2023 / 엉뚱하면 → 백업 배터리(또는 충전회로) 사망 확정.
+    - 시간 유지되면 → 배터리는 살아있고 다른 원인(잦은 정전으로 미충전 등).
+  
+  ▎ 팁: hwclock -r 출력의 시각이 부팅 직후에도 2023-03-03 근처면 = RTC가 시간 못 붙드는 것 = 이 사고의 핵심. 정상 장비는 RTC0가 현재시각을 들고 있어야 합니다.
+  
+  장비별 date / RTC0 한 줄 결과를 모아오시면, 이 사고가 이 장비만인지 전 장비 공통인지 바로 가려집니다. 다녀오세요 — 결과 가져오시면 같이 판정하겠습니다.
+  
