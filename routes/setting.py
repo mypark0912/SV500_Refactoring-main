@@ -4349,7 +4349,10 @@ def _apply_mqtt_services(setup):
                     time.sleep(0.5)
                     sysService("start", "frpc-restart-monitor")
                 else:
+                    # LTE 토글 등 설정 변경을 toml에 반영 (없으면 SSH 프록시 블록이 안 생김)
+                    save_frpc_config(useLte, subdomain, name_prefix)
                     if is_service_enabled("frpc"):
+                        # 새 toml 적용 위해 active 여부와 무관하게 restart
                         if is_service_active("frpc"):
                             sysService("restart", "frpc")
                         else:
