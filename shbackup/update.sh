@@ -304,6 +304,24 @@ if [ "$MODE" = "lte" ]; then
         log_warn "firewall.service not found, skipping"
     fi
 
+    # frpc-restart-monitor.sh: 이미 설치된 장비만 갱신 (신규 생성은 안 함)
+    if [ -f /home/root/frpc-restart-monitor.sh ]; then
+        if [ -f /usr/local/bin/frpc-restart-monitor.sh ]; then
+            cp /home/root/frpc-restart-monitor.sh /usr/local/bin/frpc-restart-monitor.sh
+            chmod +x /usr/local/bin/frpc-restart-monitor.sh
+            log_info "frpc-restart-monitor.sh updated"
+            if systemctl is-active --quiet frpc-restart-monitor; then
+                sudo systemctl restart frpc-restart-monitor
+                sudo systemctl restart frpc 2>/dev/null || true
+            fi
+        else
+            log_warn "frpc-restart-monitor not installed on this device, skipping update"
+        fi
+        rm -f /home/root/frpc-restart-monitor.sh
+    else
+        log_warn "frpc-restart-monitor.sh not found, skipping"
+    fi
+
     sudo systemctl daemon-reload
     sudo systemctl enable firewall.service 2>/dev/null || true
     sudo systemctl start firewall.service 2>/dev/null || true
@@ -314,6 +332,7 @@ else
     rm -f /home/root/frp_0.66.0_linux_arm64.tar.gz
     rm -f /home/root/firewall.sh
     rm -f /home/root/firewall.service
+    rm -f /home/root/frpc-restart-monitor.sh
     log_info "✅ FRP & Firewall skipped (Local mode)"
 fi
 
