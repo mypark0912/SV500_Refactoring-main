@@ -1,0 +1,1038 @@
+from fastapi import APIRouter, UploadFile, File, Request
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
+from states.global_state import redis_state, aesState, influx_state
+import os, csv, sqlite3, shutil, logging, tempfile
+import ujson as json
+import struct, subprocess
+import asyncio
+import uuid
+from typing import Dict
+from pathlib import Path
+from pydantic import BaseModel
+from datetime import date
+from .api import get_Calibrate
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersionNew, check_get_logdb, service_exists, updateLog
+from datetime import datetime, timedelta
+router = APIRouter()
+
+# Path 객체 절대경로
+
+base_dir = Path(__file__).resolve().parent
+SETTING_FOLDER = base_dir.parent.parent / "config"  # ⬅️ 두 단계 상위로
+DB_PATH = os.path.join(SETTING_FOLDER, "maintenance.db")
+
+
+class CaliSet(BaseModel):
+    channel: str
+    type: str
+    cmd: str
+    cmdnum: str
+    ref1 : str
+    ref2 : str
+    param: str
+
+class CaliRef(BaseModel):
+    U: str
+    I: str
+    In: str
+    P: str
+    Error: str
+
+setting_file = os.path.join(SETTING_FOLDER, 'setup.json')
+backup_file = os.path.join(SETTING_FOLDER, 'setup_backup.json')
+
+class TimeSetRequest(BaseModel):
+    datetime_str: str  # "2024-10-24T15:30:00"
+    timezone: str = "Asia/Seoul"
+
+def parse_csv(file_path):
+    data = []
+    with open(file_path, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            data.append(row)
+    return data
+
+def parse_csv_filelike(file_obj):
+    data = []
+    file_obj.seek(0)  # 위치 초기화
+    reader = csv.DictReader(line.decode('utf-8') for line in file_obj)
+    for row in reader:
+        data.append(row)
+    return data
+
+@router.post('/upload')
+def upload_file(file: UploadFile = File(...)):
+    if file.filename == '':
+        print('No selected file')
+        return {'passOK': '0', 'error': 'No selected file'}
+    else:
+        try:
+            calibration_file_path = os.path.join(SETTING_FOLDER, file.filename)
+            with open(calibration_file_path, "wb") as f:
+                content = file.file.read()
+                f.write(content)
+            data = parse_csv_filelike(file.file)
+            redis_state.client.hset('calibration','setup', json.dumps(data))
+            return {'passOK': '1', 'data': data, 'file_path': file.filename}
+            # original_file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+            # if os.path.exists(original_file_path):
+            #     with open(original_file_path, "r", encoding="utf-8") as f:
+            #         setting = json.load(f)
+            #     if len(data) > 0:
+            #         for idx, ch in enumerate(setting["channel"]):
+            #             ctData = setting["channel"][idx]["ctInfo"]
+            #             for key, value in ctData:
+            #                 ctData[key] = data[key]
+            #             ptData = setting["channel"][idx]["ptInfo"]
+            #             for key, value in ptData:
+            #                 ptData[key] = data[key]
+            #     if setting:
+            #         with open(original_file_path, "w", encoding="utf-8") as f:
+            #             json.dump(setting, f, indent=4)
+            #         return {'passOK': '1', 'data': data, 'file_path':file.filename}
+            #     else:
+            #         return {'passOK': '0', 'error': 'Apply Failed'}
+            # else:
+            #     return {'passOK': '0', 'error': 'No exist setup file'}
+        except Exception as e:
+            return {'passOK': '0', 'error': str(e)}
+
+@router.get('/checkSetup')
+def check_setup():
+    mac = get_mac_address()
+    # redis_state.client.execute_command("SELECT", 0)
+    if redis_state.client.hexists('calibration','setup'):
+        data = redis_state.client.hget('calibration','setup')
+        datalist = json.loads(data)
+        return {'passOK': '1', 'data':datalist, 'mac': mac}
+    else:
+        return {'passOK': '0', 'error': 'No exist calibration setup', 'mac':mac}
+
+@router.get('/calibrate/getUnbal')
+def getUnbal():
+    file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+    default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
+    # redis_state.client.select(0)
+    if redis_state.client.hexists("System", "setup"):
+        # Redis에 있으면 Redis 데이터 사용
+        setting = json.loads(redis_state.client.hget("System", "setup"))
+    else:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+        except json.JSONDecodeError:
+            # setup.json이 손상된 경우 default.json으로 복구
+            shutil.copy(default_file_path, file_path)
+            with open(file_path, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+    return { 'unbal': setting['unbalance']}
+
+@router.get('/calibrateNow')
+def cali_mount():
+    mainResponse = get_Calibrate('Main')
+    subResponse = get_Calibrate('Sub')
+
+    return {'mainStatus': mainResponse['success'], 'mainData':mainResponse['retData']['meterData'], 'mainRef':mainResponse['retData']['refData'],
+            'subStatus': subResponse['success'], 'subData': subResponse['retData']['meterData'], 'subRef': subResponse['retData']['refData']}
+
+@router.get('/calibrate/applySetup')
+def cali_setup():
+    # redis_state.client.execute_command("SELECT", 0)
+    if redis_state.client.hexists('calibration','setup'):
+        shutil.copy(backup_file, setting_file)
+        data = redis_state.client.hget('calibration','setup')
+        datalist = json.loads(data)
+        redis_state.client.hset("System", "setup", json.dumps(datalist))
+        with open(SETTING_FOLDER, "w", encoding="utf-8") as f:
+            json.dump(datalist, f, indent=4)
+        redis_state.client.hset('service', 'cflag', 1)
+        redis_state.client.hset('Service', 'save', 1)
+        return {'passOK': '1'}
+    else:
+        return {'passOK': '0', 'error': 'No exist calibration setup'}
+
+@router.post('/calibrate/saveRef')
+def set_saveref(data:CaliRef):
+    try:
+        # redis_state.client.select(0)
+        refdata = {"U": int(data.U), "I": int(data.I), "In": int(data.In), "P": int(data.P), "Error": float(data.Error)}
+        redis_state.client.hset("calibration", "ref", json.dumps(refdata))
+        return {'passOK': '1'}
+    except Exception as e:
+        print(str(e))
+        return {'passOK': '0'}
+
+@router.get('/calibrate/start')
+def cali_start():
+    try:
+        # redis_state.client.select(0)
+        redis_state.client.hset('Service','calibration', 1)
+        return {'passOK': '1'}
+    except Exception as e:
+        return {'passOK': '0', 'error': str(e)}
+
+@router.get('/calibrate/end')
+def cali_end():
+    # redis_state.client.select(0)
+    redis_state.client.hset('Service', 'calibration', 0)
+    if redis_state.client.hexists('calibration', 'setup') and redis_state.client.hexists('calibration','cflag'):
+        if redis_state.client.hget('calibration', 'cflag') == 1:
+            endflag = True
+            redis_state.client.hset('calibration', 'cflag', 0)
+        else:
+            endflag = False
+    else:
+        endflag = False
+
+    if endflag:
+        try:
+            shutil.copy(setting_file, backup_file)
+            with open(setting_file, "r", encoding="utf-8") as f:
+                setting = json.load(f)
+                # redis_state.client.execute_command("SELECT", 0)
+                redis_state.client.hset("System", "setup", json.dumps(setting))
+            redis_state.client.hdel("calibration", "setup")
+            redis_state.client.hset("Service", "save", 1)
+            return {'passOK': '1'}
+        except Exception as e:
+            return {'passOK': '0', 'error': 'No exist setup file'}
+    else:
+        if redis_state.client.hexists("calibration","ref"):
+            redis_state.client.hdel("calibration","ref")
+        return {'passOK': '1'}
+
+@router.post('/calibrate/cmd')
+def set_cmd(data:CaliSet):
+    try:
+        if data.channel == 'Main':
+            mode = 0
+        elif data.channel == 'Sub':
+            mode = 1
+        else:
+            mode = 2
+        if data.type == 'SET':
+            if data.ref1 != 'None':
+                val1 = float(data.ref1)
+            else:
+                val1 = 0.0
+            if data.ref2 != 'None':
+                val2 = float(data.ref2)
+            else:
+                val2 = 0.0
+        else:
+            val1 = 0.0
+            val2 = 0.0
+        msg = {
+            'id':mode,
+            'cmd': data.cmdnum,
+            'ref1': val1,
+            'ref2': val2
+        }
+
+        # redis_state.client.select(0)
+        if redis_state.client.hexists("calibration","ref"):
+            refdict = json.loads(redis_state.client.hget("calibration", "ref"))
+            if data.param != 'None':
+                if "," in data.param:
+                    refdict["U"] = float(data.ref1)
+                    refdict["I"] = float(data.ref2)
+                else:
+                    refdict[data.param] = float(data.ref1)
+                redis_state.client.hset("calibration", "ref", json.dumps(refdict))
+
+        format_string = 'iiff'
+
+        # 바이너리 데이터 생성
+
+        redis_state.binary_client.select(0)
+        binary_data = struct.pack(format_string,
+                              int(msg['id']),      # 명시적 변환
+                              int(msg['cmd']),     # 명시적 변환
+                              float(msg['ref1']),  # 명시적 변환
+                              float(msg['ref2']))  # 명시적 변환
+
+        redis_state.binary_client.lpush('cali_command',binary_data)
+        if data.type == 'SAVE':
+            post= Post( title = 'Calibration',  context = 'Calibration',mtype = 3, utype='')
+            save_post(post, 0, 0)
+        return {'passOK': '1'}
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return {'passOK': '0'}
+
+@router.get("/calibrate/gettime")
+async def get_device_time():
+    """
+    현재 장비 시간 조회
+    """
+    try:
+        result = subprocess.run("date '+%Y/%m/%d %H:%M:%S'", shell=True, capture_output=True, text=True)
+        device_time = result.stdout.strip()
+        return {
+            "success": True,
+            "deviceTime": device_time
+        }
+    except Exception as e:
+        return {"success": False }
+
+@router.post("/calibrate/setSystemTime")
+async def set_system_time(data: TimeSetRequest, request: Request):
+    try:
+        # NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화
+        subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
+
+        r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", data.timezone],
+                              capture_output=True, text=True)
+        if r_tz.returncode != 0:
+            logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
+
+        r_date = subprocess.run(["sudo", "date", "-s", data.datetime_str],
+                                capture_output=True, text=True)
+        if r_date.returncode != 0:
+            logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
+            return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
+
+        r_hw = subprocess.run(["sudo", "hwclock", "--systohc", "-f", "/dev/rtc1"], capture_output=True, text=True)
+        if r_hw.returncode != 0:
+            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
+        current = subprocess.run("date", shell=True, capture_output=True, text=True)
+        updateLog("Set Time", request)
+        return {
+            "success": True,
+            "message": "System time updated",
+            "current_time": current.stdout.strip(),
+            "timezone": data.timezone
+        }
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return { "success": False }
+
+@router.post("/checktime")
+async def check_device_time(request: TimeSetRequest):
+    """
+    클라이언트 시간과 장비 시간 비교하여 상태 반환
+    """
+    try:
+        result = subprocess.run("date --iso-8601=seconds", shell=True, capture_output=True, text=True)
+        device_now = datetime.fromisoformat(result.stdout.strip()).replace(tzinfo=None)
+
+        # 클라이언트 시간 파싱 (YYYY-MM-DD HH:mm:ss 형식)
+        client_dt = datetime.strptime(request.datetime_str, '%Y-%m-%d %H:%M:%S')
+
+        # 시간 차이 계산
+        diff_seconds = abs((device_now - client_dt).total_seconds())
+        twenty_four_hours = 24 * 60 * 60  # 86400초
+        status = diff_seconds <= twenty_four_hours
+
+        return {
+            "success": True,
+            "deviceTime": device_now.isoformat(),
+            "status": status,  # True: 정상, False: 24시간 이상 차이
+            "diffSeconds": int(diff_seconds)
+        }
+    except Exception as e:
+        logging.error(f"Error checking time: {e}")
+        return {"success": False, "status": False}
+
+@router.post('/savePost/{mode}/{idx}')
+def save_maintanence(data: Post, mode: int, idx:int):
+    return save_post(data,mode, idx)
+
+@router.get('/getPost')
+def get_post():
+    """maintenance 테이블의 전체 데이터를 조회"""
+    try:
+        conn = get_db_connection()  # 이미 테이블 생성 보장됨
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM maintenance")
+        rows = cursor.fetchall()
+        conn.close()
+
+        if rows:
+            result = [dict(row) for row in rows]
+            return {"result": 1, "data": result}
+        else:
+            return {"result": 0}
+
+    except Exception as e:
+        print(f"GET_POST ERROR: {e}")
+        return {"result": 0, "msg": str(e)}
+
+
+@router.get('/getLastPost')
+async def get_last():
+    ret = get_lastpost()
+    if ret.get("result") == 1:
+        lastpost = ret.get("data", {})
+        version_dict = await getVersionNew()
+        updateList = []
+
+        key_map = {
+            'fw': 'f_version',
+            'a35': 'a_version',
+            'web': 'w_version',
+            'core': 'c_version',
+            'smartsystem': 'smart_version',
+            'mqClient': 'mq_version'
+        }
+
+        if version_dict:
+            for src_key, dst_key in key_map.items():
+                last_val = lastpost.get(dst_key)
+                ver_val = version_dict.get(src_key)
+                if ver_val and last_val != ver_val:
+                    lastpost[dst_key] = ver_val
+                    updateList.append(src_key)
+
+            if updateList:
+                result = ",".join(updateList)
+                update = Post(
+                    title='Update SW',
+                    context='Update SW',
+                    mtype=1,
+                    utype=result,
+                    f_version=lastpost.get('f_version'),
+                    a_version=lastpost.get('a_version'),
+                    w_version=lastpost.get('w_version'),
+                    c_version=lastpost.get('c_version'),
+                    smart_version=lastpost.get('smart_version'),
+                    mq_version=lastpost.get('mq_version', ''),
+                    build_version=lastpost.get('build_version', '')
+                )
+                return {"result": 1, "data": update.dict(), "update":updateList}
+
+    return ret
+
+
+@router.get('/getReleaseNotes')
+def get_release_notes():
+    """release_notes 폴더의 .md 파일 목록 반환"""
+    try:
+        notes_dir = base_dir.parent / "release_notes/ko"
+        if not notes_dir.exists():
+            return {"success": False, "data": []}
+        files = sorted(
+            [f.stem for f in notes_dir.glob("*.md")],
+            reverse=True
+        )
+        return {"success": True, "data": files}
+    except Exception as e:
+        logging.error(f"getReleaseNotes error: {e}")
+        return {"success": False, "data": []}
+
+@router.get('/getReleaseNote/{lang}/{version}')
+def get_release_note(lang:str, version: str):
+    """특정 버전의 릴리즈노트 .md 파일 내용 반환"""
+    try:
+        notes_dir = base_dir.parent / "release_notes" / lang
+        file_path = notes_dir / f"{version}.md"
+        if not file_path.exists():
+            return {"success": False, "content": "", "message": "File not found"}
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return {"success": True, "content": content}
+    except Exception as e:
+        logging.error(f"getReleaseNote error: {e}")
+        return {"success": False, "content": "", "message": str(e)}
+
+@router.get('/deletePost/{idx}')
+def delete_post(idx):
+    try:
+        db_exists = os.path.exists(DB_PATH)
+        if db_exists:
+            conn = get_db_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("delete FROM maintenance where id=?",(idx,))
+            conn.commit()
+            conn.close()
+            return {"result": 1}
+        else:
+            return {"result": 0}
+    except Exception as e:
+        print(str(e))
+        return {"result": 0}
+
+@router.get('/getLog')
+def get_log(page: int = 1, page_size: int = 10):
+    """log 테이블의 데이터를 페이징하여 조회 (최신순)"""
+    try:
+        conn = check_get_logdb()
+        cursor = conn.cursor()
+
+        # 전체 개수
+        cursor.execute("SELECT COUNT(*) as total FROM log")
+        total = cursor.fetchone()['total']
+
+        # 페이징
+        offset = (page - 1) * page_size
+        cursor.execute(
+            "SELECT id, datetime(logdate, 'localtime') as logdate, account, userRole, action FROM log ORDER BY id DESC LIMIT ? OFFSET ?",
+            (page_size, offset)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        return {
+            "result": 1 if rows else 0,
+            "data": [dict(row) for row in rows] if rows else [],
+            "total": total,
+            "page": page,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+
+    except Exception as e:
+        print(f"GET_POST ERROR: {e}")
+        return {"result": 0, "msg": str(e)}
+
+
+@router.delete('/deleteLog')
+def delete_all_logs():
+    """log 테이블의 모든 데이터 삭제"""
+    try:
+        conn = check_get_logdb()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM log")
+        conn.commit()
+        conn.close()
+        return {"result": 1, "message": "All logs deleted"}
+    except Exception as e:
+        print(f"DELETE_LOG ERROR: {e}")
+        return {"result": 0, "msg": str(e)}
+
+
+@router.get('/applog/recent/{item}')
+def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
+    LOG_PATH = {
+        "SmartSystems": "/usr/local/smartsystems/log",
+        "Core": "/usr/local/sv500/logs/core",
+        "WebServer": "/usr/local/sv500/logs/web",
+        "A35": "/usr/local/sv500/logs/a35",
+    }
+
+    JOURNAL_SERVICES = {
+        "frpc": "frpc",
+        "mqClient": "mqClient",
+    }
+
+    try:
+        # Journal 로그 처리
+        if item in JOURNAL_SERVICES:
+            service_name = JOURNAL_SERVICES[item]
+
+            # 서비스 존재 여부 확인
+            if not service_exists(f"{service_name}.service"):
+                return {"success": False, "message": f"{item} 서비스가 설치되지 않음"}
+
+            result = subprocess.run(
+                ['journalctl', '-u', service_name, '-n', str(lines), '--no-pager', '-o', 'short'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            log_lines = result.stdout.strip().split('\n') if result.stdout.strip() else []
+            # "-- No entries --" 등 제거
+            log_lines = [l for l in log_lines if l and not l.startswith('--')]
+
+            if not log_lines:
+                return {"success": False, "message": "로그 없음"}
+
+            return {
+                "success": True,
+                "source": "journal",
+                "service": service_name,
+                "lines": log_lines,
+                "count": len(log_lines)
+            }
+
+        # 파일 기반 로그 처리
+        if item not in LOG_PATH:
+            return {"success": False, "message": "잘못된 항목"}
+
+        if not os.path.exists(LOG_PATH[item]):
+            return {"success": False, "message": "로그 디렉토리 없음"}
+
+        # 크기가 0보다 큰 로그 파일만 필터링
+        log_files = [
+            f for f in os.listdir(LOG_PATH[item])
+            if f.endswith('.log') and os.path.getsize(os.path.join(LOG_PATH[item], f)) > 0
+        ]
+
+        # SmartSystems: 로그 타입별 필터링
+        if item == "SmartSystems" and log_type != "all":
+            if log_type == "ss":
+                log_files = [f for f in log_files if f.startswith('SS')]
+            elif log_type == "api":
+                log_files = [f for f in log_files if f.startswith('RestAPI')]
+
+        if not log_files:
+            return {"success": False, "message": "로그 파일 없음"}
+
+        # 수정 시간 기준 최신 파일
+        latest_file = max(
+            log_files,
+            key=lambda f: os.path.getmtime(os.path.join(LOG_PATH[item], f))
+        )
+
+        file_path = os.path.join(LOG_PATH[item], latest_file)
+
+        # 최근 N줄 읽기 (tail)
+        result = subprocess.run(
+            ['tail', '-n', str(lines), file_path],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        log_lines = result.stdout.strip().split('\n') if result.stdout else []
+
+        return {
+            "success": True,
+            "source": "file",
+            "file": latest_file,
+            "lines": log_lines,
+            "count": len(log_lines)
+        }
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+# ── 학습 데이터 수집 태스크 관리 ──
+_train_tasks: Dict[str, dict] = {}
+_train_running = False
+
+TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report 둘 다 여기로 저장됨
+TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")    # 디스크 경로 (/tmp 사용 금지)
+COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
+SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
+
+
+async def _run_cmd_async(*args, timeout=600, env=None):
+    """비동기 subprocess 실행 헬퍼 (이벤트 루프 논블로킹)"""
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env,
+    )
+    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    return proc.returncode, stdout.decode(errors='replace'), stderr.decode(errors='replace')
+
+
+def _read_progress_file(progress_file: Path):
+    """진행파일을 읽어 dict 반환. 없거나 손상 시 None."""
+    if not progress_file or not progress_file.exists():
+        return None
+    try:
+        with open(progress_file, "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+async def _collect_train_bg(task_id: str):
+    """collect_train.py 실행을 백그라운드에서 감싸는 태스크"""
+    global _train_running
+    task = _train_tasks[task_id]
+    progress_file: Path = task["progress_file"]
+    channel = task.get("channel")                       # 특정 채널만 수집
+    start = task.get("start")                           # 시작일 YYYY-MM-DD (필수)
+    with_thresholds = bool(task.get("with_thresholds")) # 모드 선택
+    try:
+        # collect_train.py에 진행파일 경로 전달
+        sub_env = os.environ.copy()
+        sub_env["TRAIN_PROGRESS_FILE"] = str(progress_file)
+
+        cmd = [SHARED_PYTHON, COLLECT_TRAIN_PY, "--start", start]
+        if channel:
+            cmd += ["--channel", channel]
+        if with_thresholds:
+            cmd += ["--with-thresholds"]
+
+        logging.info(
+            f"[getTrain] subprocess CMD: {' '.join(cmd)} "
+            f"(channel={channel!r}, start={start!r}, with_thresholds={with_thresholds})"
+        )
+
+        returncode, stdout, stderr = await _run_cmd_async(
+            *cmd,
+            timeout=1800,  # 30분 여유
+            env=sub_env,
+        )
+        if returncode != 0:
+            raise Exception(stderr.strip() or f"collect_train.py exit={returncode}")
+
+        if stdout:
+            logging.info(f"[getTrain] stdout: {stdout.strip()}")
+        if stderr:
+            logging.info(f"[getTrain] stderr: {stderr.strip()}")
+
+        task["status"] = "completed"
+    except asyncio.TimeoutError:
+        logging.error("[getTrain] collect_train.py timeout (1800s)")
+        task["status"] = "failed"
+        task["error"] = "Collection timeout"
+    except Exception as e:
+        logging.error(f"[getTrain] collect failed: {e}")
+        task["status"] = "failed"
+        task["error"] = str(e)
+    finally:
+        # 마지막 진행상태 캡처 후 파일 정리
+        last = _read_progress_file(progress_file)
+        if last is not None:
+            task["last_progress"] = last
+        try:
+            if progress_file.exists():
+                progress_file.unlink()
+        except Exception as e:
+            logging.error(f"[getTrain] progress cleanup error: {e}")
+        _train_running = False
+
+
+@router.get('/getTrain/range/{channel}')
+def get_train_range(channel: str):
+    """trend 데이터의 첫/마지막 레코드 날짜 (UI 시작일 선택용).
+
+    bucket="ntek", _measurement="trend" 전체에 대해 조회. (채널별 태그명이 .NET
+    서비스 의존이라 안전하게 bucket-wide 로 가져옴 — 시작일 선택 가이드 용도).
+    channel 인자는 추후 channel-level 필터 적용 시 사용 가능하도록 path 유지.
+    """
+    try:
+        query_api = influx_state.query_api
+        if query_api is None:
+            return {"success": False, "message": "InfluxDB 미연결"}
+
+        bucket = "ntek"
+        flux_first = f'''
+from(bucket: "{bucket}")
+  |> range(start: 0)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> keep(columns: ["_time"])
+  |> first(column: "_time")
+'''
+        flux_last = f'''
+from(bucket: "{bucket}")
+  |> range(start: 0)
+  |> filter(fn: (r) => r["_measurement"] == "trend")
+  |> keep(columns: ["_time"])
+  |> last(column: "_time")
+'''
+        first_time = None
+        last_time = None
+        for table in query_api.query(flux_first):
+            for rec in table.records:
+                t = rec.get_time()
+                if first_time is None or t < first_time:
+                    first_time = t
+        for table in query_api.query(flux_last):
+            for rec in table.records:
+                t = rec.get_time()
+                if last_time is None or t > last_time:
+                    last_time = t
+
+        if not first_time or not last_time:
+            return {"success": False, "message": "trend 데이터 없음"}
+
+        return {
+            "success": True,
+            "channel": channel,
+            "first": first_time.astimezone().strftime("%Y-%m-%d"),
+            "last": last_time.astimezone().strftime("%Y-%m-%d"),
+        }
+    except Exception as e:
+        logging.error(f"[getTrain/range] influx query error: {e}")
+        return {"success": False, "message": str(e)}
+
+
+@router.post('/getTrain/start/{channel}/{start}')
+async def start_train_collect(channel: str, start: str, with_thresholds: bool = False):
+    """학습 데이터 수집 시작 (백그라운드). start 부터 7일치 수집. 즉시 task_id 반환.
+
+    Args:
+        channel:         수집할 채널 (path). 예: Main, Sub
+        start:           시작일 YYYY-MM-DD (path). 그 날부터 7일치 수집.
+        with_thresholds: True 면 thresholds 동봉 + 1주1파일 모드, False(기본) 면 1일1파일.
+    """
+    global _train_running
+    if _train_running:
+        return {"success": False, "message": "Collection already in progress"}
+
+    try:
+        datetime.strptime(start, "%Y-%m-%d")
+    except ValueError:
+        return {"success": False, "message": f"start 형식 오류 (YYYY-MM-DD): {start}"}
+
+    TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
+    task_id = str(uuid.uuid4())
+    progress_file = TRAIN_TAR_DIR / f"progress_{task_id}.json"
+
+    _train_tasks[task_id] = {
+        "status": "running",
+        "error": None,
+        "progress_file": progress_file,
+        "last_progress": None,
+        "channel": channel,
+        "start": start,
+        "with_thresholds": with_thresholds,
+    }
+    _train_running = True
+
+    asyncio.create_task(_collect_train_bg(task_id))
+    return {
+        "success": True, "task_id": task_id,
+        "channel": channel, "start": start,
+        "with_thresholds": with_thresholds,
+    }
+
+
+@router.get('/getTrain/status/{task_id}')
+async def get_train_status(task_id: str):
+    task = _train_tasks.get(task_id)
+    if not task:
+        return {"success": False, "message": "Task not found"}
+
+    # 진행파일 우선, 없으면 최종 캡처 사용
+    progress = _read_progress_file(task.get("progress_file")) or task.get("last_progress")
+
+    return {
+        "success": True,
+        "status": task["status"],   # running | completed | failed
+        "error": task["error"],
+        "progress": progress,       # {phase, channel, channel_index, total_channels, day, total_days, date}
+    }
+
+
+@router.get('/getTrain/download/{channel}/{start}')
+async def download_train(channel: str, start: str, with_thresholds: bool = False):
+    """채널 디렉토리에서 start~start+7일 범위 파일만 tar 로 묶어 다운로드.
+
+    Args:
+        channel:         채널명 (Main / Sub)
+        start:           시작일 YYYY-MM-DD. 그 날부터 7일치 (수집 시와 동일 의미).
+        with_thresholds: True 면 1주1파일 thresholds 모드의 파일을 찾음. False(기본) 면 1일1파일.
+    """
+    channel_dir = TRAIN_DIR / channel
+    if not channel_dir.exists():
+        return {"success": False, "message": f"{channel} 채널 디렉토리 없음"}
+
+    try:
+        start_date = datetime.strptime(start, "%Y-%m-%d").date()
+    except ValueError:
+        return {"success": False, "message": f"start 형식 오류 (YYYY-MM-DD): {start}"}
+
+    # collect_train.py: end_time = start_date + 7일
+    end_date = start_date + timedelta(days=7)
+    end_str = end_date.strftime("%Y%m%d")
+    start_str = start_date.strftime("%Y%m%d")
+
+    rel_names: list[str] = []
+
+    if with_thresholds:
+        # 1주 1파일: trend_training_<asset>_<startYMD>_<endYMD>.parquet
+        for f in channel_dir.glob(f"trend_training_*_{start_str}_{end_str}.parquet"):
+            rel_names.append(f"{channel}/{f.name}")
+    else:
+        # 1일 1파일: 파일명은 window_end 기준 → start+1 ~ start+7
+        cursor = start_date + timedelta(days=1)
+        while cursor <= end_date:
+            date_str = cursor.strftime("%Y%m%d")
+            for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
+                # 1주1파일 형식과 글로브가 겹치지 않도록 — 파일명에 _ 가 더 있으면 스킵
+                # (trend_training_<asset>_<YMD>.parquet 만 매칭, _<YMD>_<YMD>.parquet 는 제외)
+                stem_tail = f.stem.split("_")[-2:]  # [<asset_or_date>, <YMD>]
+                if len(stem_tail) >= 2 and len(stem_tail[-2]) == 8 and stem_tail[-2].isdigit():
+                    # 끝에서 두번째가 YYYYMMDD → 1주1파일 형식 → 스킵
+                    continue
+                rel_names.append(f"{channel}/{f.name}")
+            cursor += timedelta(days=1)
+
+    # diagnosis_report — 두 모드 공통, end_time(start+7) 시점
+    for f in channel_dir.glob(f"diagnosis_report_*_{end_str}.parquet"):
+        rel_names.append(f"{channel}/{f.name}")
+
+    if not rel_names:
+        return {
+            "success": False,
+            "message": (
+                f"{channel} 채널의 해당 기간 파일 없음 "
+                f"({start_date} ~ {end_date}). 먼저 수집을 실행하세요."
+            ),
+        }
+
+    TRAIN_TAR_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    tar_file = TRAIN_TAR_DIR / f"train_data_{channel}_{start_str}_to_{end_str}_{timestamp}.tar"
+
+    try:
+        returncode, stdout, stderr = await _run_cmd_async(
+            'tar', '--ignore-failed-read', '-cf', str(tar_file),
+            '-C', str(TRAIN_DIR), *rel_names,
+            timeout=120,
+        )
+        if returncode > 1:
+            raise Exception(f"tar failed (rc={returncode}): {stderr.strip()}")
+        if not tar_file.exists():
+            raise Exception("tar file not created")
+
+        logging.info(f"[getTrain] tar 묶음: {len(rel_names)}개 파일 → {tar_file.name}")
+    except asyncio.TimeoutError:
+        if tar_file.exists():
+            tar_file.unlink()
+        return {"success": False, "message": "tar 타임아웃 (120초 초과)"}
+    except Exception as e:
+        logging.error(f"[getTrain] tar error: {e}")
+        if tar_file.exists():
+            tar_file.unlink()
+        return {"success": False, "message": str(e)}
+
+    def cleanup():
+        try:
+            if tar_file.exists():
+                tar_file.unlink()
+        except Exception as e:
+            logging.error(f"[getTrain] cleanup error: {e}")
+
+    return FileResponse(
+        path=str(tar_file),
+        filename=tar_file.name,
+        media_type='application/x-tar',
+        background=BackgroundTask(cleanup),
+    )
+
+
+@router.post('/backup/restore/influxdb')
+async def restore_influxdb(file: UploadFile = File(...)):
+    """백업된 InfluxDB tar.gz 파일을 업로드하여 복원"""
+    BACKUP_DIR = '/usr/local/sv500/backup/influxdb'
+    temp_dir = None
+    try:
+        if not file.filename.endswith('.tar.gz'):
+            return {"success": False, "message": "tar.gz 파일만 업로드 가능합니다."}
+
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        temp_dir = tempfile.mkdtemp(dir=BACKUP_DIR)
+
+        # 업로드된 파일 저장
+        tar_file = os.path.join(temp_dir, file.filename)
+        with open(tar_file, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        # tar.gz 압축 해제
+        subprocess.run(
+            ['tar', '-xzf', tar_file, '-C', temp_dir],
+            check=True,
+            timeout=120
+        )
+
+        # 압축 해제된 백업 디렉토리 찾기
+        extracted_dirs = [
+            d for d in os.listdir(temp_dir)
+            if os.path.isdir(os.path.join(temp_dir, d))
+        ]
+        if not extracted_dirs:
+            return {"success": False, "message": "백업 데이터를 찾을 수 없습니다."}
+
+        restore_path = os.path.join(temp_dir, extracted_dirs[0])
+
+        # InfluxDB 서비스 중지
+        subprocess.run(['sudo', 'systemctl', 'stop', 'influxdb'], check=True, timeout=30)
+        logging.info("InfluxDB service stopped for restore")
+
+        try:
+            # influx restore 실행
+            result = subprocess.run(
+                ['sudo', '/usr/local/bin/influx', 'restore', restore_path, '--full'],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=600
+            )
+
+            logging.info(f"InfluxDB restore stdout: {result.stdout}")
+            logging.info(f"InfluxDB restore stderr: {result.stderr}")
+            logging.info(f"InfluxDB restore completed: {file.filename}")
+
+            return {"success": True, "message": "InfluxDB 복원이 완료되었습니다."}
+        finally:
+            # 복원 성공/실패 관계없이 서비스 재시작
+            subprocess.run(['sudo', 'systemctl', 'start', 'influxdb'], timeout=30)
+            logging.info("InfluxDB service restarted")
+
+    except subprocess.TimeoutExpired:
+        logging.error("InfluxDB restore timeout")
+        return {"success": False, "message": "복원 타임아웃 (600초 초과)"}
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"InfluxDB restore failed: {error_msg}")
+        return {"success": False, "message": f"복원 실패: {error_msg}"}
+    except Exception as e:
+        logging.error(f"InfluxDB restore error: {e}")
+        return {"success": False, "message": str(e)}
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@router.post('/backup/restore/smartsystems')
+async def restore_smartsystems(file: UploadFile = File(...)):
+    """백업된 설정 tar.gz 파일을 업로드하여 /usr/local/smartsystems 에 복원"""
+    RESTORE_DIR = '/usr/local/smartsystems'
+    temp_dir = None
+    try:
+        if not file.filename.endswith('.tar.gz'):
+            return {"success": False, "message": "tar.gz 파일만 업로드 가능합니다."}
+
+        temp_dir = tempfile.mkdtemp()
+
+        # 업로드된 파일 저장
+        tar_file = os.path.join(temp_dir, file.filename)
+        with open(tar_file, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        # tar.gz 압축 해제
+        subprocess.run(
+            ['tar', '-xzf', tar_file, '-C', temp_dir],
+            check=True,
+            timeout=120
+        )
+
+        # 압축 해제된 백업 디렉토리 찾기
+        extracted_dirs = [
+            d for d in os.listdir(temp_dir)
+            if os.path.isdir(os.path.join(temp_dir, d))
+        ]
+        if not extracted_dirs:
+            return {"success": False, "message": "백업 데이터를 찾을 수 없습니다."}
+
+        restore_path = os.path.join(temp_dir, extracted_dirs[0])
+
+        # 압축 해제된 내용을 /usr/local/smartsystems 로 덮어쓰기
+        os.makedirs(RESTORE_DIR, exist_ok=True)
+        for item in os.listdir(restore_path):
+            src = os.path.join(restore_path, item)
+            dst = os.path.join(RESTORE_DIR, item)
+            if os.path.isdir(src):
+                if os.path.exists(dst):
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+        logging.info(f"Settings restore completed: {file.filename}")
+        return {"success": True, "message": "설정 복원이 완료되었습니다."}
+
+    except subprocess.TimeoutExpired:
+        logging.error("Settings restore timeout")
+        return {"success": False, "message": "복원 타임아웃"}
+    except Exception as e:
+        logging.error(f"Settings restore error: {e}")
+        return {"success": False, "message": str(e)}
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)

@@ -31,9 +31,11 @@ ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx restore *
 ntekadmin ALL=(ALL) NOPASSWD: /bin/sh /usr/local/sv500/iss/install.sh
 ntekadmin ALL=(ALL) NOPASSWD: /bin/sh /usr/local/sv500/iss/install.sh *
 
-# ---- 서비스 파일/스크립트 생성 (tee) ----
+# ---- 서비스/설정 파일 생성 (tee, 경로 화이트리스트) ----
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/system/*
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /usr/local/bin/*
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/network/10-static-end1.network
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/profile.d/influx.sh
 
-# ---- bash (InfluxDB 환경변수 설정 등) ----
-ntekadmin ALL=(ALL) NOPASSWD: /bin/bash -c *
+# ---- 스크립트 실행권한 부여 (chmod, 경로 한정) ----
+ntekadmin ALL=(ALL) NOPASSWD: /bin/chmod 755 /usr/local/bin/*
