@@ -93,23 +93,24 @@
 
         <div class="grid grid-cols-12 gap-6 items-stretch">
 
-          <!-- 1행: 장치정보 / Device Function / 통신설정 / [기타정보 + SNTP] -->
+          <!-- 1행: 장치정보 / 통신설정 / 장치기능(+SNTP) / 계측설정(+FRP) -->
           <div class="col-span-full xl:col-span-3">
             <DeviceInfoCard />
-          </div>
-          <div class="col-span-full xl:col-span-3">
-            <DeviceFunctionCard />
           </div>
           <div class="col-span-full xl:col-span-3">
             <CommunicationCard />
           </div>
           <div class="col-span-full xl:col-span-3 flex flex-col gap-6">
             <div class="flex-1 min-h-0">
+              <DeviceFunctionCard />
+            </div>
+            <SNTPCard />
+          </div>
+          <div class="col-span-full xl:col-span-3 flex flex-col gap-6">
+            <div class="flex-1 min-h-0">
               <EtcCard />
             </div>
-            <SNTPCard
-              :showSNTP="inputDict.useFuction.sntp === 1 || inputDict.useFuction.sntp === true"
-            />
+            <FRPCard />
           </div>
 
           <!-- 2행: Modbus Serial / MQTT / Waveform FTP (각 토글 ON일 때만 표시) -->
@@ -168,6 +169,7 @@ import CommunicationCard from "./CommunicationCard.vue";
 import DeviceFunctionCard from "./DeviceFunctionCard.vue";
 import ModbusSerialCard from "./ModbusSerialCard.vue";
 import MQTTCard from "./MQTTCard.vue";
+import FRPCard from "./FRPCard.vue";
 import { useI18n } from "vue-i18n";
 export default {
   name: "PlansPanel",
@@ -184,6 +186,7 @@ export default {
     DeviceFunctionCard,
     ModbusSerialCard,
     MQTTCard,
+    FRPCard,
   },
   setup(props) {
     const { t } = useI18n();

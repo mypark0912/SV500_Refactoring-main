@@ -66,15 +66,17 @@ export function useInputDict() {
     },
     MQTT :{
       Use:"",
-      Type:"",
+      Type:0,
       host:"",
       port:"", 
       device_id:"",     
       username:"",
       password:"",
+    },
+    FRP:{
+      Use:0,
       externalport:"",
       url:"",
-      lteuse:0
     }
   });
 

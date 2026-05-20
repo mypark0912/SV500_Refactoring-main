@@ -82,7 +82,23 @@
           ></div>
         </div>
       </div>
-
+      <!-- Tunneling (FRP) -->
+      <div class="flex items-center justify-between">
+        <label class="block text-sm font-medium">Tunneling</label>
+        <div
+          class="relative inline-flex items-center cursor-pointer"
+          @click="inputDict.FRP.Use = inputDict.FRP.Use === 1 ? 0 : 1"
+        >
+          <div
+            class="w-11 h-6 rounded-full transition-colors duration-200"
+            :class="inputDict.FRP.Use === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
+          ></div>
+          <div
+            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+            :class="inputDict.FRP.Use === 1 ? 'translate-x-5' : 'translate-x-0'"
+          ></div>
+        </div>
+      </div>
       <!-- FTP 상태 안내 (카드 맨 아래) -->
       <div
         v-if="showConflictWarning"

@@ -10,7 +10,7 @@
             <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4h-2V8h2v4z" />
           </svg>
         </div>
-        <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">{{ t("config.plansPanel.etc.title") }}</h3>
+        <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">계측 설정</h3>
       </header>
     </div>
     <div class="px-4 py-4 space-y-3">

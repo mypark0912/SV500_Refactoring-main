@@ -3760,12 +3760,21 @@ async def check_comm(asset):
     except Exception as e:
         return {"status": 0, "error": str(e)}
 
-@router.get('/checkSmart')
+# @router.get('/checkSmart')
+# def check_smart():
+#     if safe_int(os_spec.mode) != 3:
+#         return is_service_active("smartsystemsrestapiservice")
+#     return True
+
 def check_smart():
     if safe_int(os_spec.mode) != 3:
         return is_service_active("smartsystemsrestapiservice")
     return True
 
+@router.get('/checkSmart')
+def sendSmartStatus():
+    ret = check_smart()
+    return {"success": ret}
 
 @router.get('/manageSmart/{mode}')
 async def manage_smart(mode):
@@ -4327,45 +4336,6 @@ def _apply_mqtt_services(setup):
                 time.sleep(0.5)
                 ret["start"] = sysService("start", "MQTTClient")
 
-            # FRP 서비스 제어 (Type == 1)
-            if safe_int(setup["General"]["MQTT"]["Type"]) == 1:
-                subdomain = setup["General"]["MQTT"]["url"]
-                name_prefix = setup["General"]["MQTT"]["externalport"]
-                useLte = safe_int(mqtt.get("lteuse", 0))
-                if not service_exists("frpc.service"):
-                    save_frpc_config(useLte, subdomain, name_prefix)
-                    save_frpc_service(
-                        "/home/root/frp_0.66.0_linux_arm64/frpc",
-                        "/home/root/frp_0.66.0_linux_arm64/frpc.toml"
-                    )
-                    execService('daemon-reload')
-                    save_frpc_restart_monitor()
-                    execService('daemon-reload')
-                    sysService("enable", "frpc")
-                    time.sleep(0.5)
-                    sysService("enable", "frpc-restart-monitor")
-                    time.sleep(0.5)
-                    sysService("start", "frpc")
-                    time.sleep(0.5)
-                    sysService("start", "frpc-restart-monitor")
-                else:
-                    # LTE 토글 등 설정 변경을 toml에 반영 (없으면 SSH 프록시 블록이 안 생김)
-                    save_frpc_config(useLte, subdomain, name_prefix)
-                    if is_service_enabled("frpc"):
-                        # 새 toml 적용 위해 active 여부와 무관하게 restart
-                        if is_service_active("frpc"):
-                            sysService("restart", "frpc")
-                        else:
-                            sysService("start", "frpc")
-                    else:
-                        sysService("enable", "frpc")
-                        time.sleep(0.5)
-                        sysService("enable", "frpc-restart-monitor")
-                        time.sleep(0.5)
-                        sysService("start", "frpc")
-                        time.sleep(0.5)
-                        sysService("start", "frpc-restart-monitor")
-
         else:
             redis_state.client.hset("System", "MQTT", 0)
             if service_exists("mqClient.service"):
@@ -4374,6 +4344,80 @@ def _apply_mqtt_services(setup):
                         ret["stop"] = sysService("stop", "MQTTClient")
                         time.sleep(0.5)
                     ret["disable"] = sysService("disable", "MQTTClient")
+
+    except Exception as e:
+        logging.error(f"MQTT service apply error: {e}")
+
+
+@router.get("/checkFRP")
+def check_frp(background_tasks: BackgroundTasks):
+    if redis_state.client.hexists("System", "setup"):
+        raw = redis_state.client.hget("System", "setup")
+        if not raw:
+            return {"passOK": 0, "error": "Redis setup data is empty"}
+        setup = json.loads(raw)
+    else:
+        file_path = os.path.join(SETTING_FOLDER, 'setup.json')
+        if not os.path.exists(file_path):
+            return {"passOK": 0, "error": "setting file not found"}
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                setup = json.load(f)
+        except Exception as e:
+            return {"passOK": 0}
+
+    if not setup or "FRP" not in setup.get("General", {}):
+        return {"passOK": 1, "result": {}}
+
+    background_tasks.add_task(_apply_frp_services, setup)
+    return {"passOK": 1, "result": "processing"}
+
+
+def _apply_frp_services(setup):
+    try:
+        frp = setup["General"].get("FRP", {})
+        if safe_int(frp.get("Use", 0)) == 1:
+            redis_state.client.hset("System", "FRP", 1)
+            subdomain = frp.get("url", "")
+            name_prefix = frp.get("externalport", "")
+            # SSH 프록시는 lteuse 옵션 제거되어 항상 포함 (useLte=1 고정)
+            useLte = 1
+
+            if not service_exists("frpc.service"):
+                save_frpc_config(useLte, subdomain, name_prefix)
+                save_frpc_service(
+                    "/home/root/frp_0.66.0_linux_arm64/frpc",
+                    "/home/root/frp_0.66.0_linux_arm64/frpc.toml"
+                )
+                execService('daemon-reload')
+                save_frpc_restart_monitor()
+                execService('daemon-reload')
+                sysService("enable", "frpc")
+                time.sleep(0.5)
+                # sysService("enable", "frpc-restart-monitor")  # restart-monitor 활성화 보류
+                # time.sleep(0.5)
+                sysService("start", "frpc")
+                time.sleep(0.5)
+                # sysService("start", "frpc-restart-monitor")  # restart-monitor 활성화 보류
+            else:
+                # 설정 변경을 toml에 반영
+                save_frpc_config(useLte, subdomain, name_prefix)
+                if is_service_enabled("frpc"):
+                    # 새 toml 적용 위해 active 여부와 무관하게 restart
+                    if is_service_active("frpc"):
+                        sysService("restart", "frpc")
+                    else:
+                        sysService("start", "frpc")
+                else:
+                    sysService("enable", "frpc")
+                    time.sleep(0.5)
+                    # sysService("enable", "frpc-restart-monitor")  # restart-monitor 활성화 보류
+                    # time.sleep(0.5)
+                    sysService("start", "frpc")
+                    time.sleep(0.5)
+                    # sysService("start", "frpc-restart-monitor")  # restart-monitor 활성화 보류
+        else:
+            redis_state.client.hset("System", "FRP", 0)
             if service_exists("frpc.service"):
                 if is_service_enabled("frpc"):
                     if is_service_active("frpc"):
@@ -4385,7 +4429,7 @@ def _apply_mqtt_services(setup):
                     sysService("disable", "frpc-restart-monitor")
 
     except Exception as e:
-        logging.error(f"MQTT service apply error: {e}")
+        logging.error(f"FRP service apply error: {e}")
 
 
 def save_frpc_restart_monitor(
@@ -4590,10 +4634,11 @@ async def check_sysStatus():
         mqtt_exists_fut = asyncio.to_thread(service_exists, "mqClient.service")
         frpc_exists_fut = asyncio.to_thread(service_exists, "frpc.service")
         mqtt_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "MQTT")
+        frp_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "FRP")
 
-        version_local, has_mqtt_service, has_frpc, has_mqtt_flag = await asyncio.gather(
+        version_local, has_mqtt_service, has_frpc, has_mqtt_flag, has_frp_flag = await asyncio.gather(
             getVersionNew(),
-            mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut
+            mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut, frp_flag_fut
         )
 
         # local 키 → 응답 키 매핑
@@ -4618,12 +4663,15 @@ async def check_sysStatus():
         }
 
         mqtt_enabled = has_mqtt_flag and safe_int(redis_state.client.hget("System", "MQTT")) == 1
+        frp_enabled = has_frp_flag and safe_int(redis_state.client.hget("System", "FRP")) == 1
+
         if mqtt_enabled and has_mqtt_service:
             base_services['mqClient'] = 'mqClient'
-            if has_frpc:
-                base_services['frpc'] = 'frpc'
         elif not has_mqtt_flag and has_mqtt_service:
             base_services['mqClient'] = 'mqClient'
+
+        if frp_enabled and has_frpc:
+            base_services['frpc'] = 'frpc'
 
         # 각 서비스 상태를 병렬로 확인
         async def check_service(key, name):

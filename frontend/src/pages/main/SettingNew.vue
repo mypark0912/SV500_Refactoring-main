@@ -553,6 +553,7 @@
           isRestartDone.value = true;
         }
         await serviceMQTT();
+        await serviceFRP();
         await networkApply();
       };
 
@@ -585,7 +586,18 @@
           const response = await axios.get(`/setting/checkMQTT`);
           if (response.data.passOK == 1) {
             console.log(response.data.ret);
-          } 
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      const serviceFRP = async () => {
+        try {
+          const response = await axios.get(`/setting/checkFRP`);
+          if (response.data.passOK == 1) {
+            console.log(response.data.ret);
+          }
         } catch (error) {
           console.log(error);
         }

@@ -39,24 +39,6 @@
         </div>
       </div>
 
-      <!-- LTE Use (Local 제외) -->
-      <div v-if="inputDict.MQTT.Use === 1 && inputDict.MQTT.Type >= 1" class="flex items-center justify-between">
-        <label class="block text-sm font-medium">LTE Use</label>
-        <div
-          class="relative inline-flex items-center cursor-pointer"
-          @click="toggleLte"
-        >
-          <div
-            class="w-11 h-6 rounded-full transition-colors duration-200"
-            :class="inputDict.MQTT.lteuse === 1 ? 'bg-sky-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
-          <div
-            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            :class="inputDict.MQTT.lteuse === 1 ? 'translate-x-5' : 'translate-x-0'"
-          ></div>
-        </div>
-      </div>
-
       <!-- Host (단독) -->
       <div v-if="inputDict.MQTT.Use === 1">
         <label class="block text-sm font-medium mb-1.5">Host</label>
@@ -72,18 +54,6 @@
         <div class="flex-1">
           <label class="block text-sm font-medium mb-1.5">Device ID</label>
           <input :value="inputDict.MQTT.device_id" class="form-input w-full bg-gray-100 dark:bg-gray-700" type="text" readonly />
-        </div>
-      </div>
-
-      <!-- externalPort & externalUrl (public) -->
-      <div v-if="inputDict.MQTT.Use === 1 && inputDict.MQTT.Type === 1" class="flex space-x-3">
-        <div class="flex-1">
-          <label class="block text-sm font-medium mb-1.5">externalPort</label>
-          <input v-model="inputDict.MQTT.externalport" class="form-input w-full" type="number" placeholder="Enter external port" />
-        </div>
-        <div class="flex-1">
-          <label class="block text-sm font-medium mb-1.5">externalUrl</label>
-          <input v-model="inputDict.MQTT.url" class="form-input w-full" type="text" placeholder="Enter url" />
         </div>
       </div>
 
@@ -166,10 +136,6 @@ export default {
     const certUploadSuccess = ref(false);
     const certFileInput = ref(null);
 
-    const toggleLte = () => {
-      inputDict.value.MQTT.lteuse = inputDict.value.MQTT.lteuse === 1 ? 0 : 1;
-    };
-
     const loadCertList = async () => {
       try {
         const response = await axios.get('/setting/listCerts');
@@ -226,7 +192,7 @@ export default {
     watch(
       () => inputDict.value.MQTT?.Type,
       (newVal) => {
-        if (newVal === 'AWSIoTCore') {
+        if (Number(newVal) === 2) {
           loadCertList();
         }
       },
@@ -242,7 +208,6 @@ export default {
       certFileInput,
       handleCertUpload,
       removeCert,
-      toggleLte,
     };
   },
 };
