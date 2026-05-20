@@ -832,20 +832,18 @@ async def download_train(channel: str, start: str, with_thresholds: bool = False
     rel_names: list[str] = []
 
     if with_thresholds:
-        # 1주 1파일: trend_training_<asset>_<startYMD>_<endYMD>.parquet
-        for f in channel_dir.glob(f"trend_training_*_{start_str}_{end_str}.parquet"):
+        # 1주 1파일: train_<mode>_<asset>_<startYMD>_<endYMD>.parquet (mode=diagnosis|pq)
+        for f in channel_dir.glob(f"train_*_{start_str}_{end_str}.parquet"):
             rel_names.append(f"{channel}/{f.name}")
     else:
-        # 1일 1파일: 파일명은 window_end 기준 → start+1 ~ start+7
+        # 1일 1파일: train_<mode>_<asset>_<YMD>.parquet, 파일명은 window_end 기준 → start+1 ~ start+7
         cursor = start_date + timedelta(days=1)
         while cursor <= end_date:
             date_str = cursor.strftime("%Y%m%d")
-            for f in channel_dir.glob(f"trend_training_*_{date_str}.parquet"):
-                # 1주1파일 형식과 글로브가 겹치지 않도록 — 파일명에 _ 가 더 있으면 스킵
-                # (trend_training_<asset>_<YMD>.parquet 만 매칭, _<YMD>_<YMD>.parquet 는 제외)
-                stem_tail = f.stem.split("_")[-2:]  # [<asset_or_date>, <YMD>]
+            for f in channel_dir.glob(f"train_*_{date_str}.parquet"):
+                # 1주1파일 형식과 글로브가 겹치지 않도록 — 끝에서 두번째 토큰이 YYYYMMDD 면 스킵
+                stem_tail = f.stem.split("_")[-2:]
                 if len(stem_tail) >= 2 and len(stem_tail[-2]) == 8 and stem_tail[-2].isdigit():
-                    # 끝에서 두번째가 YYYYMMDD → 1주1파일 형식 → 스킵
                     continue
                 rel_names.append(f"{channel}/{f.name}")
             cursor += timedelta(days=1)
