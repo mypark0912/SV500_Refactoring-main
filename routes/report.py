@@ -2640,7 +2640,7 @@ async def start_weekly_report(
         powerquality_data = diagnosis_result.get("powerquality") if diagnosis_result else None
 
         en50160_data = load_en50160_parquet(channel, date)
-        if en50160_data is None or en50160_data.get('summary') is None:
+        if en50160_data is None or not en50160_data.get('detail_table'):
             en50160_data = get_en50160_from_redis(channel, en50160_data)
 
         energy_data = load_energy_data(channel, start_date, end_date)
