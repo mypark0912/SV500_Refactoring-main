@@ -2339,6 +2339,58 @@ def get_asset_info_from_redis(channel: str, redis_state=None) -> Optional[Dict]:
         return None
 
 
+def _en50160_chart_summary(en50160_data: Dict) -> Dict:
+    """docx weekly_report.add_en50160_section 이 기대하는 chart-shape summary 합성.
+
+    프런트엔드는 get_all_chart_data 가 돌려주는 raw summary 를 그대로 사용하므로,
+    docx subprocess 로 넘기는 JSON 페이로드에서만 이 변환을 적용한다.
+    """
+    def _worst(results):
+        if "FAIL" in results: return "FAIL"
+        if "N/A" in results: return "N/A"
+        return "PASS" if results else "N/A"
+
+    def _phase_worst(section, key):
+        phases = (section or {}).get("phases") or {}
+        if not phases:
+            return "N/A"
+        return _worst([(p.get("statistics") or {}).get(key, "N/A") for p in phases.values()])
+
+    freq = en50160_data.get("frequency")
+    volt = en50160_data.get("voltage")
+    thd  = en50160_data.get("thd")
+    unb  = en50160_data.get("unbalance")
+    flk  = en50160_data.get("flicker")
+    har  = en50160_data.get("harmonics")
+
+    freq_result = ((freq or {}).get("statistics") or {}).get("result_99_5", "N/A")
+    volt_result = _phase_worst(volt, "result_95")
+    thd_result  = _phase_worst(thd, "result")
+    unb_result  = ((unb or {}).get("statistics") or {}).get("result", "N/A")
+    plt_phases  = (flk or {}).get("plt") or {}
+    flk_result  = _worst([(p.get("statistics") or {}).get("result", "N/A")
+                          for p in plt_phases.values()]) if plt_phases else "N/A"
+    har_results = [
+        h.get("result", "N/A")
+        for phase_data in ((har or {}).get("phases") or {}).values()
+        for h in phase_data.values()
+    ]
+    har_result = _worst(har_results) if har_results else "N/A"
+    overall    = _worst([freq_result, volt_result, thd_result,
+                         unb_result, flk_result, har_result])
+
+    return {
+        "compliance": overall,
+        "frequency": {"result": freq_result},
+        "voltage":   {"result": volt_result},
+        "thd":       {"result": thd_result},
+        "unbalance": {"result": unb_result},
+        "flicker":   {"result": flk_result},
+        "harmonics": {"result": har_result},
+        "raw": en50160_data.get("summary"),
+    }
+
+
 # ============================================
 # API 라우터
 # ============================================
@@ -2642,6 +2694,10 @@ async def start_weekly_report(
         en50160_data = load_en50160_parquet(channel, date)
         if en50160_data is None or not en50160_data.get('detail_table'):
             en50160_data = get_en50160_from_redis(channel, en50160_data)
+
+        # docx 가 기대하는 chart-shape summary 로 변환 (프런트엔드는 raw 그대로 사용)
+        if en50160_data:
+            en50160_data['summary'] = _en50160_chart_summary(en50160_data)
 
         energy_data = load_energy_data(channel, start_date, end_date)
         itic_events = get_itic_data_for_report(channel)

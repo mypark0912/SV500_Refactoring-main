@@ -250,65 +250,17 @@ class EN50160ReportProcessor:
         df = self.read_parquet(channel, filename)
         if df is None:
             return None
-        raw_summary = df.attrs.get('summary')
+        report_summary = df.attrs.get('summary')
         logger.info(f"차트 데이터 생성 - 정격전압: {self.nominal_voltage}V, 정격주파수: {self.nominal_frequency}Hz")
 
-        freq = self._get_frequency_from_df(df)
-        volt = self._get_voltage_from_df(df)
-        thd  = self._get_thd_from_df(df)
-        unb  = self._get_unbalance_from_df(df)
-        flk  = self._get_flicker_from_df(df)
-        har  = self._get_harmonics_from_df(df)
-
-        # 차트/배지가 기대하는 summary 스키마로 합성 (parquet 메타의 raw 값은 'raw' 로 보존)
-        def _phase_worst(section, stat_key):
-            phases = (section or {}).get("phases") or {}
-            if not phases:
-                return "N/A"
-            return self._get_worst_result([
-                (p.get("statistics") or {}).get(stat_key, "N/A") for p in phases.values()
-            ])
-
-        freq_result = ((freq or {}).get("statistics") or {}).get("result_99_5", "N/A")
-        volt_result = _phase_worst(volt, "result_95")
-        thd_result  = _phase_worst(thd, "result")
-        unb_result  = ((unb or {}).get("statistics") or {}).get("result", "N/A")
-
-        plt_phases = (flk or {}).get("plt") or {}
-        flk_result = self._get_worst_result([
-            (p.get("statistics") or {}).get("result", "N/A") for p in plt_phases.values()
-        ]) if plt_phases else "N/A"
-
-        har_results = [
-            h.get("result", "N/A")
-            for phase_data in ((har or {}).get("phases") or {}).values()
-            for h in phase_data.values()
-        ]
-        har_result = self._get_worst_result(har_results) if har_results else "N/A"
-
-        overall = self._get_worst_result([
-            freq_result, volt_result, thd_result, unb_result, flk_result, har_result
-        ])
-
-        summary = {
-            "compliance": overall,
-            "frequency": {"result": freq_result},
-            "voltage":   {"result": volt_result},
-            "thd":       {"result": thd_result},
-            "unbalance": {"result": unb_result},
-            "flicker":   {"result": flk_result},
-            "harmonics": {"result": har_result},
-            "raw": raw_summary,
-        }
-
         return {
-            "summary": summary,
-            "frequency": freq,
-            "voltage": volt,
-            "thd": thd,
-            "unbalance": unb,
-            "flicker": flk,
-            "harmonics": har,
+            "summary": report_summary,
+            "frequency": self._get_frequency_from_df(df),
+            "voltage": self._get_voltage_from_df(df),
+            "thd": self._get_thd_from_df(df),
+            "unbalance": self._get_unbalance_from_df(df),
+            "flicker": self._get_flicker_from_df(df),
+            "harmonics": self._get_harmonics_from_df(df),
         }
 
     # =========================================================================
