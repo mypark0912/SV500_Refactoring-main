@@ -605,8 +605,7 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
 _train_tasks: Dict[str, dict] = {}
 _train_running = False
 
-TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report + Nameplate 저장 위치
-REPORTS_DIR = Path("/usr/local/sv500/reports")           # EN50160 weekly parquet 저장 위치
+TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report + en50160 + Nameplate 저장 위치
 TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")    # 디스크 경로 (/tmp 사용 금지)
 COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
 SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
@@ -857,19 +856,11 @@ async def download_train(channel: str, start: str, with_thresholds: bool = False
     for f in channel_dir.glob("Nameplate_*.json"):
         rel_names.append(f"{channel}/{f.name}")
 
-    # EN50160 weekly parquet — REPORTS_DIR 에 별도 저장됨, end_str 시점 파일.
-    # 생성 실패 / 경로 누락 등 어떤 사유로든 없으면 tar 묶음에서 제외하고 진행.
-    en50160_rel: list[str] = []
-    try:
-        en50160_file = REPORTS_DIR / channel / f"en50160_weekly_{end_str}.parquet"
-        if en50160_file.exists():
-            en50160_rel.append(f"{channel}/{en50160_file.name}")
-        else:
-            logging.info(f"[getTrain] EN50160 parquet 없음 (스킵): {en50160_file}")
-    except Exception as e:
-        logging.warning(f"[getTrain] EN50160 parquet 조회 실패 (스킵): {e}")
+    # EN50160 weekly parquet — collect_train 이 train 디렉토리에 직접 생성. 없으면 스킵.
+    for f in channel_dir.glob("en50160_weekly_*.parquet"):
+        rel_names.append(f"{channel}/{f.name}")
 
-    if not rel_names and not en50160_rel:
+    if not rel_names:
         return {
             "success": False,
             "message": (
@@ -882,17 +873,10 @@ async def download_train(channel: str, start: str, with_thresholds: bool = False
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     tar_file = TRAIN_TAR_DIR / f"train_data_{channel}_{start_str}_to_{end_str}_{timestamp}.tar"
 
-    # tar 인자 조립 — TRAIN_DIR 기준 파일들 + (있으면) REPORTS_DIR 기준 EN50160 파일
-    tar_args: list[str] = [
-        'tar', '--ignore-failed-read', '-cf', str(tar_file),
-        '-C', str(TRAIN_DIR), *rel_names,
-    ]
-    if en50160_rel:
-        tar_args += ['-C', str(REPORTS_DIR), *en50160_rel]
-
     try:
         returncode, stdout, stderr = await _run_cmd_async(
-            *tar_args,
+            'tar', '--ignore-failed-read', '-cf', str(tar_file),
+            '-C', str(TRAIN_DIR), *rel_names,
             timeout=120,
         )
         if returncode > 1:
@@ -900,7 +884,7 @@ async def download_train(channel: str, start: str, with_thresholds: bool = False
         if not tar_file.exists():
             raise Exception("tar file not created")
 
-        logging.info(f"[getTrain] tar 묶음: {len(rel_names) + len(en50160_rel)}개 파일 → {tar_file.name}")
+        logging.info(f"[getTrain] tar 묶음: {len(rel_names)}개 파일 → {tar_file.name}")
     except asyncio.TimeoutError:
         if tar_file.exists():
             tar_file.unlink()
