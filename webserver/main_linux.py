@@ -130,7 +130,7 @@ async def lifespan(app: FastAPI):
         logging.info("Binary processor and handler initialized")
 
     sd_notify("READY=1")
-    logging.info("systemd READY=1 sent")
+    logging.warning("systemd READY=1 sent")
 
     yield  # 앱 실행
 
