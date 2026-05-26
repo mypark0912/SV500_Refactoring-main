@@ -123,12 +123,11 @@ def init_setup():
         if deviceMac != setting["General"]["deviceInfo"]["mac_address"]:
             setting["General"]["deviceInfo"]["mac_address"] = deviceMac
 
-        if os_spec.os != 'Windows':
-            mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
-            if os.path.exists(mac_file_path):
-                ser = read_mac_plain(mac_file_path)
-                if ser != '':
-                    setting["General"]["deviceInfo"]["serial_number"] = ser
+        mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+        if os.path.exists(mac_file_path):
+            ser = read_mac_plain(mac_file_path)
+            if ser != '':
+                setting["General"]["deviceInfo"]["serial_number"] = ser
 
         save_redis_setup(setting)
         redis_state.client.hset("System", "setup", json.dumps(setting))
@@ -1871,10 +1870,9 @@ async def check_setupfile(request: Request):
     default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
     deviceMac = get_mac_address()
     ser = ''
-    if os_spec.os != 'Windows':
-        mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
-        if os.path.exists(mac_file_path):
-            ser = read_mac_plain(mac_file_path)
+    mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+    if os.path.exists(mac_file_path):
+        ser = read_mac_plain(mac_file_path)
 
     if redis_state.client is None:
         return {"result": "0", "error": "Redis not available"}
@@ -3113,12 +3111,11 @@ async def saveSetting(channel: str, request: Request):
     deviceMac = get_mac_address()
     ser=''
     ctSetup = {}
-    if os_spec.os != 'Windows':
-        mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
-        if os.path.exists(mac_file_path):
-            ser = read_mac_plain(mac_file_path)
-            # if ser != deviceMac:
-            #     deviceMac = ser
+    mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+    if os.path.exists(mac_file_path):
+        ser = read_mac_plain(mac_file_path)
+        # if ser != deviceMac:
+        #     deviceMac = ser
     # redis_state.client.select(0)
     if redis_state.client.hexists("Service","setting"):
         checkflag = redis_state.client.hget("Service","setting")
@@ -3267,11 +3264,9 @@ def compare_channel_changes(redis_data: dict, post_data: dict) -> Dict[str, Any]
 async def saveSetting2(request: Request):
     deviceMac = get_mac_address()
     ser = ''
-
-    if os_spec.os != 'Windows':
-        mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
-        if os.path.exists(mac_file_path):
-            ser = read_mac_plain(mac_file_path)
+    mac_file_path = os.path.join(SETTING_FOLDER, 'serial_num_do_not_modify.txt')
+    if os.path.exists(mac_file_path):
+        ser = read_mac_plain(mac_file_path)
 
     if redis_state.client.hexists("Service", "setting"):
         checkflag = redis_state.client.hget("Service", "setting")
@@ -4609,95 +4604,76 @@ def check_frp():
 async def check_sysStatus():
     data = {}
 
-    if os_spec.os == 'Windows':
-        if not redis_state.client is None:
-            # redis_state.client.execute_command("SELECT", 0)
-            if redis_state.client.hexists("System", "Status"):
-                raw = redis_state.client.hget("System", "Status")
-                if raw:
-                    data = json.loads(raw)
-        data["core"] = 0
+    # 버전 정보(통합), 서비스 존재 여부를 병렬로 조회
+    mqtt_exists_fut = asyncio.to_thread(service_exists, "mqClient.service")
+    frpc_exists_fut = asyncio.to_thread(service_exists, "frpc.service")
+    mqtt_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "MQTT")
+    frp_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "FRP")
 
-        usage = psutil.disk_usage('/')
-        disk1 = {
-            "drive": "/",
-            "totalGB": round(usage.total / (1024 ** 3), 2),
-            "freeGB": round(usage.free / (1024 ** 3), 2),
-            "status": "ok" if usage.percent < 90 else "warning"
-        }
+    version_local, has_mqtt_service, has_frpc, has_mqtt_flag, has_frp_flag = await asyncio.gather(
+        getVersionNew(),
+        mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut, frp_flag_fut
+    )
 
-        return {"success": True, "data": data, "disk": [disk1]}
-    else:
-        # 버전 정보(통합), 서비스 존재 여부를 병렬로 조회
-        mqtt_exists_fut = asyncio.to_thread(service_exists, "mqClient.service")
-        frpc_exists_fut = asyncio.to_thread(service_exists, "frpc.service")
-        mqtt_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "MQTT")
-        frp_flag_fut = asyncio.to_thread(redis_state.client.hexists, "System", "FRP")
+    # local 키 → 응답 키 매핑
+    key_map = {
+        'fw': 'fw',
+        'a35': 'A35',
+        'web': 'WebServer',
+        'core': 'Core',
+        'smartsystem': 'SmartSystems',
+        'mqClient': 'MQTTClient'
+    }
+    versionDict = {key_map[k]: v for k, v in version_local.items() if k in key_map}
+    # 서비스 목록 결정
+    base_services = {
+        'smartsystem': 'smartsystemsservice',
+        'smartapi': 'smartsystemsrestapiservice',
+        'redis': 'redis',
+        'influxdb': 'influxdb',
+        'core': 'core',
+        'webserver': 'webserver',
+        'a35': 'sv500A35'
+    }
 
-        version_local, has_mqtt_service, has_frpc, has_mqtt_flag, has_frp_flag = await asyncio.gather(
-            getVersionNew(),
-            mqtt_exists_fut, frpc_exists_fut, mqtt_flag_fut, frp_flag_fut
-        )
+    mqtt_enabled = has_mqtt_flag and safe_int(redis_state.client.hget("System", "MQTT")) == 1
+    frp_enabled = has_frp_flag and safe_int(redis_state.client.hget("System", "FRP")) == 1
 
-        # local 키 → 응답 키 매핑
-        key_map = {
-            'fw': 'fw',
-            'a35': 'A35',
-            'web': 'WebServer',
-            'core': 'Core',
-            'smartsystem': 'SmartSystems',
-            'mqClient': 'MQTTClient'
-        }
-        versionDict = {key_map[k]: v for k, v in version_local.items() if k in key_map}
-        # 서비스 목록 결정
-        base_services = {
-            'smartsystem': 'smartsystemsservice',
-            'smartapi': 'smartsystemsrestapiservice',
-            'redis': 'redis',
-            'influxdb': 'influxdb',
-            'core': 'core',
-            'webserver': 'webserver',
-            'a35': 'sv500A35'
-        }
+    if mqtt_enabled and has_mqtt_service:
+        base_services['mqClient'] = 'mqClient'
+    elif not has_mqtt_flag and has_mqtt_service:
+        base_services['mqClient'] = 'mqClient'
 
-        mqtt_enabled = has_mqtt_flag and safe_int(redis_state.client.hget("System", "MQTT")) == 1
-        frp_enabled = has_frp_flag and safe_int(redis_state.client.hget("System", "FRP")) == 1
+    if frp_enabled and has_frpc:
+        base_services['frpc'] = 'frpc'
 
-        if mqtt_enabled and has_mqtt_service:
-            base_services['mqClient'] = 'mqClient'
-        elif not has_mqtt_flag and has_mqtt_service:
-            base_services['mqClient'] = 'mqClient'
+    # 각 서비스 상태를 병렬로 확인
+    async def check_service(key, name):
+        active = await asyncio.to_thread(is_service_active, name)
+        return key, active
 
-        if frp_enabled and has_frpc:
-            base_services['frpc'] = 'frpc'
+    results = await asyncio.gather(
+        *[check_service(k, v) for k, v in base_services.items()]
+    )
+    service_status = dict(results)
 
-        # 각 서비스 상태를 병렬로 확인
-        async def check_service(key, name):
-            active = await asyncio.to_thread(is_service_active, name)
-            return key, active
+    usage = psutil.disk_usage('/')
+    disk1 = {
+        "drive": "/",
+        "totalGB": round(usage.total / (1024 ** 3), 2),
+        "freeGB": round(usage.free / (1024 ** 3), 2),
+        "status": "ok" if usage.percent < 90 else "warning"
+    }
 
-        results = await asyncio.gather(
-            *[check_service(k, v) for k, v in base_services.items()]
-        )
-        service_status = dict(results)
+    usage = psutil.disk_usage('/usr/local')
+    disk2 = {
+        "drive": "/usr/local",
+        "totalGB": round(usage.total / (1024 ** 3), 2),
+        "freeGB": round(usage.free / (1024 ** 3), 2),
+        "status": "ok" if usage.percent < 90 else "warning"
+    }
 
-        usage = psutil.disk_usage('/')
-        disk1 = {
-            "drive": "/",
-            "totalGB": round(usage.total / (1024 ** 3), 2),
-            "freeGB": round(usage.free / (1024 ** 3), 2),
-            "status": "ok" if usage.percent < 90 else "warning"
-        }
-
-        usage = psutil.disk_usage('/usr/local')
-        disk2 = {
-            "drive": "/usr/local",
-            "totalGB": round(usage.total / (1024 ** 3), 2),
-            "freeGB": round(usage.free / (1024 ** 3), 2),
-            "status": "ok" if usage.percent < 90 else "warning"
-        }
-
-        return {"success": True, "data":service_status,  "disk":[disk1, disk2], "versions":versionDict}
+    return {"success": True, "data":service_status,  "disk":[disk1, disk2], "versions":versionDict}
 
 @router.get('/SysService/{cmd}/{item}')
 def control_service(cmd, item):
@@ -5190,9 +5166,12 @@ async def setup_system_time(data: TimeSetRequest, request: Request):
             logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
             return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
 
-        r_hw = subprocess.run(["sudo", "hwclock", "-w"], capture_output=True, text=True)
+        hwclock_cmd = ["sudo", "hwclock", "--systohc"]
+        if os_spec.rtc_device:
+            hwclock_cmd.extend(["-f", os_spec.rtc_device])
+        r_hw = subprocess.run(hwclock_cmd, capture_output=True, text=True)
         if r_hw.returncode != 0:
-            logging.error(f"hwclock -w failed (rc={r_hw.returncode}): {r_hw.stderr}")
+            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
 
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)

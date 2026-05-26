@@ -1,6 +1,6 @@
 import base64
 import logging
-import platform, asyncio
+import asyncio
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import ASYNCHRONOUS
 import ujson as json
@@ -21,53 +21,26 @@ VersionInfo = "1.8.4"
 AES_KEY = b'ntekSystem_20250721_mypark_caner'  # 16바이트 (AES-128)
 
 class OsSpec:
+    """
+    mode:
+      0 = Linux 장비, RTC0 (기본)
+      1 = Linux 장비, RTC1 (/dev/rtc1 사용)
+      3 = Docker 컨테이너
+    """
     def __init__(self, mode):
-        self.os = self.get_os_info()
         self.mode = mode
-        if self.os == 'Windows':
-            self.influxip = '192.168.1.91'
-            self.restip = '192.168.1.24'
-            self.logpath = '.'
-            self.redisip = '192.168.1.92'
-        else:
-            if mode == 3:  # Docker mode
-                self.influxip = 'influxdb'
-                self.redisip = 'redis'
-                self.restip = '127.0.0.1'
-                self.logpath = '/usr/local/sv500/logs/web'
-            elif mode > 0:
-                self.redisip = '127.0.0.1'
-                self.influxip = '192.168.1.91'
-                self.restip = '192.168.1.24'
-                if mode == 1:
-                    self.logpath = "/home/mypark/logs"
-                else:
-                    self.logpath = "/home/ntek/logs"
-            else:
-                self.redisip = '127.0.0.1'
-                self.influxip = '127.0.0.1'
-                self.restip = '127.0.0.1'
-                self.logpath = '/usr/local/sv500/logs/web'
-
-
-    def get_os_info(self):
-        os_type = platform.system()
-
-        if os_type == 'Windows':
-            return "Windows"
-        elif os_type == 'Linux':
-            return "Linux"
-        elif os_type == 'Darwin':
-            return "macOS"
-        else:
-            return f"{os_type}"
-
-    def get_path_separator(self):
-        """OS별 경로 구분자 반환"""
-        if self.os == "Windows":
-            return "\\"
-        else:
-            return "/"
+        if mode == 3:  # Docker
+            self.influxip = 'influxdb'
+            self.redisip = 'redis'
+            self.restip = '127.0.0.1'
+            self.logpath = '/usr/local/sv500/logs/web'
+            self.rtc_device = None
+        else:  # Linux 장비 (0 or 1)
+            self.redisip = '127.0.0.1'
+            self.influxip = '127.0.0.1'
+            self.restip = '127.0.0.1'
+            self.logpath = '/usr/local/sv500/logs/web'
+            self.rtc_device = '/dev/rtc1' if mode == 1 else None
 
 mode = int(os.environ.get('SV500_MODE', '0'))
 os_spec = OsSpec(mode)

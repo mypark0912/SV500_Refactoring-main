@@ -27,10 +27,14 @@ log_section() {
 }
 
 # =================================================================
-# 옵션 파싱 (기본값: local)
-# Usage: ./install.sh [--local|--lte]
+# 옵션 파싱
+# Usage: ./install.sh [--local|--lte] [--rtc0|--rtc1]
+#   --local/--lte  : 네트워크 모드 (기본: local)
+#   --rtc0/--rtc1  : RTC 디바이스 (기본: rtc0)
+# (docker mode는 install.sh 대상 아님 — 컨테이너에서 직접 SV500_MODE=3 설정)
 # =================================================================
 MODE="local"
+DEVICE_MODE=0   # 0=linux rtc0, 1=linux rtc1 (webserver SV500_MODE와 일치, docker는 3이지만 여기 대상 아님)
 while [ "$#" -gt 0 ]; do
   case $1 in
     --lte)
@@ -39,16 +43,29 @@ while [ "$#" -gt 0 ]; do
     --local)
       MODE="local"
       ;;
+    --rtc0)
+      DEVICE_MODE=0
+      ;;
+    --rtc1)
+      DEVICE_MODE=1
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--local|--lte]"
+      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1]"
       exit 1
       ;;
   esac
   shift
 done
 
-log_info "Install mode: $MODE"
+# RTC 디바이스 옵션 (DEVICE_MODE=1이면 /dev/rtc1, 그 외엔 기본)
+if [ "$DEVICE_MODE" = "1" ]; then
+    HWCLOCK_OPTS="-f /dev/rtc1"
+else
+    HWCLOCK_OPTS=""
+fi
+
+log_info "Install mode: network=$MODE, device=$DEVICE_MODE (hwclock opts: '$HWCLOCK_OPTS')"
 
 # =================================================================
 # 0. Create ntekadmin user and sudoers
@@ -117,8 +134,8 @@ sudo timedatectl set-ntp true
 sudo systemctl restart systemd-timesyncd  
 sleep 5  
 sudo timedatectl set-local-rtc 0  
-sudo hwclock --systohc --utc  
-timedatectl status && hwclock -r
+sudo hwclock --systohc --utc $HWCLOCK_OPTS
+timedatectl status && hwclock -r $HWCLOCK_OPTS
 timedatectl set-ntp false
 
 echo "2.5. RTC Enable and NTP disable"
@@ -625,6 +642,7 @@ NotifyAccess=main
 WorkingDirectory=$APP_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
+Environment=SV500_MODE=$DEVICE_MODE
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
 Restart=always
 RestartSec=5
@@ -637,7 +655,7 @@ UMask=0007
 WantedBy=multi-user.target
 EOF
 
-    log_info "✅ Webserver service configured"
+    log_info "✅ Webserver service configured (SV500_MODE=$DEVICE_MODE)"
 else
     log_warn "Webserver directory not found: $APP_DIR"
 fi
@@ -658,6 +676,7 @@ Wants=smartsystemsrestapiservice.service
 ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=SV500_MODE=$DEVICE_MODE
 Restart=always
 User=ntekadmin
 Group=root
@@ -669,7 +688,7 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-    log_info "✅ Core service configured"
+    log_info "✅ Core service configured (SV500_MODE=$DEVICE_MODE)"
 else
     log_warn "Core directory not found: $CORE_DIR"
 fi

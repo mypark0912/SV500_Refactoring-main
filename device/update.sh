@@ -27,9 +27,11 @@ log_section() {
 
 # =================================================================
 # 옵션 파싱 (기본값: local)
-# Usage: ./update_shared_venv.sh [--local|--lte]
+# Usage: ./update_shared_venv.sh [--local|--lte] [--rtc0|--rtc1]
+# (docker mode는 update.sh 대상 아님 — 컨테이너에서 직접 SV500_MODE=3 설정)
 # =================================================================
 MODE="local"
+DEVICE_MODE=0   # 0=linux rtc0, 1=linux rtc1 (webserver SV500_MODE와 일치)
 while [ "$#" -gt 0 ]; do
   case $1 in
     --lte)
@@ -38,16 +40,29 @@ while [ "$#" -gt 0 ]; do
     --local)
       MODE="local"
       ;;
+    --rtc0)
+      DEVICE_MODE=0
+      ;;
+    --rtc1)
+      DEVICE_MODE=1
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--local|--lte]"
+      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1]"
       exit 1
       ;;
   esac
   shift
 done
 
-log_info "Update mode: $MODE"
+# RTC 디바이스 옵션
+if [ "$DEVICE_MODE" = "1" ]; then
+    HWCLOCK_OPTS="-f /dev/rtc1"
+else
+    HWCLOCK_OPTS=""
+fi
+
+log_info "Update mode: network=$MODE, device=$DEVICE_MODE (hwclock opts: '$HWCLOCK_OPTS')"
 
 # =================================================================
 # 0. ntekadmin 사용자 확인 및 생성
@@ -241,6 +256,7 @@ NotifyAccess=main
 WorkingDirectory=$APP_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
+Environment=SV500_MODE=$DEVICE_MODE
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
 Restart=always
 RestartSec=5
@@ -252,7 +268,7 @@ UMask=0007
 [Install]
 WantedBy=multi-user.target
 EOF
-    log_info "✅ webserver.service updated (User=ntekadmin, Type=notify)"
+    log_info "✅ webserver.service updated (User=ntekadmin, Type=notify, SV500_MODE=$DEVICE_MODE)"
 else
     log_warn "Webserver directory not found: $APP_DIR — skipping service update"
 fi
@@ -271,6 +287,7 @@ Wants=smartsystemsrestapiservice.service
 ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=SV500_MODE=$DEVICE_MODE
 Restart=always
 User=ntekadmin
 Group=root
@@ -281,7 +298,7 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOF
-    log_info "✅ core.service updated (After=webserver, Requires=redis/influxdb, Wants=smartsystemsrestapi)"
+    log_info "✅ core.service updated (After=webserver, Requires=redis/influxdb, SV500_MODE=$DEVICE_MODE)"
 else
     log_warn "Core directory not found: $CORE_DIR — skipping service update"
 fi

@@ -2295,12 +2295,8 @@ async def get_alarms(channel: str, page: int):
 
         # 데이터 포맷팅
         for i in range(len(result)):
-            if os_spec.os == 'Windows':
-                result[i]["condition_str"] = convert_inequality_to_text(result[i]["condition_str"])
-                result[i]["alarm_ts"] = format_influx_time(result[i]["alarm_ts"])
-            else:
-                result[i]["condition_str"] = f"{result[i]['chan_text']} {result[i]['condition']} {result[i]['level']}"
-                result[i]["alarm_ts"] = format_influx_time(result[i]["time"])
+            result[i]["condition_str"] = f"{result[i]['chan_text']} {result[i]['condition']} {result[i]['level']}"
+            result[i]["alarm_ts"] = format_influx_time(result[i]["time"])
 
         return {
             "success": True,
@@ -2526,33 +2522,18 @@ def getAlarmStatus(channel):
 
 @router.get("/getEn50160/{channel}")  # get alarm log with redis
 def getEn50160(channel):
-    if os_spec.os == 'Windows':
-        key = get_RedisKey(channel, 'en50160')
-        redis_state.client.execute_command("SELECT", 9)
-        if redis_state.client.exists(key):
-            try:
-                harms = redis_state.client.hget(key, "en50160")
-                harmdict = json.loads(harms)
-                # 데이터 변환
-                # transformed_data = transform_en50160_data(harmdict)
-                return {"success": True, "data": harmdict}
-            except Exception as e:
-                return {"success": False, "error": "Redis Read Error"}
-        else:
-            return {"success": False, "error": "No Data"}
+    # redis_state.client.select(1)
+    if redis_state.client_db1.exists("en50160_status"):
+        try:
+            harms = redis_state.client_db1.hget("en50160_status", channel)
+            harmdict = json.loads(harms)
+            # 데이터 변환
+            transformed_data = transform_en50160_data(harmdict)
+            return {"success": True, "data": transformed_data}
+        except Exception as e:
+            return {"success": False, "error": "Redis Read Error"}
     else:
-        # redis_state.client.select(1)
-        if redis_state.client_db1.exists("en50160_status"):
-            try:
-                harms = redis_state.client_db1.hget("en50160_status", channel)
-                harmdict = json.loads(harms)
-                # 데이터 변환
-                transformed_data = transform_en50160_data(harmdict)
-                return {"success": True, "data": transformed_data}
-            except Exception as e:
-                return {"success": False, "error": "Redis Read Error"}
-        else:
-            return {"success": False, "error": "No Data"}
+        return {"success": False, "error": "No Data"}
 
 
 def get_setupContext():
@@ -3430,36 +3411,30 @@ def get_FifthMfromRedis(channel):
         if not redis_state.client_db1.exists(keyname):
             return {"success": False, "error": f"No exist key"}
 
-        if os_spec.os == 'Windows':
-            result = {
-                "success": True,
-                "retData": {}
+        processor = redis_state.processor
+
+        parsed_demand = processor.get_and_parse(
+            config_name="demand",
+            key="Demand",
+            data_type=RedisDataType.HASH,
+            field=channel
+        )
+
+        formatted_data = DemandDataFormatter.format_demand_data(parsed_demand)
+
+        result = {
+            "success": True,
+            "retData": {
+                "demandDataP": [
+                    {"subTitle": "Active", "data": formatted_data['power_demand']},
+                    {"subTitle": "Reactive", "data": formatted_data['reactive_demand']},
+                    {"subTitle": "Apparent", "data": formatted_data['apparent_demand']},
+                ],
+                "demandDataI": [
+                    {"subTitle": "Current", "data": formatted_data['current_demand']},
+                ]
             }
-        else:
-            processor = redis_state.processor
-
-            parsed_demand = processor.get_and_parse(
-                config_name="demand",
-                key="Demand",
-                data_type=RedisDataType.HASH,
-                field=channel
-            )
-
-            formatted_data = DemandDataFormatter.format_demand_data(parsed_demand)
-
-            result = {
-                "success": True,
-                "retData": {
-                    "demandDataP": [
-                        {"subTitle": "Active", "data": formatted_data['power_demand']},
-                        {"subTitle": "Reactive", "data": formatted_data['reactive_demand']},
-                        {"subTitle": "Apparent", "data": formatted_data['apparent_demand']},
-                    ],
-                    "demandDataI": [
-                        {"subTitle": "Current", "data": formatted_data['current_demand']},
-                    ]
-                }
-            }
+        }
         return {"success": True, "retData": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
