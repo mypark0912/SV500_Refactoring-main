@@ -334,6 +334,32 @@ WantedBy=multi-user.target
 EOF
 log_info "✅ startup-helper.service unit ensured"
 
+# shutdown-marker.service 재생성 — 마커를 /usr/local/sv500 (영구) 으로 이동
+# (이전 버전은 /var/run에 마커 → tmpfs라 reboot 시 휘발 → 항상 UNEXPECTED 판정)
+cat <<EOF | sudo tee /etc/systemd/system/shutdown-marker.service > /dev/null
+[Unit]
+Description=Create clean shutdown marker
+DefaultDependencies=no
+Before=shutdown.target reboot.target halt.target
+RequiresMountsFor=/usr/local
+
+[Service]
+Type=oneshot
+ExecStart=/bin/touch /usr/local/sv500/clean_shutdown
+RemainAfterExit=yes
+
+[Install]
+WantedBy=shutdown.target reboot.target halt.target
+EOF
+sudo systemctl enable shutdown-marker.service 2>/dev/null || true
+log_info "✅ shutdown-marker.service ensured (marker at /usr/local/sv500/clean_shutdown)"
+
+# shutdown-monitor.sh의 MARKER_FILE 경로도 일치시킴 (기존 설치본 patch)
+if [ -f /usr/local/bin/shutdown-monitor.sh ]; then
+    sudo sed -i 's|MARKER_FILE="/var/run/clean_shutdown"|MARKER_FILE="/usr/local/sv500/clean_shutdown"|' /usr/local/bin/shutdown-monitor.sh
+    log_info "✅ shutdown-monitor.sh MARKER_FILE path updated"
+fi
+
 if [ -f "$SCRIPT_DIR/save-time.sh" ]; then
     cp "$SCRIPT_DIR/save-time.sh" /usr/local/bin/save-time.sh
     chmod +x /usr/local/bin/save-time.sh

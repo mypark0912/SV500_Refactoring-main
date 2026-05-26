@@ -227,7 +227,7 @@ cat > /usr/local/bin/shutdown-monitor.sh << 'EOF'
 #
 
 # Configuration
-MARKER_FILE="/var/run/clean_shutdown"
+MARKER_FILE="/usr/local/sv500/clean_shutdown"
 LOG_FILE="/var/log/shutdown-monitor.log"
 PYTHON_DIRS="/home/root/webserver /home/root/core"
 MAX_LOG_SIZE=10485760  # 10MB
@@ -311,15 +311,17 @@ EOF
 chmod +x /usr/local/bin/shutdown-monitor.sh
 
 # Create shutdown-marker.service
+# 마커는 영구 위치(/usr/local/sv500)에 — /var/run은 tmpfs라 reboot 시 휘발됨
 cat > /etc/systemd/system/shutdown-marker.service << 'EOF'
 [Unit]
 Description=Create clean shutdown marker
 DefaultDependencies=no
 Before=shutdown.target reboot.target halt.target
+RequiresMountsFor=/usr/local
 
 [Service]
 Type=oneshot
-ExecStart=/bin/touch /var/run/clean_shutdown
+ExecStart=/bin/touch /usr/local/sv500/clean_shutdown
 RemainAfterExit=yes
 
 [Install]
