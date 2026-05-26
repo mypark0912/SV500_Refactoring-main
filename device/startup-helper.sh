@@ -12,6 +12,7 @@ TIME_FILE="/usr/local/sv500/last_known_time"
 MARKER="/var/run/clean_shutdown"
 RESET_THRESHOLD=86400          # 24h
 MIN_VALID_EPOCH=1704067200     # 2024-01-01 (fallback when no last_known)
+REDIS_CLI="/home/root/bin/redis-cli"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
@@ -97,7 +98,7 @@ fi
 # ── Wait for redis ready ──────────────────────────────────────────
 log "→ Waiting for redis ready..."
 for i in $(seq 1 60); do
-    if redis-cli ping 2>/dev/null | grep -q PONG; then
+    if "$REDIS_CLI" ping 2>/dev/null | grep -q PONG; then
         log "   redis ready (took ${i}s)"
         break
     fi

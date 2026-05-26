@@ -454,6 +454,13 @@ sudo systemctl daemon-reload
 sudo systemctl disable webserver.service 2>/dev/null || true
 sudo systemctl disable sv500A35.service  2>/dev/null || true
 
+# 불필요한 서비스 disable (snmpd: 시작 실패로 부팅 90초 timeout 유발)
+sudo systemctl stop    snmpd      2>/dev/null || true
+sudo systemctl disable snmpd      2>/dev/null || true
+sudo systemctl stop    snmptrapd  2>/dev/null || true
+sudo systemctl disable snmptrapd  2>/dev/null || true
+log_info "✅ snmpd/snmptrapd disabled"
+
 # startup-helper.service enable (idempotent — 이미 enable이면 무해)
 sudo systemctl enable startup-helper.service 2>/dev/null || true
 log_info "✅ startup-helper.service enabled"

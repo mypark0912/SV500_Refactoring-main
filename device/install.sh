@@ -781,6 +781,11 @@ sudo systemctl stop avahi-daemon.socket 2>/dev/null || true
 sudo systemctl disable avahi-daemon.socket 2>/dev/null || true
 sudo systemctl stop netdata 2>/dev/null || true
 sudo systemctl disable netdata 2>/dev/null || true
+# snmpd/snmptrapd: 외부 NMS 없는 환경. 시작 시 control connection 실패로 90초 timeout 발생
+sudo systemctl stop snmpd 2>/dev/null || true
+sudo systemctl disable snmpd 2>/dev/null || true
+sudo systemctl stop snmptrapd 2>/dev/null || true
+sudo systemctl disable snmptrapd 2>/dev/null || true
 
 # =================================================================
 # 9. Installation Complete
