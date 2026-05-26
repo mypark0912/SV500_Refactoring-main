@@ -1,3 +1,8 @@
+  sudo sh update.sh --local --rtc0
+
+  # RTC가 충분히 안정적이라 시간 저장/복구 불필요한 장비
+  sudo sh update.sh --local --rtc0 --nosavertc
+
 
   RTC0 시간 직접 읽기
   

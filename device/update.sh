@@ -27,11 +27,13 @@ log_section() {
 
 # =================================================================
 # 옵션 파싱 (기본값: local)
-# Usage: ./update_shared_venv.sh [--local|--lte] [--rtc0|--rtc1]
+# Usage: ./update_shared_venv.sh [--local|--lte] [--rtc0|--rtc1] [--nosavertc]
+#   --nosavertc : 시간 저장 서비스(time-keeper) 제외, startup-monitor.sh 사용 (복구 없음)
 # (docker mode는 update.sh 대상 아님 — 컨테이너에서 직접 SV500_MODE=3 설정)
 # =================================================================
 MODE="local"
 DEVICE_MODE=0   # 0=linux rtc0, 1=linux rtc1 (webserver SV500_MODE와 일치)
+NOSAVE_RTC=0    # 1이면 time-keeper 제외 + startup-monitor.service 사용
 while [ "$#" -gt 0 ]; do
   case $1 in
     --lte)
@@ -46,9 +48,12 @@ while [ "$#" -gt 0 ]; do
     --rtc1)
       DEVICE_MODE=1
       ;;
+    --nosavertc)
+      NOSAVE_RTC=1
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1]"
+      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1] [--nosavertc]"
       exit 1
       ;;
   esac
@@ -318,7 +323,13 @@ else
     log_warn "startup-helper.sh not found in $SCRIPT_DIR"
 fi
 
-# startup-helper.service unit 재생성 (idempotent — 손상/누락 케이스에도 보장)
+if [ -f "$SCRIPT_DIR/startup-monitor.sh" ]; then
+    cp "$SCRIPT_DIR/startup-monitor.sh" /usr/local/bin/startup-monitor.sh
+    chmod +x /usr/local/bin/startup-monitor.sh
+    log_info "✅ startup-monitor.sh updated"
+fi
+
+# startup-helper.service unit 재생성 (시간 복구 있는 버전)
 cat <<EOF | sudo tee /etc/systemd/system/startup-helper.service > /dev/null
 [Unit]
 Description=Startup Helper for Services
@@ -333,6 +344,22 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 log_info "✅ startup-helper.service unit ensured"
+
+# startup-monitor.service unit 재생성 (시간 복구 없는 버전, --nosavertc용)
+cat <<EOF | sudo tee /etc/systemd/system/startup-monitor.service > /dev/null
+[Unit]
+Description=Startup Monitor for Services (no RTC recovery)
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/startup-monitor.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+log_info "✅ startup-monitor.service unit ensured"
 
 # shutdown-marker.service 재생성 — 마커를 /usr/local/sv500 (영구) 으로 이동
 # (이전 버전은 /var/run에 마커 → tmpfs라 reboot 시 휘발 → 항상 UNEXPECTED 판정)
@@ -507,14 +534,22 @@ sudo systemctl stop    snmptrapd  2>/dev/null || true
 sudo systemctl disable snmptrapd  2>/dev/null || true
 log_info "✅ snmpd/snmptrapd disabled"
 
-# startup-helper.service enable (idempotent — 이미 enable이면 무해)
-sudo systemctl enable startup-helper.service 2>/dev/null || true
-log_info "✅ startup-helper.service enabled"
-
-# time-keeper.timer enable + start (RTC reset recovery용 heartbeat)
-sudo systemctl enable time-keeper.timer 2>/dev/null || true
-sudo systemctl start  time-keeper.timer 2>/dev/null || true
-log_info "✅ time-keeper.timer enabled"
+# --nosavertc 옵션 따라 두 가지 흐름:
+#   기본: startup-helper.service (시간 복구) + time-keeper.timer (heartbeat)
+#   --nosavertc: startup-monitor.service (복구 없음), time-keeper.timer 사용 안 함
+if [ "$NOSAVE_RTC" = "1" ]; then
+    sudo systemctl disable startup-helper.service 2>/dev/null || true
+    sudo systemctl enable  startup-monitor.service 2>/dev/null || true
+    sudo systemctl stop    time-keeper.timer 2>/dev/null || true
+    sudo systemctl disable time-keeper.timer 2>/dev/null || true
+    log_info "✅ startup-monitor.service enabled (no RTC save/recovery)"
+else
+    sudo systemctl disable startup-monitor.service 2>/dev/null || true
+    sudo systemctl enable  startup-helper.service 2>/dev/null || true
+    sudo systemctl enable  time-keeper.timer 2>/dev/null || true
+    sudo systemctl start   time-keeper.timer 2>/dev/null || true
+    log_info "✅ startup-helper.service + time-keeper.timer enabled"
+fi
 
 log_info "Starting sv500A35..."
 sudo systemctl start sv500A35
