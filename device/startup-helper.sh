@@ -105,6 +105,10 @@ for i in $(seq 1 60); do
     sleep 1
 done
 
+# ── Start sv500A35 early (redis만 의지, webserver init_setup 기다리지 않음) ──
+log "→ Starting sv500A35 (early, depends on redis only)..."
+systemctl start sv500A35
+
 # ── Wait for influxdb ready ───────────────────────────────────────
 log "→ Waiting for influxdb ready..."
 for i in $(seq 1 120); do
@@ -119,9 +123,5 @@ done
 log "→ Starting webserver (Type=notify, blocks until READY=1)..."
 systemctl start webserver
 log "   webserver active"
-
-# ── Start sv500A35 ────────────────────────────────────────────────
-log "→ Starting sv500A35..."
-systemctl start sv500A35
 
 log "===== All services started ====="

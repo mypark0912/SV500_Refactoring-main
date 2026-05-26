@@ -750,7 +750,7 @@ SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME
 cat <<EOF | sudo tee $SERVICE_PATH > /dev/null
 [Unit]
 Description=SV500A35 Service
-After=network.target
+After=network.target redis.service
 
 [Service]
 ExecStart=/home/root/bin/SV500_CA35
