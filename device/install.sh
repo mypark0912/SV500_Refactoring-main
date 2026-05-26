@@ -620,12 +620,15 @@ After=network.target redis.service influxdb.service
 Wants=redis.service
 
 [Service]
+Type=notify
+NotifyAccess=main
 WorkingDirectory=$APP_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
 Restart=always
 RestartSec=5
+TimeoutStartSec=120
 User=ntekadmin
 Group=root
 UMask=0007
@@ -676,36 +679,11 @@ fi
 # =================================================================
 log_section "7. Creating Boot Helper Script"
 
-cat > /usr/local/bin/startup-helper.sh << 'EOF'
-#!/bin/bash
-# Boot service start order assurance
-
-LOG="/var/log/startup-helper.log"
-echo "[$(date)] Boot helper script started" >> $LOG
-
-# Wait for mount
-while ! mountpoint -q /usr/local; do
-    echo "[$(date)] Waiting for /usr/local mount..." >> $LOG
-    sleep 1
-done
-
-# Prepare Redis directory
-mkdir -p /var/run/redis
-chown redis:redis /var/run/redis 2>/dev/null || true
-
-# Sequential service start
-echo "[$(date)] Starting services..." >> $LOG
-systemctl start redis
-sleep 2
-systemctl start influxdb
-sleep 3
-systemctl start webserver
-systemctl start core
-
-echo "[$(date)] All services started" >> $LOG
-EOF
-
+# Install startup-helper.sh from device/ folder
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cp "$SCRIPT_DIR/startup-helper.sh" /usr/local/bin/startup-helper.sh
 chmod +x /usr/local/bin/startup-helper.sh
+log_info "✅ startup-helper.sh installed"
 
 cat > /etc/systemd/system/startup-helper.service << 'EOF'
 [Unit]
@@ -721,6 +699,14 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
+# Install time-keeper (heartbeat for RTC reset recovery)
+cp "$SCRIPT_DIR/save-time.sh" /usr/local/bin/save-time.sh
+chmod +x /usr/local/bin/save-time.sh
+cp "$SCRIPT_DIR/time-keeper.service" /etc/systemd/system/time-keeper.service
+cp "$SCRIPT_DIR/time-keeper.timer"   /etc/systemd/system/time-keeper.timer
+chmod 644 /etc/systemd/system/time-keeper.service /etc/systemd/system/time-keeper.timer
+log_info "✅ time-keeper installed"
+
 # =================================================================
 # 8. Enable and Start Services
 # =================================================================
@@ -735,20 +721,20 @@ sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
 # Enable main services
+# (webserver / sv500A35: startup-helper가 시작하므로 enable 제외)
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
-sudo systemctl enable webserver.service
 sudo systemctl enable core.service
 sudo systemctl enable startup-helper.service
+sudo systemctl enable time-keeper.timer
 
 # Start services
+# redis/influxdb 먼저, 그 다음 startup-helper가 health 폴링 + webserver/sv500A35 시작
 log_info "Starting services..."
 sudo systemctl start redis
-sleep 2
 sudo systemctl start influxdb
-sleep 3
-sudo systemctl start webserver
-#sudo systemctl start core
+sudo systemctl start time-keeper.timer
+sudo systemctl start startup-helper.service
 
 #######################################
 # 8.5 register sv500A35.service
@@ -779,13 +765,14 @@ WantedBy=multi-user.target
 EOF
 
 # configure the authority and register the service
+# (sv500A35는 startup-helper가 시작하므로 enable 안 함)
 sudo chmod 644 $SERVICE_PATH
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
-sudo systemctl enable $SERVICE_NAME
+#sudo systemctl enable $SERVICE_NAME
 #sudo systemctl start $SERVICE_NAME
 
-echo "$SERVICE_NAME registered"
+echo "$SERVICE_NAME registered (start managed by startup-helper)"
 
 # Disable unnecessary services
 sudo systemctl stop avahi-daemon 2>/dev/null || true

@@ -5,7 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from states.global_state import init_redis, redis_state, os_spec, cleanup_global_resources, SETTING_FOLDER
 from starlette.middleware.base import BaseHTTPMiddleware
-import mimetypes, os, logging
+import mimetypes, os, logging, socket
 from pathlib import Path
 from routes import api_router
 from contextlib import asynccontextmanager
@@ -93,6 +93,20 @@ def init_binary_processor():
     else:
         logging.error("Redis client not initialized, cannot create binary processor")
 
+def sd_notify(message: str) -> None:
+    """systemd Type=notify 소켓으로 상태 전송. NOTIFY_SOCKET 없으면 무시."""
+    addr = os.environ.get("NOTIFY_SOCKET")
+    if not addr:
+        return
+    if addr[0] == "@":
+        addr = "\0" + addr[1:]  # abstract namespace
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+            sock.connect(addr)
+            sock.sendall(message.encode())
+    except Exception as e:
+        logging.warning(f"sd_notify failed: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(SETTING_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
@@ -114,6 +128,10 @@ async def lifespan(app: FastAPI):
         setup_all_processors(redis_state.processor)
 
         logging.info("Binary processor and handler initialized")
+
+    sd_notify("READY=1")
+    logging.info("systemd READY=1 sent")
+
     yield  # 앱 실행
 
     await cleanup_global_resources()

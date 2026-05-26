@@ -1,0 +1,6 @@
+[Unit]
+Description=Persist current time to disk for boot-time RTC recovery
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/save-time.sh

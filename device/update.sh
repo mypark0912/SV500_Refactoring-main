@@ -236,12 +236,15 @@ After=network.target redis.service influxdb.service
 Wants=redis.service
 
 [Service]
+Type=notify
+NotifyAccess=main
 WorkingDirectory=$APP_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
 Restart=always
 RestartSec=5
+TimeoutStartSec=120
 User=ntekadmin
 Group=root
 UMask=0007
@@ -249,7 +252,7 @@ UMask=0007
 [Install]
 WantedBy=multi-user.target
 EOF
-    log_info "✅ webserver.service updated (User=ntekadmin)"
+    log_info "✅ webserver.service updated (User=ntekadmin, Type=notify)"
 else
     log_warn "Webserver directory not found: $APP_DIR — skipping service update"
 fi
@@ -282,6 +285,51 @@ EOF
 else
     log_warn "Core directory not found: $CORE_DIR — skipping service update"
 fi
+
+# =================================================================
+# 4.5 Install Boot/RTC Helpers (startup-helper, time-keeper)
+# =================================================================
+log_section "4.5 Install Boot/RTC Helpers"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/startup-helper.sh" ]; then
+    cp "$SCRIPT_DIR/startup-helper.sh" /usr/local/bin/startup-helper.sh
+    chmod +x /usr/local/bin/startup-helper.sh
+    log_info "✅ startup-helper.sh updated"
+else
+    log_warn "startup-helper.sh not found in $SCRIPT_DIR"
+fi
+
+# startup-helper.service unit 재생성 (idempotent — 손상/누락 케이스에도 보장)
+cat <<EOF | sudo tee /etc/systemd/system/startup-helper.service > /dev/null
+[Unit]
+Description=Startup Helper for Services
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/startup-helper.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+log_info "✅ startup-helper.service unit ensured"
+
+if [ -f "$SCRIPT_DIR/save-time.sh" ]; then
+    cp "$SCRIPT_DIR/save-time.sh" /usr/local/bin/save-time.sh
+    chmod +x /usr/local/bin/save-time.sh
+fi
+if [ -f "$SCRIPT_DIR/time-keeper.service" ]; then
+    cp "$SCRIPT_DIR/time-keeper.service" /etc/systemd/system/time-keeper.service
+    chmod 644 /etc/systemd/system/time-keeper.service
+fi
+if [ -f "$SCRIPT_DIR/time-keeper.timer" ]; then
+    cp "$SCRIPT_DIR/time-keeper.timer" /etc/systemd/system/time-keeper.timer
+    chmod 644 /etc/systemd/system/time-keeper.timer
+fi
+log_info "✅ time-keeper installed"
 
 # =================================================================
 # 5. FRP 터널링 & Firewall (모드에 따라 처리)
@@ -354,11 +402,17 @@ chmod 750 /home/root 2>/dev/null || true
 
 # 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
 # (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
-chmod -R 770 /usr/local/sv500 2>/dev/null || true
-chmod -R 770 /home/root/webserver 2>/dev/null || true
-chmod -R 770 /home/root/core 2>/dev/null || true
-chmod -R 770 /home/root/mqClient 2>/dev/null || true
-chmod -R 770 /home/root/config 2>/dev/null || true
+# ownership 도 root:root 로 강제 복구 — chmod 만으로는 잘못 잡힌 owner(예: influxdb)가 풀리지 않음
+sudo chown -R root:root /usr/local/sv500 2>/dev/null || true
+sudo chmod -R 770       /usr/local/sv500 2>/dev/null || true
+sudo chown -R root:root /home/root/webserver 2>/dev/null || true
+sudo chmod -R 770       /home/root/webserver 2>/dev/null || true
+sudo chown -R root:root /home/root/core 2>/dev/null || true
+sudo chmod -R 770       /home/root/core 2>/dev/null || true
+sudo chown -R root:root /home/root/mqClient 2>/dev/null || true
+sudo chmod -R 770       /home/root/mqClient 2>/dev/null || true
+sudo chown -R root:root /home/root/config 2>/dev/null || true
+sudo chmod -R 770       /home/root/config 2>/dev/null || true
 
 # 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
 #  - *.network      : 비교용 read (쓰기는 sudo 경유)
@@ -379,6 +433,14 @@ else
     log_info "ℹ️  /usr/local/sv500/backup not found (skip)"
 fi
 
+# InfluxDB 백업 디렉토리는 influxdb 사용자 소유로 복원
+# (위 chown -R root:root + chgrp -R root /backup 가 덮어쓴 것을 되돌림)
+if [ -d /usr/local/sv500/backup/influxdb ]; then
+    sudo chown -R influxdb:influxdb /usr/local/sv500/backup/influxdb 2>/dev/null || true
+    sudo chmod 775                  /usr/local/sv500/backup/influxdb 2>/dev/null || true
+    log_info "✅ Ownership restored: /usr/local/sv500/backup/influxdb (influxdb:influxdb, 775)"
+fi
+
 
 log_section "6. Reload systemd and Restart Services"
 
@@ -387,12 +449,26 @@ sudo chmod +x /home/root/bin/SV500_CA35
 
 
 sudo systemctl daemon-reload
+
+# Enable 정책 조정 (webserver / sv500A35는 startup-helper가 시작하므로 disable)
+sudo systemctl disable webserver.service 2>/dev/null || true
+sudo systemctl disable sv500A35.service  2>/dev/null || true
+
+# startup-helper.service enable (idempotent — 이미 enable이면 무해)
+sudo systemctl enable startup-helper.service 2>/dev/null || true
+log_info "✅ startup-helper.service enabled"
+
+# time-keeper.timer enable + start (RTC reset recovery용 heartbeat)
+sudo systemctl enable time-keeper.timer 2>/dev/null || true
+sudo systemctl start  time-keeper.timer 2>/dev/null || true
+log_info "✅ time-keeper.timer enabled"
+
 log_info "Starting sv500A35..."
 sudo systemctl start sv500A35
 sleep 3
 
 log_info "Starting webserver..."
-sudo systemctl start webserver
+sudo systemctl restart webserver
 sleep 3
 
 log_info "Starting core..."
