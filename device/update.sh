@@ -336,20 +336,23 @@ log_info "✅ startup-helper.service unit ensured"
 
 # shutdown-marker.service 재생성 — 마커를 /usr/local/sv500 (영구) 으로 이동
 # (이전 버전은 /var/run에 마커 → tmpfs라 reboot 시 휘발 → 항상 UNEXPECTED 판정)
+# Conflicts + ExecStop 패턴: 부팅 시 active 유지 → 종료 target 진입 시 stop → ExecStop으로 마커 생성
 cat <<EOF | sudo tee /etc/systemd/system/shutdown-marker.service > /dev/null
 [Unit]
 Description=Create clean shutdown marker
 DefaultDependencies=no
 Before=shutdown.target reboot.target halt.target
+Conflicts=shutdown.target reboot.target halt.target
 RequiresMountsFor=/usr/local
 
 [Service]
 Type=oneshot
-ExecStart=/bin/touch /usr/local/sv500/clean_shutdown
 RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/bin/touch /usr/local/sv500/clean_shutdown
 
 [Install]
-WantedBy=shutdown.target reboot.target halt.target
+WantedBy=multi-user.target
 EOF
 sudo systemctl enable shutdown-marker.service 2>/dev/null || true
 log_info "✅ shutdown-marker.service ensured (marker at /usr/local/sv500/clean_shutdown)"

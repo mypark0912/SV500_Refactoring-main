@@ -312,20 +312,23 @@ chmod +x /usr/local/bin/shutdown-monitor.sh
 
 # Create shutdown-marker.service
 # 마커는 영구 위치(/usr/local/sv500)에 — /var/run은 tmpfs라 reboot 시 휘발됨
+# Conflicts + ExecStop 패턴: 부팅 시 active 유지 → 종료 target 진입 시 stop → ExecStop으로 마커 생성
 cat > /etc/systemd/system/shutdown-marker.service << 'EOF'
 [Unit]
 Description=Create clean shutdown marker
 DefaultDependencies=no
 Before=shutdown.target reboot.target halt.target
+Conflicts=shutdown.target reboot.target halt.target
 RequiresMountsFor=/usr/local
 
 [Service]
 Type=oneshot
-ExecStart=/bin/touch /usr/local/sv500/clean_shutdown
 RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/bin/touch /usr/local/sv500/clean_shutdown
 
 [Install]
-WantedBy=shutdown.target reboot.target halt.target
+WantedBy=multi-user.target
 EOF
 
 # Create shutdown-monitor.service
