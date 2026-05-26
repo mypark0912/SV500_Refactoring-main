@@ -263,11 +263,11 @@ if [ -d "$CORE_DIR" ]; then
     cat <<EOF > /etc/systemd/system/core.service
 [Unit]
 Description=SV500 Core
-After=network.target influxdb.service redis.service webserver.service
-Wants=
+After=network.target redis.service influxdb.service webserver.service
+Requires=redis.service influxdb.service
+Wants=smartsystemsrestapiservice.service
 
 [Service]
-ExecStartPre=/bin/sleep 5
 ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
@@ -281,7 +281,7 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOF
-    log_info "✅ core.service updated (User=ntekadmin)"
+    log_info "✅ core.service updated (After=webserver, Requires=redis/influxdb, Wants=smartsystemsrestapi)"
 else
     log_warn "Core directory not found: $CORE_DIR — skipping service update"
 fi

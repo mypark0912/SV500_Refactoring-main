@@ -650,11 +650,11 @@ if [ -d "$CORE_DIR" ]; then
     cat <<EOF > /etc/systemd/system/core.service
 [Unit]
 Description=SV500 Core
-After=network.target influxdb.service redis.service webserver.service
-Wants=
+After=network.target redis.service influxdb.service webserver.service
+Requires=redis.service influxdb.service
+Wants=smartsystemsrestapiservice.service
 
 [Service]
-ExecStartPre=/bin/sleep 5
 ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
