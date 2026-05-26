@@ -9,7 +9,6 @@ ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/timedatectl set-local-rtc *
 ntekadmin ALL=(ALL) NOPASSWD: /bin/date -s *
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock -w
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock --systohc --utc
-ntekadmin ALL=(ALL) NOPASSWD: /sbin/hwclock --systohc -f /dev/rtc1
 
 # ---- 서비스 제어 (systemctl) ----
 ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl start *

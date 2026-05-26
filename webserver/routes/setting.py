@@ -2373,7 +2373,7 @@ async def resetAll(request:Request):
                 redis_state.client.hdel("System", "mode")
             if redis_state.client.exists("Equipment"):
                 redis_state.client.delete("Equipment")
-            # rt = delete_channel_data()  # /sv500 램디스크는 재부팅 시 자동 초기화되므로 ntekadmin 권한 부족 문제 회피
+            # rt = delete_channel_data()
             sysService("start", "Core")
             if service_exists("smartsystemsservice.service"):
                 sysService("start", "SmartSystems")
@@ -4543,8 +4543,6 @@ ExecStart={exec_start}
 WorkingDirectory={working_directory}
 Restart={restart}
 User={user}
-Group=root
-UMask=0007
 
 [Install]
 WantedBy={wanted_by}
@@ -5043,8 +5041,10 @@ async def update_smartsystem(mode, request: Request):
 
             return {"success": False, "message": "Health check timed out after 60s"}
         except subprocess.CalledProcessError as e:
+            logging.error(f"Update failed: {e.stderr}")
             return {"success": False, "message": f"Fresh installation is failed: {e.stderr}"}  # 6. 에러 메시지 추가
         except subprocess.TimeoutExpired:
+            logging.error(f"Update failed: {str(e)}")
             return {"success": False, "message": "Fresh installation is timeout"}
 
     else:
@@ -5083,10 +5083,8 @@ async def update_smartsystem(mode, request: Request):
             return {"success": False, "message": "Health check timed out after 60s"}
 
         except subprocess.CalledProcessError as e:
-            logging.error(f"Update failed: {e.stderr}")
             return {"success": False, "message": f"Update failed: {e.stderr}"}
         except Exception as e:
-            logging.error(f"Update failed: {str(e)}")
             return {"success": False, "message": str(e)}
 
 
@@ -5192,9 +5190,9 @@ async def setup_system_time(data: TimeSetRequest, request: Request):
             logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
             return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
 
-        r_hw = subprocess.run(["sudo", "hwclock", "--systohc", "-f", "/dev/rtc1"], capture_output=True, text=True)
+        r_hw = subprocess.run(["sudo", "hwclock", "-w"], capture_output=True, text=True)
         if r_hw.returncode != 0:
-            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
+            logging.error(f"hwclock -w failed (rc={r_hw.returncode}): {r_hw.stderr}")
 
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)

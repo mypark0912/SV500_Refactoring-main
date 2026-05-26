@@ -90,7 +90,13 @@ fi
 # ntekadmin을 root 그룹에 추가 (디렉토리 접근용)
 usermod -aG root $ADMIN_USER 2>/dev/null || true
 
-log_info "ntekadmin setup complete (file permissions applied at end of install)"
+# ntekadmin을 influxdb 그룹에 추가 (백업 디렉토리 쓰기 권한용)
+usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
+
+# /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
+chmod 750 /home/root 2>/dev/null || true
+
+log_info "ntekadmin setup complete"
 
 #######################################
 # backup profile
@@ -107,12 +113,12 @@ echo "1. Locale changed : zh_CN.UTF-8 → en_US.UTF-8"
 sudo timedatectl set-timezone Asia/Seoul
 echo "2. Timezone changed : Asia/Seoul"
 
-sudo timedatectl set-ntp true
-sudo systemctl restart systemd-timesyncd
-sleep 5
-sudo timedatectl set-local-rtc 0
-sudo hwclock --systohc --utc -f /dev/rtc1
-timedatectl status && hwclock -r -f /dev/rtc1
+sudo timedatectl set-ntp true  
+sudo systemctl restart systemd-timesyncd  
+sleep 5  
+sudo timedatectl set-local-rtc 0  
+sudo hwclock --systohc --utc  
+timedatectl status && hwclock -r
 timedatectl set-ntp false
 
 echo "2.5. RTC Enable and NTP disable"
@@ -152,6 +158,22 @@ sudo mkdir -p /var/log
 sudo mkdir -p /usr/local/sv500/logs/web
 sudo mkdir -p /usr/local/sv500/logs/core
 sudo mkdir -p /usr/local/sv500/trendcsv
+
+# 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
+# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
+chmod -R 770 /usr/local/sv500 2>/dev/null || true
+chmod -R 770 /home/root/webserver 2>/dev/null || true
+chmod -R 770 /home/root/core 2>/dev/null || true
+chmod -R 770 /home/root/mqClient 2>/dev/null || true
+chmod -R 770 /home/root/config 2>/dev/null || true
+
+# 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
+#  - *.network      : 비교용 read (쓰기는 sudo 경유)
+#  - timesyncd.conf : sudo 없이 직접 read/write
+# ntekadmin 이 root 그룹 멤버이므로 그룹 권한만 부여. 실행 비트 불필요.
+# 664 = owner rw / group rw / other r
+chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
+chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
 
 # LTE 모드일 경우에만 frp 압축 해제
 if [ "$MODE" = "lte" ]; then
@@ -302,19 +324,6 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
-# Install rtc-sync.service (RTC1 -> system clock sync at boot)
-RTC_SYNC_SRC="$(dirname "$0")/rtc-sync.service"
-RTC_SYNC_DST="/etc/systemd/system/rtc-sync.service"
-if [ -f "$RTC_SYNC_SRC" ]; then
-    cp "$RTC_SYNC_SRC" "$RTC_SYNC_DST"
-    chmod 644 "$RTC_SYNC_DST"
-    chown root:root "$RTC_SYNC_DST"
-    log_info "rtc-sync.service installed: $RTC_SYNC_DST"
-    rm -f "$RTC_SYNC_SRC"
-else
-    log_warn "rtc-sync.service not found: $RTC_SYNC_SRC"
-fi
-
 # =================================================================
 # 2.5 시스템 패키지 설치 (APT 패키지)
 # =================================================================
@@ -381,9 +390,6 @@ sudo systemctl stop influxdb2-custom 2>/dev/null || true
 
 # Create InfluxDB user
 sudo useradd -r -s /bin/false influxdb 2>/dev/null || true
-
-# ntekadmin을 influxdb 그룹에 추가 (백업 디렉토리 쓰기 권한용)
-usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
 
 # Install InfluxDB (using offline package)
 if [ -f "$OFFLINE_DIR/binaries/influxdb2-2.7.11_linux_arm64.tar.gz" ]; then
@@ -650,7 +656,9 @@ ExecStart=$SHARED_VENV_DIR/bin/python3 main.py
 WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Restart=always
-User=root
+User=ntekadmin
+Group=root
+UMask=0007
 StandardOutput=journal
 StandardError=journal
 
@@ -726,56 +734,12 @@ sudo systemctl restart systemd-journald
 sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
-# Enable RTC sync (must run before other services to set correct system time)
-sudo systemctl enable rtc-sync.service
-
 # Enable main services
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
 sudo systemctl enable webserver.service
 sudo systemctl enable core.service
 sudo systemctl enable startup-helper.service
-
-# =================================================================
-# 8.5 Apply File Permissions (서비스 start 전에 반드시 적용)
-# webserver(ntekadmin)가 시작 즉시 로그 파일을 만들기 때문에,
-# /usr/local/sv500/logs/web 등에 그룹 쓰기 권한이 미리 잡혀 있어야 함.
-# =================================================================
-log_section "8.5 Apply File Permissions"
-
-# /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
-chown root:root /home/root 2>/dev/null || true
-chmod 750       /home/root 2>/dev/null || true
-
-# 웹서버/core/mqClient 관련 디렉토리: root:root + 770
-# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
-for dir in /usr/local/sv500 /home/root/webserver /home/root/core /home/root/mqClient /home/root/config; do
-    if [ -d "$dir" ]; then
-        chown -R root:root "$dir" 2>/dev/null || true
-        chmod -R 770       "$dir" 2>/dev/null || true
-        log_info "  permissions applied: $dir"
-    else
-        log_warn "  directory missing (skipped): $dir"
-    fi
-done
-
-# InfluxDB 백업 디렉토리는 influxdb 사용자 소유로 복원
-# (위 chown -R root:root /usr/local/sv500 이 덮어쓴 것을 되돌림)
-if [ -d /usr/local/sv500/backup/influxdb ]; then
-    chown -R influxdb:influxdb /usr/local/sv500/backup/influxdb 2>/dev/null || true
-    chmod 775                  /usr/local/sv500/backup/influxdb 2>/dev/null || true
-fi
-
-# 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
-#  - *.network      : 비교용 read (쓰기는 sudo 경유)
-#  - timesyncd.conf : sudo 없이 직접 read/write
-# ntekadmin 이 root 그룹 멤버이므로 그룹 권한만 부여. 실행 비트 불필요.
-# 664 = owner rw / group rw / other r
-chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
-chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
-log_info "  permissions applied: /etc/systemd/network/*.network, /etc/systemd/timesyncd.conf"
-
-log_info "✅ File permissions applied (pre-service-start)"
 
 # Start services
 log_info "Starting services..."
