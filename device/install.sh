@@ -874,7 +874,15 @@ sudo systemctl enable webserver.service
 sudo systemctl enable core.service
 sudo systemctl enable startup-monitor.service
 sudo systemctl enable sv500A35.service
-sudo systemctl enable time-keeper.timer
+
+# time-keeper.timer: --nosavertc / --nosavertc1 이면 비활성
+if [ "$NOSAVE_RTC" = "1" ]; then
+    sudo systemctl disable time-keeper.timer 2>/dev/null || true
+    log_info "✅ time-keeper disabled (nosavertc mode)"
+else
+    sudo systemctl enable time-keeper.timer
+    log_info "✅ time-keeper enabled (RTC 복구 활성)"
+fi
 
 # smartsystemsservice / smartsystemsrestapiservice 의 After= 보강 (drop-in override)
 # iss installer 가 만든 unit 파일에 After= 가 빠져있을 수 있어 우리가 명시
