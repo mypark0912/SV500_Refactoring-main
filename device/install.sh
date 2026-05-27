@@ -176,6 +176,11 @@ sudo mkdir -p /usr/local/sv500/logs/web
 sudo mkdir -p /usr/local/sv500/logs/core
 sudo mkdir -p /usr/local/sv500/trendcsv
 
+# /usr/local/sv500 자체는 755 (other +x 필요)
+# influxdb 같은 외부 계정이 자기 소유 하위(backup) 로 들어가려면 부모 traverse 권한 필수
+if [ -d /usr/local/sv500 ]; then
+    chmod 755 /usr/local/sv500 2>/dev/null || true
+fi
 # /usr/local/sv500 은 backup(influxdb 소유) 등이 섞이므로 필요한 하위만 처리.
 # 아래 4개 폴더는 ntekadmin/root 어느 쪽으로 만들어졌든 root:root + 775 로 통일
 # (그래야 ntekadmin · core 가 그룹으로 일관 접근 가능)
@@ -652,8 +657,8 @@ if [ -d "$APP_DIR" ]; then
     cat <<EOF > /etc/systemd/system/webserver.service
 [Unit]
 Description=FastAPI Web Server
-After=network.target redis.service influxdb.service
-Wants=redis.service
+After=startup-monitor.service redis.service
+Wants=influxdb.service
 
 [Service]
 Type=notify
@@ -687,8 +692,7 @@ if [ -d "$CORE_DIR" ]; then
     cat <<EOF > /etc/systemd/system/core.service
 [Unit]
 Description=SV500 Core
-After=network.target redis.service influxdb.service webserver.service
-Requires=redis.service influxdb.service
+After=webserver.service influxdb.service
 Wants=smartsystemsrestapiservice.service
 
 [Service]
@@ -717,20 +721,20 @@ fi
 # =================================================================
 log_section "7. Creating Boot Helper Script"
 
-# Install startup-helper.sh from device/ folder
+# Install startup-monitor.sh from device/ folder (consolidated boot orchestrator)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cp "$SCRIPT_DIR/startup-helper.sh" /usr/local/bin/startup-helper.sh
-chmod +x /usr/local/bin/startup-helper.sh
-log_info "✅ startup-helper.sh installed"
+cp "$SCRIPT_DIR/startup-monitor.sh" /usr/local/bin/startup-monitor.sh
+chmod +x /usr/local/bin/startup-monitor.sh
+log_info "✅ startup-monitor.sh installed"
 
-cat > /etc/systemd/system/startup-helper.service << 'EOF'
+cat > /etc/systemd/system/startup-monitor.service << 'EOF'
 [Unit]
-Description=Startup Helper for Services
-After=multi-user.target
+Description=Boot Logger and RTC Recovery
+After=network.target local-fs.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/startup-helper.sh
+ExecStart=/usr/local/bin/startup-monitor.sh
 RemainAfterExit=yes
 
 [Install]
@@ -759,20 +763,50 @@ sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
 # Enable main services
-# (webserver / sv500A35: startup-helper가 시작하므로 enable 제외)
+# 모두 enable. systemd 가 After= 체인으로 순서 보장:
+#   redis/influxdb → startup-monitor → webserver → core / smartsystems*
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
+sudo systemctl enable webserver.service
 sudo systemctl enable core.service
-sudo systemctl enable startup-helper.service
+sudo systemctl enable startup-monitor.service
+sudo systemctl enable sv500A35.service
 sudo systemctl enable time-keeper.timer
 
+# smartsystemsservice / smartsystemsrestapiservice 의 After= 보강 (drop-in override)
+# iss installer 가 만든 unit 파일에 After= 가 빠져있을 수 있어 우리가 명시
+for sname in smartsystemsservice smartsystemsrestapiservice; do
+    spath="/etc/systemd/system/${sname}.service"
+    if [ -f "$spath" ]; then
+        sudo mkdir -p "${spath}.d"
+        if [ "$sname" = "smartsystemsservice" ]; then
+            sudo tee "${spath}.d/override.conf" > /dev/null <<'DROPIN'
+[Unit]
+After=
+After=webserver.service smartsystemsrestapiservice.service influxdb.service
+DROPIN
+        else
+            sudo tee "${spath}.d/override.conf" > /dev/null <<'DROPIN'
+[Unit]
+After=
+After=webserver.service influxdb.service
+DROPIN
+        fi
+        log_info "✅ ${sname}.service drop-in override 적용"
+    fi
+done
+
+sudo systemctl daemon-reload
+
 # Start services
-# redis/influxdb 먼저, 그 다음 startup-helper가 health 폴링 + webserver/sv500A35 시작
 log_info "Starting services..."
 sudo systemctl start redis
 sudo systemctl start influxdb
 sudo systemctl start time-keeper.timer
-sudo systemctl start startup-helper.service
+sudo systemctl start startup-monitor.service
+sudo systemctl start sv500A35.service 2>/dev/null || true
+sudo systemctl start webserver.service
+sudo systemctl start core.service
 
 #######################################
 # 8.5 register sv500A35.service
@@ -803,14 +837,12 @@ WantedBy=multi-user.target
 EOF
 
 # configure the authority and register the service
-# (sv500A35는 startup-helper가 시작하므로 enable 안 함)
+# (sv500A35 는 위에서 enable 처리됨, systemd 가 After=redis 로 자동 기동)
 sudo chmod 644 $SERVICE_PATH
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
-#sudo systemctl enable $SERVICE_NAME
-#sudo systemctl start $SERVICE_NAME
 
-echo "$SERVICE_NAME registered (start managed by startup-helper)"
+echo "$SERVICE_NAME registered"
 
 # Disable unnecessary services
 sudo systemctl stop avahi-daemon 2>/dev/null || true

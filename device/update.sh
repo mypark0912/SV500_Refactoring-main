@@ -28,12 +28,12 @@ log_section() {
 # =================================================================
 # 옵션 파싱 (기본값: local)
 # Usage: ./update_shared_venv.sh [--local|--lte] [--rtc0|--rtc1] [--nosavertc]
-#   --nosavertc : 시간 저장 서비스(time-keeper) 제외, startup-monitor.sh 사용 (복구 없음)
+#   --nosavertc : time-keeper 제외 (startup-monitor 가 last_known_time 없으면 자동 skip)
 # (docker mode는 update.sh 대상 아님 — 컨테이너에서 직접 SV500_MODE=3 설정)
 # =================================================================
 MODE="local"
 DEVICE_MODE=0   # 0=linux rtc0, 1=linux rtc1 (webserver SV500_MODE와 일치)
-NOSAVE_RTC=0    # 1이면 time-keeper 제외 + startup-monitor.service 사용
+NOSAVE_RTC=0    # 1이면 time-keeper 제외 (startup-monitor 는 항상 동일)
 while [ "$#" -gt 0 ]; do
   case $1 in
     --lte)
@@ -252,8 +252,8 @@ if [ -d "$APP_DIR" ]; then
     cat <<EOF > /etc/systemd/system/webserver.service
 [Unit]
 Description=FastAPI Web Server
-After=network.target redis.service influxdb.service
-Wants=redis.service
+After=startup-monitor.service redis.service
+Wants=influxdb.service
 
 [Service]
 Type=notify
@@ -284,8 +284,7 @@ if [ -d "$CORE_DIR" ]; then
     cat <<EOF > /etc/systemd/system/core.service
 [Unit]
 Description=SV500 Core
-After=network.target redis.service influxdb.service webserver.service
-Requires=redis.service influxdb.service
+After=webserver.service influxdb.service
 Wants=smartsystemsrestapiservice.service
 
 [Service]
@@ -303,53 +302,39 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOF
-    log_info "✅ core.service updated (After=webserver, Requires=redis/influxdb, SV500_MODE=$DEVICE_MODE)"
+    log_info "✅ core.service updated (After=webserver,influxdb / Wants=smartsystemsrestapiservice / SV500_MODE=$DEVICE_MODE)"
 else
     log_warn "Core directory not found: $CORE_DIR — skipping service update"
 fi
 
 # =================================================================
-# 4.5 Install Boot/RTC Helpers (startup-helper, time-keeper)
+# 4.5 Install Boot Orchestrator (startup-monitor, time-keeper)
 # =================================================================
-log_section "4.5 Install Boot/RTC Helpers"
+log_section "4.5 Install Boot Orchestrator"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-if [ -f "$SCRIPT_DIR/startup-helper.sh" ]; then
-    cp "$SCRIPT_DIR/startup-helper.sh" /usr/local/bin/startup-helper.sh
-    chmod +x /usr/local/bin/startup-helper.sh
-    log_info "✅ startup-helper.sh updated"
-else
-    log_warn "startup-helper.sh not found in $SCRIPT_DIR"
-fi
+# 옛 startup-helper 잔재 정리 (startup-monitor 로 일원화됨)
+sudo systemctl stop    startup-helper.service 2>/dev/null || true
+sudo systemctl disable startup-helper.service 2>/dev/null || true
+sudo rm -f /etc/systemd/system/startup-helper.service
+sudo rm -f /usr/local/bin/startup-helper.sh
 
 if [ -f "$SCRIPT_DIR/startup-monitor.sh" ]; then
     cp "$SCRIPT_DIR/startup-monitor.sh" /usr/local/bin/startup-monitor.sh
     chmod +x /usr/local/bin/startup-monitor.sh
     log_info "✅ startup-monitor.sh updated"
+else
+    log_warn "startup-monitor.sh not found in $SCRIPT_DIR"
 fi
 
-# startup-helper.service unit 재생성 (시간 복구 있는 버전)
-cat <<EOF | sudo tee /etc/systemd/system/startup-helper.service > /dev/null
-[Unit]
-Description=Startup Helper for Services
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/startup-helper.sh
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-log_info "✅ startup-helper.service unit ensured"
-
-# startup-monitor.service unit 재생성 (시간 복구 없는 버전, --nosavertc용)
+# startup-monitor.service unit 재생성 (boot 로깅 + RTC 복구)
+# After=multi-user.target 은 cycle 만들기 때문에 절대 쓰면 안 됨
+# After=redis/influxdb 도 불필요 (스크립트가 systemctl restart 만 호출, ping 안 함)
 cat <<EOF | sudo tee /etc/systemd/system/startup-monitor.service > /dev/null
 [Unit]
-Description=Startup Monitor for Services (no RTC recovery)
-After=multi-user.target
+Description=Boot Logger and RTC Recovery
+After=network.target local-fs.target
 
 [Service]
 Type=oneshot
@@ -460,9 +445,14 @@ fi
 # =================================================================
 # 6. systemd 리로드 및 서비스 재시작
 # =================================================================
-rm -rf /usr/local/sv500/iss
-mv /home/root/iss /usr/local/sv500/iss
-sudo chmod +x /home/root/SV500/install.sh
+# iss 패키지가 업로드된 경우에만 교체 (업데이트 시 항상 올라오지는 않음)
+if [ -d /home/root/iss ]; then
+    rm -rf /usr/local/sv500/iss
+    mv /home/root/iss /usr/local/sv500/iss
+fi
+if [ -f /usr/local/sv500/iss/install.sh ]; then
+    sudo chmod +x /usr/local/sv500/iss/install.sh
+fi
 
 # ntekadmin을 root 그룹에 추가 (디렉토리 접근용)
 usermod -aG root $ADMIN_USER 2>/dev/null || true
@@ -473,6 +463,11 @@ usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
 # /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
 chmod 750 /home/root 2>/dev/null || true
 
+# /usr/local/sv500 자체는 755 (other +x 필요)
+# influxdb 같은 외부 계정이 자기 소유 하위(backup) 로 들어가려면 부모 traverse 권한 필수
+if [ -d /usr/local/sv500 ]; then
+    sudo chmod 755 /usr/local/sv500 2>/dev/null || true
+fi
 # /usr/local/sv500 은 backup(influxdb 소유) 등이 섞여있으므로 통째로 휩쓸지 않음.
 # 아래 4개 폴더는 ntekadmin/root 어느 쪽으로 만들어졌든 root:root + 775 로 통일
 # (그래야 ntekadmin · core 가 그룹으로 일관 접근 가능)
@@ -520,9 +515,36 @@ sudo chmod +x /home/root/bin/SV500_CA35
 
 sudo systemctl daemon-reload
 
-# Enable 정책 조정 (webserver / sv500A35는 startup-helper가 시작하므로 disable)
-sudo systemctl disable webserver.service 2>/dev/null || true
-sudo systemctl disable sv500A35.service  2>/dev/null || true
+# Enable 정책: 모든 핵심 서비스 enable.
+# systemd 가 After= 체인으로 순서 보장:
+#   redis/influxdb → startup-monitor → webserver → core / smartsystems*
+sudo systemctl enable  webserver.service       2>/dev/null || true
+sudo systemctl enable  core.service            2>/dev/null || true
+sudo systemctl enable  startup-monitor.service 2>/dev/null || true
+sudo systemctl enable  sv500A35.service        2>/dev/null || true
+
+# smartsystemsservice / smartsystemsrestapiservice: iss installer 가 만든 unit 파일에
+# 우리가 원하는 After= 가 없을 수 있어 drop-in override 로 보강
+for sname in smartsystemsservice smartsystemsrestapiservice; do
+    spath="/etc/systemd/system/${sname}.service"
+    if [ -f "$spath" ]; then
+        sudo mkdir -p "${spath}.d"
+        if [ "$sname" = "smartsystemsservice" ]; then
+            sudo tee "${spath}.d/override.conf" > /dev/null <<'DROPIN'
+[Unit]
+After=
+After=webserver.service smartsystemsrestapiservice.service influxdb.service
+DROPIN
+        else
+            sudo tee "${spath}.d/override.conf" > /dev/null <<'DROPIN'
+[Unit]
+After=
+After=webserver.service influxdb.service
+DROPIN
+        fi
+        log_info "✅ ${sname}.service drop-in override 적용"
+    fi
+done
 
 # 불필요한 서비스 disable (snmpd: 시작 실패로 부팅 90초 timeout 유발)
 sudo systemctl stop    snmpd      2>/dev/null || true
@@ -531,33 +553,26 @@ sudo systemctl stop    snmptrapd  2>/dev/null || true
 sudo systemctl disable snmptrapd  2>/dev/null || true
 log_info "✅ snmpd/snmptrapd disabled"
 
-# --nosavertc 옵션 따라 두 가지 흐름:
-#   기본: startup-helper.service (시간 복구) + time-keeper.timer (heartbeat)
-#   --nosavertc: startup-monitor.service (복구 없음), time-keeper.timer 사용 안 함
+# --nosavertc 옵션: time-keeper 만 토글 (startup-monitor 는 last_known_time 파일 유무로 자동 분기)
 if [ "$NOSAVE_RTC" = "1" ]; then
-    sudo systemctl disable startup-helper.service 2>/dev/null || true
-    sudo systemctl enable  startup-monitor.service 2>/dev/null || true
     sudo systemctl stop    time-keeper.timer 2>/dev/null || true
     sudo systemctl disable time-keeper.timer 2>/dev/null || true
-    log_info "✅ startup-monitor.service enabled (no RTC save/recovery)"
+    log_info "✅ time-keeper disabled (startup-monitor 가 RTC 복구 skip)"
 else
-    sudo systemctl disable startup-monitor.service 2>/dev/null || true
-    sudo systemctl enable  startup-helper.service 2>/dev/null || true
     sudo systemctl enable  time-keeper.timer 2>/dev/null || true
     sudo systemctl start   time-keeper.timer 2>/dev/null || true
-    log_info "✅ startup-helper.service + time-keeper.timer enabled"
+    log_info "✅ time-keeper enabled (startup-monitor 가 RTC 복구 수행)"
 fi
 
-log_info "Starting sv500A35..."
-sudo systemctl start sv500A35
-sleep 3
+sudo systemctl daemon-reload
 
-log_info "Starting webserver..."
-sudo systemctl restart webserver
+log_info "Restarting services (systemd 가 After= 체인으로 순서 보장)..."
+sudo systemctl restart startup-monitor.service
+sleep 1
+sudo systemctl restart sv500A35.service 2>/dev/null || true
+sudo systemctl restart webserver.service
 sleep 3
-
-log_info "Starting core..."
-sudo systemctl start core
+sudo systemctl restart core.service
 sleep 2
 
 # 상태 확인

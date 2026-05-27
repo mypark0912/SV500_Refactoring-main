@@ -3,9 +3,9 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from states.global_state import init_redis, redis_state, os_spec, cleanup_global_resources, SETTING_FOLDER
+from states.global_state import init_redis, redis_state, influx_state, os_spec, cleanup_global_resources, SETTING_FOLDER
 from starlette.middleware.base import BaseHTTPMiddleware
-import mimetypes, os, logging, socket
+import mimetypes, os, logging, socket, asyncio
 from pathlib import Path
 from routes import api_router
 from contextlib import asynccontextmanager
@@ -107,6 +107,30 @@ def sd_notify(message: str) -> None:
     except Exception as e:
         logging.warning(f"sd_notify failed: {e}")
 
+
+async def wait_for_influxdb_ready(timeout: int = 180) -> bool:
+    """influx_state 실제 client 로 health + 가벼운 query 까지 통과할 때까지 대기.
+    HTTP listener 만 뜬 false-positive 상태에서는 query 가 실패하므로,
+    After=webserver 로 묶인 의존 서비스들의 진짜 게이트 역할.
+    """
+    for i in range(timeout):
+        try:
+            client = influx_state.client
+            if client is not None:
+                health = client.health()
+                if health.status == "pass":
+                    # 실제 쿼리도 받는지 확인 (engine 진짜 ready)
+                    client.query_api().query("buckets() |> limit(n: 1)")
+                    logging.warning(f"InfluxDB ready (took {i}s)")
+                    return True
+        except Exception as e:
+            logging.debug(f"InfluxDB not ready yet ({i}s): {e}")
+        # 미준비 → 다음 폴에서 재연결되도록 client 초기화
+        influx_state._client = None
+        await asyncio.sleep(1)
+    logging.error(f"InfluxDB not ready after {timeout}s")
+    return False
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(SETTING_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
@@ -128,6 +152,8 @@ async def lifespan(app: FastAPI):
         setup_all_processors(redis_state.processor)
 
         logging.info("Binary processor and handler initialized")
+
+    await wait_for_influxdb_ready()
 
     sd_notify("READY=1")
     logging.warning("systemd READY=1 sent")
