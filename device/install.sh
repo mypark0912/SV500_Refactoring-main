@@ -514,6 +514,9 @@ Environment="INFLUXD_ENGINE_PATH=$INFLUX_DATA_DIR/engine"
 Environment="TMPDIR=/usr/local/sv500/backup/influxdb"
 Environment="INFLUXD_STORAGE_CACHE_MAX_MEMORY_SIZE=134217728"
 ExecStartPre=/bin/bash -c 'until [ -d $INFLUX_INSTALL_DIR ]; do sleep 1; done'
+# TMPDIR 가 가리키는 디렉토리 보장 (없으면 backup 시 metadata snapshot 실패)
+ExecStartPre=/bin/mkdir -p /usr/local/sv500/backup/influxdb
+ExecStartPre=/bin/chown influxdb:influxdb /usr/local/sv500/backup/influxdb
 ExecStart=$INFLUX_INSTALL_DIR/influxd
 Restart=always
 RestartSec=5

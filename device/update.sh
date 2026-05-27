@@ -346,6 +346,16 @@ WantedBy=multi-user.target
 EOF
 log_info "✅ startup-monitor.service unit ensured"
 
+# influxdb.service drop-in: TMPDIR 디렉토리 자동 생성 보장
+# (TMPDIR=/usr/local/sv500/backup/influxdb 가 없으면 backup metadata snapshot 실패)
+sudo mkdir -p /etc/systemd/system/influxdb.service.d
+sudo tee /etc/systemd/system/influxdb.service.d/tmpdir.conf > /dev/null <<'DROPIN'
+[Service]
+ExecStartPre=/bin/mkdir -p /usr/local/sv500/backup/influxdb
+ExecStartPre=/bin/chown influxdb:influxdb /usr/local/sv500/backup/influxdb
+DROPIN
+log_info "✅ influxdb.service drop-in (TMPDIR auto-create) 적용"
+
 # shutdown-marker.service 재생성 — 마커를 /usr/local/sv500 (영구) 으로 이동
 # (이전 버전은 /var/run에 마커 → tmpfs라 reboot 시 휘발 → 항상 UNEXPECTED 판정)
 # Conflicts + ExecStop 패턴: 부팅 시 active 유지 → 종료 target 진입 시 stop → ExecStop으로 마커 생성
@@ -497,14 +507,12 @@ chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
 chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
 
 # /usr/local/sv500/backup : influxdb 데몬 + influxdb 계정의 다른 프로세스가 파일 생성/접근
+# 없으면 무조건 만들어야 함 (influxd 의 TMPDIR 가 이걸 가리켜서 없으면 backup 실패)
 # owner=influxdb, mode 777 (cross-process 파일 생성/접근 보장)
-if [ -d /usr/local/sv500/backup ]; then
-    sudo chown -R influxdb:influxdb /usr/local/sv500/backup 2>/dev/null || true
-    sudo chmod -R 777               /usr/local/sv500/backup 2>/dev/null || true
-    log_info "✅ Permissions set: /usr/local/sv500/backup (influxdb:influxdb, 777)"
-else
-    log_info "ℹ️  /usr/local/sv500/backup not found (skip)"
-fi
+sudo mkdir -p /usr/local/sv500/backup/influxdb
+sudo chown -R influxdb:influxdb /usr/local/sv500/backup 2>/dev/null || true
+sudo chmod -R 777               /usr/local/sv500/backup 2>/dev/null || true
+log_info "✅ Permissions set: /usr/local/sv500/backup (influxdb:influxdb, 777)"
 
 
 log_section "6. Reload systemd and Restart Services"
