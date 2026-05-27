@@ -176,13 +176,25 @@ sudo mkdir -p /usr/local/sv500/logs/web
 sudo mkdir -p /usr/local/sv500/logs/core
 sudo mkdir -p /usr/local/sv500/trendcsv
 
-# 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
-# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
-chmod -R 770 /usr/local/sv500 2>/dev/null || true
-chmod -R 770 /home/root/webserver 2>/dev/null || true
-chmod -R 770 /home/root/core 2>/dev/null || true
-chmod -R 770 /home/root/mqClient 2>/dev/null || true
-chmod -R 770 /home/root/config 2>/dev/null || true
+# /usr/local/sv500 은 backup(influxdb 소유) 등이 섞이므로 필요한 하위만 처리.
+# 아래 4개 폴더는 ntekadmin/root 어느 쪽으로 만들어졌든 root:root + 775 로 통일
+# (그래야 ntekadmin · core 가 그룹으로 일관 접근 가능)
+for subdir in reports trendcsv logs train; do
+    if [ -d "/usr/local/sv500/$subdir" ]; then
+        chown -R root:root /usr/local/sv500/$subdir 2>/dev/null || true
+        chmod -R 775       /usr/local/sv500/$subdir 2>/dev/null || true
+    fi
+done
+# /home/root/* : 배포 시점 owner 유지, 권한만 설정
+for d in /home/root/webserver /home/root/core /home/root/mqClient; do
+    if [ -d "$d" ]; then
+        chmod -R 770 "$d" 2>/dev/null || true
+    fi
+done
+# config 는 775 (other read 필요)
+if [ -d /home/root/config ]; then
+    chmod -R 775 /home/root/config 2>/dev/null || true
+fi
 
 # 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
 #  - *.network      : 비교용 read (쓰기는 sudo 경유)
@@ -474,9 +486,11 @@ else
     exit 1
 fi
 
+# /usr/local/sv500/backup : influxdb 데몬 + influxdb 계정의 다른 프로세스가 파일 생성/접근
+# owner=influxdb, mode 777 (cross-process 파일 생성/접근 보장)
 mkdir -p /usr/local/sv500/backup/influxdb
-chown influxdb:influxdb /usr/local/sv500/backup/influxdb
-chmod 775 /usr/local/sv500/backup/influxdb
+chown -R influxdb:influxdb /usr/local/sv500/backup
+chmod -R 777               /usr/local/sv500/backup
 
 # InfluxDB systemd service file (with mount wait)
 cat <<EOF | sudo tee /etc/systemd/system/influxdb.service > /dev/null

@@ -473,19 +473,25 @@ usermod -aG influxdb $ADMIN_USER 2>/dev/null || true
 # /home/root 그룹 접근 허용 (ntekadmin이 서비스 경로 진입할 수 있도록)
 chmod 750 /home/root 2>/dev/null || true
 
-# 웹서버/core/mqClient 관련 디렉토리를 770 으로 일괄 지정
-# (owner/group 모두 rwx, other 차단. ntekadmin 이 root 그룹 멤버라 정상 접근)
-# ownership 도 root:root 로 강제 복구 — chmod 만으로는 잘못 잡힌 owner(예: influxdb)가 풀리지 않음
-sudo chown -R root:root /usr/local/sv500 2>/dev/null || true
-sudo chmod -R 770       /usr/local/sv500 2>/dev/null || true
-sudo chown -R root:root /home/root/webserver 2>/dev/null || true
-sudo chmod -R 770       /home/root/webserver 2>/dev/null || true
-sudo chown -R root:root /home/root/core 2>/dev/null || true
-sudo chmod -R 770       /home/root/core 2>/dev/null || true
-sudo chown -R root:root /home/root/mqClient 2>/dev/null || true
-sudo chmod -R 770       /home/root/mqClient 2>/dev/null || true
-sudo chown -R root:root /home/root/config 2>/dev/null || true
-sudo chmod -R 770       /home/root/config 2>/dev/null || true
+# /usr/local/sv500 은 backup(influxdb 소유) 등이 섞여있으므로 통째로 휩쓸지 않음.
+# 아래 4개 폴더는 ntekadmin/root 어느 쪽으로 만들어졌든 root:root + 775 로 통일
+# (그래야 ntekadmin · core 가 그룹으로 일관 접근 가능)
+for subdir in reports trendcsv logs train; do
+    if [ -d "/usr/local/sv500/$subdir" ]; then
+        sudo chown -R root:root /usr/local/sv500/$subdir 2>/dev/null || true
+        sudo chmod -R 775       /usr/local/sv500/$subdir 2>/dev/null || true
+    fi
+done
+# /home/root/* : 배포 시점 owner 유지, 권한만 설정
+for d in /home/root/webserver /home/root/core /home/root/mqClient; do
+    if [ -d "$d" ]; then
+        sudo chmod -R 770 "$d" 2>/dev/null || true
+    fi
+done
+# config 는 775 (other read 필요)
+if [ -d /home/root/config ]; then
+    sudo chmod -R 775 /home/root/config 2>/dev/null || true
+fi
 
 # 네트워크/시간동기 설정: webserver(ntekadmin, root 그룹)가 직접 접근.
 #  - *.network      : 비교용 read (쓰기는 sudo 경유)
@@ -495,23 +501,14 @@ sudo chmod -R 770       /home/root/config 2>/dev/null || true
 chmod 664 /etc/systemd/network/*.network 2>/dev/null || true
 chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
 
-# /usr/local/sv500/backup : core(root) 와 webserver(ntekadmin, root그룹) 가 공유하는 작업 디렉토리.
-# 존재 시 그룹 쓰기 + setgid 부여 → ntekadmin 이 report input/progress/docx 기록 가능.
+# /usr/local/sv500/backup : influxdb 데몬 + influxdb 계정의 다른 프로세스가 파일 생성/접근
+# owner=influxdb, mode 777 (cross-process 파일 생성/접근 보장)
 if [ -d /usr/local/sv500/backup ]; then
-    chgrp -R root /usr/local/sv500/backup 2>/dev/null || true
-    chmod -R g+w  /usr/local/sv500/backup 2>/dev/null || true
-    find /usr/local/sv500/backup -type d -exec chmod g+s {} \; 2>/dev/null || true
-    log_info "✅ Permissions granted: /usr/local/sv500/backup (group-writable + setgid)"
+    sudo chown -R influxdb:influxdb /usr/local/sv500/backup 2>/dev/null || true
+    sudo chmod -R 777               /usr/local/sv500/backup 2>/dev/null || true
+    log_info "✅ Permissions set: /usr/local/sv500/backup (influxdb:influxdb, 777)"
 else
     log_info "ℹ️  /usr/local/sv500/backup not found (skip)"
-fi
-
-# InfluxDB 백업 디렉토리는 influxdb 사용자 소유로 복원
-# (위 chown -R root:root + chgrp -R root /backup 가 덮어쓴 것을 되돌림)
-if [ -d /usr/local/sv500/backup/influxdb ]; then
-    sudo chown -R influxdb:influxdb /usr/local/sv500/backup/influxdb 2>/dev/null || true
-    sudo chmod 775                  /usr/local/sv500/backup/influxdb 2>/dev/null || true
-    log_info "✅ Ownership restored: /usr/local/sv500/backup/influxdb (influxdb:influxdb, 775)"
 fi
 
 
