@@ -871,6 +871,7 @@
         "title": "Equipment Management",
         "AddAsset": "Add Asset",
         "UnregisterAsset": "Unregister Asset",
+        "ReLearn": "Re-Learn",
         "registerAsset": "Register Asset",
         "NameChange": "Name Change",
         "DeleteAsset": "Delete Asset",

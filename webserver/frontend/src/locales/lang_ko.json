@@ -868,6 +868,7 @@
         "title": "설비 관리",
         "AddAsset": "설비 추가",
         "UnregisterAsset": "설비 등록 해제",
+        "ReLearn": "재학습",
         "registerAsset": "설비 등록",
         "NameChange": "이름 변경",
         "DeleteAsset": "설비 삭제",

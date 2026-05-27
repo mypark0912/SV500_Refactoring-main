@@ -707,6 +707,17 @@ async def get_faults(asset, request: Request):
     else:
         return {"success": False, "error": "No Data"}
 
+
+@router.get("/relearn/{asset}")
+async def relearn_asset(asset):
+    try:
+        async with httpx.AsyncClient(timeout=api_timeout) as client:
+            response = await client.get(f"http://{os_spec.restip}:5000/api/relearn?name={asset}")
+            data = response.json()
+        return {"Status": data["Status"], "Messages": data.get("Messages", [])}
+    except Exception as e:
+        return {"Status": 1, "Messages": [str(e)]}
+
 @router.get("/getTrendParameters/{channel}")
 def get_trendParams(channel):
     # redis_state.client.execute_command("SELECT", 0)

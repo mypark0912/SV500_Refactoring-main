@@ -124,6 +124,13 @@
            {{ t('config.channelPanel.Diagnosis.UnregisterAsset') }}
           </button>
           <button
+            v-if="assetMode.name !== '' && selectedbtn == 2"
+            @click="relearnAsset"
+            class="bg-purple-500 text-white px-4 py-2 rounded"
+          >
+            {{ t('config.channelPanel.Diagnosis.ReLearn') }}
+          </button>
+          <button
             v-if="selectedbtn != 2"
             @click="registerAsset"
             class="bg-green-500 text-white px-4 py-2 rounded"
@@ -861,6 +868,25 @@ const unregisterAsset = async () => {
     alert("Asset is unregistered on this channel");
   } else {
     alert("Unregistering asset is failed");
+  }
+};
+
+const relearnAsset = async () => {
+  if (!selectedAsset.value.name) {
+    alert("❌ Please select an asset to re-learn.");
+    return;
+  }
+  try {
+    const response = await axios.get(`/api/relearn/${selectedAsset.value.name}`);
+    const msgs = Array.isArray(response.data.Messages) ? response.data.Messages.join('\n') : '';
+    if (response.data.Status === 0) {
+      alert(`✅ Re-Learn started${msgs ? '\n' + msgs : ''}`);
+    } else {
+      alert(`❌ Re-Learn failed${msgs ? '\n' + msgs : ''}`);
+    }
+  } catch (error) {
+    console.log(error);
+    alert("❌ Error occurred while requesting Re-Learn: " + error.message);
   }
 };
 
