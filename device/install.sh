@@ -899,7 +899,7 @@ sudo systemctl enable shutdown-monitor.service
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
 sudo systemctl enable webserver.service
-sudo systemctl enable core.service
+#sudo systemctl enable core.service
 sudo systemctl enable startup-monitor.service
 sudo systemctl enable sv500A35.service
 
