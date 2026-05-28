@@ -150,6 +150,7 @@ async def wait_for_influxdb_ready(check_query: bool = True, timeout: int = 180) 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(SETTING_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
+    logging.warning(f"OsSpec:mode={os_spec.mode}, rtc_device={os_spec.rtc_device}")
     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
     CHKINFLUX = False
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
