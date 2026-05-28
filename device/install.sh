@@ -866,12 +866,10 @@ sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
 # Enable main services
-# 모두 enable. systemd 가 After= 체인으로 순서 보장:
-#   redis/influxdb → startup-monitor → webserver → core / smartsystems*
+# bootstrap 서비스만 enable. core/smartsystems*는 initDB 완료 후 enable.
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
 sudo systemctl enable webserver.service
-sudo systemctl enable core.service
 sudo systemctl enable startup-monitor.service
 sudo systemctl enable sv500A35.service
 

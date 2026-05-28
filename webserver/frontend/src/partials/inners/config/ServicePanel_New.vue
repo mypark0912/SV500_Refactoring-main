@@ -326,6 +326,112 @@
       title="Reset System as factory default initialization"
       :message="serviceLoadingMessage"
     />
+
+    <!-- InfluxDB Init Progress Modal -->
+    <ModalBasic
+      id="init-influx-modal"
+      :modalOpen="showInitModal"
+      @close-modal="closeInitModal"
+      title="Initialize InfluxDB"
+    >
+      <div class="px-5 py-4" style="min-width: 520px;">
+        <div class="space-y-3">
+          <div
+            v-for="step in stepStatuses"
+            :key="step.id"
+            class="flex items-center gap-3"
+          >
+            <!-- 상태 아이콘 -->
+            <div class="w-6 h-6 flex items-center justify-center shrink-0">
+              <svg
+                v-if="step.status === 'completed'"
+                class="w-5 h-5 text-green-500"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <svg
+                v-else-if="step.status === 'failed'"
+                class="w-5 h-5 text-red-500"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <svg
+                v-else-if="step.status === 'running'"
+                class="animate-spin w-5 h-5 text-blue-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              <div v-else class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+            </div>
+            <!-- 라벨 -->
+            <div class="flex-1 text-sm">
+              <span
+                :class="
+                  step.status === 'pending'
+                    ? 'text-gray-400 dark:text-gray-500'
+                    : step.status === 'failed'
+                    ? 'text-red-600 dark:text-red-400 font-medium'
+                    : step.status === 'completed'
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-gray-800 dark:text-gray-100 font-medium'
+                "
+              >
+                {{ step.id }}. {{ step.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 메시지 -->
+        <div
+          v-if="initStepDetails.message"
+          class="mt-4 text-sm text-gray-600 dark:text-gray-400"
+        >
+          {{ initStepDetails.message }}
+        </div>
+      </div>
+
+      <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
+        <div class="flex justify-end space-x-2">
+          <button
+            class="btn-sm border-gray-200 dark:border-gray-700/60 text-gray-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="initPolling"
+            @click="closeInitModal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </ModalBasic>
     
     <!-- IP Address Modal -->
     <ModalBasic
@@ -693,6 +799,19 @@ export default {
     const updateInflux = ref(null);
     const influxReady = ref(false);
     let influxReadyTimer = null;
+
+    // InfluxDB Init 모달 상태
+    const INIT_STEPS = [
+      { id: 1, label: 'Initialize & Generate Token' },
+      { id: 2, label: 'Configure Environment Variables' },
+      { id: 3, label: 'Restart InfluxDB' },
+      { id: 4, label: 'Create Downsampling Buckets & Tasks' },
+      { id: 5, label: 'Enable & Start Services' },
+    ];
+    const showInitModal = ref(false);
+    const initStepDetails = ref({ currentStep: 0, status: 'IDLE', message: '' });
+    const initPolling = ref(false);
+    let initPollTimer = null;
     const isResetAll = ref(false);
     const serviceLoadingMessage = ref('');
     //const checkSmartflag = ref(false);
@@ -863,7 +982,68 @@ export default {
       }
     };
 
+    const stepStatuses = computed(() => {
+      const current = initStepDetails.value.currentStep || 0;
+      const status = initStepDetails.value.status || 'IDLE';
+      return INIT_STEPS.map((step) => {
+        if (status === 'COMPLETE') return { ...step, status: 'completed' };
+        if (status === 'FAIL' && current === step.id) return { ...step, status: 'failed' };
+        if (current > step.id) return { ...step, status: 'completed' };
+        if (current === step.id && (status === 'RUNNING' || status === 'WAITING')) {
+          return { ...step, status: 'running' };
+        }
+        return { ...step, status: 'pending' };
+      });
+    });
+
+    const pollInitStatus = async () => {
+      try {
+        const res = await axios.get('/setting/initDB/status');
+        const data = res.data || {};
+        initStepDetails.value = {
+          status: data.status || 'WAITING',
+          currentStep: data.currentStep || initStepDetails.value.currentStep || 1,
+          message: data.message || '',
+        };
+        initInfluxStatus.value = data.status || initInfluxStatus.value;
+        if (data.status === 'COMPLETE' || data.status === 'FAIL') {
+          stopInitPolling();
+          if (data.status === 'COMPLETE') {
+            await SysCheck();
+            await checkInfluxStatus();
+          }
+        }
+      } catch (e) {
+        // 단발성 실패는 무시 — 다음 폴에서 회복
+      }
+    };
+
+    const startInitPolling = () => {
+      if (initPollTimer) return;
+      initPolling.value = true;
+      pollInitStatus();
+      initPollTimer = setInterval(pollInitStatus, 1000);
+    };
+
+    const stopInitPolling = () => {
+      if (initPollTimer) {
+        clearInterval(initPollTimer);
+        initPollTimer = null;
+      }
+      initPolling.value = false;
+    };
+
+    const closeInitModal = () => {
+      if (initPolling.value) return;
+      showInitModal.value = false;
+    };
+
     const init = async () => {
+      // 모달 열고 단계 초기화 + 폴링 시작 (백엔드 호출과 병렬)
+      showInitModal.value = true;
+      initStepDetails.value = { currentStep: 1, status: 'RUNNING', message: '' };
+      startInitPolling();
+
       try {
         const response = await axios.get('/setting/initDB');
         if (response.data.success) {
@@ -871,9 +1051,21 @@ export default {
           authStore.setInstall(3);
         } else {
           message.value = 'InfluxDB initialization Failed';
+          initStepDetails.value = {
+            ...initStepDetails.value,
+            status: 'FAIL',
+            message: response.data.message || '',
+          };
+          stopInitPolling();
         }
       } catch (error) {
         message.value = 'InfluxDB initialization Failed';
+        initStepDetails.value = {
+          ...initStepDetails.value,
+          status: 'FAIL',
+          message: error.message || '',
+        };
+        stopInitPolling();
       }
     };
 
@@ -1224,6 +1416,7 @@ export default {
         clearInterval(influxReadyTimer);
         influxReadyTimer = null;
       }
+      stopInitPolling();
       stopCollectTimers();
     });
 
@@ -1285,6 +1478,11 @@ export default {
       csvDownloading,
       downloadTrendCsv,
       isNtek,
+      showInitModal,
+      initStepDetails,
+      initPolling,
+      stepStatuses,
+      closeInitModal,
     };
   },
 };

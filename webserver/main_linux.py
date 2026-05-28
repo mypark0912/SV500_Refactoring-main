@@ -5,7 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from states.global_state import init_redis, redis_state, influx_state, os_spec, cleanup_global_resources, SETTING_FOLDER
 from starlette.middleware.base import BaseHTTPMiddleware
-import mimetypes, os, logging, socket, asyncio
+import mimetypes, os, logging, socket, asyncio, httpx
 from pathlib import Path
 from routes import api_router
 from contextlib import asynccontextmanager
@@ -108,11 +108,27 @@ def sd_notify(message: str) -> None:
         logging.warning(f"sd_notify failed: {e}")
 
 
-async def wait_for_influxdb_ready(timeout: int = 180) -> bool:
-    """influx_state 실제 client 로 health + 가벼운 query 까지 통과할 때까지 대기.
-    HTTP listener 만 뜬 false-positive 상태에서는 query 가 실패하므로,
-    After=webserver 로 묶인 의존 서비스들의 진짜 게이트 역할.
+async def wait_for_influxdb_ready(check_query: bool = True, timeout: int = 180) -> bool:
+    """InfluxDB ready 대기.
+    - check_query=False (InitDB 전, 토큰 없음): httpx 로 /health 만 폴링
+    - check_query=True  (InitDB 후): client 로 health + 가벼운 query 까지 확인
+      (HTTP listener 만 뜬 false-positive 차단)
     """
+    if not check_query:
+        url = f"http://{os_spec.influxip}:8086/health"
+        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=2.0, read=3.0, write=2.0, pool=3.0)) as hc:
+            for i in range(timeout):
+                try:
+                    r = await hc.get(url)
+                    if r.json().get("status") == "pass":
+                        logging.warning(f"InfluxDB ready (took {i}s, health-only)")
+                        return True
+                except Exception as e:
+                    logging.debug(f"InfluxDB not ready yet ({i}s): {e}")
+                await asyncio.sleep(1)
+        logging.error(f"InfluxDB not ready after {timeout}s")
+        return False
+
     for i in range(timeout):
         try:
             client = influx_state.client
@@ -134,8 +150,10 @@ async def wait_for_influxdb_ready(timeout: int = 180) -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(SETTING_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
-    # file_path = os.path.join(SETTING_FOLDER, 'influx.json')
-    # if os.path.exists(file_path):
+    file_path = os.path.join(SETTING_FOLDER, 'influx.json')
+    CHKINFLUX = False
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        CHKINFLUX = True
     #     init_influx()
     init_redis()
     init_setup()
@@ -153,7 +171,7 @@ async def lifespan(app: FastAPI):
 
         logging.info("Binary processor and handler initialized")
 
-    await wait_for_influxdb_ready()
+    await wait_for_influxdb_ready(check_query=CHKINFLUX)
 
     sd_notify("READY=1")
     logging.warning("systemd READY=1 sent")

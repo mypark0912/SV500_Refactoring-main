@@ -222,8 +222,9 @@ def init_redis():
 
 async def cleanup_global_resources():
     """모든 전역 리소스 정리"""
-    if influx_state.client:
-        influx_state.client.close()
+    # 종료 시점엔 재연결 의미 없으므로 property 대신 내부 _client 로 직접 확인
+    if influx_state._client:
+        influx_state._client.close()
     if redis_state.client:
         redis_state.client.close()
     if redis_state.client_db1:

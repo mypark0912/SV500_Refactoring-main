@@ -185,12 +185,24 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
         "bucket": "nteks",
         "retentionPeriodSeconds": 0
     }
+
+    # Step 1: 초기화 및 토큰 생성
+    redis_state.client.hset("influx_init", mapping={
+        "status": "RUNNING",
+        "currentStep": "1",
+        "message": "Initializing InfluxDB and generating token..."
+    })
+
     try:
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
             response = await client.post(f"http://127.0.0.1:8086/api/v2/setup", json=data)
             resData = response.json()
             if resData.get("code") == "conflict":
                 logging.warning("⚠️ InfluxDB already initialized")
+                redis_state.client.hset("influx_init", mapping={
+                    "status": "FAIL",
+                    "message": "InfluxDB has already been initialized"
+                })
                 return {"success": False, "message": "InfluxDB has already been initialized"}
 
             auth = resData.get("auth")
@@ -198,6 +210,10 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
 
             if not auth or not org:
                 logging.error(f"❌ Unexpected response: {resData}")
+                redis_state.client.hset("influx_init", mapping={
+                    "status": "FAIL",
+                    "message": f"InfluxDB setup failed: {resData}"
+                })
                 return {"success": False, "message": f"InfluxDB setup failed: {resData}"}
 
             token = auth.get("token")
@@ -211,18 +227,43 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
                 "retention": data.get("retentionPeriodSeconds")
             }
 
-        with open(file_path, "w", encoding="utf-8") as f:
+        # atomic write: 중간에 끊겨도 0바이트 파일이 남지 않도록 tmp → replace
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, file_path)
 
         # init_influx()  # ✅ 초기화 수행 (json 생성 + client 전역 등록)
         if influx_state.client is None:
+            redis_state.client.hset("influx_init", mapping={
+                "status": "FAIL",
+                "message": "Influx client not initialized"
+            })
             return {"result": False}
 
         if influx_state.error:
+            redis_state.client.hset("influx_init", mapping={
+                "status": "FAIL",
+                "message": influx_state.error
+            })
             return {"success": False, "message": influx_state.error}
+
+        # Step 2: 환경변수 설정
+        redis_state.client.hset("influx_init", mapping={
+            "currentStep": "2",
+            "message": "Configuring environment variables..."
+        })
         set_cli = init_influxcli()
         if not set_cli["status"]:
             logging.warning(set_cli["message"])
+
+        # Step 3: InfluxDB 재시작 (실제 대기는 complete_influx_setup에서)
+        redis_state.client.hset("influx_init", mapping={
+            "currentStep": "3",
+            "message": "Restarting InfluxDB..."
+        })
         sysService('restart', 'InfluxDB')
         background_tasks.add_task(complete_influx_setup)
 
@@ -234,6 +275,10 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
         logging.error(f"❌ Influxdb Init Error: {e}")
         influx_state._client = None
         influx_state._error = f"Exception during init: {str(e)}"
+        redis_state.client.hset("influx_init", mapping={
+            "status": "FAIL",
+            "message": str(e)
+        })
         return {"success": False, "message": str(e)}
 
 @router.get("/restoreInflux/{org_id}/{token}")
@@ -255,8 +300,13 @@ def restore_influxToken(org_id:str, token:str):
             "retention": data.get("retentionPeriodSeconds")
         }
 
-        with open(file_path, "w", encoding="utf-8") as f:
+        # atomic write
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, file_path)
 
         import shlex
         token_escaped = shlex.quote(token)
@@ -344,12 +394,55 @@ export INFLUX_BUCKET="nteks"
         }
 
 
+def enable_post_init_services():
+    """initDB 후처리: core/smartsystems* 서비스가 존재하면 enable 처리.
+    이미 enabled이면 스킵. install.sh에서 이들 서비스를 enable 하지 않으므로
+    initDB 완료 시점에 명시적으로 enable 한다.
+    """
+    targets = [
+        ('Core', 'core.service'),
+        ('SmartSystems', 'smartsystemsservice.service'),
+        ('SmartAPI', 'smartsystemsrestapiservice.service'),
+    ]
+    results = {}
+    for item, unit in targets:
+        if not service_exists(unit):
+            results[item] = {'enabled': False, 'reason': 'service file not found'}
+            logging.warning(f"⚠️ Service file not found: {unit}")
+            continue
+        try:
+            check = subprocess.run(
+                ['systemctl', 'is-enabled', unit],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, timeout=5
+            )
+            if check.stdout.strip() == 'enabled':
+                results[item] = {'enabled': True, 'skipped': True}
+                logging.info(f"✅ {unit} already enabled")
+                continue
+        except Exception as e:
+            logging.warning(f"⚠️ is-enabled check failed for {unit}: {e}")
+
+        ret = sysService('enable', item)
+        results[item] = ret
+        if ret.get('returncode') == 0:
+            logging.info(f"✅ {unit} enabled")
+        else:
+            logging.warning(f"⚠️ Failed to enable {unit}: {ret.get('stderr') or ret.get('error')}")
+    return results
+
+
 async def complete_influx_setup():
     """백그라운드에서 InfluxDB 재시작 대기 후 버킷 생성 및 서비스 재시작"""
     try:
         # redis_state.client.select(0)
         sysMode = redis_state.client.hget("System", "mode")
-        redis_state.client.hset("influx_init", "status", "WAITING")
+        # Step 3 진행 중: InfluxDB 재시작 대기
+        redis_state.client.hset("influx_init", mapping={
+            "status": "WAITING",
+            "currentStep": "3",
+            "message": "Waiting for InfluxDB to become ready..."
+        })
 
         # InfluxDB 재시작 완료 대기
         await asyncio.sleep(3)
@@ -368,14 +461,27 @@ async def complete_influx_setup():
             await asyncio.sleep(1)
 
         if not influx_ready:
-            redis_state.client.hset("influx_init", "status", "FAIL")
+            redis_state.client.hset("influx_init", mapping={
+                "status": "FAIL",
+                "message": "InfluxDB did not become ready in time"
+            })
             return
 
-        # 버킷 생성
+        # Step 4: 다운샘플링 버킷 및 태스크 생성
+        redis_state.client.hset("influx_init", mapping={
+            "status": "RUNNING",
+            "currentStep": "4",
+            "message": "Creating downsampling buckets and tasks..."
+        })
+
+        # 기본 버킷 생성
         bucket_result = await create_influx_bucket("ntek", 365)
 
         if not bucket_result["success"]:
-            redis_state.client.hset("influx_init", "status", "P.FAIL")
+            redis_state.client.hset("influx_init", mapping={
+                "status": "P.FAIL",
+                "message": f"Bucket creation failed: {bucket_result.get('message', '')}"
+            })
             logging.warning(f"⚠️ Bucket creation failed: {bucket_result['message']}")
 
         # 다운샘플링 설정 (버킷 + Task) 추가
@@ -385,18 +491,24 @@ async def complete_influx_setup():
         else:
             logging.info("✅ Downsampling buckets and tasks configured")
 
-        # bucket_result2 = await create_influx_bucket("ntek30", 30)
-        #
-        # if not bucket_result2["success"]:
-        #     logging.warning(f"⚠️ Bucket creation failed: {bucket_result2['message']}")
-        # 다른 서비스 재시작
+        # Step 5: 관련 서비스 enable + start (또는 restart)
+        redis_state.client.hset("influx_init", mapping={
+            "currentStep": "5",
+            "message": "Enabling and starting related services..."
+        })
+
+        enable_post_init_services()
+
         if sysMode != 'device0':
             sysService('restart', 'SmartSystems')
             sysService('restart', 'SmartAPI')
 
         sysService('restart', 'Core')
 
-        redis_state.client.hset("influx_init", "status", "COMPLETE")
+        redis_state.client.hset("influx_init", mapping={
+            "status": "COMPLETE",
+            "message": "InfluxDB initialization completed"
+        })
         logging.info("✅ InfluxDB initialization completed")
 
     except Exception as e:
@@ -1140,15 +1252,19 @@ async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
                     org_id = target_org["id"]
                     logging.info(f"✅ Found org_id: {org_id}")
 
-                    # influx.json에 org_id 저장
+                    # influx.json에 org_id 저장 (atomic write)
                     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
                     with open(file_path, "r", encoding="utf-8") as f:
                         influx_config = json.load(f)
 
                     influx_config["org_id"] = org_id
 
-                    with open(file_path, "w", encoding="utf-8") as f:
+                    tmp_path = file_path + ".tmp"
+                    with open(tmp_path, "w", encoding="utf-8") as f:
                         json.dump(influx_config, f, indent=4)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    os.replace(tmp_path, file_path)
 
                     logging.info(f"✅ org_id saved to influx.json")
 
@@ -1169,7 +1285,13 @@ async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
 def get_init_status():
     # redis_state.client.select(0)
     status = redis_state.client.hget("influx_init", "status") or "IDLE"
-    return {"status": status}
+    raw_step = redis_state.client.hget("influx_init", "currentStep") or "0"
+    try:
+        current_step = int(raw_step)
+    except (ValueError, TypeError):
+        current_step = 0
+    message = redis_state.client.hget("influx_init", "message") or ""
+    return {"status": status, "currentStep": current_step, "message": message}
 
 
 @router.get("/backup/download/{backup_type}")
