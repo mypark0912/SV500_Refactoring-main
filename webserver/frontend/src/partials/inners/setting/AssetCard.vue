@@ -125,7 +125,7 @@
           </button>
           <button
             v-if="assetMode.name !== '' && selectedbtn == 2"
-            @click="relearnAsset"
+            @click="showCheckRelearn = true"
             class="bg-purple-500 text-white px-4 py-2 rounded"
           >
             {{ t('config.channelPanel.Diagnosis.ReLearn') }}
@@ -279,6 +279,34 @@
       </div>
     </div>
   </ModalBasic>
+  <ModalBasic
+    :modalOpen="showCheckRelearn"
+    @close-modal="showCheckRelearn = false"
+    title="Confirm Re-Learn"
+  >
+    <div class="w-[600px] max-w-full px-6">
+      <div class="text-sm">
+        Do you want to re-learn this asset?
+      </div>
+
+      <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700/60">
+        <div class="flex justify-end space-x-2">
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            @click="confirmRelearn"
+          >
+            YES
+          </button>
+          <button
+            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            @click="showCheckRelearn = false"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </ModalBasic>
 </template>
 <script setup>
 import { inject, ref, watch, defineProps, onMounted, computed } from "vue";
@@ -300,6 +328,7 @@ const assetList = ref([]);
 const checkList = ref([]);
 const selectedbtn = ref(0);
 const showCheckDelete = ref(false);
+const showCheckRelearn = ref(false);
 const assetTypeList = ref([
             "PSupply",
             "PrimaryTransformer",
@@ -888,6 +917,11 @@ const relearnAsset = async () => {
     console.log(error);
     alert("❌ Error occurred while requesting Re-Learn: " + error.message);
   }
+};
+
+const confirmRelearn = async () => {
+  showCheckRelearn.value = false;
+  await relearnAsset();
 };
 
 const registerAsset = async () => {
