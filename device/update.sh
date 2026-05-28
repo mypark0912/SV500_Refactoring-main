@@ -491,6 +491,49 @@ if [ -f "$SCRIPT_DIR/time-keeper.timer" ]; then
 fi
 log_info "✅ time-keeper installed"
 
+# Install rtc-sync (DEVICE_MODE=1 → boot 시 /dev/rtc1 → 시스템 클럭 초기화)
+# 기본 systemd는 /dev/rtc0 에서 클럭을 가져오므로 rtc1 사용 시 반드시 필요
+if [ "$DEVICE_MODE" = "1" ]; then
+    cat <<'EOF' | sudo tee /usr/local/bin/rtc-sync.sh > /dev/null
+#!/bin/sh
+# Sync /dev/rtc1 hardware clock to system clock at boot.
+RTC_DEV="/dev/rtc1"
+LOG_DIR="/usr/local/sv500/logs"
+LOG_FILE="$LOG_DIR/rtc-sync.log"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE" 2>/dev/null; }
+[ -e "$RTC_DEV" ] || { log "skip: $RTC_DEV not found"; exit 0; }
+BEFORE=$(date '+%Y-%m-%d %H:%M:%S')
+HW=$(hwclock -r -f "$RTC_DEV" 2>/dev/null || echo "N/A")
+if /sbin/hwclock --hctosys -f "$RTC_DEV" 2>/dev/null; then
+    log "ok: sys($BEFORE) <- rtc($HW) => sys($(date '+%Y-%m-%d %H:%M:%S'))"
+else
+    log "fail: hwclock --hctosys -f $RTC_DEV"
+    exit 1
+fi
+EOF
+    sudo chmod +x /usr/local/bin/rtc-sync.sh
+
+    cat <<EOF | sudo tee /etc/systemd/system/rtc-sync.service > /dev/null
+[Unit]
+Description=Sync RTC1 to system clock at boot
+DefaultDependencies=no
+Before=sysinit.target time-sync.target
+After=local-fs.target
+ConditionPathExists=/dev/rtc1
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rtc-sync.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target
+EOF
+    sudo chmod 644 /etc/systemd/system/rtc-sync.service
+    log_info "✅ rtc-sync installed (RTC1 → system clock at boot)"
+fi
+
 # =================================================================
 # 5. FRP 터널링 & Firewall (모드에 따라 처리)
 # =================================================================
@@ -662,6 +705,14 @@ else
     sudo systemctl enable  time-keeper.timer 2>/dev/null || true
     sudo systemctl start   time-keeper.timer 2>/dev/null || true
     log_info "✅ time-keeper enabled (startup-monitor 가 RTC 복구 수행)"
+fi
+
+# rtc-sync.service: DEVICE_MODE=1 (--rtc1 / --nosavertc1) 에서만 enable
+if [ "$DEVICE_MODE" = "1" ]; then
+    sudo systemctl enable rtc-sync.service 2>/dev/null || true
+    log_info "✅ rtc-sync enabled (boot 시 /dev/rtc1 → 시스템 클럭)"
+else
+    sudo systemctl disable rtc-sync.service 2>/dev/null || true
 fi
 
 sudo systemctl daemon-reload

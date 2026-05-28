@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync RTC1 to system clock
+DefaultDependencies=no
+Before=sysinit.target time-sync.target
+After=local-fs.target
+ConditionPathExists=/dev/rtc1
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/hwclock --hctosys -f /dev/rtc1
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target
