@@ -852,8 +852,36 @@ cp "$SCRIPT_DIR/time-keeper.timer"   /etc/systemd/system/time-keeper.timer
 chmod 644 /etc/systemd/system/time-keeper.service /etc/systemd/system/time-keeper.timer
 log_info "✅ time-keeper installed"
 
+#######################################
+# 8. register sv500A35.service
+
+sudo chmod +x /home/root/SV500/fw_cortex_m33.sh
+sudo chmod +x /home/root/bin/SV500_CA35
+sudo chmod +x /home/root/mqClient/mqtt_publisher
+
+SERVICE_NAME=sv500A35.service
+SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME
+
+# service file 
+cat <<EOF | sudo tee $SERVICE_PATH > /dev/null
+[Unit]
+Description=SV500A35 Service
+After=network.target redis.service
+
+[Service]
+ExecStart=/home/root/bin/SV500_CA35
+WorkingDirectory=/home/root/bin
+Restart=always
+User=root
+TimeoutStopSec=10s
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # =================================================================
-# 8. Enable and Start Services
+# 8.5 Enable and Start Services
 # =================================================================
 log_section "8. Enable and Start Services"
 
@@ -866,10 +894,12 @@ sudo systemctl enable shutdown-marker.service
 sudo systemctl enable shutdown-monitor.service
 
 # Enable main services
-# bootstrap 서비스만 enable. core/smartsystems*는 initDB 완료 후 enable.
+# 모두 enable. systemd 가 After= 체인으로 순서 보장:
+#   redis/influxdb → startup-monitor → webserver → core / smartsystems*
 sudo systemctl enable influxdb.service
 sudo systemctl enable redis.service
 sudo systemctl enable webserver.service
+sudo systemctl enable core.service
 sudo systemctl enable startup-monitor.service
 sudo systemctl enable sv500A35.service
 
@@ -911,39 +941,13 @@ sudo systemctl daemon-reload
 log_info "Starting services..."
 sudo systemctl start redis
 sudo systemctl start influxdb
-sudo systemctl start time-keeper.timer
+if [ "$NOSAVE_RTC" = "0" ]; then
+    sudo systemctl start time-keeper.timer
 sudo systemctl start startup-monitor.service
 sudo systemctl start sv500A35.service 2>/dev/null || true
 sudo systemctl start webserver.service
-sudo systemctl start core.service
 
-#######################################
-# 8.5 register sv500A35.service
 
-sudo chmod +x /home/root/SV500/fw_cortex_m33.sh
-sudo chmod +x /home/root/bin/SV500_CA35
-sudo chmod +x /home/root/mqClient/mqtt_publisher
-
-SERVICE_NAME=sv500A35.service
-SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME
-
-# service file 
-cat <<EOF | sudo tee $SERVICE_PATH > /dev/null
-[Unit]
-Description=SV500A35 Service
-After=network.target redis.service
-
-[Service]
-ExecStart=/home/root/bin/SV500_CA35
-WorkingDirectory=/home/root/bin
-Restart=always
-User=root
-TimeoutStopSec=10s
-KillMode=mixed
-
-[Install]
-WantedBy=multi-user.target
-EOF
 
 # configure the authority and register the service
 # (sv500A35 는 위에서 enable 처리됨, systemd 가 After=redis 로 자동 기동)
