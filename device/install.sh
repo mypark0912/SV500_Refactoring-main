@@ -943,6 +943,7 @@ sudo systemctl start redis
 sudo systemctl start influxdb
 if [ "$NOSAVE_RTC" = "0" ]; then
     sudo systemctl start time-keeper.timer
+fi
 sudo systemctl start startup-monitor.service
 sudo systemctl start sv500A35.service 2>/dev/null || true
 sudo systemctl start webserver.service
