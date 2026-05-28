@@ -1,0 +1,21 @@
+[Unit]
+Description=SmartSystems Service
+After=webserver.service smartsystemsrestapiservice.service influxdb.service
+Wants=influxdb.service
+
+[Service]
+WorkingDirectory=/opt/service
+ExecStart=/opt/service/smartsystemsservice
+StandardOutput = Null
+StandardError = Null
+SyslogIdentifier=SmartSystems
+CPUAffinity=1
+Nice=10
+Restart=always
+RestartSec=60
+KillMode=process
+User=root
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target

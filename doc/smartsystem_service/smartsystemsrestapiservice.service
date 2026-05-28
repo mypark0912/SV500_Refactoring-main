@@ -1,0 +1,19 @@
+[Unit]
+Description=SmartSystems REST API Service
+After=webserver.service influxdb.service
+Wants=influxdb.service
+
+[Service]
+WorkingDirectory=/opt/restapiservice
+ExecStart=/opt/restapiservice/smartsystemsrestapiservice
+StandardOutput = Null
+StandardError = Null
+SyslogIdentifier=SmartSystemsRestAPI
+Restart=always
+RestartSec=60
+KillMode=process
+User=root
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
