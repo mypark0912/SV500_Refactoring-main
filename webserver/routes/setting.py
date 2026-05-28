@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec, VersionInfo
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
+from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
@@ -410,18 +410,11 @@ def enable_post_init_services():
             results[item] = {'enabled': False, 'reason': 'service file not found'}
             logging.warning(f"⚠️ Service file not found: {unit}")
             continue
-        try:
-            check = subprocess.run(
-                ['systemctl', 'is-enabled', unit],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                text=True, timeout=5
-            )
-            if check.stdout.strip() == 'enabled':
-                results[item] = {'enabled': True, 'skipped': True}
-                logging.info(f"✅ {unit} already enabled")
-                continue
-        except Exception as e:
-            logging.warning(f"⚠️ is-enabled check failed for {unit}: {e}")
+
+        if is_service_enabled(unit):
+            results[item] = {'enabled': True, 'skipped': True}
+            logging.info(f"✅ {unit} already enabled")
+            continue
 
         ret = sysService('enable', item)
         results[item] = ret

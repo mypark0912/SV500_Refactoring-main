@@ -499,6 +499,18 @@ def is_service_active(name):
         print(f"❌ 서비스 상태 확인 실패: {name} - {e}")
         return False
 
+def is_service_enabled(name):
+    try:
+        result = subprocess.run(['systemctl', 'is-enabled', name],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                                timeout=2)
+        return result.stdout.strip() == "enabled"
+    except Exception as e:
+        print(f"❌ 서비스 enabled 확인 실패: {name} - {e}")
+        return False
+
 def service_exists(name):
     """서비스 파일이 존재하는지 확인"""
     try:
