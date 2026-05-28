@@ -211,8 +211,13 @@ async def initInflux(request: Request,background_tasks: BackgroundTasks):
                 "retention": data.get("retentionPeriodSeconds")
             }
 
-        with open(file_path, "w", encoding="utf-8") as f:
+        # atomic write: 중간에 끊겨도 0바이트 파일이 남지 않도록 tmp → replace
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, file_path)
 
         # init_influx()  # ✅ 초기화 수행 (json 생성 + client 전역 등록)
         if influx_state.client is None:
@@ -255,8 +260,13 @@ def restore_influxToken(org_id:str, token:str):
             "retention": data.get("retentionPeriodSeconds")
         }
 
-        with open(file_path, "w", encoding="utf-8") as f:
+        # atomic write
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(influxdata, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, file_path)
 
         import shlex
         token_escaped = shlex.quote(token)
@@ -1140,15 +1150,19 @@ async def get_org_id_from_influxdb(org_name: str = "ntek") -> str:
                     org_id = target_org["id"]
                     logging.info(f"✅ Found org_id: {org_id}")
 
-                    # influx.json에 org_id 저장
+                    # influx.json에 org_id 저장 (atomic write)
                     file_path = os.path.join(SETTING_FOLDER, 'influx.json')
                     with open(file_path, "r", encoding="utf-8") as f:
                         influx_config = json.load(f)
 
                     influx_config["org_id"] = org_id
 
-                    with open(file_path, "w", encoding="utf-8") as f:
+                    tmp_path = file_path + ".tmp"
+                    with open(tmp_path, "w", encoding="utf-8") as f:
                         json.dump(influx_config, f, indent=4)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    os.replace(tmp_path, file_path)
 
                     logging.info(f"✅ org_id saved to influx.json")
 
