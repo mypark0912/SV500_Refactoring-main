@@ -78,38 +78,15 @@ const CATEGORY_COLORS = {
   'electrical': '#0ea5e9',         // sky-500 스카이블루
 }
 
-const ITEM_CATEGORY_MAP = {
-  // Voltage / Inverter
-  'IncomingVoltage': 'voltage-inverter',
-  'DCLink': 'voltage-inverter',
-  'Rectifier': 'voltage-inverter',
-  'Switching': 'voltage-inverter',
-  // Components
-  'Capacitor': 'components',
-  'TapChanger': 'components',
-  'Bushings': 'components',
-  // Mechanical
-  'NoiseVibration': 'mechanical',
-  'Rotor': 'mechanical',
-  'Bearing': 'mechanical',
-  'TorqueRipple': 'mechanical',
-  'MechanicalUnbalance': 'mechanical',
-  'SoftFoot': 'mechanical',
-  'Cavitation': 'mechanical',
-  'Vane': 'mechanical',
-  'Turbulence': 'mechanical',
-  'Blade': 'mechanical',
-  // Electrical
-  'Stress': 'electrical',
-  'LoadUnbalance': 'electrical',
-  'CableConnection': 'electrical',
-  'Winding': 'electrical',
-  'Heat': 'electrical',
-  'Core': 'electrical',
-  'Load': 'electrical',
-  'NeutralLoading': 'electrical',
-  'Stator': 'electrical',
+const GROUPING_TO_CATEGORY = {
+  'Input Voltage/Inverter': 'voltage-inverter',
+  'Input Voltage': 'voltage-inverter',
+  'Transformer Components': 'components',
+  'Mechanical': 'mechanical',
+  'Electrical': 'electrical',
 }
+
+const CATEGORY_ORDER = { 'voltage-inverter': 0, 'components': 1, 'mechanical': 2, 'electrical': 3 }
 
 export default {
   name: 'DiagnosisTab_Bands',
@@ -140,28 +117,32 @@ export default {
     /* ───────── 배터리 차트 (BarGraph → 카테고리) ───────── */
     const categories = computed(() => {
       const currentLocale = locale.value
-      const cats = [
-        { id: 'voltage-inverter', label: t('diagnosis.category.voltage-inverter'), color: CATEGORY_COLORS['voltage-inverter'], items: [] },
-        { id: 'components',       label: t('diagnosis.category.components'),       color: CATEGORY_COLORS['components'],       items: [] },
-        { id: 'mechanical',       label: t('diagnosis.category.mechanical'),       color: CATEGORY_COLORS['mechanical'],       items: [] },
-        { id: 'electrical',       label: t('diagnosis.category.electrical'),       color: CATEGORY_COLORS['electrical'],       items: [] },
-      ]
-      const catMap = {}
-      cats.forEach(c => { catMap[c.id] = c })
+      const grouped = new Map()
 
       for (const bar of dataStatus.value) {
-        const itemName = bar.Name || bar.Title || ''
-        const lookupKey = itemName.replace(/\s+/g, '')
-        const catId = ITEM_CATEGORY_MAP[lookupKey]
-        if (catId && catMap[catId]) {
-          catMap[catId].items.push({
-            name: bar.Titles?.[currentLocale] || bar.Title || bar.Name,
-            rawName: itemName,
-            status: bar.Status || 0,
+        const gt = bar.GroupingText
+        if (!gt) continue
+        const catId = GROUPING_TO_CATEGORY[gt]
+        if (!catId) continue
+
+        if (!grouped.has(catId)) {
+          grouped.set(catId, {
+            id: catId,
+            label: gt,
+            color: CATEGORY_COLORS[catId],
+            items: [],
           })
         }
+        grouped.get(catId).items.push({
+          name: bar.Titles?.[currentLocale] || bar.Title || bar.Name,
+          rawName: bar.Name || bar.Title || '',
+          status: bar.Status || 0,
+        })
       }
-      return cats.filter(c => c.items.length > 0)
+
+      return [...grouped.values()].sort(
+        (a, b) => (CATEGORY_ORDER[a.id] ?? 99) - (CATEGORY_ORDER[b.id] ?? 99)
+      )
     })
 
     /* ───────── 트리테이블 (TreeList 기반 트리, 카테고리와 독립) ───────── */
