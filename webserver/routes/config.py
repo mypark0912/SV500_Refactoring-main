@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from states.global_state import redis_state, aesState, influx_state
+from states.global_state import redis_state, aesState, influx_state, os_spec
 import os, csv, sqlite3, shutil, logging, tempfile
 import ujson as json
 import struct, subprocess
@@ -294,9 +294,12 @@ async def set_system_time(data: TimeSetRequest, request: Request):
             logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
             return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
 
-        r_hw = subprocess.run(["sudo", "hwclock", "--systohc", "-f", "/dev/rtc1"], capture_output=True, text=True)
+        hwclock_cmd = ["sudo", "hwclock", "--systohc"]
+        if os_spec.rtc_device:
+            hwclock_cmd.extend(["-f", os_spec.rtc_device])
+        r_hw = subprocess.run(hwclock_cmd, capture_output=True, text=True)
         if r_hw.returncode != 0:
-            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
+            logging.error(f"hwclock failed (cmd={hwclock_cmd}, rc={r_hw.returncode}): {r_hw.stderr}")
         current = subprocess.run("date", shell=True, capture_output=True, text=True)
         updateLog("Set Time", request)
         return {
