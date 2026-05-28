@@ -80,8 +80,8 @@ import Footer from "../common/Footer.vue";
 import DiagnosisTab from '../../partials/modeview/diagnosis/DiagnosisTab.vue'
 import DiagnosisTab_Chart from '../../partials/modeview/diagnosis/DiagnosisTab_Chart.vue'
 import Diagnosis_Info from '../../partials/modeview/diagnosis/Diagnosis_Info.vue'
-// import DiagnosisTab_Bands from '../../partials/modeview/diagnosis/DiagnosisTab_Bands.vue' // 신규 버전 (호환성 보류)
-import DiagnosisTab_Bands from '../../partials/modeview/diagnosis/DiagnosisTab_Bands_Legacy.vue' // v21 호환 버전 사용 중
+import DiagnosisTab_Bands from '../../partials/modeview/diagnosis/DiagnosisTab_Bands.vue' // 신규 버전 (호환성 보류)
+//import DiagnosisTab_Bands from '../../partials/modeview/diagnosis/DiagnosisTab_Bands_Legacy.vue' // v21 호환 버전 사용 중
 import { useI18n } from 'vue-i18n'  
 import { useAuthStore } from '@/store/auth';
 export default {
