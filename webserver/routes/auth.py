@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from utils.util import save_post, Post, get_mac_address, getVersionNew, is_service_active, sysService, create_logdb_connection, get_ip_address
+from utils.util import save_post, Post, get_mac_address, getVersionNew, is_service_active, sysService, create_logdb_connection, get_active_interface_ip
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 router = APIRouter()
 
@@ -308,7 +308,7 @@ async def join_admin(data: SignupAdmin):
     if adminflag:
         default_file_path = os.path.join(SETTING_FOLDER, 'default.json')
         shutil.copy(default_file_path, SETUP_PATH)
-        ip = get_ip_address()
+        _, ip = get_active_interface_ip()
         with open(SETUP_PATH, "r", encoding="utf-8") as f:
             setting = json.load(f)
             setting["mode"] = mode

@@ -264,9 +264,13 @@ def get_mac_address():
         mac_address = f'{mac_int:012x}'
         return mac_address
 
-def get_ip_address():
-    """지정된 네트워크 카드들의 IP 주소 가져오기"""
+def get_active_interface_ip():
+    """sw0ep / end1 중 IP를 보유한 인터페이스명과 IP를 함께 반환.
 
+    Returns:
+        (interface_name, ip): 보유 인터페이스가 있으면 (예: ('sw0ep', '192.168.1.10'))
+        (None, '0.0.0.0'):    둘 다 IP가 없거나 예외 발생 시
+    """
     TARGET_INTERFACES = ['sw0ep', 'end1']
 
     try:
@@ -278,13 +282,13 @@ def get_ip_address():
                     if addr.family == socket.AF_INET:
                         ip = addr.address
                         if ip and ip != '127.0.0.1':
-                            return ip
+                            return interface_name, ip
 
-        return '0.0.0.0'
+        return None, '0.0.0.0'
 
     except Exception as e:
         print(f"IP 주소 가져오기 실패: {e}")
-        return '0.0.0.0'
+        return None, '0.0.0.0'
 
 def getVersions():
     versionPath = '/home/root/versionInfo.txt'

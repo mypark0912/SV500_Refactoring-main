@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec, VersionInfo
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists
+from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists, get_active_interface_ip
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
@@ -3520,8 +3520,17 @@ def get_current_ip(IFACE):
     return None
 
 def apply_network_setting(net_data):
-    NETWORK_FILE = "/etc/systemd/network/10-static-end1.network"
-    IFACE = "end1"
+    NETWORK_FILE_MAP = {
+        "end1":  "/etc/systemd/network/10-static-end1.network",
+        "sw0ep": "/etc/systemd/network/20-static-sw02p.network",
+    }
+
+    IFACE, _ = get_active_interface_ip()
+    if IFACE not in NETWORK_FILE_MAP:
+        # 활성 인터페이스 감지 실패 → 기본값 end1 (legacy 동작 유지)
+        IFACE = "end1"
+    NETWORK_FILE = NETWORK_FILE_MAP[IFACE]
+
     dhcp = safe_int(net_data.get("dhcp", 0))
     ip = net_data["ip_address"]
     mask = net_data["subnet_mask"]
@@ -3529,7 +3538,7 @@ def apply_network_setting(net_data):
     cidr = mask_to_cidr(mask)
 
     DHCP_TEMPLATE = """[Match]
-Name=end1
+Name={iface}
 [Network]
 DHCP=ipv4
 [DHCP]
@@ -3538,7 +3547,7 @@ UseRoutes=true
 """
 
     STATIC_TEMPLATE = """[Match]
-Name=end1
+Name={iface}
 [Network]
 #DHCP=ipv4
 Address={ip}/{cidr}
@@ -3550,9 +3559,9 @@ UseRoutes=true
 
     # ⭐ 새 설정 생성
     if dhcp == 1:
-        new_content = DHCP_TEMPLATE
+        new_content = DHCP_TEMPLATE.format(iface=IFACE)
     else:
-        new_content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
+        new_content = STATIC_TEMPLATE.format(iface=IFACE, ip=ip, cidr=cidr, gw=gateway)
 
     # ⭐ 기존 설정과 비교 — 변경 없으면 스킵
     try:
@@ -3581,7 +3590,7 @@ UseRoutes=true
                 return {"result": True, "mode": "dhcp", "ip": current["ip"]}
 
         # DHCP 실패 → static fallback
-        content = STATIC_TEMPLATE.format(ip=ip, cidr=cidr, gw=gateway)
+        content = STATIC_TEMPLATE.format(iface=IFACE, ip=ip, cidr=cidr, gw=gateway)
         sudo_write_file(NETWORK_FILE, content)
         os.system("sudo systemctl restart systemd-networkd")
         time.sleep(3)
