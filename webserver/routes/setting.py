@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec, VersionInfo
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists, get_active_interface_ip
+from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists, get_active_interface_ip, _get_ip_of
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
@@ -3519,6 +3519,40 @@ def get_current_ip(IFACE):
         return {"ip": match.group(1), "cidr": match.group(2)}
     return None
 
+def _disable_end1_address():
+    """end1 네트워크 파일의 Address= / DHCP= 라인을 주석 처리.
+
+    sw0ep, end1 둘 다 IP를 보유한 비정상 상황에서 end1이 IP를 잡지 않도록 차단.
+    파일이 없거나 주석 처리할 라인이 없으면 아무 변경 없음.
+    """
+    end1_file = "/etc/systemd/network/10-static-end1.network"
+    DISABLE_PREFIXES = ("Address=", "DHCP=")
+    try:
+        with open(end1_file, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return
+    except Exception as e:
+        logging.error(f"end1 네트워크 파일 읽기 실패: {e}")
+        return
+
+    changed = False
+    new_lines = []
+    for line in lines:
+        stripped = line.lstrip()
+        if any(stripped.startswith(p) for p in DISABLE_PREFIXES):
+            new_lines.append("#" + line)
+            changed = True
+        else:
+            new_lines.append(line)
+
+    if changed:
+        try:
+            sudo_write_file(end1_file, "".join(new_lines))
+        except Exception as e:
+            logging.error(f"end1 Address/DHCP 주석 처리 실패: {e}")
+
+
 def apply_network_setting(net_data):
     NETWORK_FILE_MAP = {
         "end1":  "/etc/systemd/network/10-static-end1.network",
@@ -3530,6 +3564,10 @@ def apply_network_setting(net_data):
         # 활성 인터페이스 감지 실패 → 기본값 end1 (legacy 동작 유지)
         IFACE = "end1"
     NETWORK_FILE = NETWORK_FILE_MAP[IFACE]
+
+    # 비정상 상황: sw0ep, end1 둘 다 IP 보유 → end1 측 Address= 라인 주석 처리
+    if IFACE == "sw0ep" and _get_ip_of("end1"):
+        _disable_end1_address()
 
     dhcp = safe_int(net_data.get("dhcp", 0))
     ip = net_data["ip_address"]

@@ -287,8 +287,20 @@ def get_active_interface_ip():
         return None, '0.0.0.0'
 
     except Exception as e:
-        print(f"IP 주소 가져오기 실패: {e}")
+        logging.error(f"IP 주소 가져오기 실패: {e}")
         return None, '0.0.0.0'
+
+def _get_ip_of(interface_name):
+    """특정 인터페이스의 IPv4 주소를 반환. 없으면 None."""
+    try:
+        for addr in psutil.net_if_addrs().get(interface_name, []):
+            if addr.family == socket.AF_INET:
+                ip = addr.address
+                if ip and ip != '127.0.0.1':
+                    return ip
+    except Exception:
+        pass
+    return None
 
 def getVersions():
     versionPath = '/home/root/versionInfo.txt'
