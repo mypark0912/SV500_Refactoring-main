@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize TSN/STP daisy chain
+After=network.target systemd-networkd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/init-tsn.sh
+RemainAfterExit=yes
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target
