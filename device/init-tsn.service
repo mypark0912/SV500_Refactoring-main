@@ -6,7 +6,6 @@ After=network.target systemd-networkd.service
 Type=oneshot
 ExecStart=/usr/local/bin/init-tsn.sh
 RemainAfterExit=yes
-Restart=on-failure
 User=root
 
 [Install]

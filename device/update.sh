@@ -27,16 +27,19 @@ log_section() {
 
 # =================================================================
 # 옵션 파싱 (기본값: local --rtc0)
-# Usage: ./update.sh [--local|--lte] [--rtc0|--rtc1|--nosavertc|--nosavertc1]
+# Usage: ./update.sh [--local|--lte] [--rtc0|--rtc1|--nosavertc|--nosavertc1] [--switch|--noswitch]
 #   --rtc0       : rtc0 사용, 시간 저장/복원 O (default)
 #   --rtc1       : rtc1 사용, 시간 저장/복원 O
 #   --nosavertc  : rtc0 사용, 시간 저장/복원 X
 #   --nosavertc1 : rtc1 사용, 시간 저장/복원 X
+#   --switch     : 스위치 모드 (init-tsn.service 활성화)
+#   --noswitch   : 일반 모드, init-tsn 비활성화 (default)
 # (docker mode는 update.sh 대상 아님 — 컨테이너에서 직접 SV500_MODE=3 설정)
 # =================================================================
 MODE="local"
 DEVICE_MODE=0   # 0=linux rtc0, 1=linux rtc1 (webserver SV500_MODE와 일치)
 NOSAVE_RTC=0    # 1이면 time-keeper 제외 + startup-monitor 의 RTC 복구도 skip
+SWITCH_MODE=0   # 1이면 스위치 모드 (init-tsn.service enable)
 while [ "$#" -gt 0 ]; do
   case $1 in
     --lte)
@@ -57,9 +60,15 @@ while [ "$#" -gt 0 ]; do
     --nosavertc1)
       DEVICE_MODE=1; NOSAVE_RTC=1
       ;;
+    --switch)
+      SWITCH_MODE=1
+      ;;
+    --noswitch)
+      SWITCH_MODE=0
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1|--nosavertc|--nosavertc1]"
+      echo "Usage: $0 [--local|--lte] [--rtc0|--rtc1|--nosavertc|--nosavertc1] [--switch|--noswitch]"
       exit 1
       ;;
   esac
@@ -73,7 +82,7 @@ else
     HWCLOCK_OPTS=""
 fi
 
-log_info "Update mode: network=$MODE, device=$DEVICE_MODE (hwclock opts: '$HWCLOCK_OPTS')"
+log_info "Update mode: network=$MODE, device=$DEVICE_MODE, switch=$SWITCH_MODE (hwclock opts: '$HWCLOCK_OPTS')"
 
 # =================================================================
 # 0. ntekadmin 사용자 확인 및 생성
@@ -491,6 +500,17 @@ if [ -f "$SCRIPT_DIR/time-keeper.timer" ]; then
 fi
 log_info "✅ time-keeper installed"
 
+# Install init-tsn (스위치 모드 TSN/STP daisy chain 초기화 — systemd-networkd 이후 1회 실행)
+if [ -f "$SCRIPT_DIR/init-tsn.sh" ]; then
+    cp "$SCRIPT_DIR/init-tsn.sh" /usr/local/bin/init-tsn.sh
+    chmod +x /usr/local/bin/init-tsn.sh
+fi
+if [ -f "$SCRIPT_DIR/init-tsn.service" ]; then
+    cp "$SCRIPT_DIR/init-tsn.service" /etc/systemd/system/init-tsn.service
+    chmod 644 /etc/systemd/system/init-tsn.service
+fi
+log_info "✅ init-tsn installed"
+
 # Install rtc-sync (DEVICE_MODE=1 → boot 시 /dev/rtc1 → 시스템 클럭 초기화)
 # 기본 systemd는 /dev/rtc0 에서 클럭을 가져오므로 rtc1 사용 시 반드시 필요
 if [ "$DEVICE_MODE" = "1" ]; then
@@ -713,6 +733,16 @@ if [ "$DEVICE_MODE" = "1" ]; then
     log_info "✅ rtc-sync enabled (boot 시 /dev/rtc1 → 시스템 클럭)"
 else
     sudo systemctl disable rtc-sync.service 2>/dev/null || true
+fi
+
+# init-tsn.service: SWITCH_MODE=1 (--switch) 에서만 enable
+if [ "$SWITCH_MODE" = "1" ]; then
+    sudo systemctl enable init-tsn.service 2>/dev/null || true
+    sudo systemctl start  init-tsn.service 2>/dev/null || true
+    log_info "✅ init-tsn enabled (스위치 모드 — systemd-networkd 이후 1회 실행)"
+else
+    sudo systemctl stop    init-tsn.service 2>/dev/null || true
+    sudo systemctl disable init-tsn.service 2>/dev/null || true
 fi
 
 sudo systemctl daemon-reload
