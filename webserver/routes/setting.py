@@ -4469,7 +4469,7 @@ def _apply_mqtt_services(setup):
                     json.dump(jsonData, f, indent=2, ensure_ascii=False)
 
             # mqClient 서비스 제어
-            if service_exists("mqClient"):
+            if service_exists("mqClient.service"):
                 if is_service_enabled("mqClient"):
                     if not is_service_active("mqClient"):
                         ret["start"] = sysService("start", "MQTTClient")
