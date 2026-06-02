@@ -308,9 +308,7 @@ WorkingDirectory=$CORE_DIR
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=SV500_MODE=$DEVICE_MODE
 Restart=always
-User=ntekadmin
-Group=root
-UMask=0007
+User=root
 StandardOutput=journal
 StandardError=journal
 
