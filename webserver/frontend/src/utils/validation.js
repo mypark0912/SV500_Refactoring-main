@@ -170,7 +170,7 @@ export class SettingValidator {
   validateCTSettings(ctInfo) {
     if (!ctInfo) return false;
     this.validateNumberRange(ctInfo.startingcurrent, 0.1, 1000, 'Starting Current');
-    this.validateNumberRange(ctInfo.inorminal, 1, 10000, 'Rated Current');
+    this.validateNumberRange(ctInfo.inorminal, 1, 100000, 'Rated Current');
     this.validateRatio(ctInfo.ct1, this.getCTSecondaryValue(ctInfo.ct2), 'CT Ratio');
     this.validateNumberRange(ctInfo.zctscale, 0.1, 1000, 'ZCT Scale');
     
