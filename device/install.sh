@@ -839,12 +839,13 @@ if [ "\$TIME_RECOVERED" = "1" ]; then
     systemctl restart influxdb 2>/dev/null || true
 fi
 
-# Switch mode: 자동 부여된 관리 IP 제거 후 네트워크 재시작
+# Switch mode: TSN/STP daisy chain 초기화 (init-tsn.sh 부팅 시 1회 직접 실행) + 자동 부여된 관리 IP 제거
 if [ "\$SWITCH_MODE" = "1" ]; then
+    log "→ Switch mode: running init-tsn.sh"
+    chmod +x /usr/local/bin/init-tsn.sh 2>/dev/null || true
+    sh /usr/local/bin/init-tsn.sh >> "\$LOG" 2>&1 || true
     log "→ Switch mode: removing auto-assigned IP (192.168.0.10/32 on sw0ep)"
     ip addr del 192.168.0.10/32 dev sw0ep 2>/dev/null || true
-    log "→ Restarting systemd-networkd"
-    systemctl restart systemd-networkd 2>/dev/null || true
 fi
 
 log "===== Boot logging done ====="
@@ -874,12 +875,10 @@ cp "$SCRIPT_DIR/time-keeper.timer"   /etc/systemd/system/time-keeper.timer
 chmod 644 /etc/systemd/system/time-keeper.service /etc/systemd/system/time-keeper.timer
 log_info "✅ time-keeper installed"
 
-# Install init-tsn (스위치 모드 TSN/STP daisy chain 초기화 — systemd-networkd 이후 1회 실행)
+# Install init-tsn.sh (스위치 모드 TSN/STP daisy chain 초기화 — startup-monitor 가 부팅 시 1회 직접 실행)
 cp "$SCRIPT_DIR/init-tsn.sh" /usr/local/bin/init-tsn.sh
 chmod +x /usr/local/bin/init-tsn.sh
-cp "$SCRIPT_DIR/init-tsn.service" /etc/systemd/system/init-tsn.service
-chmod 644 /etc/systemd/system/init-tsn.service
-log_info "✅ init-tsn installed"
+log_info "✅ init-tsn.sh installed (service 미사용 — startup-monitor 가 직접 실행)"
 
 # Install rtc-sync (DEVICE_MODE=1 → boot 시 /dev/rtc1 → 시스템 클럭 초기화)
 # 기본 systemd는 /dev/rtc0 에서 클럭을 가져오므로 rtc1 사용 시 반드시 필요
@@ -992,12 +991,13 @@ else
     sudo systemctl disable rtc-sync.service 2>/dev/null || true
 fi
 
-# init-tsn.service: SWITCH_MODE=1 (--switch) 에서만 enable
-if [ "$SWITCH_MODE" = "1" ]; then
-    sudo systemctl enable init-tsn.service
-    log_info "✅ init-tsn enabled (스위치 모드 — systemd-networkd 이후 1회 실행)"
-else
+# init-tsn.service 폐기: startup-monitor 가 부팅 시 init-tsn.sh 를 직접 실행 (기존 설치본이 있을 때만 정리)
+if [ -f /etc/systemd/system/init-tsn.service ]; then
+    sudo systemctl stop    init-tsn.service 2>/dev/null || true
     sudo systemctl disable init-tsn.service 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/init-tsn.service
+    sudo systemctl daemon-reload
+    log_info "✅ 기존 init-tsn.service 제거"
 fi
 
 # smartsystemsservice / smartsystemsrestapiservice 의 After= 보강 (drop-in override)
@@ -1034,9 +1034,6 @@ if [ "$NOSAVE_RTC" = "0" ]; then
 fi
 sudo systemctl start startup-monitor.service
 sudo systemctl start sv500A35.service 2>/dev/null || true
-if [ "$SWITCH_MODE" = "1" ]; then
-    sudo systemctl start init-tsn.service 2>/dev/null || true
-fi
 sudo systemctl start webserver.service
 
 
