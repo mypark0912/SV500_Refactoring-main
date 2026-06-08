@@ -427,7 +427,9 @@ fi
 
 # Switch mode: 자동 부여된 관리 IP 제거 후 네트워크 재시작
 if [ "\$SWITCH_MODE" = "1" ]; then
-    log "→ Switch mode: removing auto-assigned IP (192.168.0.10/32 on sw0ep)"
+	chmod +x /usr/local/bin/init-tsn.sh
+	sh /usr/local/bin/init-tsn.sh
+    log "→ Switch mode: Initiating swich mode and removing auto-assigned IP (192.168.0.10/32 on sw0ep)"
     ip addr del 192.168.0.10/32 dev sw0ep 2>/dev/null || true
     log "→ Restarting systemd-networkd"
     systemctl restart systemd-networkd 2>/dev/null || true
@@ -570,6 +572,18 @@ log_section "5. FRP Tunnel & Firewall Setup"
 
 if [ "$MODE" = "lte" ]; then
     log_info "LTE mode: Installing FRP tunnel and Firewall..."
+
+    # frp 폴더가 없으면 압축 해제 (이미 존재하면 건너뜀)
+    if [ ! -d /home/root/frp_0.66.0_linux_arm64 ]; then
+        if [ -f /home/root/frp_0.66.0_linux_arm64.tar.gz ]; then
+            tar -xzf /home/root/frp_0.66.0_linux_arm64.tar.gz -C /home/root
+            log_info "FRP extracted (LTE mode)"
+        else
+            log_warn "frp_0.66.0_linux_arm64.tar.gz not found, skipping FRP extraction"
+        fi
+    else
+        log_info "FRP already extracted, skipping"
+    fi
 
     if [ -f /home/root/firewall.sh ]; then
         mv /home/root/firewall.sh /opt/firewall.sh
@@ -792,9 +806,3 @@ if [ "$MODE" = "lte" ]; then
 echo "- FRP Tunnel & Firewall: applied"
 fi
 echo ""
-
-# =================================================================
-# 스크립트 자기 자신 삭제 (업데이트 완료 후 정리)
-# =================================================================
-log_info "Cleaning up update script..."
-rm -f "$0"
