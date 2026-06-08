@@ -3614,9 +3614,6 @@ UseRoutes=true
     # ⭐ 변경 있을 때만 아래 실행 (root 소유 경로 → sudo tee)
     sudo_write_file(NETWORK_FILE, new_content)
 
-    # ⭐ 연쇄 재시작 방지
-    os.system("sudo systemctl stop frpc-restart-monitor")
-    time.sleep(0.5)
     os.system("sudo systemctl restart systemd-networkd")
 
     if dhcp == 1:
@@ -3624,7 +3621,6 @@ UseRoutes=true
             time.sleep(2)
             current = get_current_ip(IFACE)
             if current:
-                os.system("sudo systemctl start frpc-restart-monitor")
                 return {"result": True, "mode": "dhcp", "ip": current["ip"]}
 
         # DHCP 실패 → static fallback
@@ -3632,11 +3628,9 @@ UseRoutes=true
         sudo_write_file(NETWORK_FILE, content)
         os.system("sudo systemctl restart systemd-networkd")
         time.sleep(3)
-        os.system("sudo systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
     else:
         time.sleep(3)
-        os.system("sudo systemctl start frpc-restart-monitor")
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
 
 def apply_timezone_setting(timezone):
@@ -4547,15 +4541,9 @@ def _apply_frp_services(setup):
                     "/home/root/frp_0.66.0_linux_arm64/frpc.toml"
                 )
                 execService('daemon-reload')
-                save_frpc_restart_monitor()
-                execService('daemon-reload')
                 sysService("enable", "frpc")
                 time.sleep(0.5)
-                # sysService("enable", "frpc-restart-monitor")  # restart-monitor 활성화 보류
-                # time.sleep(0.5)
                 sysService("start", "frpc")
-                time.sleep(0.5)
-                # sysService("start", "frpc-restart-monitor")  # restart-monitor 활성화 보류
             else:
                 # 설정 변경을 toml에 반영
                 save_frpc_config(useLte, subdomain, name_prefix)
@@ -4568,116 +4556,18 @@ def _apply_frp_services(setup):
                 else:
                     sysService("enable", "frpc")
                     time.sleep(0.5)
-                    # sysService("enable", "frpc-restart-monitor")  # restart-monitor 활성화 보류
-                    # time.sleep(0.5)
                     sysService("start", "frpc")
-                    time.sleep(0.5)
-                    # sysService("start", "frpc-restart-monitor")  # restart-monitor 활성화 보류
         else:
             redis_state.client.hset("System", "FRP", 0)
             if service_exists("frpc.service"):
                 if is_service_enabled("frpc"):
                     if is_service_active("frpc"):
                         sysService("stop", "frpc")
-                    if is_service_active("frpc-restart-monitor"):
-                        sysService("stop", "frpc-restart-monitor")
                     sysService("disable", "frpc")
-                    time.sleep(0.5)
-                    sysService("disable", "frpc-restart-monitor")
 
     except Exception as e:
         logging.error(f"FRP service apply error: {e}")
 
-
-def save_frpc_restart_monitor(
-        interfaces=["end1"],
-        restart_delay=5,
-        debounce=30,
-        script_path="/usr/local/bin/frpc-restart-monitor.sh",
-        service_path="/etc/systemd/system/frpc-restart-monitor.service"
-):
-    try:
-        import os
-
-        # 1. 모니터링 스크립트 생성
-        interfaces_str = " ".join(interfaces)
-        script_content = f'''#!/bin/bash
-INTERFACES="{interfaces_str}"
-DEBOUNCE={debounce}
-LAST_RESTART=0
-
-WAS_DOWN=1   # 부팅 직후 첫 UP 은 복구로 간주(초기 연결 보장)
-
-ip monitor link | while read -r line; do
-    for iface in $INTERFACES; do
-        echo "$line" | grep -q "$iface" || continue
-
-        # 다운 계열 이벤트: 다음 UP 을 '실제 복구'로 인식하기 위한 표시만
-        if echo "$line" | grep -qE "NO-CARRIER|state DOWN|LOWERLAYERDOWN"; then
-            WAS_DOWN=1
-            continue
-        fi
-
-        # 여기부터는 UP 이벤트
-        echo "$line" | grep -q "state UP" || continue
-
-        # 실제 DOWN -> UP 복구가 아닌 단순 UP 재통지는 무시.
-        # (링크가 안 끊겼는데 오는 UP 이벤트로 frpc/SSH 를 죽이지 않음)
-        [ "$WAS_DOWN" = "1" ] || continue
-
-        now=$(date +%s)
-        # 디바운스: 짧은 시간 내 down/up 반복(flap)은 1회만 처리
-        if [ $((now - LAST_RESTART)) -lt $DEBOUNCE ]; then
-            WAS_DOWN=0
-            continue
-        fi
-        LAST_RESTART=$now
-        WAS_DOWN=0
-        sleep {restart_delay}
-        # 링크가 실제로 끊겼다 복구된 경우에만 재시작 → web 빠르게 복구.
-        # (이 시점엔 기존 frpc 연결/SSH 는 이미 끊겨 있으므로 추가 피해 없음)
-        sudo systemctl restart frpc
-        sudo systemctl restart mqClient
-    done
-done
-'''
-
-        # 스크립트 디렉토리 생성
-        os.makedirs(os.path.dirname(script_path), exist_ok=True)
-
-        # 스크립트 저장 (root 소유 경로 → sudo 경유) + 실행 권한
-        sudo_write_file(script_path, script_content, mode='755')
-        print(f"Monitor script saved to {script_path}")
-
-        # 2. systemd 서비스 파일 생성
-        service_content = f'''[Unit]
-Description=FRPC Restart Monitor
-After=network.target
-
-[Service]
-Type=simple
-ExecStart={script_path}
-Restart=always
-RestartSec=5
-User=ntekadmin
-
-[Install]
-WantedBy=multi-user.target
-'''
-
-        # 서비스 디렉토리 생성
-        os.makedirs(os.path.dirname(service_path), exist_ok=True)
-
-        # 서비스 파일 저장 (root 소유 경로 → sudo 경유)
-        sudo_write_file(service_path, service_content)
-
-        print(f"Service file saved to {service_path}")
-
-        return True
-
-    except Exception as e:
-        print(f"Failed to create frpc restart monitor: {str(e)}")
-        return False
 
 def create_service_file(
         service_name: str,

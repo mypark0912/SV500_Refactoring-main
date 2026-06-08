@@ -551,8 +551,7 @@ def sysService(cmd, item):
       "WebServer":"webserver",
       "A35":"sv500A35",
       "MQTTClient":"mqClient",
-      "frpc":"frpc",
-      "frpc-restart-monitor" : "frpc-restart-monitor"
+      "frpc":"frpc"
     }
 
     try:

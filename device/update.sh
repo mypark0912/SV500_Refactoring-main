@@ -278,6 +278,9 @@ Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
 Environment=SV500_MODE=$DEVICE_MODE
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
+# webserver 가 (재)시작되면 frpc 터널을 다시 맺어 LTE→frpc SSH 세션을 복구한다.
+# frpc 가 떠 있을 때만 재시작(try-restart 효과), 없으면 무시. webserver stop 시엔 건드리지 않음.
+ExecStartPost=-/bin/sh -c 'systemctl is-active --quiet frpc && sudo /bin/systemctl restart frpc'
 Restart=always
 RestartSec=5
 TimeoutStartSec=120
@@ -577,6 +580,7 @@ if [ "$MODE" = "lte" ]; then
     if [ ! -d /home/root/frp_0.66.0_linux_arm64 ]; then
         if [ -f /home/root/frp_0.66.0_linux_arm64.tar.gz ]; then
             tar -xzf /home/root/frp_0.66.0_linux_arm64.tar.gz -C /home/root
+            rm -f /home/root/frp_0.66.0_linux_arm64.tar.gz
             log_info "FRP extracted (LTE mode)"
         else
             log_warn "frp_0.66.0_linux_arm64.tar.gz not found, skipping FRP extraction"
@@ -598,23 +602,16 @@ if [ "$MODE" = "lte" ]; then
         log_warn "firewall.service not found, skipping"
     fi
 
-    # frpc-restart-monitor.sh: 이미 설치된 장비만 갱신 (신규 생성은 안 함)
-    if [ -f /home/root/frpc-restart-monitor.sh ]; then
-        if [ -f /usr/local/bin/frpc-restart-monitor.sh ]; then
-            cp /home/root/frpc-restart-monitor.sh /usr/local/bin/frpc-restart-monitor.sh
-            chmod +x /usr/local/bin/frpc-restart-monitor.sh
-            log_info "frpc-restart-monitor.sh updated"
-            if systemctl is-active --quiet frpc-restart-monitor; then
-                sudo systemctl restart frpc-restart-monitor
-                sudo systemctl restart frpc 2>/dev/null || true
-            fi
-        else
-            log_warn "frpc-restart-monitor not installed on this device, skipping update"
-        fi
-        rm -f /home/root/frpc-restart-monitor.sh
-    else
-        log_warn "frpc-restart-monitor.sh not found, skipping"
-    fi
+    # (구) frpc-restart-monitor 제거 (deprecated):
+    # LAN 링크(end1) down/up 감시 방식이 일시적 플래핑에도 frpc 를 재시작해
+    # LTE→frpc 터널 SSH 세션을 끊는 문제로 폐기함.
+    # frpc 재시작은 webserver.service 의 ExecStartPost 가 대신한다.
+    # 기존 장비에 남아있는 모니터 서비스/스크립트를 정리한다.
+    sudo systemctl stop frpc-restart-monitor 2>/dev/null || true
+    sudo systemctl disable frpc-restart-monitor 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/frpc-restart-monitor.service
+    sudo rm -f /usr/local/bin/frpc-restart-monitor.sh
+    rm -f /home/root/frpc-restart-monitor.sh
 
     sudo systemctl daemon-reload
     sudo systemctl enable firewall.service 2>/dev/null || true
@@ -627,6 +624,11 @@ else
     rm -f /home/root/firewall.sh
     rm -f /home/root/firewall.service
     rm -f /home/root/frpc-restart-monitor.sh
+    # (구) frpc-restart-monitor 잔존물 제거 (deprecated)
+    sudo systemctl stop frpc-restart-monitor 2>/dev/null || true
+    sudo systemctl disable frpc-restart-monitor 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/frpc-restart-monitor.service
+    sudo rm -f /usr/local/bin/frpc-restart-monitor.sh
     log_info "✅ FRP & Firewall skipped (Local mode)"
 fi
 

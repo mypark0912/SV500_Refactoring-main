@@ -231,6 +231,7 @@ chmod 664 /etc/systemd/timesyncd.conf    2>/dev/null || true
 # LTE 모드일 경우에만 frp 압축 해제
 if [ "$MODE" = "lte" ]; then
     tar -xzf frp_0.66.0_linux_arm64.tar.gz
+    rm -f frp_0.66.0_linux_arm64.tar.gz
     log_info "FRP extracted (LTE mode)"
 else
     log_info "Local mode: skipping FRP extraction"
@@ -690,6 +691,9 @@ Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
 Environment=SV500_MODE=$DEVICE_MODE
 ExecStart=$SHARED_VENV_DIR/bin/python3 $MAIN_FILE
+# webserver 가 (재)시작되면 frpc 터널을 다시 맺어 LTE→frpc SSH 세션을 복구한다.
+# frpc 가 떠 있을 때만 재시작(try-restart 효과), 없으면 무시. webserver stop 시엔 건드리지 않음.
+ExecStartPost=-/bin/sh -c 'systemctl is-active --quiet frpc && sudo /bin/systemctl restart frpc'
 Restart=always
 RestartSec=5
 TimeoutStartSec=120
