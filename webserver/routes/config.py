@@ -608,7 +608,7 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
 _train_tasks: Dict[str, dict] = {}
 _train_running = False
 
-TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report + en50160 + Nameplate 저장 위치
+TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report + en50160 + Nameplate + Parameters 저장 위치
 TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")    # 디스크 경로 (/tmp 사용 금지)
 COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
 SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
@@ -857,6 +857,10 @@ async def download_train(channel: str, start: str, with_thresholds: bool = False
 
     # Nameplate — 채널당 1개 (collect_train 이 저장)
     for f in channel_dir.glob("Nameplate_*.json"):
+        rel_names.append(f"{channel}/{f.name}")
+
+    # Parameters(공장 임계값 DefaultThresholds) — 채널당 1개 (collect_train 이 저장)
+    for f in channel_dir.glob("Parameters_*.json"):
         rel_names.append(f"{channel}/{f.name}")
 
     # EN50160 weekly parquet — collect_train 이 train 디렉토리에 직접 생성. 없으면 스킵.
