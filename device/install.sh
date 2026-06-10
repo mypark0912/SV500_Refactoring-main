@@ -198,7 +198,7 @@ sudo mkdir -p /usr/local/sv500/trendcsv
 # /usr/local/sv500 자체는 755 (other +x 필요)
 # influxdb 같은 외부 계정이 자기 소유 하위(backup) 로 들어가려면 부모 traverse 권한 필수
 if [ -d /usr/local/sv500 ]; then
-    chmod 755 /usr/local/sv500 2>/dev/null || true
+    chmod 775 /usr/local/sv500 2>/dev/null || true
 fi
 # /usr/local/sv500 은 backup(influxdb 소유) 등이 섞이므로 필요한 하위만 처리.
 # 아래 4개 폴더는 ntekadmin/root 어느 쪽으로 만들어졌든 root:root + 775 로 통일
