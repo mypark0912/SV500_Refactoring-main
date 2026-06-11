@@ -43,12 +43,7 @@
       <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60"
       >
-        <div
-          class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-2"
-        >
-          {{ t("config.parametersConfiguration") }}
-        </div>
-        <div class="mt-6 pt-2">
+        <div>
           <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
           <div class="flex flex-col">
             <!-- 헤더 - 스크롤바 영역만큼 패딩 추가 -->

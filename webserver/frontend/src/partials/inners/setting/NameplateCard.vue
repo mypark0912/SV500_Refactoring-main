@@ -37,34 +37,27 @@
         <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">
           {{ t("config.nameplates") }}
         </h3>
-      </header>
-    </div>
-    <div class="px-4 py-3 space-y-4">
-      <div v-if="isAdmin" class="flex justify-end gap-2">
         <button
-          class="btn h-6 px-5 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
+          v-if="isAdmin"
+          class="btn h-6 px-5 ml-auto mr-2 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
           @click="feedbackModalOpen = true"
         >
           {{ t("config.addbearing") }}
         </button>
         <button
+          v-if="isAdmin"
           @click="showAdvancedModal = true"
           class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
         >
           {{ t("config.plansPanel.dig.advanced") }}
         </button>
-      </div>
+      </header>
+    </div>
+    <div class="px-4 py-3 space-y-4">
       <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60"
       >
-        <div class="flex justify-between items-center mb-2">
-          <div
-            class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase"
-          >
-            {{ t("config.nameplatesConfiguration") }}
-          </div>
-        </div>
-        <div class="mt-6 pt-2">
+        <div>
           <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
           <div class="flex flex-col">
             <!-- 헤더 - 스크롤바 영역만큼 패딩 추가 -->
