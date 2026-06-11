@@ -40,6 +40,20 @@
       </header>
     </div>
     <div class="px-4 py-3 space-y-4">
+      <div v-if="isAdmin" class="flex justify-end gap-2">
+        <button
+          class="btn h-6 px-5 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
+          @click="feedbackModalOpen = true"
+        >
+          {{ t("config.addbearing") }}
+        </button>
+        <button
+          @click="showAdvancedModal = true"
+          class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
+        >
+          {{ t("config.plansPanel.dig.advanced") }}
+        </button>
+      </div>
       <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700/60"
       >
@@ -49,22 +63,6 @@
           >
             {{ t("config.nameplatesConfiguration") }}
           </div>
-          <button
-            v-if="isAdmin"
-            class="btn h-6 px-5 ml-auto mr-2 bg-sky-900 text-xs text-sky-100 hover:bg-sky-800 dark:bg-sky-100 dark:text-sky-800 dark:hover:bg-white"
-            @click="feedbackModalOpen = true"
-          >
-            {{ t("config.addbearing") }}
-          </button>
-          <button
-            v-if="
-              isAdmin
-            "
-            @click="showAdvancedModal = true"
-            class="btn h-6 px-5 bg-violet-900 text-xs text-violet-100 hover:bg-violet-800 dark:bg-violet-100 dark:text-violet-800 dark:hover:bg-white"
-          >
-            {{ t("config.plansPanel.dig.advanced") }}
-          </button>
         </div>
         <div class="mt-6 pt-2">
           <!-- 컨테이너를 flex로 변경하고 스크롤바 공간 확보 -->
