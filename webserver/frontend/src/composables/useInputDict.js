@@ -115,6 +115,10 @@ export function useInputDict() {
       demand_interval: "15",
       collect:0,
     },
+    harmonics: {
+      period: 5,
+      collect: 0,
+    },
     ptInfo: {
       wiringmode: 0,
       linefrequency: 60,
@@ -191,6 +195,10 @@ export function useInputDict() {
       target: 0,
       demand_interval: 15,
       collect:0,
+    },
+    harmonics: {
+      period: 5,
+      collect: 0,
     },
     ptInfo: {
       wiringmode: 0,

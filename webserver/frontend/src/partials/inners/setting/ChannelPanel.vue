@@ -495,14 +495,14 @@
               class="relative col-span-full xl:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg flex flex-col flex-1"
             >
               <div
-                class="absolute top-0 left-0 right-0 h-0.5 bg-blue-500"
+                class="absolute top-0 left-0 right-0 h-0.5 bg-stone-500"
                 aria-hidden="true"
               ></div>
               <div
                 class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
               >
                 <header class="flex items-center">
-                  <div class="w-6 h-6 rounded-full shrink-0 bg-blue-500 mr-3">
+                  <div class="w-6 h-6 rounded-full shrink-0 bg-stone-500 mr-3">
                     <svg
                       class="w-6 h-6 fill-current text-white"
                       viewBox="0 0 24 24"
@@ -598,9 +598,11 @@
                 </div>
               </div>
             </div>
+            <!-- Demand + Harmonics -->
+            <div class="col-span-full xl:col-span-3 flex flex-col gap-6">
             <!-- Demand -->
             <div
-              class="relative col-span-full xl:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg flex flex-col flex-1"
+              class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg flex flex-col"
             >
               <div
                 class="absolute top-0 left-0 right-0 h-0.5 bg-blue-500"
@@ -714,6 +716,86 @@
                   </select>
                 </div>
               </div>
+            </div>
+            <!-- Harmonics -->
+            <div
+              class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-b-lg flex flex-col"
+            >
+              <div
+                class="absolute top-0 left-0 right-0 h-0.5 bg-blue-500"
+                aria-hidden="true"
+              ></div>
+              <div
+                class="px-5 py-3 border-b border-gray-200 dark:border-gray-700/60"
+              >
+                <header class="flex items-center">
+                  <div class="w-6 h-6 rounded-full shrink-0 bg-blue-500 mr-3">
+                    <svg
+                      class="w-6 h-6 fill-current text-white"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 20V10M9 20V4M14 20V13M19 20V8"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        fill="none"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <h3
+                    class="text-lg text-gray-800 dark:text-gray-100 font-semibold"
+                  >
+                    Harmonics
+                  </h3>
+                </header>
+              </div>
+              <div class="px-4 py-4 space-y-3">
+                <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1.5">수집여부</label>
+                  <select
+                    :value="getInputDict().harmonics?.collect"
+                    @change="
+                      updateNestedField(
+                        'harmonics',
+                        'collect',
+                        Number($event.target.value),
+                      )
+                    "
+                    class="form-select w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option :value="1">Yes</option>
+                    <option :value="0">No</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1.5">수집주기</label>
+                  <select
+                    :value="getInputDict().harmonics?.period"
+                    @change="
+                      updateNestedField(
+                        'harmonics',
+                        'period',
+                        Number($event.target.value),
+                      )
+                    "
+                    class="form-select w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option
+                      v-for="(min, index) in [5, 10, 15, 30]"
+                      :key="index"
+                      :value="min"
+                    >
+                      {{ min }} {{ t("config.plansPanel.demand.minutes") }}
+                    </option>
+                  </select>
+                </div>
+                </div>
+              </div>
+            </div>
             </div>
             <AlarmCard :parameterOptions="parameterOptions" />
             <EventCard1 />
