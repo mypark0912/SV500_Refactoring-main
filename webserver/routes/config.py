@@ -157,7 +157,7 @@ def cali_setup():
 def set_saveref(data:CaliRef):
     try:
         # redis_state.client.select(0)
-        refdata = {"U": int(data.U), "I": int(data.I), "In": int(data.In), "P": int(data.P), "Error": float(data.Error)}
+        refdata = {"U": float(data.U), "I": float(data.I), "In": float(data.In), "P": float(data.P), "Error": float(data.Error)}
         redis_state.client.hset("calibration", "ref", json.dumps(refdata))
         return {'passOK': '1'}
     except Exception as e:
