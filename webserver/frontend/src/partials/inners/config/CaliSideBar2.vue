@@ -172,7 +172,7 @@
       </label>
       <input
         id="uRef"
-        v-model.number="refDict.U"
+        v-model="refDict.U"
         type="text"
         class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
@@ -186,7 +186,7 @@
       </label>
       <input
         id="iRef"
-        v-model.number="refDict.I"
+        v-model="refDict.I"
         type="text"
         class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
@@ -201,7 +201,7 @@
       <input
         id="inRef"
         type="text"
-        v-model.number="refDict.In"
+        v-model="refDict.In"
         class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
@@ -219,7 +219,7 @@
     <input
       id="phaseAngle"
       type="text"
-      v-model.number="refDict.P"
+      v-model="refDict.P"
       class="h-8 w-20 px-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
     />
   </div>
@@ -631,6 +631,10 @@ export default {
     };
 
     const sendRef = async() =>{
+      // 문자열로 입력된 값을 숫자로 변환 (빈 값/NaN은 0 처리)
+      ["U", "I", "In", "P"].forEach((k) => {
+        refDict.value[k] = parseFloat(refDict.value[k]) || 0;
+      });
       refDict.value["Error"] = errorLimit.value
       if (Object.values(refDict.value).every(val => val === 0)) {
           alert("모든 값이 0입니다. 최소 하나 이상의 값을 입력해주세요.");
