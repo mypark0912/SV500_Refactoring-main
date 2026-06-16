@@ -206,11 +206,21 @@
         }
         
         await setupStore.checkSetting()
-        
+
+        // 🛡️ 방어 코드: opMode가 스토어(localStorage)에 없으면 서버 세션에서 복구
+        // localStorage는 브라우저별로 분리되므로, 세션은 유효해도 opMode가 비어
+        // 폴링이 시작되지 않고 "Preparation in Progress"에 갇히는 문제를 방지한다.
+        if (!opMode.value || opMode.value === '') {
+          console.warn('⚠️ opMode 비어있음 - checkSession으로 복구 시도')
+          await authStore.checkSession()
+        }
+
         // 초기 데이터 로딩은 watch에서 처리됨 (immediate: true)
         if (opMode.value && opMode.value !== '') {
           isInitialized.value = true
           realtimeStore.startPolling(opMode.value, ChannelState.value)
+        } else {
+          console.error('❌ opMode 복구 실패 - 세션을 다시 확인하세요')
         }
         console.log('=== Dashboard onMounted 완료 ===')
       })

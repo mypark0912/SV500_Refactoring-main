@@ -641,6 +641,26 @@ async def create_downsampling_buckets():
         return {"success": False, "message": str(e)}
 
 
+async def create_harmonics_bucket():
+    """고조파 트렌드용 버킷 생성 (harmonics, retention 6개월)
+
+    고조파는 다운샘플링하지 않으므로 다운샘플링 버킷/task와 분리하여
+    독립적으로 생성한다. retention만 6개월(180일)로 지정한다.
+    """
+    try:
+        retention_days = 180  # 6개월
+        result = await create_influx_bucket("harmonics", retention_days)
+        return {
+            "success": result["success"],
+            "message": result["message"],
+            "results": [result]
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Harmonics bucket creation error: {e}")
+        return {"success": False, "message": str(e)}
+
+
 async def create_downsampling_tasks():
     """다운샘플링 Task 생성 (로컬 타임존 자동 감지)"""
     try:
@@ -874,8 +894,17 @@ async def setup_downsampling():
         if not task_result["success"]:
             logging.warning(f"⚠️ Task creation had issues: {task_result['message']}")
 
-        # 3. 결과 요약
-        overall_success = bucket_result["success"] and task_result["success"]
+        # 3. 고조파 트렌드 버킷 생성 (다운샘플링 task 없음, retention 6개월)
+        harmonics_result = await create_harmonics_bucket()
+        if not harmonics_result["success"]:
+            logging.warning(f"⚠️ Harmonics bucket creation had issues: {harmonics_result['message']}")
+
+        # 4. 결과 요약
+        overall_success = (
+            bucket_result["success"]
+            and task_result["success"]
+            and harmonics_result["success"]
+        )
 
         if overall_success:
             # redis_state.client.select(0)
@@ -884,14 +913,14 @@ async def setup_downsampling():
             return {
                 "success": True,
                 "message": "Downsampling buckets and tasks created",
-                "buckets": bucket_result["results"],
+                "buckets": bucket_result["results"] + harmonics_result.get("results", []),
                 "tasks": task_result["results"]
             }
         else:
             return {
                 "success": False,
                 "message": "Downsampling setup had issues",
-                "buckets": bucket_result.get("results", []),
+                "buckets": bucket_result.get("results", []) + harmonics_result.get("results", []),
                 "tasks": task_result.get("results", [])
             }
 
@@ -1058,7 +1087,7 @@ async def check_downsampling_status():
 
         token = aesState.decrypt(config["cipher"])
 
-        bucket_names = ["ntek_1h", "ntek_1d", "ntek30"]
+        bucket_names = ["ntek_1h", "ntek_1d", "ntek30", "harmonics"]
         task_names = [
             "downsample_trend_to_1h",
             "downsample_trend_to_1d",
