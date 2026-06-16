@@ -3979,6 +3979,118 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
         )
 
 
+# ─────────────────────────────────────────────────────────────
+# 고조파(Harmonics) 트렌드 — harmonics 버킷 (다운샘플링 없음)
+#   measurement: harmonics_u(상전압) / harmonics_upp(선간전압) / harmonics_i(상전류)
+#   tags: channel, order(2~63) / fields: l1,l2,l3
+#   차트 3종(차수별 히트맵 / 선택차수 라인 / 시점 스펙트럼)이 같은 매트릭스를 공유.
+# ─────────────────────────────────────────────────────────────
+HARMONICS_BUCKET = "harmonics"
+HARMONICS_MEASUREMENTS = {"harmonics_u", "harmonics_upp", "harmonics_i"}
+
+
+class HarmonicsTrendRequest(BaseModel):
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    measurement: str = "harmonics_i"  # 모터진단 기본 = 상전류
+
+
+def query_harmonics_matrix(channel: str, measurement: str,
+                           start_date: str = None, end_date: str = None):
+    """harmonics 버킷에서 [시간 × 차수 × l1/l2/l3] 매트릭스 조회 (executor 실행)"""
+    if influx_state.query_api is None:
+        raise Exception("query_api not available")
+
+    if measurement not in HARMONICS_MEASUREMENTS:
+        raise ValueError(f"invalid measurement: {measurement}")
+
+    if start_date and end_date:
+        rng = f"range(start: {start_date}, stop: {end_date})"
+    else:
+        rng = "range(start: -1d)"
+
+    query = f'''
+    from(bucket: "{HARMONICS_BUCKET}")
+        |> {rng}
+        |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+        |> filter(fn: (r) => r["channel"] == "{channel}")
+        |> pivot(rowKey: ["_time", "order"], columnKey: ["_field"], valueColumn: "_value")
+        |> sort(columns: ["_time"])
+    '''
+
+    tables = influx_state.query_api.query(query)
+
+    # 고조파는 raw 정수(×100)로 저장됨 → 조회 시 /100 스케일 (getHarmonics 와 동일)
+    def _scale(v):
+        return v / 100 if v is not None else None
+
+    records = []
+    for table in tables:
+        for rec in table.records:
+            try:
+                order = int(rec.values.get("order"))
+            except (TypeError, ValueError):
+                continue
+            records.append({
+                "time": rec.get_time().isoformat(),
+                "order": order,
+                "l1": _scale(rec.values.get("l1")),
+                "l2": _scale(rec.values.get("l2")),
+                "l3": _scale(rec.values.get("l3")),
+            })
+
+    # 축 정렬 후 상별 2D 매트릭스 [time][order] 구성
+    times = sorted({r["time"] for r in records})
+    orders = sorted({r["order"] for r in records})
+    time_idx = {t: i for i, t in enumerate(times)}
+    order_idx = {o: i for i, o in enumerate(orders)}
+
+    phases = ["l1", "l2", "l3"]
+    matrix = {p: [[None] * len(orders) for _ in times] for p in phases}
+    for r in records:
+        ti = time_idx[r["time"]]
+        oi = order_idx[r["order"]]
+        for p in phases:
+            matrix[p][ti][oi] = r[p]
+
+    return {
+        "measurement": measurement,
+        "channel": channel,
+        "times": times,
+        "orders": orders,
+        "phases": phases,
+        "matrix": matrix,
+        "count": len(records),
+    }
+
+
+@router.post('/getHarmonicsTrend/{channel}')
+async def getHarmonicsTrend(channel: str, request: HarmonicsTrendRequest):
+    """고조파 트렌드 매트릭스 조회 (히트맵/선택차수/스펙트럼 공용)"""
+    if influx_state.client is None:
+        raise HTTPException(status_code=503, detail="InfluxDB client not initialized")
+    if influx_state.error:
+        raise HTTPException(status_code=503, detail="InfluxDB error state")
+
+    try:
+        result = await run_influx_query(
+            query_harmonics_matrix,
+            channel=channel,
+            measurement=request.measurement,
+            start_date=request.startDate,
+            end_date=request.endDate,
+            timeout=60,
+        )
+        return {"result": True, **result}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"❌ 고조파 트렌드 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"Harmonics query failed: {str(e)}")
+
+
 def query_energy_trend_data(
         channel: str,
         start_date: str = None,

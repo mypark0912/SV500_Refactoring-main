@@ -96,6 +96,7 @@
                             <TrendTab v-if="activeTab === 'PowerQuality'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>   
                             <TrendTab v-if="activeTab === 'Diagnosis'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
                             <TrendTab v-if="activeTab === 'Parameters'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :tap="activeTab" :asset="asset"/>
+                            <HarmonicsTab v-if="activeTab === 'Harmonics'" :key="`${activeTab}-${channel}`" :channel="channel" :startdate="startDate" :enddate="endDate" :asset="asset"/>
                                              
                         </div>
                     </div>
@@ -117,6 +118,7 @@ import axios from "axios";
 import Sidebar from "../common/SideBar3.vue";
 import Header from "../common/Header.vue";
 import TrendTab from '../../partials/inners/trend/TrendTab.vue'
+import HarmonicsTab from '../../partials/inners/trend/HarmonicsTab.vue'
 //import TrendTab_trans from '../../partials/TrendTab_trans.vue'
 
 import { tailwindConfig } from "../../utils/Utils";
@@ -128,6 +130,7 @@ export default {
   name: "Trend",
   props: ["channel"],
   components: {
+    HarmonicsTab,
     Sidebar,
     Header,
     TrendTab,
@@ -207,6 +210,14 @@ export default {
         : setupStore.getDemandCollectSub;
       if (demandCollect === 1) {
         tabList.push({ name: "Demand", label: "Demand" });
+      }
+
+      // Harmonics 탭은 harmonicsCollect 활성 시 표시
+      const harmonicsCollect = channel.value === 'Main'
+        ? setupStore.getHarmonicsCollectMain
+        : setupStore.getHarmonicsCollectSub;
+      if (harmonicsCollect === 1) {
+        tabList.push({ name: "Harmonics", label: "Harmonics" });
       }
 
       // Diagnosis가 활성화된 경우 추가 탭들

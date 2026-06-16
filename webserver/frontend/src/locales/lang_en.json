@@ -726,7 +726,8 @@
       "Parameters": "Parameters",
       "Energy1": "Import Energy",
       "Energy2": "Energy",
-      "Demand": "Demand"
+      "Demand": "Demand",
+      "Harmonics": "Harmonics"
     },
     "treetable": {
       "Item": "Item",

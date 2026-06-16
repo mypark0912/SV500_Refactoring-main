@@ -30,6 +30,8 @@ export const useSetupStore = defineStore('setup', () => {
   const unbalance = ref(-1);
   const demandCollectMain = ref(0);
   const demandCollectSub = ref(0);
+  const harmonicsCollectMain = ref(0);
+  const harmonicsCollectSub = ref(0);
 
   const devLocation = ref(localStorage.getItem('devLocation') || '')
 
@@ -176,6 +178,8 @@ export const useSetupStore = defineStore('setup', () => {
         setUnbalance(response.data.unbalance);
         demandCollectMain.value = response.data.demand_collect_main ?? 0;
         demandCollectSub.value = response.data.demand_collect_sub ?? 0;
+        harmonicsCollectMain.value = response.data.harmonics_collect_main ?? 0;
+        harmonicsCollectSub.value = response.data.harmonics_collect_sub ?? 0;
         setSetup(true)
         setApplySetup(true)
       } else {
@@ -240,6 +244,8 @@ export const useSetupStore = defineStore('setup', () => {
   const getUnbalance = computed(() => unbalance.value)
   const getDemandCollectMain = computed(() => demandCollectMain.value)
   const getDemandCollectSub = computed(() => demandCollectSub.value)
+  const getHarmonicsCollectMain = computed(() => harmonicsCollectMain.value)
+  const getHarmonicsCollectSub = computed(() => harmonicsCollectSub.value)
 
 
   return {
@@ -262,6 +268,8 @@ export const useSetupStore = defineStore('setup', () => {
     unbalance,
     demandCollectMain,
     demandCollectSub,
+    harmonicsCollectMain,
+    harmonicsCollectSub,
 
     setCalib,
     setSetup,
@@ -295,6 +303,8 @@ export const useSetupStore = defineStore('setup', () => {
     getUnbalance,
     getDemandCollectMain,
     getDemandCollectSub,
+    getHarmonicsCollectMain,
+    getHarmonicsCollectSub,
     $reset,
   }
 })

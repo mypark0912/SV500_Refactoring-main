@@ -413,7 +413,8 @@
       "Power Quality": "電力品質",
       "Diagnosis": "診断",
       "Energy": "電力量",
-      "Demand": "デマンド"
+      "Demand": "デマンド",
+      "Harmonics": "高調波"
     },
     "treetable": {
       "Item": "項目",

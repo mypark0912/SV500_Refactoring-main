@@ -1948,6 +1948,8 @@ def parse_settings(setting):
         "assetdriveType_sub": "",
         "demand_collect_main": 0,
         "demand_collect_sub": 0,
+        "harmonics_collect_main": 0,
+        "harmonics_collect_sub": 0,
         "main_kva": -1,
         "sub_kva": -1,
         "pf_sign": -1,
@@ -1992,6 +1994,9 @@ def parse_channel_data(channel_data, result, prefix, diag_enabled):
 
     demand = channel_data.get("demand", {})
     result[f"demand_collect_{prefix}"] = safe_int(demand.get("collect", 0)) if "collect" in demand else 0
+
+    harmonics = channel_data.get("harmonics", {})
+    result[f"harmonics_collect_{prefix}"] = safe_int(harmonics.get("collect", 0)) if "collect" in harmonics else 0
 
     if diag_enabled:
         asset_info = channel_data.get("assetInfo", {})
