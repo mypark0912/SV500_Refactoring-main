@@ -694,6 +694,7 @@
     "btnSave": "저장하기"
   },
   "trend": {
+    "harmonicsTab": {"signalType": "신호종류", "phaseVoltage": "상전압", "lineVoltage": "선간전압", "phaseCurrent": "상전류", "viewLines": "차수 선택", "viewSpectrum": "시점 선택", "order": "차수", "orderUnit": "차", "time": "시점", "loadingTimes": "시간축 불러오는 중...", "noTimes": "시점 데이터 없음", "loading": "불러오는 중...", "noData": "데이터 없음", "fetchFail": "조회 실패", "draw": "그리기"},
     "sitemap": {
       "title": "트렌드",
       "main": "채널 1",
@@ -847,6 +848,7 @@
       }
     },
     "channelPanel": {
+      "harmonics": {"collect": "수집 여부", "period": "수집 주기"},
       "disabledTitle": "비활성화된 채널",
       "disabledMessage": "이 채널은 비활성화 상태입니다. 상단의 채널 토글을 켜면 설정을 변경할 수 있습니다.",
       "tempR":"온도 R상",

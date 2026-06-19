@@ -697,6 +697,7 @@
     "btnSave": "Save Changes"
   },
   "trend": {
+    "harmonicsTab": {"signalType": "Signal Type", "phaseVoltage": "Phase Voltage", "lineVoltage": "Line Voltage", "phaseCurrent": "Phase Current", "viewLines": "Select Orders", "viewSpectrum": "Select Time", "order": "Order", "orderUnit": "th", "time": "Time", "loadingTimes": "Loading time axis...", "noTimes": "No time data", "loading": "Loading...", "noData": "No data", "fetchFail": "Query failed", "draw": "Draw"},
     "sitemap": {
       "title": "Trend",
       "main": "Channel 1",
@@ -850,6 +851,7 @@
       }
     },
     "channelPanel": {
+      "harmonics": {"collect": "Collect", "period": "Period"},
       "selEnable": "Enable",
       "selPQ": "PowerQuality",
       "disabledTitle": "Channel Disabled",

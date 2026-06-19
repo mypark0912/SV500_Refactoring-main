@@ -3,7 +3,7 @@
     <!-- 컨트롤 바: 신호종류 콤보 + 뷰 토글 + Draw -->
     <div class="flex flex-wrap items-center gap-4 mb-3">
       <div class="flex items-center gap-2">
-        <label class="text-sm text-gray-600 dark:text-gray-300">신호종류</label>
+        <label class="text-sm text-gray-600 dark:text-gray-300">{{ t("trend.harmonicsTab.signalType") }}</label>
         <select v-model="measurement"
           class="form-select text-sm rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600">
           <option v-for="s in signalTypes" :key="s.value" :value="s.value">{{ s.label }}</option>
@@ -24,7 +24,7 @@
       <button @click="onDraw"
         :disabled="loading || (viewMode === 'lines' && selectedOrders.length === 0)"
         class="px-4 py-1.5 text-sm rounded bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40">
-        Draw
+        {{ t("trend.harmonicsTab.draw") }}
       </button>
     </div>
 
@@ -33,7 +33,7 @@
       <!-- 차수 선택 (최대 4) — 선택한 차수만 조회 -->
       <div v-show="viewMode === 'lines'" class="flex items-start gap-2">
         <span class="text-sm text-gray-600 dark:text-gray-300 mt-1 whitespace-nowrap">
-          차수 ({{ selectedOrders.length }}/4)
+          {{ t("trend.harmonicsTab.order") }} ({{ selectedOrders.length }}/4)
         </span>
         <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
           <button v-for="o in availableOrders" :key="o"
@@ -47,26 +47,26 @@
         </div>
       </div>
 
-      <!-- 시점 (최신 기본 + 직접 입력) — 1개 시점만 조회 -->
+      <!-- 시점 슬라이더 — 슬라이더로 고르고 Draw 누르면 그 1시점 렌더 (시간축은 자동 로드) -->
       <div v-show="viewMode === 'spectrum'" class="flex items-center gap-3">
-        <span class="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">시점</span>
-        <input type="datetime-local" v-model="spectrumTime"
-          class="form-input text-sm rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600" />
-        <button @click="spectrumTime = ''"
-          class="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 dark:text-gray-300">
-          최신
-        </button>
-        <span class="text-sm text-gray-500 whitespace-nowrap">{{ spectrumTime ? "" : "(범위 내 최신 시점)" }}</span>
+        <span class="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ t("trend.harmonicsTab.time") }}</span>
+        <input type="range" min="0" :max="Math.max(0, spectrumTimes.length - 1)"
+          v-model.number="specIdx"
+          :disabled="spectrumTimes.length === 0" class="flex-1 max-w-md" />
+        <span class="text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap w-36">
+          {{ spectrumTimes.length ? fmtTime(spectrumTimes[specIdx]) : (timesLoading ? t("trend.harmonicsTab.loadingTimes") : t("trend.harmonicsTab.noTimes")) }}
+        </span>
       </div>
     </div>
 
     <!-- 상태 -->
-    <div v-if="loading" class="text-sm text-gray-500 py-8 text-center">불러오는 중...</div>
+    <div v-if="loading" class="text-sm text-gray-500 py-8 text-center">{{ t("trend.harmonicsTab.loading") }}</div>
     <div v-else-if="errorMsg" class="text-sm text-red-500 py-8 text-center">{{ errorMsg }}</div>
-    <div v-else-if="!hasData" class="text-sm text-gray-500 py-8 text-center">데이터 없음</div>
+    <div v-else-if="!hasData" class="text-sm text-gray-500 py-8 text-center">{{ t("trend.harmonicsTab.noData") }}</div>
 
-    <!-- 3상 차트 3개 (두 뷰 공용, Draw 시 렌더) -->
-    <div v-show="!loading && !errorMsg && hasData">
+    <!-- 3상 차트 3개 (두 뷰 공용, Draw 시 렌더). loading 중에도 표시해 둬야
+         nextTick 렌더 시점에 컨테이너가 보이는 상태라 차트 크기가 고정됨. -->
+    <div v-show="!errorMsg && hasData">
       <div v-for="(ph, i) in phases" :key="ph"
         :ref="el => (chartEls[i] = el)" class="phase-chart"></div>
     </div>
@@ -74,7 +74,8 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { useI18n } from "vue-i18n";
 import axios from "axios";
 import * as echarts from "echarts";
 
@@ -89,15 +90,16 @@ export default {
     asset: { type: String, default: "" },
   },
   setup(props) {
-    const signalTypes = [
-      { value: "harmonics_u", label: "상전압" },
-      { value: "harmonics_upp", label: "선간전압" },
-      { value: "harmonics_i", label: "상전류" },
-    ];
-    const views = [
-      { value: "lines", label: "차수 선택" },     // 선택차수 트렌드
-      { value: "spectrum", label: "시점 선택" },  // 특정시점 스펙트럼
-    ];
+    const { t } = useI18n();
+    const signalTypes = computed(() => [
+      { value: "harmonics_u", label: t("trend.harmonicsTab.phaseVoltage") },
+      { value: "harmonics_upp", label: t("trend.harmonicsTab.lineVoltage") },
+      { value: "harmonics_i", label: t("trend.harmonicsTab.phaseCurrent") },
+    ]);
+    const views = computed(() => [
+      { value: "lines", label: t("trend.harmonicsTab.viewLines") },     // 선택차수 트렌드
+      { value: "spectrum", label: t("trend.harmonicsTab.viewSpectrum") },  // 특정시점 스펙트럼
+    ]);
     const phases = ["l1", "l2", "l3"];
 
     const measurement = ref("harmonics_i");
@@ -107,7 +109,9 @@ export default {
 
     const availableOrders = Array.from({ length: 62 }, (_, i) => i + 2); // 선택 가능한 차수 2~63 (정적)
     const selectedOrders = ref([5, 7]);  // 최대 4 (기본 5·7차)
-    const spectrumTime = ref("");     // "" = 범위 내 최신, 값 있으면 해당 시점
+    const spectrumTimes = ref([]);    // spectrum 슬라이더용 시간축 (뷰 진입 시 가볍게 자동 로드)
+    const timesLoading = ref(false);  // 시간축 로딩 표시
+    const specIdx = ref(0);           // 슬라이더 위치
     const timeIdx = ref(0);           // spectrum 응답은 1시점 → 항상 0
 
     const matrix = reactive({ times: [], orders: [], phases: [], data: {} });
@@ -133,6 +137,8 @@ export default {
     // ── 선택차수 트렌드 (x=시간, 선택 차수 라인) ──────────────
     const renderLines = () => {
       const timeLabels = matrix.times.map(fmtTime);
+      // 점이 1개면 선이 안 그려지므로 마커를 표시 (적은 포인트일 때도 보이게)
+      const fewPoints = matrix.times.length <= 2;
       phases.forEach((ph, i) => {
         const chart = ensureChart(i);
         if (!chart) return;
@@ -140,7 +146,7 @@ export default {
         const series = selectedOrders.value.map((ord, k) => {
           const oi = matrix.orders.indexOf(ord);
           const data = matrix.times.map((_, ti) => (grid2d[ti] ? grid2d[ti][oi] : null));
-          return { name: `${ord}차`, type: "line", showSymbol: false, data, lineStyle: { color: PALETTE[k] }, itemStyle: { color: PALETTE[k] } };
+          return { name: `${ord}${t("trend.harmonicsTab.orderUnit")}`, type: "line", showSymbol: fewPoints, symbolSize: 8, data, lineStyle: { color: PALETTE[k] }, itemStyle: { color: PALETTE[k] } };
         });
         chart.setOption({
           title: { text: `L${i + 1}`, left: "left", textStyle: { fontSize: 13 } },
@@ -169,19 +175,12 @@ export default {
           title: { text: `L${i + 1}  (${timeLabel})`, left: "left", textStyle: { fontSize: 13 } },
           tooltip: { trigger: "axis" },
           grid: { left: 55, right: 20, top: 30, bottom: 40 },
-          xAxis: { type: "category", data: orderLabels, name: "차수", axisLabel: { fontSize: 9 } },
+          xAxis: { type: "category", data: orderLabels, name: t("trend.harmonicsTab.order"), axisLabel: { fontSize: 9 } },
           yAxis: { type: "value" },
           series: [{ type: "bar", data, itemStyle: { color: "#7c3aed" } }],
         }, true);
         chart.resize();
       });
-    };
-
-    // Draw 버튼 — 현재 뷰/선택 기준으로 렌더
-    const drawChart = () => {
-      if (!hasData.value) return;
-      if (viewMode.value === "lines") renderLines();
-      else renderSpectrum();
     };
 
     // ── 상호작용 ─────────────────────────────────────────────
@@ -192,50 +191,86 @@ export default {
     };
 
     // ── 데이터 조회 — 뷰가 필요한 만큼만 (64차 전체 조회 방지) ──
-    //   lines    : 선택차수(≤4)만 기간 트렌드
-    //   spectrum : 1개 시점(최신/지정)의 전차수
-    const fetchData = async () => {
+    const post = (payload) =>
+      axios.post(`/api/getHarmonicsTrend/${props.channel}`, {
+        startDate: props.startdate, endDate: props.enddate,
+        measurement: measurement.value, ...payload,
+      });
+
+    const applyMatrix = (d) => {
+      matrix.times = d.times || [];
+      matrix.orders = d.orders || [];
+      matrix.phases = d.phases || [];
+      matrix.data = d.matrix || {};
+    };
+
+    // lines: 선택차수(≤4)만 기간 트렌드
+    const fetchLines = async () => {
+      const res = await post({ mode: "lines", orders: selectedOrders.value });
+      if (res.data && res.data.result) { applyMatrix(res.data); timeIdx.value = 0; }
+      else errorMsg.value = t("trend.harmonicsTab.fetchFail");
+    };
+
+    // spectrum 시간축만 가볍게 조회 (1차수·1필드)
+    const fetchTimes = async () => {
+      const res = await post({ mode: "times" });
+      spectrumTimes.value = (res.data && res.data.result) ? (res.data.times || []) : [];
+    };
+
+    // spectrum: 슬라이더가 가리키는 1시점의 전차수만
+    const fetchSpectrum = async () => {
+      const t = spectrumTimes.value[specIdx.value] || null;
+      const res = await post({ mode: "spectrum", time: t });
+      if (res.data && res.data.result) { applyMatrix(res.data); timeIdx.value = 0; }
+      else errorMsg.value = t("trend.harmonicsTab.fetchFail");
+    };
+
+    // Draw 클릭 → 조회 후 렌더 (자동 조회 없음)
+    const onDraw = async () => {
       if (!props.channel) return;
-      loading.value = true;
-      errorMsg.value = "";
+      loading.value = true; errorMsg.value = "";
       try {
-        const payload = {
-          startDate: props.startdate,
-          endDate: props.enddate,
-          measurement: measurement.value,
-          mode: viewMode.value,
-        };
         if (viewMode.value === "lines") {
-          payload.orders = selectedOrders.value;
+          await fetchLines();
+          if (!errorMsg.value && hasData.value) { await nextTick(); renderLines(); }
         } else {
-          // datetime-local(로컬) → ISO(UTC). 비우면 최신.
-          payload.time = spectrumTime.value ? new Date(spectrumTime.value).toISOString() : null;
-        }
-        const res = await axios.post(`/api/getHarmonicsTrend/${props.channel}`, payload);
-        if (res.data && res.data.result) {
-          matrix.times = res.data.times || [];
-          matrix.orders = res.data.orders || [];
-          matrix.phases = res.data.phases || [];
-          matrix.data = res.data.matrix || {};
-          timeIdx.value = Math.max(0, matrix.times.length - 1);
-        } else {
-          errorMsg.value = "조회 실패";
+          if (spectrumTimes.value.length === 0) {
+            await fetchTimes();
+            specIdx.value = Math.max(0, spectrumTimes.value.length - 1); // 최신 시점 기본
+          }
+          await fetchSpectrum();
+          if (!errorMsg.value && hasData.value) { await nextTick(); renderSpectrum(); }
         }
       } catch (e) {
         console.error("Harmonics fetch failed:", e);
-        errorMsg.value = "조회 실패";
+        errorMsg.value = t("trend.harmonicsTab.fetchFail");
       } finally {
         loading.value = false;
       }
     };
 
-    // Draw 클릭 → 조회 후 렌더 (자동 조회 없음)
-    const onDraw = async () => {
-      await fetchData();
-      if (!errorMsg.value && hasData.value) drawChart();
+    const onResize = () => charts.forEach((c) => c && c.resize());
+
+    // spectrum 뷰 진입 시 시간축만 가볍게 미리 로드 → 슬라이더 바로 활성화 (스펙트럼 데이터는 Draw에서)
+    const loadSpectrumTimes = async () => {
+      if (viewMode.value !== "spectrum" || !props.channel) return;
+      timesLoading.value = true;
+      try {
+        await fetchTimes();
+        specIdx.value = Math.max(0, spectrumTimes.value.length - 1); // 기본 최신 시점
+      } catch (e) {
+        console.error("Harmonics times fetch failed:", e);
+        spectrumTimes.value = [];
+      } finally {
+        timesLoading.value = false;
+      }
     };
 
-    const onResize = () => charts.forEach((c) => c && c.resize());
+    // 신호종류·구간·채널·뷰 변경 → 시간축 무효화 후, spectrum 뷰면 가벼운 시간축만 다시 로드
+    watch(() => [measurement.value, props.startdate, props.enddate, props.channel, viewMode.value], () => {
+      spectrumTimes.value = [];
+      loadSpectrumTimes();
+    });
 
     onMounted(() => {
       window.addEventListener("resize", onResize);
@@ -246,8 +281,9 @@ export default {
     });
 
     return {
+      t,
       signalTypes, views, phases, measurement, viewMode, loading, errorMsg,
-      matrix, hasData, availableOrders, selectedOrders, spectrumTime, timeIdx,
+      matrix, hasData, availableOrders, selectedOrders, spectrumTimes, timesLoading, specIdx,
       chartEls, fmtTime, toggleOrder, onDraw,
     };
   },

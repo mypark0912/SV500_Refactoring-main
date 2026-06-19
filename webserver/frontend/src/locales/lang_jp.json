@@ -391,6 +391,7 @@
       "btnSave": "保存"
   },
   "trend": {
+    "harmonicsTab": {"signalType": "信号種類", "phaseVoltage": "相電圧", "lineVoltage": "線間電圧", "phaseCurrent": "相電流", "viewLines": "次数選択", "viewSpectrum": "時点選択", "order": "次数", "orderUnit": "次", "time": "時点", "loadingTimes": "時間軸を読み込み中...", "noTimes": "時点データなし", "loading": "読み込み中...", "noData": "データなし", "fetchFail": "照会失敗", "draw": "描画"},
     "sitemap": {
       "title": "トレンド",
       "main": "メインチャンネル",
@@ -422,6 +423,7 @@
     }
   },
   "config": {
+    "channelPanel": {"harmonics": {"collect": "収集有無", "period": "収集周期"}},
     "sitemap": {
       "title": "設定",
       "Main Channel": "メインチャンネル",

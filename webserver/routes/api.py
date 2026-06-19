@@ -4016,6 +4016,34 @@ def query_harmonics_matrix(channel: str, measurement: str,
     if measurement not in HARMONICS_MEASUREMENTS:
         raise ValueError(f"invalid measurement: {measurement}")
 
+    # mode="times": spectrum 슬라이더용 시간축만 (1차수·1필드로 축소 → 매우 가벼움)
+    if mode == "times":
+        rng_t = f"range(start: {start_date}, stop: {end_date})" if (start_date and end_date) else "range(start: -1d)"
+        tq = f'''
+        from(bucket: "{HARMONICS_BUCKET}")
+            |> {rng_t}
+            |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+            |> filter(fn: (r) => r["channel"] == "{channel}")
+            |> filter(fn: (r) => r["_field"] == "l1")
+            |> keep(columns: ["_time"])
+        '''
+        ttables = influx_state.query_api.query(tq)
+        tset = set()
+        for table in ttables:
+            for rec in table.records:
+                gt = rec.get_time()
+                if gt is not None:
+                    tset.add(gt.isoformat())
+        return {
+            "measurement": measurement,
+            "channel": channel,
+            "times": sorted(tset),
+            "orders": [],
+            "phases": ["l1", "l2", "l3"],
+            "matrix": {},
+            "count": len(tset),
+        }
+
     reducer = ""        # spectrum에서 1시점으로 축약
     order_filter = ""   # lines에서 선택차수만
 

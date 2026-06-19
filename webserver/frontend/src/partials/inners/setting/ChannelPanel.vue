@@ -755,7 +755,7 @@
               <div class="px-4 py-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium mb-1.5">수집여부</label>
+                  <label class="block text-sm font-medium mb-1.5">{{ t("config.channelPanel.harmonics.collect") }}</label>
                   <select
                     :value="getInputDict().harmonics?.collect"
                     @change="
@@ -772,7 +772,7 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium mb-1.5">수집주기</label>
+                  <label class="block text-sm font-medium mb-1.5">{{ t("config.channelPanel.harmonics.period") }}</label>
                   <select
                     :value="getInputDict().harmonics?.period"
                     @change="
