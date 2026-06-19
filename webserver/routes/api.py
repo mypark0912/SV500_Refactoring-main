@@ -4035,9 +4035,6 @@ def query_harmonics_matrix(channel: str, measurement: str,
                 gt = rec.get_time()
                 if gt is not None:
                     tset.add(gt.isoformat())
-        # 🐞 디버그: 시간축 조회 결과 (개수/범위/최소·최대) — "시점 1개만 나옴" 진단용
-        _s = sorted(tset)
-        logging.warning(f"[harmonics times DEBUG] meas={measurement} ch={channel} range=({start_date}~{end_date}) count={len(_s)} min={_s[0] if _s else None} max={_s[-1] if _s else None}")
         return {
             "measurement": measurement,
             "channel": channel,
