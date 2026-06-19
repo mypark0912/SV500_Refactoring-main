@@ -610,7 +610,7 @@ _train_running = False
 
 TRAIN_DIR = Path("/usr/local/sv500/train")               # trend_training + diagnosis_report + en50160 + Nameplate + Parameters 저장 위치
 TRAIN_TAR_DIR = Path("/usr/local/sv500/backup/train")    # 디스크 경로 (/tmp 사용 금지)
-COLLECT_TRAIN_PY = "/home/root/core/collect_train.py"
+COLLECT_TRAIN_PY = "/home/root/report/collect_train.py"  # SV500_Report 분리 배포
 SHARED_PYTHON = "/home/root/shared_venv/bin/python3"
 
 

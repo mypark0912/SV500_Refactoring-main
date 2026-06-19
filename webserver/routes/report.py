@@ -31,8 +31,7 @@ REPORTS_DIR = Path("/usr/local/sv500/reports")
 
 # ── 주간 워드 리포트 별도 프로세스 ──
 REPORT_WORK_DIR = Path("/usr/local/sv500/backup/report")  # 작업 파일 (입력 JSON / 진행상태 / 출력 docx)
-RUN_WEEKLY_REPORT_PY = "/home/root/core/run_weekly_report.py"
-#RUN_WEEKLY_REPORT_PY = "/home/root/wordreport/run_weekly_report.py"
+RUN_WEEKLY_REPORT_PY = "/home/root/report/run_weekly_report.py"  # SV500_Report 분리 배포
 WEEKLY_REPORT_TIMEOUT = 1200  # 20분
 
 _report_tasks: Dict[str, dict] = {}      # task_id → 상태
