@@ -531,8 +531,9 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
             if not service_exists(f"{service_name}.service"):
                 return {"success": False, "message": f"{item} 서비스가 설치되지 않음"}
 
+            # 웹서버는 비-root → 다른 유닛 journal 읽으려면 sudo 필요(sysService 의 sudo systemctl 과 동일 패턴)
             result = subprocess.run(
-                ['journalctl', '-u', service_name, '-n', str(lines), '--no-pager', '-o', 'short'],
+                ['sudo', 'journalctl', '-u', service_name, '-n', str(lines), '--no-pager', '-o', 'short'],
                 capture_output=True,
                 text=True,
                 timeout=10

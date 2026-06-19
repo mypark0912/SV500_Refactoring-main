@@ -26,6 +26,10 @@ ntekadmin ALL=(ALL) NOPASSWD: /bin/systemctl poweroff
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/reboot
 ntekadmin ALL=(ALL) NOPASSWD: /sbin/shutdown *
 
+# ---- 로그 조회 (journalctl) ----
+# 웹 /applog/recent/{item} 가 sudo journalctl 로 core/frpc/mqClient 등 유닛 로그를 읽음
+ntekadmin ALL=(ALL) NOPASSWD: /bin/journalctl -u *
+
 # ---- InfluxDB ----
 ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx backup *
 ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx restore *
