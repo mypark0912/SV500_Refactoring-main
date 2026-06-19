@@ -3983,7 +3983,8 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
 # 고조파(Harmonics) 트렌드 — 메인 ntek 버킷 (별도 버킷 폐기, 2026-06-19)
 #   다운샘플링 task는 measurement 기준(trend/energy_consumption)이라 harmonics_* 는 자동 제외.
 #   measurement: harmonics_u(상전압) / harmonics_upp(선간전압) / harmonics_i(상전류)
-#   tags: channel, order(2~63) / fields: l1,l2,l3
+#   tags: channel, order(=redis index 0~63: 0=THD, 1=기본파, 2~63=2~63차) / fields: l1,l2,l3
+#      조회 시 THD(0)·기본파(1)는 제외하고 order 2~63을 그대로 실제 차수로 반환.
 #   차트 3종(차수별 히트맵 / 선택차수 라인 / 시점 스펙트럼)이 같은 매트릭스를 공유.
 # ─────────────────────────────────────────────────────────────
 HARMONICS_BUCKET = "ntek"
@@ -4069,6 +4070,7 @@ def query_harmonics_matrix(channel: str, measurement: str,
         else:
             rng = "range(start: -1d)"
         if orders:
+            # order 태그 = 실제 차수 (저장이 redis index 그대로) → 변환 없이 그대로 필터
             oset = ", ".join(f'"{int(o)}"' for o in orders)
             order_filter = f'|> filter(fn: (r) => contains(value: r["order"], set: [{oset}]))'
 
@@ -4094,6 +4096,8 @@ def query_harmonics_matrix(channel: str, measurement: str,
             try:
                 order = int(rec.values.get("order"))
             except (TypeError, ValueError):
+                continue
+            if order < 2 or order > 63:   # order 태그=redis index: 0=THD, 1=기본파 제외 → 차수 2~63 (order=실제차수)
                 continue
             records.append({
                 "time": rec.get_time().isoformat(),

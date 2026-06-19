@@ -107,7 +107,7 @@ export default {
     const loading = ref(false);
     const errorMsg = ref("");
 
-    const availableOrders = Array.from({ length: 62 }, (_, i) => i + 2); // 선택 가능한 차수 2~63 (정적)
+    const availableOrders = Array.from({ length: 62 }, (_, i) => i + 2); // 선택 가능한 차수 2~63 (정적, order 태그=실제차수)
     const selectedOrders = ref([5, 7]);  // 최대 4 (기본 5·7차)
     const spectrumTimes = ref([]);    // spectrum 슬라이더용 시간축 (뷰 진입 시 가볍게 자동 로드)
     const timesLoading = ref(false);  // 시간축 로딩 표시
