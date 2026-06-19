@@ -234,10 +234,11 @@ export default {
           await fetchLines();
           if (!errorMsg.value && hasData.value) { await nextTick(); renderLines(); }
         } else {
-          if (spectrumTimes.value.length === 0) {
-            await fetchTimes();
-            specIdx.value = Math.max(0, spectrumTimes.value.length - 1); // 최신 시점 기본
-          }
+          // Draw 때마다 시간축 갱신(새 데이터 반영). 선택 중이던 시점은 유지, 없으면 최신.
+          const prevTime = spectrumTimes.value[specIdx.value];
+          await fetchTimes();
+          const i = prevTime ? spectrumTimes.value.indexOf(prevTime) : -1;
+          specIdx.value = i >= 0 ? i : Math.max(0, spectrumTimes.value.length - 1);
           await fetchSpectrum();
           if (!errorMsg.value && hasData.value) { await nextTick(); renderSpectrum(); }
         }
