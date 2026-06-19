@@ -3994,29 +3994,64 @@ class HarmonicsTrendRequest(BaseModel):
     startDate: Optional[str] = None
     endDate: Optional[str] = None
     measurement: str = "harmonics_i"  # 모터진단 기본 = 상전류
+    mode: str = "lines"               # "lines"(선택차수 트렌드) | "spectrum"(1시점 전차수)
+    orders: Optional[List[int]] = None  # lines: 선택된 차수(≤4)만 조회 → 64차 전체 조회 방지
+    time: Optional[str] = None        # spectrum: 특정 시점(없으면 범위 내 최신 1시점)
 
 
 def query_harmonics_matrix(channel: str, measurement: str,
-                           start_date: str = None, end_date: str = None):
-    """harmonics 버킷에서 [시간 × 차수 × l1/l2/l3] 매트릭스 조회 (executor 실행)"""
+                           start_date: str = None, end_date: str = None,
+                           mode: str = "lines", orders: list = None,
+                           time: str = None):
+    """harmonics 버킷에서 [시간 × 차수 × l1/l2/l3] 매트릭스 조회 (executor 실행).
+
+    64차 × 전체기간을 통째로 가져오면 pivot이 타임아웃 → 뷰가 필요한 만큼만 조회:
+      - mode="lines"   : orders(선택차수 ≤4)만 필터해 기간 트렌드 (차수축 64→4)
+      - mode="spectrum": 1개 시점의 전차수만 (time 없으면 범위 내 최신)
+    어느 경우든 평균 다운샘플 없이 실측값 그대로라 차수별 진단 의미 보존.
+    """
     if influx_state.query_api is None:
         raise Exception("query_api not available")
 
     if measurement not in HARMONICS_MEASUREMENTS:
         raise ValueError(f"invalid measurement: {measurement}")
 
-    if start_date and end_date:
-        rng = f"range(start: {start_date}, stop: {end_date})"
-    else:
-        rng = "range(start: -1d)"
+    reducer = ""        # spectrum에서 1시점으로 축약
+    order_filter = ""   # lines에서 선택차수만
+
+    if mode == "spectrum":
+        if time:
+            # 지정 시점부터 다음 샘플 1개만 (수집주기 여유 16분 윈도우 → first)
+            try:
+                t0 = datetime.fromisoformat(time.replace('Z', '+00:00'))
+                stop = (t0 + timedelta(minutes=16)).isoformat()
+            except Exception:
+                raise ValueError(f"invalid time: {time}")
+            rng = f'range(start: {time}, stop: {stop})'
+            reducer = "|> first()"
+        elif start_date and end_date:
+            rng = f"range(start: {start_date}, stop: {end_date})"
+            reducer = "|> last()"      # 범위 내 최신 1시점
+        else:
+            rng = "range(start: -1d)"
+            reducer = "|> last()"
+    else:  # lines
+        if start_date and end_date:
+            rng = f"range(start: {start_date}, stop: {end_date})"
+        else:
+            rng = "range(start: -1d)"
+        if orders:
+            oset = ", ".join(f'"{int(o)}"' for o in orders)
+            order_filter = f'|> filter(fn: (r) => contains(value: r["order"], set: [{oset}]))'
 
     query = f'''
     from(bucket: "{HARMONICS_BUCKET}")
         |> {rng}
         |> filter(fn: (r) => r["_measurement"] == "{measurement}")
         |> filter(fn: (r) => r["channel"] == "{channel}")
+        {order_filter}
+        {reducer}
         |> pivot(rowKey: ["_time", "order"], columnKey: ["_field"], valueColumn: "_value")
-        |> sort(columns: ["_time"])
     '''
 
     tables = influx_state.query_api.query(query)
@@ -4039,6 +4074,11 @@ def query_harmonics_matrix(channel: str, measurement: str,
                 "l2": _scale(rec.values.get("l2")),
                 "l3": _scale(rec.values.get("l3")),
             })
+
+    # spectrum은 1시점만 — last()/first()가 차수별로 시각이 어긋날 수 있어 단일 시점으로 축약
+    if mode == "spectrum" and records:
+        pick = (min if time else max)(r["time"] for r in records)
+        records = [r for r in records if r["time"] == pick]
 
     # 축 정렬 후 상별 2D 매트릭스 [time][order] 구성
     times = sorted({r["time"] for r in records})
@@ -4080,6 +4120,9 @@ async def getHarmonicsTrend(channel: str, request: HarmonicsTrendRequest):
             measurement=request.measurement,
             start_date=request.startDate,
             end_date=request.endDate,
+            mode=request.mode,
+            orders=request.orders,
+            time=request.time,
             timeout=60,
         )
         return {"result": True, **result}

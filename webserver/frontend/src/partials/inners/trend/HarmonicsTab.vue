@@ -21,21 +21,22 @@
         </button>
       </div>
 
-      <button @click="drawChart" :disabled="loading || !hasData"
+      <button @click="onDraw"
+        :disabled="loading || (viewMode === 'lines' && selectedOrders.length === 0)"
         class="px-4 py-1.5 text-sm rounded bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40">
         Draw
       </button>
     </div>
 
-    <!-- 뷰별 서브 컨트롤 -->
-    <div v-show="!loading && !errorMsg && hasData" class="mb-3">
-      <!-- 차수 선택 (최대 4) -->
+    <!-- 뷰별 서브 컨트롤 (조회 조건이므로 Draw 전에도 표시) -->
+    <div v-show="!loading" class="mb-3">
+      <!-- 차수 선택 (최대 4) — 선택한 차수만 조회 -->
       <div v-show="viewMode === 'lines'" class="flex items-start gap-2">
         <span class="text-sm text-gray-600 dark:text-gray-300 mt-1 whitespace-nowrap">
           차수 ({{ selectedOrders.length }}/4)
         </span>
         <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-          <button v-for="o in matrix.orders" :key="o"
+          <button v-for="o in availableOrders" :key="o"
             @click="toggleOrder(o)"
             class="px-2 py-0.5 text-xs rounded border"
             :class="selectedOrders.includes(o)
@@ -46,14 +47,16 @@
         </div>
       </div>
 
-      <!-- 시점 슬라이더 -->
+      <!-- 시점 (최신 기본 + 직접 입력) — 1개 시점만 조회 -->
       <div v-show="viewMode === 'spectrum'" class="flex items-center gap-3">
         <span class="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">시점</span>
-        <input type="range" min="0" :max="Math.max(0, matrix.times.length - 1)" v-model.number="timeIdx"
-          class="flex-1 max-w-md" />
-        <span class="text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap w-32">
-          {{ matrix.times[timeIdx] ? fmtTime(matrix.times[timeIdx]) : "-" }}
-        </span>
+        <input type="datetime-local" v-model="spectrumTime"
+          class="form-input text-sm rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600" />
+        <button @click="spectrumTime = ''"
+          class="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 dark:text-gray-300">
+          최신
+        </button>
+        <span class="text-sm text-gray-500 whitespace-nowrap">{{ spectrumTime ? "" : "(범위 내 최신 시점)" }}</span>
       </div>
     </div>
 
@@ -71,7 +74,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import * as echarts from "echarts";
 
@@ -102,8 +105,10 @@ export default {
     const loading = ref(false);
     const errorMsg = ref("");
 
-    const selectedOrders = ref([]);   // 최대 4
-    const timeIdx = ref(0);           // 슬라이더 위치
+    const availableOrders = Array.from({ length: 62 }, (_, i) => i + 2); // 선택 가능한 차수 2~63 (정적)
+    const selectedOrders = ref([5, 7]);  // 최대 4 (기본 5·7차)
+    const spectrumTime = ref("");     // "" = 범위 내 최신, 값 있으면 해당 시점
+    const timeIdx = ref(0);           // spectrum 응답은 1시점 → 항상 0
 
     const matrix = reactive({ times: [], orders: [], phases: [], data: {} });
     const hasData = computed(() => matrix.times.length > 0 && matrix.orders.length > 0);
@@ -186,26 +191,33 @@ export default {
       else if (selectedOrders.value.length < 4) selectedOrders.value.push(o);
     };
 
-    // ── 데이터 조회 (렌더는 Draw 에서) ───────────────────────
+    // ── 데이터 조회 — 뷰가 필요한 만큼만 (64차 전체 조회 방지) ──
+    //   lines    : 선택차수(≤4)만 기간 트렌드
+    //   spectrum : 1개 시점(최신/지정)의 전차수
     const fetchData = async () => {
       if (!props.channel) return;
       loading.value = true;
       errorMsg.value = "";
       try {
-        const res = await axios.post(`/api/getHarmonicsTrend/${props.channel}`, {
+        const payload = {
           startDate: props.startdate,
           endDate: props.enddate,
           measurement: measurement.value,
-        });
+          mode: viewMode.value,
+        };
+        if (viewMode.value === "lines") {
+          payload.orders = selectedOrders.value;
+        } else {
+          // datetime-local(로컬) → ISO(UTC). 비우면 최신.
+          payload.time = spectrumTime.value ? new Date(spectrumTime.value).toISOString() : null;
+        }
+        const res = await axios.post(`/api/getHarmonicsTrend/${props.channel}`, payload);
         if (res.data && res.data.result) {
           matrix.times = res.data.times || [];
           matrix.orders = res.data.orders || [];
           matrix.phases = res.data.phases || [];
           matrix.data = res.data.matrix || {};
           timeIdx.value = Math.max(0, matrix.times.length - 1);
-          if (selectedOrders.value.length === 0) {
-            selectedOrders.value = [5, 7].filter((o) => matrix.orders.includes(o)).slice(0, 4);
-          }
         } else {
           errorMsg.value = "조회 실패";
         }
@@ -217,14 +229,16 @@ export default {
       }
     };
 
-    const onResize = () => charts.forEach((c) => c && c.resize());
+    // Draw 클릭 → 조회 후 렌더 (자동 조회 없음)
+    const onDraw = async () => {
+      await fetchData();
+      if (!errorMsg.value && hasData.value) drawChart();
+    };
 
-    // 신호종류·구간·채널 변경 → 매트릭스만 재조회 (그리기는 Draw)
-    watch(() => [measurement.value, props.startdate, props.enddate, props.channel], fetchData);
+    const onResize = () => charts.forEach((c) => c && c.resize());
 
     onMounted(() => {
       window.addEventListener("resize", onResize);
-      fetchData();
     });
     onBeforeUnmount(() => {
       window.removeEventListener("resize", onResize);
@@ -233,8 +247,8 @@ export default {
 
     return {
       signalTypes, views, phases, measurement, viewMode, loading, errorMsg,
-      matrix, hasData, selectedOrders, timeIdx, chartEls, fmtTime,
-      toggleOrder, drawChart,
+      matrix, hasData, availableOrders, selectedOrders, spectrumTime, timeIdx,
+      chartEls, fmtTime, toggleOrder, onDraw,
     };
   },
 };
