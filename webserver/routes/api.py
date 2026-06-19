@@ -3980,12 +3980,13 @@ async def getMeterTrendPost(channel: str, request: TrendRequest, save_csv: int =
 
 
 # ─────────────────────────────────────────────────────────────
-# 고조파(Harmonics) 트렌드 — harmonics 버킷 (다운샘플링 없음)
+# 고조파(Harmonics) 트렌드 — 메인 ntek 버킷 (별도 버킷 폐기, 2026-06-19)
+#   다운샘플링 task는 measurement 기준(trend/energy_consumption)이라 harmonics_* 는 자동 제외.
 #   measurement: harmonics_u(상전압) / harmonics_upp(선간전압) / harmonics_i(상전류)
 #   tags: channel, order(2~63) / fields: l1,l2,l3
 #   차트 3종(차수별 히트맵 / 선택차수 라인 / 시점 스펙트럼)이 같은 매트릭스를 공유.
 # ─────────────────────────────────────────────────────────────
-HARMONICS_BUCKET = "harmonics"
+HARMONICS_BUCKET = "ntek"
 HARMONICS_MEASUREMENTS = {"harmonics_u", "harmonics_upp", "harmonics_i"}
 
 
