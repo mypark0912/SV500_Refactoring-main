@@ -175,7 +175,7 @@ export default {
           title: { text: `L${i + 1}  (${timeLabel})`, left: "left", textStyle: { fontSize: 13 } },
           tooltip: { trigger: "axis" },
           grid: { left: 55, right: 20, top: 30, bottom: 40 },
-          xAxis: { type: "category", data: orderLabels, name: t("trend.harmonicsTab.order"), axisLabel: { fontSize: 9 } },
+          xAxis: { type: "category", data: orderLabels, axisLabel: { fontSize: 9 } },
           yAxis: { type: "value" },
           series: [{ type: "bar", data, itemStyle: { color: "#7c3aed" } }],
         }, true);

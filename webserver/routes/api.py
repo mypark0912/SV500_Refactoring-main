@@ -4020,13 +4020,13 @@ def query_harmonics_matrix(channel: str, measurement: str,
     # mode="times": spectrum 슬라이더용 시간축만 (1차수·1필드로 축소 → 매우 가벼움)
     if mode == "times":
         rng_t = f"range(start: {start_date}, stop: {end_date})" if (start_date and end_date) else "range(start: -1d)"
+        # 차수 2(2차)·l1 한 시리즈로 좁혀 타임스탬프만 수집 (keep 미사용 — keep이 시점 누락 의심)
         tq = f'''
         from(bucket: "{HARMONICS_BUCKET}")
             |> {rng_t}
             |> filter(fn: (r) => r["_measurement"] == "{measurement}")
             |> filter(fn: (r) => r["channel"] == "{channel}")
-            |> filter(fn: (r) => r["_field"] == "l1")
-            |> keep(columns: ["_time"])
+            |> filter(fn: (r) => r["order"] == "2" and r["_field"] == "l1")
         '''
         ttables = influx_state.query_api.query(tq)
         tset = set()
