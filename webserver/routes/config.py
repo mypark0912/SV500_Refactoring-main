@@ -511,7 +511,7 @@ def delete_all_logs():
 def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
     LOG_PATH = {
         "SmartSystems": "/usr/local/smartsystems/log",
-        "Core": "/usr/local/sv500/logs/core",
+        # "Core": "/usr/local/sv500/logs/core",  # Go 코어 전환: 파일 → journald(core.service) 로 이동
         "WebServer": "/usr/local/sv500/logs/web",
         "A35": "/usr/local/sv500/logs/a35",
     }
@@ -519,6 +519,7 @@ def get_recent_logs(item: str, lines: int = 5, log_type: str = "all"):
     JOURNAL_SERVICES = {
         "frpc": "frpc",
         "mqClient": "mqClient",
+        "Core": "core",  # Go 코어는 core.service(systemd)→journald 로 기록
     }
 
     try:
