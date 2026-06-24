@@ -809,6 +809,11 @@
       "etc": {
         "title": "계측 설정"
       },
+      "tunneling": {
+        "serverSettings": "서버 설정",
+        "serverModalTitle": "외부 터널링 서버 설정",
+        "confirm": "확인"
+      },
       "modbus": {
         "title": "Modbus",
         "tcp": "포트",

@@ -812,6 +812,11 @@
       "etc": {
         "title": "Measurement Settings"
       },
+      "tunneling": {
+        "serverSettings": "Server Settings",
+        "serverModalTitle": "External Tunneling Server",
+        "confirm": "OK"
+      },
       "modbus": {
         "title": "Modbus",
         "tcp": "Port",

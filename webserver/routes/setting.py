@@ -3454,17 +3454,7 @@ async def saveSetting2(request: Request):
                 ch["ctInfo"]["inorminal"] = safe_int(safe_float(ch["ctInfo"]["inorminal"]) * 1000)
 
         redis_state.client.hset("System", "config", json.dumps(data))
-        resp = {"status": "1"}
-        # 터널링(FRP) 켜면 frp 바이너리 디렉토리 존재 여부로 사용가능/불가 상태를 항상 반환.
-        frp = data["General"].get("FRP", {})
-        if safe_int(frp.get("Use", 0)) == 1:
-            avail = os.path.isdir("/home/root/frp_0.66.0_linux_arm64")
-            resp["frp"] = {
-                "available": avail,
-                "message": "터널링(FRP)을 사용할 수 있습니다." if avail
-                           else "이 장비에는 터널링(FRP) 구성요소가 없어 터널링을 사용할 수 없습니다. 터널링을 끄거나 frp 패키지를 설치하세요.",
-            }
-        return resp
+        return {"status": "1"}
     except Exception as e:
         print("Error:", e)
         import traceback
@@ -4707,6 +4697,17 @@ def check_frp():
             return {"exist": True, "status": False}
     else:
         return {"exist": False, "status": False}
+
+
+@router.get('/checkTunneling')
+def check_tunneling():
+    # frp 바이너리 디렉토리 존재 여부 → 터널링 사용가능/불가 + 메시지. 저장 모달 step2 상태표시용.
+    avail = os.path.isdir("/home/root/frp_0.66.0_linux_arm64")
+    return {
+        "available": avail,
+        "message": "터널링(FRP)을 사용할 수 있습니다." if avail
+                   else "이 장비에는 터널링(FRP) 구성요소가 없어 터널링을 사용할 수 없습니다. 터널링을 끄거나 frp 패키지를 설치하세요.",
+    }
 
 @router.get("/SysCheck")
 async def check_sysStatus():

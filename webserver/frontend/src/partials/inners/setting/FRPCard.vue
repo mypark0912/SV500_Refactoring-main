@@ -40,7 +40,7 @@
           :disabled="inputDict.FRP.type !== 'External'"
           @click="showServer = true"
         >
-          서버 설정
+          {{ t("config.plansPanel.tunneling.serverSettings") }}
         </button>
       </div>
       <!-- externalPort | externalUrl — 한 줄(수평) -->
@@ -73,7 +73,7 @@
       @click.self="showServer = false"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-80 max-w-[90vw] p-5 space-y-3">
-        <h4 class="text-base font-semibold text-gray-800 dark:text-gray-100">외부 터널링 서버 설정</h4>
+        <h4 class="text-base font-semibold text-gray-800 dark:text-gray-100">{{ t("config.plansPanel.tunneling.serverModalTitle") }}</h4>
         <div>
           <label class="block text-sm font-medium mb-1.5">host</label>
           <input
@@ -98,7 +98,7 @@
             class="px-3 py-2 text-sm rounded-md bg-emerald-500 text-white"
             @click="showServer = false"
           >
-            확인
+            {{ t("config.plansPanel.tunneling.confirm") }}
           </button>
         </div>
       </div>
@@ -108,7 +108,9 @@
 
 <script setup>
 import { inject, computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const inputDict = inject("inputDict");
 
 const visible = computed(() => inputDict.value.FRP?.Use === 1);

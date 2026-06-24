@@ -116,7 +116,7 @@
                 {{ t('saveModal.buttons.cancel') }}
               </button>
               <button v-if="!isProcessing" class="btn px-4 py-2 rounded-lg" :class="canProceedToNext ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-400 text-gray-600 cursor-not-allowed'" :disabled="!canProceedToNext" @click="handleStep1Next">
-                {{ useDiagnosis ? t('saveModal.buttons.next') : t('saveModal.buttons.save') }}
+                {{ needsStep2 ? t('saveModal.buttons.next') : t('saveModal.buttons.save') }}
               </button>
             </div>
           </div>
@@ -227,8 +227,12 @@ export default {
       return true;
     });
 
+    // 터널링(FRP) 켜졌는지 / 2단계가 필요한지(진단 또는 터널링이면 2단계로 가서 상태 확인).
+    const tunnelingOn = computed(() => inputDict.value?.FRP?.Use === 1);
+    const needsStep2 = computed(() => useDiagnosis.value || tunnelingOn.value);
+
     const visibleSteps = computed(() => {
-      if (useDiagnosis.value) {
+      if (needsStep2.value) {
         return steps.value;
       }
       return [steps.value[0]];
@@ -381,6 +385,16 @@ export default {
         currentStep.value = 2;
         steps.value[1].status = "current";
         await runDiagnosisConfig();
+      } else if (tunnelingOn.value) {
+        // 비진단이지만 터널링 켜진 경우: 2단계로 가서 터널링 상태만 확인.
+        currentStep.value = 2;
+        steps.value[1].status = "current";
+        isProcessing.value = true;
+        diagnosisResults.value = [];
+        processingMessage.value = t('saveModal.messages.saving') || "Checking...";
+        await pushTunnelingStatus();
+        steps.value[1].status = "success";
+        isProcessing.value = false;
       } else {
         await saveAndClose();
       }
@@ -410,11 +424,32 @@ export default {
         const advResult = await runAdvancedProfile();
         diagnosisResults.value.push(advResult);
         steps.value[1].status = advResult.status === "error" ? "error" : "success";
+
+        // 터널링(FRP) 켰으면 frp 디렉토리 존재 여부를 상태 항목으로 추가(저장 전에 step2 결과에 표시).
+        await pushTunnelingStatus();
       } catch (error) {
         diagnosisResults.value.push({ id: "error", name: "Diagnosis Configuration", status: "error", message: error.message, errors: [error.message] });
         steps.value[1].status = "error";
       } finally {
         isProcessing.value = false;
+      }
+    };
+
+    // 터널링(FRP) 켰을 때만 frp 디렉토리 존재 여부를 확인해 step2 결과에 상태 항목으로 추가.
+    const pushTunnelingStatus = async () => {
+      if (inputDict.value?.FRP?.Use !== 1) return;
+      diagnosisResults.value = diagnosisResults.value.filter((r) => r.id !== "frp-status");
+      try {
+        const res = await axios.get("/setting/checkTunneling", { withCredentials: true });
+        const avail = res.data?.available === true;
+        diagnosisResults.value.push({
+          id: "frp-status",
+          name: "Tunneling (FRP)",
+          status: avail ? "success" : "warning",
+          message: res.data?.message || "",
+        });
+      } catch (e) {
+        diagnosisResults.value.push({ id: "frp-status", name: "Tunneling (FRP)", status: "warning", message: "터널링 상태 확인 실패" });
       }
     };
 
@@ -520,24 +555,9 @@ export default {
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
-          // 터널링(FRP) 켰을 때만 상태 항목 표시(폴더 있으면 성공, 없으면 경고). 백엔드가 frp 상태 반환.
-          const frp = response.data?.frp;
-          if (frp && inputDict.value?.FRP?.Use === 1) {
-            // 결과 목록(diagnosisResults)에 터널링 상태 항목 추가 + 모달 유지(상태 확인용).
-            // save-complete/close-modal 미emit(부모가 닫지 않게) → 사용자가 상태 확인 후 취소로 닫음.
-            diagnosisResults.value = diagnosisResults.value.filter((r) => r.id !== "frp-status");
-            diagnosisResults.value.push({
-              id: "frp-status",
-              name: "Tunneling (FRP)",
-              status: frp.available ? "success" : "warning",
-              message: frp.message,
-            });
-            currentStep.value = 2;
-          } else {
-            emit("save-complete", { success: true });
-            alert(t('saveModal.messages.saveSuccess') || "Configuration saved successfully!");
-            emit("close-modal");
-          }
+          emit("save-complete", { success: true });
+          alert(t('saveModal.messages.saveSuccess') || "Configuration saved successfully!");
+          emit("close-modal");
         } else {
           alert((t('saveModal.messages.saveFailed') || "Save failed") + ": " + (response.data?.error || "Unknown error"));
         }
@@ -607,7 +627,7 @@ export default {
 
     return { 
       currentStep, steps, visibleSteps, isProcessing, isSaving, processingMessage, 
-      validationResult, diagnosisResults, hasDiagnosisErrors, useDiagnosis,
+      validationResult, diagnosisResults, hasDiagnosisErrors, useDiagnosis, needsStep2,
       showNameplateWarning, nameplateWarningMessage, nameplateConfirmed, canProceedToNext,
       getStepClass, getStepLabelClass, getConnectorClass, 
       handleStep1Next, saveAndClose, cancelAndReload,devLang,

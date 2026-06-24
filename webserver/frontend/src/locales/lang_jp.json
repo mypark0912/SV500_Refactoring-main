@@ -424,6 +424,16 @@
   },
   "config": {
     "channelPanel": {"harmonics": {"collect": "収集有無", "period": "収集周期"}},
+    "plansPanel": {
+      "etc": {
+        "title": "計測設定"
+      },
+      "tunneling": {
+        "serverSettings": "サーバー設定",
+        "serverModalTitle": "外部トンネリングサーバー",
+        "confirm": "確認"
+      }
+    },
     "sitemap": {
       "title": "設定",
       "Main Channel": "メインチャンネル",
