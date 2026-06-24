@@ -519,9 +519,23 @@ export default {
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
-          alert(t('saveModal.messages.saveSuccess') || "Configuration saved successfully!");
-          emit("save-complete", { success: true });
-          emit("close-modal");
+          // 터널링(FRP) 켰을 때만 경고 항목 추가(백엔드도 Use==1 일 때만 warning 반환하지만 명시 가드).
+          if (response.data?.warning && inputDict.value?.FRP?.Use === 1) {
+            // 저장은 됐으나 경고(예: 터널링 불가) → 결과 목록(diagnosisResults)에 항목 추가 + 모달 유지.
+            // save-complete/close-modal 미emit(부모가 닫지 않게) → 사용자가 상태 확인 후 취소로 닫음.
+            diagnosisResults.value = diagnosisResults.value.filter((r) => r.id !== "frp-warning");
+            diagnosisResults.value.push({
+              id: "frp-warning",
+              name: "Tunneling (FRP)",
+              status: "warning",
+              message: response.data.warning,
+            });
+            currentStep.value = 2;
+          } else {
+            emit("save-complete", { success: true });
+            alert(t('saveModal.messages.saveSuccess') || "Configuration saved successfully!");
+            emit("close-modal");
+          }
         } else {
           alert((t('saveModal.messages.saveFailed') || "Save failed") + ": " + (response.data?.error || "Unknown error"));
         }

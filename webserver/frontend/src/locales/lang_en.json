@@ -810,7 +810,7 @@
         "ftpDxConflict": "⚠️ FTP and Diagnosis cannot be used simultaneously. Please disable one."
       },
       "etc": {
-        "title": "ETC"
+        "title": "Measurement Settings"
       },
       "modbus": {
         "title": "Modbus",

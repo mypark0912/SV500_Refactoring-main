@@ -3454,7 +3454,12 @@ async def saveSetting2(request: Request):
                 ch["ctInfo"]["inorminal"] = safe_int(safe_float(ch["ctInfo"]["inorminal"]) * 1000)
 
         redis_state.client.hset("System", "config", json.dumps(data))
-        return {"status": "1"}
+        resp = {"status": "1"}
+        # 터널링(FRP) 켰는데 frp 바이너리 디렉토리가 없는 장비(LTE 모드 아니면 미설치)면 저장은 하되 경고.
+        frp = data["General"].get("FRP", {})
+        if safe_int(frp.get("Use", 0)) == 1 and not os.path.isdir("/home/root/frp_0.66.0_linux_arm64"):
+            resp["warning"] = "이 장비에는 터널링(FRP) 구성요소가 없어 터널링을 사용할 수 없습니다. 터널링을 끄거나 frp 패키지를 설치하세요."
+        return resp
     except Exception as e:
         print("Error:", e)
         import traceback
@@ -3815,19 +3820,24 @@ def save_redis_setup(setupData):
 
     return procData
 
-def save_frpc_config(lte, subdomain,prefix, file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
+def save_frpc_config(lte, subdomain, prefix, server_addr="", token="", file_path="/home/root/frp_0.66.0_linux_arm64/frpc.toml"):
     try:
         # 디렉토리가 없으면 생성
         import os
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # server_addr/token 이 비면 공용(Public) 기본값, 있으면(External) 그 값 사용.
+        if not server_addr:
+            server_addr = "13.125.5.143"
+        if not token:
+            token = "NTEK_system_20260116_mypark"
         proxyname = f"device-web-{prefix}"
         ftpname = f"device-ssh-{prefix}"
         ftpport = 12000 + safe_int(prefix)
         # TOML 내용 생성
         if lte == 0:
-            toml_content = f'''serverAddr = "13.125.5.143"
+            toml_content = f'''serverAddr = "{server_addr}"
 serverPort = 7000
-auth.token = "NTEK_system_20260116_mypark"
+auth.token = "{token}"
 transport.tls.enable = true
 
 [[proxies]]
@@ -3838,9 +3848,9 @@ localPort = 4000
 subdomain = "{subdomain}"
 '''
         else:
-            toml_content = f'''serverAddr = "13.125.5.143"
+            toml_content = f'''serverAddr = "{server_addr}"
 serverPort = 7000
-auth.token = "NTEK_system_20260116_mypark"
+auth.token = "{token}"
 transport.tls.enable = true
 
 [[proxies]]
@@ -4567,11 +4577,16 @@ def _apply_frp_services(setup):
             redis_state.client.hset("System", "FRP", 1)
             subdomain = frp.get("url", "")
             name_prefix = frp.get("externalport", "")
+            # type=External 이면 사용자 입력 host/token 주입, 아니면 빈 값 → save_frpc_config 가 공용(Public) 기본값 사용.
+            server_addr, token = "", ""
+            if frp.get("type") == "External":
+                server_addr = frp.get("host", "")
+                token = frp.get("token", "")
             # SSH 프록시는 lteuse 옵션 제거되어 항상 포함 (useLte=1 고정)
             useLte = 1
 
             if not service_exists("frpc.service"):
-                save_frpc_config(useLte, subdomain, name_prefix)
+                save_frpc_config(useLte, subdomain, name_prefix, server_addr, token)
                 save_frpc_service(
                     "/home/root/frp_0.66.0_linux_arm64/frpc",
                     "/home/root/frp_0.66.0_linux_arm64/frpc.toml"
@@ -4582,7 +4597,7 @@ def _apply_frp_services(setup):
                 sysService("start", "frpc")
             else:
                 # 설정 변경을 toml에 반영
-                save_frpc_config(useLte, subdomain, name_prefix)
+                save_frpc_config(useLte, subdomain, name_prefix, server_addr, token)
                 if is_service_enabled("frpc"):
                     # 새 toml 적용 위해 active 여부와 무관하게 restart
                     if is_service_active("frpc"):

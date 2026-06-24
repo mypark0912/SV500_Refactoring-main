@@ -10,21 +10,33 @@
             <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4h-2V8h2v4z" />
           </svg>
         </div>
-        <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">계측 설정</h3>
+        <h3 class="text-lg text-gray-800 dark:text-gray-100 font-semibold">{{ t("config.plansPanel.etc.title") }}</h3>
       </header>
     </div>
     <div class="px-4 py-4 space-y-3">
+      <!-- Unbalance — 첫 줄(전체 너비) -->
       <div>
-        <label class="block text-sm font-medium mb-1.5">PF Sign</label>
+        <label class="block text-sm font-medium mb-1.5">Unbalance</label>
         <select
-          v-model.number="inputDict.pf_sign"
+          v-model.number="inputDict.unbalance"
           class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
         >
-          <option :value="0">IEC</option>
-          <option :value="1">IEEE</option>
+          <option :value="0">Nema</option>
+          <option :value="1">Sequence Components</option>
         </select>
       </div>
+      <!-- PF Sign | VA type — 한 줄(수평 정렬) -->
       <div class="flex gap-2">
+        <div class="flex-1 min-w-0">
+          <label class="block text-sm font-medium mb-1.5">PF Sign</label>
+          <select
+            v-model.number="inputDict.pf_sign"
+            class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option :value="0">IEC</option>
+            <option :value="1">IEEE</option>
+          </select>
+        </div>
         <div class="flex-1 min-w-0">
           <label class="block text-sm font-medium mb-1.5">VA type</label>
           <select
@@ -33,16 +45,6 @@
           >
             <option :value="0">RMS</option>
             <option :value="1">vector</option>
-          </select>
-        </div>
-        <div class="flex-1 min-w-0">
-          <label class="block text-sm font-medium mb-1.5">Unbalance</label>
-          <select
-            v-model.number="inputDict.unbalance"
-            class="form-select w-full bg-white border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option :value="0">Nema</option>
-            <option :value="1">Sequence Components</option>
           </select>
         </div>
       </div>

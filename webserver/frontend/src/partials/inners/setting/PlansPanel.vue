@@ -93,7 +93,7 @@
 
         <div class="grid grid-cols-12 gap-6 items-stretch">
 
-          <!-- 1행: 장치정보 / 통신설정 / 장치기능(+SNTP) / 계측설정(+FRP) -->
+          <!-- 1행: 장치정보 / 통신설정 / 장치기능(+터널링) / 계측설정(+SNTP) -->
           <div class="col-span-full xl:col-span-3">
             <DeviceInfoCard />
           </div>
@@ -104,13 +104,13 @@
             <div class="flex-1 min-h-0">
               <DeviceFunctionCard />
             </div>
-            <SNTPCard />
+            <FRPCard />
           </div>
           <div class="col-span-full xl:col-span-3 flex flex-col gap-6">
             <div class="flex-1 min-h-0">
               <EtcCard />
             </div>
-            <FRPCard />
+            <SNTPCard />
           </div>
 
           <!-- 2행: Modbus Serial / MQTT / Waveform FTP (각 토글 ON일 때만 표시) -->

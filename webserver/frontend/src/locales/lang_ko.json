@@ -807,7 +807,7 @@
         "ftpDxConflict": "⚠️ FTP와 진단은 동시에 사용할 수 없습니다. 하나를 비활성화해주세요."
       },
       "etc": {
-        "title": "기타 정보"
+        "title": "계측 설정"
       },
       "modbus": {
         "title": "Modbus",

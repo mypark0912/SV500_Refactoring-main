@@ -75,6 +75,9 @@ export function useInputDict() {
     },
     FRP:{
       Use:0,
+      type:"Public",   // "Public" | "External" — External 일 때만 host/token 사용
+      host:"",
+      token:"",
       externalport:"",
       url:"",
     }

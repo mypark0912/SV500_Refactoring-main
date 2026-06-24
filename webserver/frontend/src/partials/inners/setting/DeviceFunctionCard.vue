@@ -14,41 +14,78 @@
       </header>
     </div>
     <div class="px-4 py-4 space-y-3 flex-1">
-      <!-- FTP -->
-      <div class="flex items-center justify-between">
-        <label class="block text-sm font-medium">{{ t("config.plansPanel.useWaveFormFTP") }}</label>
-        <div
-          class="relative inline-flex items-center cursor-pointer"
-          @click="toggleFTP"
-        >
+      <!-- FTP / SNTP / MQTT / Tunneling — 2컬럼(높이 절감) -->
+      <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+        <!-- FTP -->
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-medium">{{ t("config.plansPanel.useWaveFormFTP") }}</label>
           <div
-            class="w-11 h-6 rounded-full transition-colors duration-200"
-            :class="isFTP ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
+            class="relative inline-flex items-center cursor-pointer"
+            @click="toggleFTP"
+          >
+            <div
+              class="w-11 h-6 rounded-full transition-colors duration-200"
+              :class="isFTP ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
+            ></div>
+            <div
+              class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              :class="isFTP ? 'translate-x-5' : 'translate-x-0'"
+            ></div>
+          </div>
+        </div>
+        <!-- SNTP -->
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-medium">{{ t("config.plansPanel.useSNTP") }}</label>
           <div
-            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            :class="isFTP ? 'translate-x-5' : 'translate-x-0'"
-          ></div>
+            class="relative inline-flex items-center cursor-pointer"
+            @click="inputDict.useFuction.sntp = inputDict.useFuction.sntp === 1 ? 0 : 1"
+          >
+            <div
+              class="w-11 h-6 rounded-full transition-colors duration-200"
+              :class="inputDict.useFuction.sntp === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
+            ></div>
+            <div
+              class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              :class="inputDict.useFuction.sntp === 1 ? 'translate-x-5' : 'translate-x-0'"
+            ></div>
+          </div>
+        </div>
+        <!-- MQTT -->
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-medium">MQTT</label>
+          <div
+            class="relative inline-flex items-center cursor-pointer"
+            @click="inputDict.MQTT.Use = inputDict.MQTT.Use === 1 ? 0 : 1"
+          >
+            <div
+              class="w-11 h-6 rounded-full transition-colors duration-200"
+              :class="inputDict.MQTT.Use === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
+            ></div>
+            <div
+              class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              :class="inputDict.MQTT.Use === 1 ? 'translate-x-5' : 'translate-x-0'"
+            ></div>
+          </div>
+        </div>
+        <!-- Tunneling (FRP) -->
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-medium">Tunneling</label>
+          <div
+            class="relative inline-flex items-center cursor-pointer"
+            @click="inputDict.FRP.Use = inputDict.FRP.Use === 1 ? 0 : 1"
+          >
+            <div
+              class="w-11 h-6 rounded-full transition-colors duration-200"
+              :class="inputDict.FRP.Use === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
+            ></div>
+            <div
+              class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              :class="inputDict.FRP.Use === 1 ? 'translate-x-5' : 'translate-x-0'"
+            ></div>
+          </div>
         </div>
       </div>
-      <!-- SNTP -->
-      <div class="flex items-center justify-between">
-        <label class="block text-sm font-medium">{{ t("config.plansPanel.useSNTP") }}</label>
-        <div
-          class="relative inline-flex items-center cursor-pointer"
-          @click="inputDict.useFuction.sntp = inputDict.useFuction.sntp === 1 ? 0 : 1"
-        >
-          <div
-            class="w-11 h-6 rounded-full transition-colors duration-200"
-            :class="inputDict.useFuction.sntp === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
-          <div
-            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            :class="inputDict.useFuction.sntp === 1 ? 'translate-x-5' : 'translate-x-0'"
-          ></div>
-        </div>
-      </div>
-      <!-- Modbus Serial -->
+      <!-- Modbus Serial — 단독(전체 너비) -->
       <div class="flex items-center justify-between">
         <label class="block text-sm font-medium">Modbus Serial</label>
         <div
@@ -62,40 +99,6 @@
           <div
             class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
             :class="inputDict.modbus.rtu_use === 1 ? 'translate-x-5' : 'translate-x-0'"
-          ></div>
-        </div>
-      </div>
-      <!-- MQTT -->
-      <div class="flex items-center justify-between">
-        <label class="block text-sm font-medium">MQTT</label>
-        <div
-          class="relative inline-flex items-center cursor-pointer"
-          @click="inputDict.MQTT.Use = inputDict.MQTT.Use === 1 ? 0 : 1"
-        >
-          <div
-            class="w-11 h-6 rounded-full transition-colors duration-200"
-            :class="inputDict.MQTT.Use === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
-          <div
-            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            :class="inputDict.MQTT.Use === 1 ? 'translate-x-5' : 'translate-x-0'"
-          ></div>
-        </div>
-      </div>
-      <!-- Tunneling (FRP) -->
-      <div class="flex items-center justify-between">
-        <label class="block text-sm font-medium">Tunneling</label>
-        <div
-          class="relative inline-flex items-center cursor-pointer"
-          @click="inputDict.FRP.Use = inputDict.FRP.Use === 1 ? 0 : 1"
-        >
-          <div
-            class="w-11 h-6 rounded-full transition-colors duration-200"
-            :class="inputDict.FRP.Use === 1 ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'"
-          ></div>
-          <div
-            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            :class="inputDict.FRP.Use === 1 ? 'translate-x-5' : 'translate-x-0'"
           ></div>
         </div>
       </div>
