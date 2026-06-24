@@ -3455,10 +3455,15 @@ async def saveSetting2(request: Request):
 
         redis_state.client.hset("System", "config", json.dumps(data))
         resp = {"status": "1"}
-        # 터널링(FRP) 켰는데 frp 바이너리 디렉토리가 없는 장비(LTE 모드 아니면 미설치)면 저장은 하되 경고.
+        # 터널링(FRP) 켜면 frp 바이너리 디렉토리 존재 여부로 사용가능/불가 상태를 항상 반환.
         frp = data["General"].get("FRP", {})
-        if safe_int(frp.get("Use", 0)) == 1 and not os.path.isdir("/home/root/frp_0.66.0_linux_arm64"):
-            resp["warning"] = "이 장비에는 터널링(FRP) 구성요소가 없어 터널링을 사용할 수 없습니다. 터널링을 끄거나 frp 패키지를 설치하세요."
+        if safe_int(frp.get("Use", 0)) == 1:
+            avail = os.path.isdir("/home/root/frp_0.66.0_linux_arm64")
+            resp["frp"] = {
+                "available": avail,
+                "message": "터널링(FRP)을 사용할 수 있습니다." if avail
+                           else "이 장비에는 터널링(FRP) 구성요소가 없어 터널링을 사용할 수 없습니다. 터널링을 끄거나 frp 패키지를 설치하세요.",
+            }
         return resp
     except Exception as e:
         print("Error:", e)

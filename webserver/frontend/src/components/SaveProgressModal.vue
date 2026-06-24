@@ -133,16 +133,17 @@
             <div v-else class="space-y-4">
               <h3 class="font-semibold text-gray-800 dark:text-gray-100 mb-4">{{ t('saveModal.diagnosis.results') }}</h3>
               
-              <div v-for="result in diagnosisResults" :key="result.id" class="rounded-lg p-4" :class="result.status === 'error' ? 'bg-red-50 dark:bg-red-900/20' : result.status === 'success' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/50'">
+              <div v-for="result in diagnosisResults" :key="result.id" class="rounded-lg p-4" :class="result.status === 'error' ? 'bg-red-50 dark:bg-red-900/20' : result.status === 'success' ? 'bg-green-50 dark:bg-green-900/20' : result.status === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-gray-50 dark:bg-gray-700/50'">
                 <div class="flex items-start">
                   <div class="flex-shrink-0 mr-3">
                     <svg v-if="result.status === 'success'" class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                     <svg v-else-if="result.status === 'error'" class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    <svg v-else-if="result.status === 'warning'" class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                     <svg v-else class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" /></svg>
                   </div>
                   <div class="flex-1">
-                    <div class="font-medium text-sm" :class="result.status === 'error' ? 'text-red-700 dark:text-red-400' : result.status === 'success' ? 'text-green-700 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'">{{ result.name }}</div>
-                    <div v-if="result.message" class="text-xs mt-1" :class="result.status === 'error' ? 'text-red-600' : 'text-gray-500'">{{ result.message }}</div>
+                    <div class="font-medium text-sm" :class="result.status === 'error' ? 'text-red-700 dark:text-red-400' : result.status === 'success' ? 'text-green-700 dark:text-green-400' : result.status === 'warning' ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-300'">{{ result.name }}</div>
+                    <div v-if="result.message" class="text-xs mt-1" :class="result.status === 'error' ? 'text-red-600' : result.status === 'warning' ? 'text-yellow-700 dark:text-yellow-300' : 'text-gray-500'">{{ result.message }}</div>
                     <ul v-if="result.errors && result.errors.length > 0" class="mt-2 text-xs space-y-1">
                       <li v-for="(err, idx) in result.errors" :key="idx" class="text-red-600">• {{ err }}</li>
                     </ul>
@@ -519,16 +520,17 @@ export default {
         const response = await axios.post("/setting/savefileNew", formattedData, { headers: { "Content-Type": "application/json;charset=utf-8" }, withCredentials: true });
 
         if (response.data?.status === "1") {
-          // 터널링(FRP) 켰을 때만 경고 항목 추가(백엔드도 Use==1 일 때만 warning 반환하지만 명시 가드).
-          if (response.data?.warning && inputDict.value?.FRP?.Use === 1) {
-            // 저장은 됐으나 경고(예: 터널링 불가) → 결과 목록(diagnosisResults)에 항목 추가 + 모달 유지.
+          // 터널링(FRP) 켰을 때만 상태 항목 표시(폴더 있으면 성공, 없으면 경고). 백엔드가 frp 상태 반환.
+          const frp = response.data?.frp;
+          if (frp && inputDict.value?.FRP?.Use === 1) {
+            // 결과 목록(diagnosisResults)에 터널링 상태 항목 추가 + 모달 유지(상태 확인용).
             // save-complete/close-modal 미emit(부모가 닫지 않게) → 사용자가 상태 확인 후 취소로 닫음.
-            diagnosisResults.value = diagnosisResults.value.filter((r) => r.id !== "frp-warning");
+            diagnosisResults.value = diagnosisResults.value.filter((r) => r.id !== "frp-status");
             diagnosisResults.value.push({
-              id: "frp-warning",
+              id: "frp-status",
               name: "Tunneling (FRP)",
-              status: "warning",
-              message: response.data.warning,
+              status: frp.available ? "success" : "warning",
+              message: frp.message,
             });
             currentStep.value = 2;
           } else {
