@@ -150,7 +150,26 @@ union(tables: [p_max, p_avg, s_max, q_max])
         results = []
 
         async with httpx.AsyncClient(timeout=setting_timeout) as client:
+            # ⚠️ InfluxDB POST /api/v2/tasks 는 이름 중복을 막지 않음(매번 새 ID 생성).
+            #    422 가정만으로는 재실행 때마다 누적됨 → 선조회 후 없을 때만 생성.
+            existing_names = set()
+            try:
+                list_resp = await client.get(
+                    f"http://127.0.0.1:8086/api/v2/tasks",
+                    headers={"Authorization": f"Token {token}"},
+                    params={"orgID": config['org_id']}
+                )
+                if list_resp.status_code == 200:
+                    existing_names = {t["name"] for t in list_resp.json().get("tasks", [])}
+            except Exception as e:
+                logging.warning(f"⚠️ 기존 task 목록 조회 실패(중복체크 생략): {e}")
+
             for task_info in tasks:
+                if task_info["name"] in existing_names:
+                    logging.info(f"ℹ️ Demand Task '{task_info['name']}' already exists (skip)")
+                    results.append({"task": task_info["name"], "success": True, "existed": True})
+                    continue
+
                 task_data = {
                     "orgID": config['org_id'],
                     "org": org_name,
