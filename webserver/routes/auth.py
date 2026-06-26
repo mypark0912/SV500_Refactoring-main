@@ -235,7 +235,7 @@ async def getVersionSave(Opmode):
         smart = version_dict.get('smartsystem', '1.0.0')
 
     install = Post(
-        title='Fist Installation',
+        title='First Installation',
         context='SV-500 Installed',
         mtype=0,
         utype=utype,
