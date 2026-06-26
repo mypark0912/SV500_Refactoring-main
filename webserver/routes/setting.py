@@ -1636,11 +1636,12 @@ async def _backup_all_bg(task_id: str, request: Request):
         logging.info(f"📋 Backup stdout: {stdout}")
         logging.info(f"📋 Backup stderr: {stderr}")
 
-        # root 가 만든 0600 파일/0750 디렉토리를 ntekadmin tar 가 읽도록 재귀로 읽기/탐색 권한 부여.
-        # (쓰기는 안 줌 → 하드닝 유지. temp_dir 은 sudoers 화이트리스트 패턴과 한 단계로 매칭됨)
-        rc_chmod, _, chmod_err = await _run_cmd('sudo', 'chmod', '-R', 'a+rX', temp_dir, timeout=60)
-        if rc_chmod != 0:
-            raise Exception(f"backup chmod failed: {chmod_err}")
+        # influx 가 root:root 로 만든 결과물의 소유권을 ntekadmin 으로 넘긴다.
+        # chmod a+rX 는 읽기(tar)만 풀고 삭제(cleanup rmtree)는 못 풀어서(디렉토리 쓰기 권한 필요)
+        # cleanup 에서 깨졌다. chown 으로 소유자가 되면 읽기+삭제가 모두 해결되고 모드는 0600 그대로라 외부노출 없음.
+        rc_chown, _, chown_err = await _run_cmd('sudo', 'chown', '-R', 'ntekadmin:root', temp_dir, timeout=60)
+        if rc_chown != 0:
+            raise Exception(f"backup chown failed: {chown_err}")
 
         task["steps"]["influxdb"] = "completed"
         logging.info("✅ InfluxDB backup completed")
@@ -1766,10 +1767,9 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
             logging.info(f"✅ LogDB copied")
 
         # 5. 통합 압축
-        # influx backup 이 sudo(root)로 생성한 내부 디렉토리는 root:700 → ntekadmin tar 가 못 읽음.
-        # 백업 임시경로 한정으로 읽기/탐색 권한 부여 (sudoers 화이트리스트와 일치).
+        # influx 가 root:root 로 만든 결과물의 소유권을 ntekadmin 으로 넘겨 읽기(tar)+삭제(cleanup) 둘 다 가능하게.
         subprocess.run(
-            ['sudo', 'chmod', '-R', 'a+rX', temp_dir],
+            ['sudo', 'chown', '-R', 'ntekadmin:root', temp_dir],
             check=True, capture_output=True, text=True, timeout=60
         )
 
@@ -1836,10 +1836,9 @@ async def _backup_influxdb(temp_dir: str, timestamp: str):
             timeout=300
         )
 
-        # influx backup 이 sudo(root)로 생성한 내부 디렉토리는 root:700 → ntekadmin tar 가 못 읽음.
-        # 백업 임시경로 한정으로 읽기/탐색 권한 부여 (sudoers 화이트리스트와 일치).
+        # influx 가 root:root 로 만든 결과물의 소유권을 ntekadmin 으로 넘겨 읽기(tar)+삭제(cleanup) 둘 다 가능하게.
         subprocess.run(
-            ['sudo', 'chmod', '-R', 'a+rX', temp_dir],
+            ['sudo', 'chown', '-R', 'ntekadmin:root', temp_dir],
             check=True, capture_output=True, text=True, timeout=60
         )
 
