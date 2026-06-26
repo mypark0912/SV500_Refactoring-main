@@ -1618,11 +1618,15 @@ async def _backup_all_bg(task_id: str, request: Request):
         # 1. InfluxDB 백업
         task["current_step"] = "influxdb"
         task["steps"]["influxdb"] = "in_progress"
-        temp_influx_backup = os.path.join(temp_dir, f"temp_influx_{timestamp}")
 
+        # influx backup 은 sudo(root)로 실행되어 결과물이 root:root (디렉토리 0750·파일 0600)으로 생성됨.
+        # 예전엔 temp_influx 에 백업 후 shutil.move 로 옮겼는데, root 소유 디렉토리를 다른 부모로
+        # rename 하려면 그 디렉토리 자체에 쓰기 권한이 필요(.. 갱신) → ntekadmin 은 권한 없어 copytree
+        # 폴백 → 0600 파일 읽기 실패(Errno 13)로 깨졌다. 그래서 최종 위치로 "직접" 백업한다.
+        influx_backup_path = os.path.join(backup_path, "influxdb")
         token = aesState.decrypt(config["cipher"])
         returncode, stdout, stderr = await _run_cmd(
-            'sudo', '/usr/local/bin/influx', 'backup', temp_influx_backup, '-t', token, timeout=600
+            'sudo', '/usr/local/bin/influx', 'backup', influx_backup_path, '-t', token, timeout=600
         )
         if returncode > 1:
             raise Exception(f"InfluxDB backup failed: {stderr}")
@@ -1632,13 +1636,8 @@ async def _backup_all_bg(task_id: str, request: Request):
         logging.info(f"📋 Backup stdout: {stdout}")
         logging.info(f"📋 Backup stderr: {stderr}")
 
-        influx_backup_path = os.path.join(backup_path, "influxdb")
-        shutil.move(temp_influx_backup, influx_backup_path)
-
-        # influx backup 은 sudo(root)로 실행되어 내부 디렉토리가 root:root 0700 으로 생성됨.
-        # 웹서버(ntekadmin)가 아래 tar 단계에서 읽으려면 읽기/탐색 권한이 필요하다.
-        # (웹서버가 root 로 돌 땐 tar 도 root 라 문제 없지만, ntekadmin 으로는 막힘)
-        # temp_dir 한 단계만 와일드카드로 매칭되도록 temp_dir 전체에 -R 부여 (sudoers 화이트리스트와 일치).
+        # root 가 만든 0600 파일/0750 디렉토리를 ntekadmin tar 가 읽도록 재귀로 읽기/탐색 권한 부여.
+        # (쓰기는 안 줌 → 하드닝 유지. temp_dir 은 sudoers 화이트리스트 패턴과 한 단계로 매칭됨)
         rc_chmod, _, chmod_err = await _run_cmd('sudo', 'chmod', '-R', 'a+rX', temp_dir, timeout=60)
         if rc_chmod != 0:
             raise Exception(f"backup chmod failed: {chmod_err}")
@@ -1730,11 +1729,12 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
         backup_path = os.path.join(temp_dir, backup_name)
         os.makedirs(backup_path, exist_ok=True)
 
-        # ✅ 임시 InfluxDB 백업 (루트 레벨에)
-        temp_influx_backup = os.path.join(temp_dir, f"temp_influx_{timestamp}")
-
+        # ✅ InfluxDB 를 최종 위치로 "직접" 백업.
+        # influx 결과물은 root:root(디렉토리 0750·파일 0600)이라, 예전처럼 temp 에 받아 shutil.move 하면
+        # root 소유 디렉토리 rename 에 쓰기 권한이 없어(.. 갱신) copytree 폴백 → 0600 파일 읽기 실패로 깨진다.
+        influx_backup_path = os.path.join(backup_path, "influxdb")
         result = subprocess.run(
-            ['sudo', '/usr/local/bin/influx', 'backup', temp_influx_backup],
+            ['sudo', '/usr/local/bin/influx', 'backup', influx_backup_path],
             check=True,
             capture_output=True,
             text=True,
@@ -1745,11 +1745,6 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
         logging.info(f"📋 Backup stderr: {result.stderr}")
 
         logging.info(f"✅ InfluxDB backup completed")
-
-        # ✅ 백업을 최종 위치로 이동
-        influx_backup_path = os.path.join(backup_path, "influxdb")
-        shutil.move(temp_influx_backup, influx_backup_path)
-        logging.info(f"✅ InfluxDB backup moved to final location")
 
         # 2. logs 폴더 복사
         if os.path.exists(log_dir):
