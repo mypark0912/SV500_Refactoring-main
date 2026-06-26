@@ -217,6 +217,16 @@ const signup = async () => {
     return;
   }
 
+  // 첫 설치 시 장비 시간이 안 맞을 수 있으므로 브라우저 현재 시각/타임존을 함께 전송
+  const now = new Date();
+  const datetimeStr = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + ' ' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0') + ':' +
+    String(now.getSeconds()).padStart(2, '0');
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const data = {
     devType : devType.value,
     username: username.value,
@@ -225,7 +235,9 @@ const signup = async () => {
     email: email.value,
     role: role.value,
     adminPass: adminpassword.value,
-    lang: lang.value
+    lang: lang.value,
+    datetime_str: datetimeStr,
+    timezone: timezone || "Asia/Seoul"
   };
 
   try {

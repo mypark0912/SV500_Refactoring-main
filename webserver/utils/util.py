@@ -234,6 +234,38 @@ def updateLog(action: str, request: Request):
         conn.close()
 
 
+def set_system_time(datetime_str: str, timezone: str = "Asia/Seoul"):
+    """클라이언트가 보낸 시각/타임존을 장비에 그대로 적용한다.
+    NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화."""
+    subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
+
+    r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", timezone],
+                          capture_output=True, text=True)
+    if r_tz.returncode != 0:
+        logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
+
+    r_date = subprocess.run(["sudo", "date", "-s", datetime_str],
+                            capture_output=True, text=True)
+    if r_date.returncode != 0:
+        logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
+        return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
+
+    hwclock_cmd = ["sudo", "hwclock", "--systohc"]
+    if os_spec.rtc_device:
+        hwclock_cmd.extend(["-f", os_spec.rtc_device])
+    r_hw = subprocess.run(hwclock_cmd, capture_output=True, text=True)
+    if r_hw.returncode != 0:
+        logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
+
+    current = subprocess.run("date", shell=True, capture_output=True, text=True)
+    return {
+        "success": True,
+        "message": "System time updated",
+        "current_time": current.stdout.strip(),
+        "timezone": timezone,
+    }
+
+
 def get_mac_address():
     """지정된 네트워크 카드들의 MAC 주소 가져오기"""
 

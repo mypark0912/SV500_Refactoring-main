@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from states.global_state import influx_state, redis_state, aesState,os_spec, VersionInfo
 from collections import defaultdict
 from typing import Dict, Any, List
-from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists, get_active_interface_ip, _get_ip_of
+from utils.util import get_mac_address, sysService, is_service_active, is_service_enabled, getVersionNew, saveLog, updateLog, get_lastpost, Post, save_post, WAVEFORM_PATHS, service_exists, get_active_interface_ip, _get_ip_of, set_system_time
 from utils.util import parameter_options
 from utils.RedisBinary import Command, CmdType, ItemType
 import pyinotify, threading, uuid
@@ -5277,36 +5277,11 @@ async def setup_system_time(data: TimeSetRequest, request: Request):
         target_dt = client_dt_aware.astimezone(ZoneInfo(saved_tz))
         target_dt_str = target_dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        # 3. 장비에 타깃 타임존 + 변환된 시간 설정
-        # NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화
-        subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
-
-        r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", saved_tz],
-                              capture_output=True, text=True)
-        if r_tz.returncode != 0:
-            logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
-
-        r_date = subprocess.run(["sudo", "date", "-s", target_dt_str],
-                                capture_output=True, text=True)
-        if r_date.returncode != 0:
-            logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
-            return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
-
-        hwclock_cmd = ["sudo", "hwclock", "--systohc"]
-        if os_spec.rtc_device:
-            hwclock_cmd.extend(["-f", os_spec.rtc_device])
-        r_hw = subprocess.run(hwclock_cmd, capture_output=True, text=True)
-        if r_hw.returncode != 0:
-            logging.error(f"hwclock --systohc failed (rc={r_hw.returncode}): {r_hw.stderr}")
-
-        current = subprocess.run("date", shell=True, capture_output=True, text=True)
-        updateLog("Set Time", request)
-        return {
-            "success": True,
-            "message": "System time updated",
-            "current_time": current.stdout.strip(),
-            "timezone": saved_tz
-        }
+        # 3. 장비에 타깃 타임존 + 변환된 시간 설정 (공용 헬퍼)
+        result = set_system_time(target_dt_str, saved_tz)
+        if result.get("success"):
+            updateLog("Set Time", request)
+        return result
     except Exception as e:
         logging.error(f"Error: {e}")
         return { "success": False }

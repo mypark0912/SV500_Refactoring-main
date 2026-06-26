@@ -12,7 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from datetime import date
 from .api import get_Calibrate
-from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersionNew, check_get_logdb, service_exists, updateLog
+from utils.util import get_mac_address, Post, save_post, get_db_connection, get_lastpost, getVersionNew, check_get_logdb, service_exists, updateLog, set_system_time
 from datetime import datetime, timedelta
 router = APIRouter()
 
@@ -278,36 +278,12 @@ async def get_device_time():
         return {"success": False }
 
 @router.post("/calibrate/setSystemTime")
-async def set_system_time(data: TimeSetRequest, request: Request):
+async def set_calibrate_system_time(data: TimeSetRequest, request: Request):
     try:
-        # NTP가 켜져 있으면 date -s 가 거부되므로 먼저 비활성화
-        subprocess.run(["sudo", "timedatectl", "set-ntp", "false"], check=False, capture_output=True, text=True)
-
-        r_tz = subprocess.run(["sudo", "timedatectl", "set-timezone", data.timezone],
-                              capture_output=True, text=True)
-        if r_tz.returncode != 0:
-            logging.error(f"set-timezone failed (rc={r_tz.returncode}): {r_tz.stderr}")
-
-        r_date = subprocess.run(["sudo", "date", "-s", data.datetime_str],
-                                capture_output=True, text=True)
-        if r_date.returncode != 0:
-            logging.error(f"date -s failed (rc={r_date.returncode}): {r_date.stderr}")
-            return {"success": False, "message": f"date -s failed: {r_date.stderr.strip()}"}
-
-        hwclock_cmd = ["sudo", "hwclock", "--systohc"]
-        if os_spec.rtc_device:
-            hwclock_cmd.extend(["-f", os_spec.rtc_device])
-        r_hw = subprocess.run(hwclock_cmd, capture_output=True, text=True)
-        if r_hw.returncode != 0:
-            logging.error(f"hwclock failed (cmd={hwclock_cmd}, rc={r_hw.returncode}): {r_hw.stderr}")
-        current = subprocess.run("date", shell=True, capture_output=True, text=True)
-        updateLog("Set Time", request)
-        return {
-            "success": True,
-            "message": "System time updated",
-            "current_time": current.stdout.strip(),
-            "timezone": data.timezone
-        }
+        result = set_system_time(data.datetime_str, data.timezone)
+        if result.get("success"):
+            updateLog("Set Time", request)
+        return result
     except Exception as e:
         logging.error(f"Error: {e}")
         return { "success": False }

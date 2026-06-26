@@ -3,7 +3,7 @@ import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
 import ujson as json
-from utils.util import save_post, Post, get_mac_address, getVersionNew, is_service_active, sysService, create_logdb_connection, get_active_interface_ip
+from utils.util import save_post, Post, get_mac_address, getVersionNew, is_service_active, sysService, create_logdb_connection, get_active_interface_ip, set_system_time
 from states.global_state import aesState, INIT_PATH, redis_state, os_spec
 router = APIRouter()
 
@@ -251,7 +251,18 @@ async def getVersionSave(Opmode):
 
 
 @router.post('/joinAdmin')
-async def join_admin(data: SignupAdmin):
+async def join_admin(data: SignupAdmin, request: Request):
+    # 라우트 진입 시 무조건 시스템 시간 설정 (첫 설치 시 시간이 안 맞는 상태 대비)
+    # SignupAdmin 스키마는 그대로 두고, 같은 POST body에서 시간 정보를 직접 읽는다.
+    try:
+        body = await request.json()
+        dt = body.get("datetime_str")
+        tz = body.get("timezone", "Asia/Seoul")
+        if dt:
+            set_system_time(dt, tz)
+    except Exception as e:
+        logging.warning(f"joinAdmin time set failed: {e}")
+
     devType = data.devType
     name = data.username
     account = data.account
