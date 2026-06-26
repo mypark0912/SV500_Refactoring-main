@@ -1634,6 +1634,15 @@ async def _backup_all_bg(task_id: str, request: Request):
 
         influx_backup_path = os.path.join(backup_path, "influxdb")
         shutil.move(temp_influx_backup, influx_backup_path)
+
+        # influx backup 은 sudo(root)로 실행되어 내부 디렉토리가 root:root 0700 으로 생성됨.
+        # 웹서버(ntekadmin)가 아래 tar 단계에서 읽으려면 읽기/탐색 권한이 필요하다.
+        # (웹서버가 root 로 돌 땐 tar 도 root 라 문제 없지만, ntekadmin 으로는 막힘)
+        # temp_dir 한 단계만 와일드카드로 매칭되도록 temp_dir 전체에 -R 부여 (sudoers 화이트리스트와 일치).
+        rc_chmod, _, chmod_err = await _run_cmd('sudo', 'chmod', '-R', 'a+rX', temp_dir, timeout=60)
+        if rc_chmod != 0:
+            raise Exception(f"backup chmod failed: {chmod_err}")
+
         task["steps"]["influxdb"] = "completed"
         logging.info("✅ InfluxDB backup completed")
 
@@ -1762,6 +1771,13 @@ async def _backup_all(temp_dir: str, timestamp: str, log_dir: str):
             logging.info(f"✅ LogDB copied")
 
         # 5. 통합 압축
+        # influx backup 이 sudo(root)로 생성한 내부 디렉토리는 root:700 → ntekadmin tar 가 못 읽음.
+        # 백업 임시경로 한정으로 읽기/탐색 권한 부여 (sudoers 화이트리스트와 일치).
+        subprocess.run(
+            ['sudo', 'chmod', '-R', 'a+rX', temp_dir],
+            check=True, capture_output=True, text=True, timeout=60
+        )
+
         #        tar_file = f"{backup_path}.tar.gz"
         parent_dir = os.path.dirname(temp_dir)
         tar_file = os.path.join(parent_dir, f"{backup_name}.tar.gz")
@@ -1823,6 +1839,13 @@ async def _backup_influxdb(temp_dir: str, timestamp: str):
             capture_output=True,
             text=True,
             timeout=300
+        )
+
+        # influx backup 이 sudo(root)로 생성한 내부 디렉토리는 root:700 → ntekadmin tar 가 못 읽음.
+        # 백업 임시경로 한정으로 읽기/탐색 권한 부여 (sudoers 화이트리스트와 일치).
+        subprocess.run(
+            ['sudo', 'chmod', '-R', 'a+rX', temp_dir],
+            check=True, capture_output=True, text=True, timeout=60
         )
 
         # ✅ tar 파일을 부모 디렉토리에 생성

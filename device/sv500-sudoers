@@ -33,6 +33,9 @@ ntekadmin ALL=(ALL) NOPASSWD: /bin/journalctl -u *
 # ---- InfluxDB ----
 ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx backup *
 ntekadmin ALL=(ALL) NOPASSWD: /usr/local/bin/influx restore *
+# influx backup 은 root 로 실행되어 백업 임시 디렉토리가 root:700 으로 생성됨.
+# 웹서버(ntekadmin)가 tar 로 읽으려면 읽기/탐색 권한이 필요 → 백업 임시경로 한정으로 허용.
+ntekadmin ALL=(ALL) NOPASSWD: /bin/chmod -R a+rX /usr/local/sv500/backup/influxdb/*
 
 # ---- 설치 스크립트 ----
 ntekadmin ALL=(ALL) NOPASSWD: /bin/sh /usr/local/sv500/iss/install.sh
