@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, BackgroundTasks
 import bcrypt, os, logging, shutil
 from pydantic import BaseModel
 import sqlite3, httpx, subprocess
@@ -250,18 +250,28 @@ async def getVersionSave(Opmode):
 
 
 
+def _deferred_set_time(dt: str, tz: str):
+    """가입완료 응답을 보낸 뒤(BackgroundTask) 시스템 시간 설정.
+    date -s 가 요청 도중 시계를 점프시키면 응답/연결이 끊겨 가입완료 팝업이 안 뜨므로,
+    응답 후 약간의 지연을 두고 적용한다(첫 설치 시간 보정)."""
+    import time
+    time.sleep(1)
+    try:
+        set_system_time(dt, tz)
+    except Exception as e:
+        logging.warning(f"joinAdmin deferred time set failed: {e}")
+
+
 @router.post('/joinAdmin')
-async def join_admin(data: SignupAdmin, request: Request):
-    # 라우트 진입 시 무조건 시스템 시간 설정 (첫 설치 시 시간이 안 맞는 상태 대비)
-    # SignupAdmin 스키마는 그대로 두고, 같은 POST body에서 시간 정보를 직접 읽는다.
+async def join_admin(data: SignupAdmin, request: Request, background_tasks: BackgroundTasks):
+    # 첫 설치 시 장비 시간 보정용 정보(같은 POST body). 실제 적용은 "응답을 보낸 뒤" 백그라운드로.
+    dt, tz = None, "Asia/Seoul"
     try:
         body = await request.json()
         dt = body.get("datetime_str")
         tz = body.get("timezone", "Asia/Seoul")
-        if dt:
-            set_system_time(dt, tz)
     except Exception as e:
-        logging.warning(f"joinAdmin time set failed: {e}")
+        logging.warning(f"joinAdmin time info read failed: {e}")
 
     devType = data.devType
     name = data.username
@@ -360,6 +370,9 @@ async def join_admin(data: SignupAdmin, request: Request):
                 return {"passOK": "0", "msg":bearing_result.get('msg')}
             else:
                 logging.info(f"✅ Bearing DB initialized: {bearing_result.get('inserted', 0)} bearings, {bearing_result.get('skipped', 0)} skipped")
+                # ⚠️ 시스템 시간 설정은 응답을 보낸 뒤 실행(BackgroundTask) — 위 _deferred_set_time 참고.
+                if dt:
+                    background_tasks.add_task(_deferred_set_time, dt, tz)
                 return {"passOK": "1"}
         except Exception as e:
             logging.warning(f"⚠️ Bearing DB initialization error: {e}")
