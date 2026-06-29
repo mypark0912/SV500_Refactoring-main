@@ -815,6 +815,8 @@
       "tunneling": {
         "serverSettings": "Server Settings",
         "serverModalTitle": "External Tunneling Server",
+        "allowIP": "Allowed IP Range",
+        "allowIPHint": "IP range (CIDR) allowed to connect. e.g. 192.168.0.0/24",
         "confirm": "OK"
       },
       "modbus": {

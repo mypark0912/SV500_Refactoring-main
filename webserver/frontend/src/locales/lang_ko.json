@@ -812,6 +812,8 @@
       "tunneling": {
         "serverSettings": "서버 설정",
         "serverModalTitle": "외부 터널링 서버 설정",
+        "allowIP": "허용 IP 대역",
+        "allowIPHint": "접속을 허용할 IP 대역(CIDR). 예: 192.168.0.0/24",
         "confirm": "확인"
       },
       "modbus": {

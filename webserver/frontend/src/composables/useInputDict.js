@@ -80,6 +80,7 @@ export function useInputDict() {
       token:"",
       externalport:"",
       url:"",
+      allowIP:"",
     }
   });
 

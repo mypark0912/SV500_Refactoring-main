@@ -48,6 +48,10 @@ ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/system/*
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /usr/local/bin/*
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/systemd/network/10-static-end1.network
 ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/profile.d/influx.sh
+# 방화벽: FRP.host/allowIP 를 반영해 webserver 가 생성/갱신 (스크립트 + 동적 env)
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /opt/firewall.sh
+ntekadmin ALL=(ALL) NOPASSWD: /usr/bin/tee /opt/firewall.env
 
 # ---- 스크립트 실행권한 부여 (chmod, 경로 한정) ----
 ntekadmin ALL=(ALL) NOPASSWD: /bin/chmod 755 /usr/local/bin/*
+ntekadmin ALL=(ALL) NOPASSWD: /bin/chmod 755 /opt/firewall.sh

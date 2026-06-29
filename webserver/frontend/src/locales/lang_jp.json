@@ -431,6 +431,8 @@
       "tunneling": {
         "serverSettings": "サーバー設定",
         "serverModalTitle": "外部トンネリングサーバー",
+        "allowIP": "許可IP範囲",
+        "allowIPHint": "接続を許可するIP範囲(CIDR)。例: 192.168.0.0/24",
         "confirm": "確認"
       }
     },

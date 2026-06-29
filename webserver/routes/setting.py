@@ -3551,11 +3551,21 @@ def apply_network(background_tasks: BackgroundTasks):
         return {"result": False}
 
 async def save_influx_status():
+    """influx_init 캐시를 원본(influx.json + 버킷/태스크)으로 재계산.
+
+    Redis 무영속(save "")이라 재부팅 시 influx_init 이 사라지므로, 부팅 시 1회 호출해
+    캐시를 복구한다. 판정 불가(쿼리 실패 등)일 때는 IDLE 로 굳히지 않고 보류 → 다음 기회 재계산.
+    """
     ret = await check_influxStatus()
-    if ret['status'] == 2:
+    status = ret.get('status')
+    if status == 2:
         redis_state.client.hset("influx_init", "status", "COMPLETE")
-    else:
+    elif status in (0, -1, 1):
+        # 0: InitDB 전(influx.json 없음), -1: influx.json 빈 파일, 1: 버킷/태스크 일부 미생성
         redis_state.client.hset("influx_init", "status", "IDLE")
+    else:
+        # result=False 등 판정 불가 → 캐싱 보류 (콜드 캐시 유지, 다음 호출에서 재시도)
+        logging.warning(f"influx 상태 판정 불가, 캐시 보류: {ret.get('message')}")
 
 def mask_to_cidr(mask: str) -> int:
     return sum(bin(int(x)).count("1") for x in mask.split("."))
@@ -3674,6 +3684,7 @@ UseRoutes=true
             time.sleep(2)
             current = get_current_ip(IFACE)
             if current:
+                _restart_frpc_after_network()
                 return {"result": True, "mode": "dhcp", "ip": current["ip"]}
 
         # DHCP 실패 → static fallback
@@ -3681,10 +3692,54 @@ UseRoutes=true
         sudo_write_file(NETWORK_FILE, content)
         os.system("sudo systemctl restart systemd-networkd")
         time.sleep(3)
+        _restart_frpc_after_network()
         return {"result": True, "mode": "static_fallback", "ip": f"{ip}/{cidr}"}
     else:
         time.sleep(3)
+        _restart_frpc_after_network()
         return {"result": True, "mode": "static", "ip": f"{ip}/{cidr}"}
+
+
+def is_internet_available(host="8.8.8.8", port=53, timeout=3):
+    """외부 인터넷 연결 가능 여부 확인 (공용 DNS로 TCP 연결 시도).
+
+    frpc 서버에 닿으려면 외부 연결이 살아있어야 하므로, 네트워크 변경 직후
+    실제로 인터넷이 되는지 확인하는 용도. 실패하면 False.
+    """
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _restart_frpc_after_network():
+    """통신(IP) 설정이 바뀐 뒤 인터넷이 연결되면 frpc 재시작.
+
+    frpc는 시작 시점의 라우팅/DNS로 서버에 붙으므로, IP 설정만 바뀌었을 때는
+    웹서버가 재시작되지 않아 frpc가 옛 경로에 묶여있을 수 있다. 네트워크 변경
+    후 인터넷이 되면 새 경로로 재연결되도록 재시작한다.
+    FRP가 꺼져있거나 frpc 서비스가 없으면 아무 것도 하지 않는다.
+    """
+    try:
+        frp_on = safe_int(redis_state.client.hget("System", "FRP")) == 1
+        if not frp_on:
+            return
+        if not service_exists("frpc.service") or not is_service_enabled("frpc"):
+            return
+
+        # networkd 재시작 직후라 링크가 잡힐 때까지 잠깐 재시도
+        for _ in range(5):
+            if is_internet_available():
+                sysService("restart", "frpc")
+                logging.info("✅ 네트워크 변경 + 인터넷 연결 확인 → frpc 재시작")
+                return
+            time.sleep(2)
+        logging.warning("⚠️ 네트워크 변경 후 인터넷 연결 불가 → frpc 재시작 생략")
+    except Exception as e:
+        logging.error(f"frpc 재시작(네트워크 변경) 처리 실패: {e}")
+
 
 def apply_timezone_setting(timezone):
     """장비 타임존 설정. 변경 있을 때만 적용."""
@@ -3954,6 +4009,185 @@ WantedBy=multi-user.target
     except Exception as e:
         print(f"Failed to save frpc.service: {str(e)}")
         return False
+
+
+# ─────────────────────────────────────────────────────────────
+# 방화벽(iptables) — FRP 설정(host/allowIP)을 /opt/firewall.env 로 주입.
+# LTE 설치 옵션 없이 나중에 FRP 를 켜는 경우에도 동작하도록, 스크립트/유닛이
+# 없으면 webserver 가 생성한 뒤 enable + restart 한다.
+# firewall.sh 원본: device/firewall.sh (아래 save_firewall_script 와 동일 내용 유지)
+# ─────────────────────────────────────────────────────────────
+FIREWALL_SCRIPT_PATH = "/opt/firewall.sh"
+FIREWALL_ENV_PATH = "/opt/firewall.env"
+FIREWALL_SERVICE_PATH = "/etc/systemd/system/firewall.service"
+DEFAULT_FRP_SERVER = "13.125.5.143"   # Public FRP 서버 기본 주소 (save_frpc_config 와 동일)
+
+
+def _sanitize_fw_tokens(value):
+    """공백/쉼표로 구분된 토큰 중 IP/CIDR/호스트로 안전한 것만 남김.
+
+    /opt/firewall.env 는 firewall.sh 가 `. ` 로 source 하므로, 셸 인젝션 방지를 위해
+    IP·CIDR·호스트명에 쓰이는 문자만 통과시킨다.
+    """
+    import re
+    if not value:
+        return ""
+    token_re = re.compile(r'^[0-9A-Za-z.:/_-]+$')
+    tokens = [t for t in str(value).replace(",", " ").split() if token_re.match(t)]
+    return " ".join(tokens)
+
+
+def save_firewall_env(allowed_ip, allowed_subnet, file_path=FIREWALL_ENV_PATH):
+    """firewall.sh 가 source 하는 동적 설정 파일 생성.
+
+    FRP.host → ALLOWED_IP, FRP.allowIP → ALLOWED_SUBNET.
+    값이 비면 해당 라인을 생략해 firewall.sh 의 기본값을 사용한다.
+    """
+    ip = _sanitize_fw_tokens(allowed_ip)
+    subnet = _sanitize_fw_tokens(allowed_subnet)
+    lines = []
+    if ip:
+        lines.append(f'ALLOWED_IP="{ip}"')
+    if subnet:
+        lines.append(f'ALLOWED_SUBNET="{subnet}"')
+    content = ("\n".join(lines) + "\n") if lines else "# (no dynamic override)\n"
+    sudo_write_file(file_path, content)
+    return True
+
+
+def save_firewall_script(file_path=FIREWALL_SCRIPT_PATH):
+    """비-LTE 설치 등으로 /opt/firewall.sh 가 없을 때 webserver 가 생성.
+
+    내용은 device/firewall.sh 와 동일하게 유지할 것.
+    """
+    script = """#!/bin/sh
+# /opt/firewall.sh
+# 특정 공인 IP + 대역만 허용, 나머지 전부 차단
+#
+# ALLOWED_IP / ALLOWED_SUBNET 은 webserver 가 FRP 설정(FRP.host / FRP.allowIP)을
+# 반영해 생성하는 /opt/firewall.env 로 덮어쓴다. env 파일이 없으면 아래 기본값 사용.
+
+LOCAL_NETS="192.168.0.0/16 172.16.0.0/12 10.0.0.0/8"
+
+# 허용할 공인 IP (FRP 서버) — 기본값(Public FRP 서버)
+ALLOWED_IP="13.125.5.143"
+
+# 허용할 공인 IP 대역 — 기본값
+ALLOWED_SUBNET="222.99.175.0/24"
+
+# 허용 포트
+ALLOWED_PORTS="22 443"
+
+LOCAL_ONLY_PORTS="22 4000 502 8086"
+
+# webserver 가 생성한 동적 설정으로 덮어쓰기 (있으면)
+[ -f /opt/firewall.env ] && . /opt/firewall.env
+
+# 초기화
+iptables -F
+iptables -X
+
+# 기본 정책
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# 수립된 연결 응답 허용 (frpc 터널 유지)
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# === 내부 네트워크 허용 ===
+for net in $LOCAL_NETS; do
+  for port in $LOCAL_ONLY_PORTS; do
+    iptables -A INPUT -s $net -p tcp --dport $port -j ACCEPT
+  done
+  iptables -A INPUT -s $net -p icmp -j ACCEPT
+done
+
+# === 특정 공인 IP 허용 (FRP 서버 등) — 공백 구분 다중 허용 / 비어있으면 규칙 없음 ===
+for ip in $ALLOWED_IP; do
+  for port in $ALLOWED_PORTS; do
+    iptables -A INPUT -s $ip -p tcp --dport $port -j ACCEPT
+  done
+done
+
+# === 특정 공인 대역 허용 (관리자 허용 IP 대역) — 공백 구분 다중 허용 / 비어있으면 규칙 없음 ===
+for subnet in $ALLOWED_SUBNET; do
+  for port in $ALLOWED_PORTS; do
+    iptables -A INPUT -s $subnet -p tcp --dport $port -j ACCEPT
+  done
+done
+
+# === 나머지 전부 차단 ===
+iptables -A INPUT -j DROP
+
+echo "===== Firewall Applied ====="
+echo "Allowed IP:     $ALLOWED_IP"
+echo "Allowed Subnet: $ALLOWED_SUBNET"
+echo "Local Network:  $LOCAL_NETS"
+echo "Allowed Ports:  $ALLOWED_PORTS"
+echo "============================"
+iptables -L -n --line-numbers
+"""
+    sudo_write_file(file_path, script, mode="755")
+    return True
+
+
+def save_firewall_service(service_path=FIREWALL_SERVICE_PATH):
+    """firewall.service 유닛 생성 (없을 때). 내용은 device/firewall.service 와 동일."""
+    service_content = """[Unit]
+Description=Firewall
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/firewall.sh
+RemainAfterExit=yes
+ExecStop=/bin/sh -c "iptables -F; iptables -P INPUT ACCEPT"
+
+[Install]
+WantedBy=multi-user.target
+"""
+    sudo_write_file(service_path, service_content)
+    return True
+
+
+def _apply_firewall(frp):
+    """FRP 설정(host/allowIP)을 방화벽에 반영하고 재시작.
+
+    스크립트/유닛이 없으면(비-LTE 설치) 생성한 뒤 enable + restart 한다.
+    - FRP.host → ALLOWED_IP (External 이면 사용자 host, 아니면 Public 기본 서버)
+    - FRP.allowIP → ALLOWED_SUBNET
+    """
+    try:
+        server_addr = frp.get("host", "") if frp.get("type") == "External" else ""
+        if not server_addr:
+            server_addr = DEFAULT_FRP_SERVER
+        allow_ip = frp.get("allowIP", "")
+
+        if not os.path.exists(FIREWALL_SCRIPT_PATH):
+            save_firewall_script()
+
+        created_service = False
+        if not service_exists("firewall.service"):
+            save_firewall_service()
+            created_service = True
+
+        # 동적 값 주입 (FRP.host / FRP.allowIP)
+        save_firewall_env(server_addr, allow_ip)
+
+        if created_service:
+            execService("daemon-reload")
+        if not is_service_enabled("firewall"):
+            execService("enable", "firewall")
+        execService("restart", "firewall")
+        logging.info(f"✅ 방화벽 적용: ALLOWED_IP={server_addr}, "
+                     f"ALLOWED_SUBNET={_sanitize_fw_tokens(allow_ip)}")
+    except Exception as e:
+        logging.error(f"방화벽 적용 실패: {e}")
+
 
 @router.get('/checkCommision/{asset}')
 async def check_comm(asset):
@@ -4620,6 +4854,9 @@ def _apply_frp_services(setup):
                     sysService("enable", "frpc")
                     time.sleep(0.5)
                     sysService("start", "frpc")
+
+            # FRP.host / FRP.allowIP 를 방화벽에 반영 (없으면 스크립트/유닛 생성 후 재시작)
+            _apply_firewall(frp)
         else:
             redis_state.client.hset("System", "FRP", 0)
             if service_exists("frpc.service"):

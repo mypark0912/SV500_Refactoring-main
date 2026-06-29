@@ -1,0 +1,16 @@
+[Unit]
+Description=Firewall
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/firewall.sh
+RemainAfterExit=yes
+ExecStop=/bin/sh -c "iptables -F; iptables -P INPUT ACCEPT"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable firewall.service
+systemctl start firewall.service

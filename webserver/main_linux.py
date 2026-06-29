@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 import uvicorn, time, sys
 from utils.RedisBinary import BinaryDataProcessor, register_waveform_config
 from utils.MaxMinDataHandler import MaxMinDataHandler
-from routes.setting import init_setup
+from routes.setting import init_setup, save_influx_status
 
 sys.dont_write_bytecode = True
 
@@ -173,6 +173,13 @@ async def lifespan(app: FastAPI):
         logging.info("Binary processor and handler initialized")
 
     await wait_for_influxdb_ready(check_query=CHKINFLUX)
+
+    # Redis 무영속(save "")이라 재부팅 시 influx_init 캐시가 사라진다.
+    # InfluxDB ready 가 보장된 이 시점에 부팅당 1회 재계산해 IDLE 오표시를 방지.
+    try:
+        await save_influx_status()
+    except Exception as e:
+        logging.error(f"influx_init 초기 상태 계산 실패: {e}")
 
     sd_notify("READY=1")
     logging.warning("systemd READY=1 sent")

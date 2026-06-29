@@ -92,6 +92,16 @@
             placeholder="token"
           />
         </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">{{ t("config.plansPanel.tunneling.allowIP") }}</label>
+          <input
+            v-model="inputDict.FRP.allowIP"
+            class="form-input w-full"
+            type="text"
+            placeholder="0.0.0.0/0"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t("config.plansPanel.tunneling.allowIPHint") }}</p>
+        </div>
         <div class="flex justify-end pt-2">
           <button
             type="button"
