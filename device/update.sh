@@ -592,17 +592,35 @@ if [ "$MODE" = "lte" ]; then
         log_info "FRP already extracted, skipping"
     fi
 
-    if [ -f /home/root/firewall.sh ]; then
-        mv /home/root/firewall.sh /opt/firewall.sh
+    # firewall.sh / firewall.service 갱신.
+    # 소스($SCRIPT_DIR → /home/root 순)에 있으면 최신본으로 cp, 없으면 기존 설치본(/opt, /etc) 유지.
+    # 웹서버는 firewall.sh 가 아니라 /opt/firewall.env 를 갱신하므로(정적 firewall.sh 가 source),
+    # 설치본이 한 번 신버전(env source)으로 깔려 있으면 매 업데이트마다 firewall.sh 재배포는 불필요.
+    FW_SH_SRC=""
+    for cand in "$SCRIPT_DIR/firewall.sh" /home/root/firewall.sh; do
+        [ -f "$cand" ] && { FW_SH_SRC="$cand"; break; }
+    done
+    if [ -n "$FW_SH_SRC" ]; then
+        cp "$FW_SH_SRC" /opt/firewall.sh
         chmod +x /opt/firewall.sh
+        log_info "firewall.sh updated from $FW_SH_SRC"
+    elif [ -f /opt/firewall.sh ]; then
+        log_info "firewall.sh source not found — keeping installed /opt/firewall.sh"
     else
-        log_warn "firewall.sh not found, skipping"
+        log_warn "firewall.sh not found (source & /opt) — firewall will not run"
     fi
 
-    if [ -f /home/root/firewall.service ]; then
-        mv /home/root/firewall.service /etc/systemd/system/firewall.service
+    FW_SVC_SRC=""
+    for cand in "$SCRIPT_DIR/firewall.service" /home/root/firewall.service; do
+        [ -f "$cand" ] && { FW_SVC_SRC="$cand"; break; }
+    done
+    if [ -n "$FW_SVC_SRC" ]; then
+        cp "$FW_SVC_SRC" /etc/systemd/system/firewall.service
+        log_info "firewall.service updated from $FW_SVC_SRC"
+    elif [ -f /etc/systemd/system/firewall.service ]; then
+        log_info "firewall.service source not found — keeping installed unit"
     else
-        log_warn "firewall.service not found, skipping"
+        log_warn "firewall.service not found (source & /etc) — cannot start firewall"
     fi
 
     # (구) frpc-restart-monitor 제거 (deprecated):
@@ -617,8 +635,15 @@ if [ "$MODE" = "lte" ]; then
     rm -f /home/root/frpc-restart-monitor.sh
 
     sudo systemctl daemon-reload
-    sudo systemctl enable firewall.service 2>/dev/null || true
-    sudo systemctl start firewall.service 2>/dev/null || true
+    # firewall.service 가 (설치본이든 방금 배포본이든) 존재할 때만 enable/restart.
+    # restart 로 매 업데이트마다 iptables 규칙·신버전 firewall.sh 를 재적용.
+    if [ -f /etc/systemd/system/firewall.service ]; then
+        sudo systemctl enable firewall.service 2>/dev/null || true
+        sudo systemctl restart firewall.service 2>/dev/null || true
+        log_info "firewall.service (re)started"
+    else
+        log_warn "firewall.service absent — skipping enable/start"
+    fi
 
     log_info "✅ FRP & Firewall installed (LTE mode)"
 else
