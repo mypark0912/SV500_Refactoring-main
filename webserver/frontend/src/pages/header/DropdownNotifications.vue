@@ -68,7 +68,7 @@
             >
               <div class="block py-2 px-4">
                 <span class="block text-sm text-gray-500 dark:text-gray-400">
-                  ✅ All Service is running
+                  ✅ All the services are running
                 </span>
               </div>
             </li>
