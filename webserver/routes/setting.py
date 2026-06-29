@@ -2306,7 +2306,7 @@ def reset():
                 redis_state.client.hset("Service", "restart", 1)
                 threading.Timer(2, apply_network_setting, args=[defaults["General"]["tcpip"]]).start()
                 threading.Timer(2, apply_timezone_setting, args=[defaults["General"].get("deviceInfo", {}).get("timezone", "")]).start()
-                threading.Timer(2, apply_sntp_setting, args=[defaults["General"].get("sntpInfo", {})]).start()
+                threading.Timer(2, apply_sntp_setting, args=[defaults["General"].get("sntpInfo", {}), defaults["General"].get("useFuction", {}).get("sntp", 0)]).start()
         except Exception as e:
             print(str(e))
             return {"success": False, "msg": str(e)}
@@ -3530,7 +3530,7 @@ async def apply(request: Request):
     redis_state.client.hset("System", "setup", json.dumps(saveData))
 
     apply_timezone_setting(saveData["General"].get("deviceInfo", {}).get("timezone", ""))
-    apply_sntp_setting(saveData["General"].get("sntpInfo", {}))
+    apply_sntp_setting(saveData["General"].get("sntpInfo", {}), saveData["General"].get("useFuction", {}).get("sntp", 0))
 
     return {"status": "1", "data": saveData, "restartDevice": restartdevice, "restartCore": restartCore}
 
@@ -3756,14 +3756,16 @@ def apply_timezone_setting(timezone):
     return {"result": True}
 
 
-def apply_sntp_setting(sntp_data):
-    """SNTP/NTP 서버 설정 적용. host가 없으면 timesyncd 비활성화."""
+def apply_sntp_setting(sntp_data, enabled):
+    """SNTP/NTP 서버 설정 적용. SNTP enable + host 가 있을 때만 동기화, 그 외(꺼짐/host없음)엔 timesyncd 비활성화.
+    host 만 보면 SNTP 를 꺼도 host 값이 남아있으면 동기화가 계속 켜지는 문제가 있어 enable 플래그도 함께 본다."""
     TIMESYNCD_CONF = "/etc/systemd/timesyncd.conf"
     ntp_server = (sntp_data or {}).get("host", "")
+    sntp_on = safe_int(enabled) == 1
 
-    # ⭐ NTP 설정 변경 비교
+    # ⭐ enable + host 둘 다 있어야 동기화
     ntpflag = False
-    if ntp_server:
+    if sntp_on and ntp_server:
         new_content = f"[Time]\nNTP={ntp_server}\n"
         try:
             with open(TIMESYNCD_CONF, "r") as f:
@@ -3778,7 +3780,7 @@ def apply_sntp_setting(sntp_data):
                 f.write(new_content)
             ntpflag = True
     else:
-        # ⭐ NTP 서버 없으면 비활성화 (이미 비활성화면 스킵)
+        # ⭐ SNTP 꺼짐 또는 host 없음 → 비활성화 (이미 비활성화면 스킵)
         try:
             result = subprocess.run(["systemctl", "is-enabled", "systemd-timesyncd"],
                                     capture_output=True, text=True)
