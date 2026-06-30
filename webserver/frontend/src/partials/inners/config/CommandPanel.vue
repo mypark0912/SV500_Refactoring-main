@@ -136,6 +136,15 @@
                 </button>
               </div>
 
+              <!-- SW 패키지 파일 업로드 -->
+              <label class="flex items-center gap-3 cursor-pointer">
+                <span class="text-sm text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">Package</span>
+                <span class="flex-1 truncate text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700/30 text-gray-600 dark:text-gray-300">
+                  {{ swFile ? swFile.name : "패키지 파일 선택 (.tar.gz)" }}
+                </span>
+                <input type="file" class="hidden" accept=".tar.gz,.tgz,.gz" @change="onSwFileChange" />
+              </label>
+
               <!-- Smart System Update 섹션 -->
               <div class="flex items-center gap-3">
                 <!-- 라디오 버튼 그룹 -->
@@ -590,6 +599,7 @@ export default {
     const isUpdating = ref(false); // 업데이트 진행 중 상태
     const showRestoreModal = ref(false);
     const restoreFile = ref(null);
+    const swFile = ref(null); // SW 업데이트 패키지 파일
     const isRestoring = ref(false);
 
     // 백업 진행 모달 상태
@@ -645,15 +655,60 @@ export default {
 
     // Smart System Update 처리
     const handleSystemUpdate = () => {
-      if (updateMode.value === "restore") {
-        showRestoreModal.value = true;
+      // SW 패키지 파일 필수 (업로드 → SmartSystem 업데이트 → 적용·재부팅)
+      if (!swFile.value) {
+        showMessage("업데이트 패키지 파일을 선택하세요.");
         return;
       }
       if (updateMode.value === "reinstall") {
-        showUpdateModal.value = true;
+        showUpdateModal.value = true; // 재설치 경고 모달 → 확인 시 performSwUpdate
       } else {
-        // Update 모드일 때 바로 실행
-        performUpdate();
+        performSwUpdate();
+      }
+    };
+
+    const onSwFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) swFile.value = file;
+    };
+
+    // 통합 SW 업데이트 흐름:
+    //   1) /swupdate/upload — 패키지 업로드 + HMAC/해시 검증 + 스테이징
+    //   2) /setting/updateSmartSystem/{mode} — SmartSystem 업데이트(재부팅 전)
+    //   3) /swupdate/apply  — 러너(updateSW.sh) → 정리 → 재부팅
+    const performSwUpdate = async () => {
+      if (!swFile.value) return;
+      isUpdating.value = true;
+      const mode = updateMode.value === "reinstall" ? 1 : 0;
+      try {
+        const fd = new FormData();
+        fd.append("file", swFile.value);
+        const up = await axios.post("/swupdate/upload", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (!up.data.success) {
+          showMessage("패키지 검증 실패: " + (up.data.error || "알 수 없는 오류"));
+          isUpdating.value = false;
+          return;
+        }
+        const ss = await axios.get(`/setting/updateSmartSystem/${mode}`);
+        if (!ss.data.success) {
+          showMessage("SmartSystem 업데이트 실패");
+          isUpdating.value = false;
+          return;
+        }
+        const ap = await axios.post("/swupdate/apply");
+        if (ap.data.success) {
+          showMessage("업데이트를 적용합니다. 곧 재부팅됩니다.");
+        } else {
+          showMessage("적용 실패: " + (ap.data.error || "알 수 없는 오류"));
+          isUpdating.value = false;
+        }
+      } catch (error) {
+        showMessage(
+          "업데이트 실패: " + (error.response?.data?.error || error.message)
+        );
+        isUpdating.value = false;
       }
     };
 
@@ -697,7 +752,7 @@ export default {
 
     const confirmUpdate = () => {
       showUpdateModal.value = false;
-      performUpdate();
+      performSwUpdate();
     };
 
     const performUpdate = async () => {
@@ -906,6 +961,8 @@ export default {
       isNtek,
       showRestoreModal,
       restoreFile,
+      swFile,
+      onSwFileChange,
       isRestoring,
       onRestoreFileChange,
       closeRestoreModal,

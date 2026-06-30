@@ -6,6 +6,7 @@ from .setting import router as setting_router
 from .config import router as config_router
 from .report import router as report_router
 from .demand import router as demand_router
+from .swupdate import router as swupdate_router
 
 api_router = APIRouter()
 
@@ -16,3 +17,4 @@ api_router.include_router(setting_router, prefix="/setting", tags=["Setting"])
 api_router.include_router(config_router, prefix="/config", tags=["Config"])
 api_router.include_router(report_router, prefix="/report", tags=["Report"])
 api_router.include_router(demand_router, prefix="/demand", tags=["Demand"])
+api_router.include_router(swupdate_router, prefix="/swupdate", tags=["SwUpdate"])
